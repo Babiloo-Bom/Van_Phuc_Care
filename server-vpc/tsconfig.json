@@ -12,6 +12,7 @@
     "baseUrl": "./src",
     "allowJs": true,
     "checkJs": true,
+    "skipLibCheck": true,
     "lib": [
         "es2019.object",
         "dom",
