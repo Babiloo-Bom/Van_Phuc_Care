@@ -7,7 +7,7 @@ on:
 
 jobs:
   deploy:
-    runs-on: [self-hosted, ubuntu, prod]
+    runs-on: [self-hosted, Linux, X64] 
 
     env:
       APP_DIR: /home/backend/Van_Phuc_Care/server-vpc
