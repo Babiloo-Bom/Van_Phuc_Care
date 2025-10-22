@@ -1,0 +1,47 @@
+name: Deploy Backend
+
+on:
+  push:
+    branches: [ "main" ]
+  workflow_dispatch:
+
+jobs:
+  deploy:
+    runs-on: [self-hosted, ubuntu, prod]
+
+    env:
+      APP_DIR: /home/backend/Van_Phuc_Care/server-vpc
+      SERVICE_NAME: my-backend
+
+    steps:
+      - name: Checkout source code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+          cache: npm
+
+      - name: Install dependencies and build
+        run: |
+          npm ci
+          npm run build-ts
+
+      - name: Sync code to server
+        run: |
+          sudo mkdir -p $APP_DIR
+          sudo rsync -a --delete \
+            --exclude=".git" \
+            --exclude=".github" \
+            . $APP_DIR/
+          sudo chown -R backend:backend $APP_DIR
+
+      - name: Install production dependencies
+        run: |
+          cd $APP_DIR
+          npm ci --omit=dev
+
+      - name: Restart backend service
+        run: |
+          sudo systemctl restart $SERVICE_NAME
