@@ -10,25 +10,20 @@ jobs:
     runs-on: [self-hosted, Linux, X64] 
 
     env:
-      APP_DIR: /home/backend/Van_Phuc_Care/server-vpc
+      APP_DIR: /home/backend
       SERVICE_NAME: my-backend
 
     steps:
       - name: Checkout source code
         uses: actions/checkout@v4
 
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: '18'
-          cache: npm
-
       - name: Install dependencies and build
         run: |
-          npm ci
+          cd ${{ github.workspace }}
+          npm ci || npm install
           npm run build-ts
 
-      - name: Sync code to server
+      - name: Sync code to server folder
         run: |
           sudo mkdir -p $APP_DIR
           sudo rsync -a --delete \
@@ -40,8 +35,8 @@ jobs:
       - name: Install production dependencies
         run: |
           cd $APP_DIR
-          npm ci --omit=dev
+          npm ci --omit=dev || npm install --omit=dev
 
-      - name: Restart backend service
+      - name: Restart service
         run: |
           sudo systemctl restart $SERVICE_NAME
