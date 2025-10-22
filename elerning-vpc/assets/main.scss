@@ -1,0 +1,227 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@import './transitions.scss';
+
+@font-face {
+    font-family: "Gilory";
+    src: url("/fonts/gilory/Thin.otf");
+    font-weight: 100;
+}
+
+@font-face {
+    font-family: "Gilory";
+    src: url("/fonts/gilory/XLight.otf");
+    font-weight: 200;
+}
+
+@font-face {
+    font-family: "Gilory";
+    src: url("/fonts/gilory/Light.otf");
+    font-weight: 300;
+}
+
+@font-face {
+    font-family: "Gilory";
+    src: url("/fonts/gilory/Regular.otf");
+    font-weight: 400;
+}
+
+@font-face {
+    font-family: "Gilory";
+    src: url("/fonts/gilory/Medium.otf");
+    font-weight: 500;
+}
+
+@font-face {
+    font-family: "Gilory";
+    src: url("/fonts/gilory/SemiBold.otf");
+    font-weight: 600;
+}
+
+@font-face {
+    font-family: "Gilory";
+    src: url("/fonts/gilory/Bold.otf");
+    font-weight: 700;
+}
+
+@font-face {
+    font-family: "Gilory";
+    src: url("/fonts/gilory/XBold.otf");
+    font-weight: 800;
+}
+
+@font-face {
+    font-family: "Gilory";
+    src: url("/fonts/gilory/Black.otf");
+    font-weight: 900;
+}
+
+@font-face {
+    font-family: "Gilory";
+    src: url("/fonts/gilory/Heavy.otf");
+    font-weight: 1000;
+}
+
+
+@font-face {
+    font-family: "Synck";
+    src: url("/fonts/synck/SVN-Flamingo-Script.otf");
+    font-weight: 100;
+    src: url('/fonts/synck/SVN-Gilroy-Italic.otf') format('opentype');
+    font-style: normal;
+}
+
+@font-face {
+    font-family: "Synck";
+    src: url("/fonts/synck/SVN-Gilroy-Light.otf");
+    font-weight: 300;
+}
+
+@font-face {
+    font-family: "Synck";
+    src: url("/fonts/synck/SVN-Gilroy-Italic.otf");
+    font-weight: 400;
+}
+
+@font-face {
+    font-family: "Synck";
+    src: url("/fonts/synck/SVN-Gilroy-Medium.otf");
+    font-weight: 500;
+}
+
+@font-face {
+    font-family: "Synck";
+    src: url("/fonts/synck/SVN-Gilroy-Bold.otf");
+    font-weight: 600;
+}
+
+body {
+    font-family: 'Gilory', sans-serif !important;
+    word-break: break-word !important;
+    @apply text-base text-gray-100 #{!important};
+}
+
+.app {
+    min-height: 100vh;
+}
+
+// Scroll
+::-webkit-scrollbar-track {
+    border-radius: 10px;
+    background-color: transparent;
+}
+
+::-webkit-scrollbar {
+    width: 6px;
+    height: 3px;
+    background-color: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+    border-radius: 10px;
+    background-color: #CCCECC;
+}
+
+a {
+    color: inherit !important;
+}
+
+.fade-enter-active, .fade-leave-active {
+    opacity: 1;
+    animation: acrossIn .15s ease-out both, opacity .15s;
+}
+
+.fade-enter, .fade-leave-active {
+    opacity: 0;
+    transition: opacity 0.15s linear;
+}
+
+@keyframes acrossIn {
+    0% {
+        transform: translate3d(-5%, 0, 0);
+    }
+    100% {
+        transform: translate3d(0, 0, 0);
+    }
+}
+
+.shadow-light {
+    box-shadow: 0px 2px 12px rgba(0, 0, 0, 0.1);
+}
+
+.card {
+    box-shadow: 0rem 0.125rem 0.25rem rgba(204, 204, 204, 0.01), 0rem 0.0625rem 0.375rem rgba(0, 0, 0, 0.05);
+    @apply bg-white p-4 rounded-sm;
+}
+
+// gradient buton
+
+@layer components {
+    .btn-gradient {
+        background-image: linear-gradient(131.19deg, #EB7300 -47.83%, #FDC615 140.5%) !important;
+        height: 40px !important;
+        border: none !important;
+        
+    }
+
+    .btn-cancel {
+        @apply bg-prim-20 text-prim-100 h-9 px-12 py-2 border-none mx-1 #{!important};
+    }
+    .btn-add {
+        @apply bg-prim-100 text-white h-9 px-12 py-2 border-none mx-1 #{!important};
+    }
+}
+
+.container {
+    @apply mx-auto px-5 lg:px-10;
+}
+.container.container-custom {
+    @apply max-w-[1360px] mx-auto px-5 xl:px-10;
+}
+.container.large-container {
+    @apply w-screen mx-auto max-w-[1700px] px-5 xl:px-14;
+}
+.genstech-loader {
+    width: 48px;
+    height: 48px;
+    border: 3px solid #FFF;
+    border-radius: 50%;
+    display: inline-block;
+    position: relative;
+    box-sizing: border-box;
+    animation: rotation 1s linear infinite;
+  }
+  .genstech-loader::after {
+    content: '';  
+    box-sizing: border-box;
+    position: absolute;
+    left: 50%;
+    top: 50%;
+    transform: translate(-50%, -50%);
+    width: 56px;
+    height: 56px;
+    border-radius: 50%;
+    border: 3px solid;
+    border-color: #1A75BB transparent;
+  }
+  
+  @keyframes rotation {
+    0% {
+      transform: rotate(0deg);
+    }
+    100% {
+      transform: rotate(360deg);
+    }
+  } 
+
+iframe {
+    width: 100%;
+}
+.ant-radio-checked .ant-radio-inner {
+    border-color: #14cf76
+}
+.ant-radio-inner:after {
+    background-color: #14cf76;
+}

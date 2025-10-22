@@ -1,0 +1,32 @@
+.translate-x-transition {
+    &-enter-active, &-leave-active {
+        transition: all .5s;
+    }
+
+    &-enter, &-leave-active, &-enter-from, &-leave-to {
+        opacity: 0;
+        transform: translateX(20px);
+    }
+
+    &-move {
+        transition: all .5s;
+    }
+
+    &-leave-active {
+        position: absolute;
+    }
+}
+
+.page-enter-active,
+.page-leave-active,
+.layout-enter-active, 
+.layout-leave-active {
+    transition: opacity .1s
+}
+
+.page-enter,
+.page-leave-active,
+.layout-enter, 
+.layout-leave-active {
+    opacity: 0
+}

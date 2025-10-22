@@ -1,0 +1,70 @@
+{
+  "compilerOptions": {
+    "resolveJsonModule": true,
+    "module": "commonjs",
+    "esModuleInterop": true,
+    "allowSyntheticDefaultImports": true,
+    "target": "es6",
+    "noImplicitAny": true,
+    "moduleResolution": "node",
+    "sourceMap": true,
+    "outDir": "dist",
+    "baseUrl": "./src",
+    "allowJs": true,
+    "checkJs": true,
+    "lib": [
+        "es2019.object",
+        "dom",
+    ],
+    "paths": {
+      "*": [
+          "../node_modules/*",
+          "./types/*"
+      ],
+      "@configs/*": [
+          "./configs/*"
+      ],
+      "@initializers/*": [
+          "./initializers/*"
+      ],
+      "@models/*": [
+          "./models/*"
+      ],
+      "@interfaces/*": [
+          "./interfaces/*"
+      ],
+      "@services/*": [
+          "./services/*"
+      ],
+      "@database/*": [
+          "./database/*"
+      ],
+      "@libs/*": [
+          "./libs/*"
+      ],
+      "@controllers/*": [
+          "./controllers/*"
+      ],
+      "@middlewares/*": [
+          "./middlewares/*"
+      ],
+      "@mongodb/*": [
+        "./mongodb/*"
+      ],
+      "@helpers/*": [
+        "./helpers/*"
+      ],
+      "@decorators/*": [
+        "./decorators/*"
+      ],
+      "~": [
+          "./*"
+      ],
+    }
+  },
+  "include": [
+    "./src/**/*"
+  ],
+  "exclude": [
+  ]
+}

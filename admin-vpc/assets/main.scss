@@ -1,0 +1,196 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@import './transitions.scss';
+
+body {
+    font-family: 'Be Vietnam Pro', sans-serif !important;
+    word-break: break-word !important;
+    @apply text-base text-gray-80 #{!important};
+}
+
+.app {
+    min-height: 100vh;
+}
+
+// Scroll
+::-webkit-scrollbar-track {
+    border-radius: 10px;
+    background-color: transparent;
+}
+
+::-webkit-scrollbar {
+    width: 6px;
+    height: 3px;
+    background-color: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+    border-radius: 10px;
+    background-color: #CCCECC;
+}
+
+a {
+    color: inherit !important;
+}
+
+.fade-enter-active, .fade-leave-active {
+    opacity: 1;
+    animation: acrossIn .15s ease-out both, opacity .15s;
+}
+
+.fade-enter, .fade-leave-active {
+    opacity: 0;
+    transition: opacity 0.15s linear;
+}
+
+@keyframes acrossIn {
+    0% {
+        transform: translate3d(-5%, 0, 0);
+    }
+    100% {
+        transform: translate3d(0, 0, 0);
+    }
+}
+
+.shadow-light {
+    box-shadow: 0px 2px 12px rgba(0, 0, 0, 0.1);
+}
+
+.card {
+    box-shadow: rgba(0, 0, 0, 0.1) 0px 1px 3px 0px, rgba(0, 0, 0, 0.06) 0px 1px 2px 0px;
+    @apply bg-white p-3 rounded-sm;
+}
+
+// gradient buton
+
+@layer components {
+    .btn-gradient {
+        background-image: linear-gradient(131.19deg, #EB7300 -47.83%, #FDC615 140.5%) !important;
+        height: 40px !important;
+        border: none !important;
+        
+    }
+
+    .btn-cancel {
+        @apply bg-prim-20 text-prim-100 h-9 px-12 py-2 border-none mx-1 #{!important};
+    }
+    .btn-add {
+        @apply bg-prim-100 text-white h-9 px-12 py-2 border-none mx-1 #{!important};
+    }
+}
+
+
+.race-by {
+    --uib-size: 80px;
+    --uib-speed: 1.4s;
+    --uib-color: #1351d8;
+    --uib-line-weight: 5px;
+
+    position: relative;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    height: var(--uib-line-weight);
+    width: var(--uib-size);
+    border-radius: calc(var(--uib-line-weight) / 2);
+    overflow: hidden;
+    transform: translate3d(0, 0, 0);
+    max-width: 100%;
+}
+
+.race-by::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    height: 100%;
+    width: 100%;
+    background-color: var(--uib-color);
+    opacity: 0.1;
+}
+
+.race-by::after {
+    content: '';
+    height: 100%;
+    width: 100%;
+    border-radius: calc(var(--uib-line-weight) / 2);
+    animation: raceBy var(--uib-speed) ease-in-out infinite;
+    transform: translateX(-100%);
+    background-color: var(--uib-color);
+}
+
+@keyframes raceBy {
+    0% {
+        transform: translateX(-100%);
+    }
+
+    100% {
+        transform: translateX(100%);
+    }
+}
+
+.ant-select-selection__rendered {
+    line-height: 30px !important;
+}
+
+.ant-select-selection--multiple {
+    min-height: 30px !important;
+    padding-bottom: 0 !important;
+}
+
+
+.genstech-loader {
+    width: 48px;
+    height: 48px;
+    border: 3px solid #FFF;
+    border-radius: 50%;
+    display: inline-block;
+    position: relative;
+    box-sizing: border-box;
+    animation: rotation 1s linear infinite;
+  }
+  .genstech-loader::after {
+    content: '';  
+    box-sizing: border-box;
+    position: absolute;
+    left: 50%;
+    top: 50%;
+    transform: translate(-50%, -50%);
+    width: 56px;
+    height: 56px;
+    border-radius: 50%;
+    border: 3px solid;
+    border-color: #1A75BB transparent;
+  }
+  
+  @keyframes rotation {
+    0% {
+      transform: rotate(0deg);
+    }
+    100% {
+      transform: rotate(360deg);
+    }
+  } 
+
+  .ant-input-number-sm input {
+    height: 30px !important;
+  }
+  
+.synck-select {
+    .ant-select-selection {
+        border: none;
+        background-color: transparent;
+        width: 0;
+    }
+    .ant-select-selection--single .ant-select-selection__rendered {
+        display: none;
+    }
+    .ant-select-open .ant-select-selection, .ant-select-focused .ant-select-selection, .ant-select-selection:focus, .ant-select-selection:active  {
+        box-shadow: none;
+    }
+    .ant-select-selection-selected-value {
+        max-width: fit-content;
+    }
+}

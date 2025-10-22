@@ -1,0 +1,44 @@
+<template>
+    <div class="grid grid-cols-2 md:grid-cols-3 gap-4 min-w-[50%]">
+        <SearchFilter
+            class="col-span-1"
+            label="Tìm kiếm"
+            placeholder="Nhập mã hợp đồng, tên khách hàng,..."
+            query="searchKey"
+        />
+        <SelectFilter
+            class="col-span-1"
+            label="Trạng thái"
+            placeholder="Trạng thái"
+            query="status"
+            :options="CUSTOMER_STATUS_OPTIONS"
+        />
+        <DateRangeFilter
+            class="col-span-1"
+            label="Chọn ngày"
+            query=""
+            value-format="YYYY-MM-DD"
+        />
+    </div>
+</template>
+
+<script>
+    import { CUSTOMER_STATUS_OPTIONS } from '@/constants/customers/status';
+    import SearchFilter from '@/components/filters/Search.vue';
+    import DateRangeFilter from '@/components/filters/DateRange.vue';
+    import SelectFilter from '@/components/filters/Select.vue';
+
+    export default {
+        components: {
+            SearchFilter,
+            DateRangeFilter,
+            SelectFilter,
+        },
+
+        data() {
+            return {
+                CUSTOMER_STATUS_OPTIONS,
+            };
+        },
+    };
+</script>
