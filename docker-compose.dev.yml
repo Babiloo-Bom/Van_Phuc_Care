@@ -1,5 +1,3 @@
-version: '3.9'
-
 # ============================================
 # Van Phuc Care - Development Environment
 # Hot Reload + Volume Mounts

@@ -3,8 +3,8 @@ node_modules
 npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
-package-lock.json
-yarn.lock
+# package-lock.json  # COMMENTED - Needed for npm ci
+# yarn.lock          # COMMENTED - Needed for yarn install
 
 # Build output
 dist
@@ -57,7 +57,7 @@ firebase.json
 # Misc
 .eslintrc*
 .prettierrc*
-tsconfig.json
+# tsconfig.json  # COMMENTED - Needed for TypeScript build
 nodemon.json
 
 # OS

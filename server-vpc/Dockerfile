@@ -81,6 +81,10 @@ COPY --from=builder --chown=expressjs:nodejs /app/package.json ./package.json
 COPY --from=builder --chown=expressjs:nodejs /app/views ./views
 COPY --from=builder --chown=expressjs:nodejs /app/public ./public
 
+# Create directories that app needs with proper permissions
+RUN mkdir -p tmp logs uploads public/uploads && \
+    chown -R expressjs:nodejs tmp logs uploads public/uploads
+
 # Switch to non-root user
 USER expressjs
 
