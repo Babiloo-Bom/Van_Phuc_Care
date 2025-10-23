@@ -1,0 +1,152 @@
+version: '3.9'
+
+# ============================================
+# Van Phuc Care - Docker Compose
+# 3 Nuxt 3 Applications + Nginx
+# ============================================
+
+services:
+  # ============================================
+  # Admin Portal (Port 3000)
+  # ============================================
+  admin:
+    build:
+      context: ./admin-vpc-v3
+      dockerfile: Dockerfile
+      args:
+        - NODE_ENV=production
+    container_name: vpc-admin
+    restart: unless-stopped
+    ports:
+      - "3000:3000"
+    environment:
+      - NODE_ENV=production
+      - NUXT_PUBLIC_API_HOST=http://103.216.119.104:3000
+      - NUXT_PUBLIC_API_BASE=http://103.216.119.104:3000/a
+      - NUXT_PUBLIC_TINYMCE_KEY=${TINYMCE_KEY}
+      - NUXT_PUBLIC_APP_NAME=Admin Portal - Van Phuc Care
+      - NUXT_PUBLIC_APP_URL=http://localhost:3000
+    networks:
+      - vpc-network
+    healthcheck:
+      test: ["CMD", "node", "-e", "require('http').get('http://localhost:3000/api/_health', (r) => {process.exit(r.statusCode === 200 ? 0 : 1)})"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+  # ============================================
+  # CRM Portal (Port 3001)
+  # ============================================
+  crm:
+    build:
+      context: ./crm-vpc-v3
+      dockerfile: Dockerfile
+      args:
+        - NODE_ENV=production
+    container_name: vpc-crm
+    restart: unless-stopped
+    ports:
+      - "3001:3001"
+    environment:
+      - NODE_ENV=production
+      - NUXT_PUBLIC_API_HOST=http://103.216.119.104:3000
+      - NUXT_PUBLIC_API_BASE=http://103.216.119.104:3000/a
+      - NUXT_PUBLIC_TINYMCE_KEY=${TINYMCE_KEY}
+      - NUXT_PUBLIC_APP_NAME=CRM Portal - Van Phuc Care
+      - NUXT_PUBLIC_APP_URL=http://localhost:3001
+    networks:
+      - vpc-network
+    healthcheck:
+      test: ["CMD", "node", "-e", "require('http').get('http://localhost:3001/api/_health', (r) => {process.exit(r.statusCode === 200 ? 0 : 1)})"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+  # ============================================
+  # E-Learning Portal (Port 3002)
+  # ============================================
+  elearning:
+    build:
+      context: ./elerning-vpc-v3
+      dockerfile: Dockerfile
+      args:
+        - NODE_ENV=production
+    container_name: vpc-elearning
+    restart: unless-stopped
+    ports:
+      - "3002:3002"
+    environment:
+      - NODE_ENV=production
+      - NUXT_PUBLIC_API_HOST=http://103.216.119.104:3000
+      - NUXT_PUBLIC_API_BASE=http://103.216.119.104:3000/u
+      - NUXT_PUBLIC_TINYMCE_KEY=${TINYMCE_KEY}
+      - NUXT_PUBLIC_APP_NAME=E-Learning Portal - Van Phuc Care
+      - NUXT_PUBLIC_APP_URL=http://localhost:3002
+    networks:
+      - vpc-network
+    healthcheck:
+      test: ["CMD", "node", "-e", "require('http').get('http://localhost:3002/api/_health', (r) => {process.exit(r.statusCode === 200 ? 0 : 1)})"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+  # ============================================
+  # Nginx Reverse Proxy (Optional)
+  # ============================================
+  nginx:
+    image: nginx:alpine
+    container_name: vpc-nginx
+    restart: unless-stopped
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./nginx/nginx.conf:/etc/nginx/nginx.conf:ro
+      - ./nginx/conf.d:/etc/nginx/conf.d:ro
+      - ./nginx/ssl:/etc/nginx/ssl:ro
+    depends_on:
+      - admin
+      - crm
+      - elearning
+    networks:
+      - vpc-network
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+# ============================================
+# Networks
+# ============================================
+networks:
+  vpc-network:
+    driver: bridge
+    name: van-phuc-care-network
+
+# ============================================
+# Volumes (if needed)
+# ============================================
+volumes:
+  admin-data:
+  crm-data:
+  elearning-data:
+
