@@ -1,5 +1,4 @@
 name: CI/CD Deploy to Server
-
 on:
   push:
     branches: ["main"]
