@@ -4,8 +4,10 @@ class MongoDB {
   private uri: string;
 
   constructor () {
-    // Nên sử dụng biến môi trường để bảo vệ thông tin nhạy cảm
-    this.uri = 'mongodb+srv://minhpham2615:6enDryMjUbIB6jRg@vanphucdev.o40sa.mongodb.net/?retryWrites=true&w=majority&appName=VanphucDev';
+    // Đọc MONGODB_URI từ environment variable
+    // Fallback về MongoDB Atlas nếu không có env var (để backward compatibility)
+    this.uri = process.env.MONGODB_URI || 'mongodb+srv://minhpham2615:6enDryMjUbIB6jRg@vanphucdev.o40sa.mongodb.net/?retryWrites=true&w=majority&appName=VanphucDev';
+    console.log('MongoDB URI:', this.uri.replace(/\/\/([^:]+):([^@]+)@/, '//$1:****@')); // Log URI with masked password
     this.connect();
   }
 

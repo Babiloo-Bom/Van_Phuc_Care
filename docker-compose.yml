@@ -20,7 +20,7 @@ services:
     environment:
       - NODE_ENV=production
       - PORT=3000
-      - MONGODB_URI=${MONGODB_URI:-mongodb://mongodb:27017/vanphuccare}
+      - MONGODB_URI=${MONGODB_URI:-mongodb://admin:vanphuccare2025@mongodb:27017/vanphuccare?authSource=admin}
       - JWT_SECRET=${JWT_SECRET:-your_jwt_secret_here}
       - JWT_EXPIRE=${JWT_EXPIRE:-7d}
       # Add other env vars as needed
@@ -51,7 +51,7 @@ services:
       - "27017:27017"
     environment:
       - MONGO_INITDB_ROOT_USERNAME=${MONGO_ROOT_USERNAME:-admin}
-      - MONGO_INITDB_ROOT_PASSWORD=${MONGO_ROOT_PASSWORD:-password}
+      - MONGO_INITDB_ROOT_PASSWORD=${MONGO_ROOT_PASSWORD:-vanphuccare2025}
       - MONGO_INITDB_DATABASE=vanphuccare
     volumes:
       - mongodb-data:/data/db
