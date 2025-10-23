@@ -7,7 +7,73 @@ version: '3.9'
 
 services:
   # ============================================
-  # Admin Portal (Port 3000)
+  # Backend API Server (Port 3000)
+  # ============================================
+  api:
+    build:
+      context: ./server-vpc
+      dockerfile: Dockerfile
+      args:
+        - NODE_ENV=production
+    container_name: vpc-api
+    restart: unless-stopped
+    ports:
+      - "3000:3000"
+    environment:
+      - NODE_ENV=production
+      - PORT=3000
+      - MONGODB_URI=${MONGODB_URI:-mongodb://mongodb:27017/vanphuccare}
+      - JWT_SECRET=${JWT_SECRET:-your_jwt_secret_here}
+      - JWT_EXPIRE=${JWT_EXPIRE:-7d}
+      # Add other env vars as needed
+    networks:
+      - vpc-network
+    depends_on:
+      - mongodb
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:3000/api/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+  # ============================================
+  # MongoDB Database
+  # ============================================
+  mongodb:
+    image: mongo:7-jammy
+    container_name: vpc-mongodb
+    restart: unless-stopped
+    ports:
+      - "27017:27017"
+    environment:
+      - MONGO_INITDB_ROOT_USERNAME=${MONGO_ROOT_USERNAME:-admin}
+      - MONGO_INITDB_ROOT_PASSWORD=${MONGO_ROOT_PASSWORD:-password}
+      - MONGO_INITDB_DATABASE=vanphuccare
+    volumes:
+      - mongodb-data:/data/db
+      - mongodb-config:/data/configdb
+    networks:
+      - vpc-network
+    healthcheck:
+      test: ["CMD", "mongosh", "--eval", "db.adminCommand('ping')"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+  # ============================================
+  # Admin Portal (Port 3100)
   # ============================================
   admin:
     build:
@@ -18,16 +84,18 @@ services:
     container_name: vpc-admin
     restart: unless-stopped
     ports:
-      - "3000:3000"
+      - "3100:3000"
     environment:
       - NODE_ENV=production
-      - NUXT_PUBLIC_API_HOST=http://103.216.119.104:3000
-      - NUXT_PUBLIC_API_BASE=http://103.216.119.104:3000/a
+      - NUXT_PUBLIC_API_HOST=http://api:3000
+      - NUXT_PUBLIC_API_BASE=http://api:3000/a
       - NUXT_PUBLIC_TINYMCE_KEY=${TINYMCE_KEY}
       - NUXT_PUBLIC_APP_NAME=Admin Portal - Van Phuc Care
-      - NUXT_PUBLIC_APP_URL=http://localhost:3000
+      - NUXT_PUBLIC_APP_URL=http://localhost:3100
     networks:
       - vpc-network
+    depends_on:
+      - api
     healthcheck:
       test: ["CMD", "node", "-e", "require('http').get('http://localhost:3000/api/_health', (r) => {process.exit(r.statusCode === 200 ? 0 : 1)})"]
       interval: 30s
@@ -41,7 +109,7 @@ services:
         max-file: "3"
 
   # ============================================
-  # CRM Portal (Port 3001)
+  # CRM Portal (Port 3101)
   # ============================================
   crm:
     build:
@@ -52,16 +120,18 @@ services:
     container_name: vpc-crm
     restart: unless-stopped
     ports:
-      - "3001:3001"
+      - "3101:3001"
     environment:
       - NODE_ENV=production
-      - NUXT_PUBLIC_API_HOST=http://103.216.119.104:3000
-      - NUXT_PUBLIC_API_BASE=http://103.216.119.104:3000/a
+      - NUXT_PUBLIC_API_HOST=http://api:3000
+      - NUXT_PUBLIC_API_BASE=http://api:3000/a
       - NUXT_PUBLIC_TINYMCE_KEY=${TINYMCE_KEY}
       - NUXT_PUBLIC_APP_NAME=CRM Portal - Van Phuc Care
-      - NUXT_PUBLIC_APP_URL=http://localhost:3001
+      - NUXT_PUBLIC_APP_URL=http://localhost:3101
     networks:
       - vpc-network
+    depends_on:
+      - api
     healthcheck:
       test: ["CMD", "node", "-e", "require('http').get('http://localhost:3001/api/_health', (r) => {process.exit(r.statusCode === 200 ? 0 : 1)})"]
       interval: 30s
@@ -75,7 +145,7 @@ services:
         max-file: "3"
 
   # ============================================
-  # E-Learning Portal (Port 3002)
+  # E-Learning Portal (Port 3102)
   # ============================================
   elearning:
     build:
@@ -86,16 +156,18 @@ services:
     container_name: vpc-elearning
     restart: unless-stopped
     ports:
-      - "3002:3002"
+      - "3102:3002"
     environment:
       - NODE_ENV=production
-      - NUXT_PUBLIC_API_HOST=http://103.216.119.104:3000
-      - NUXT_PUBLIC_API_BASE=http://103.216.119.104:3000/u
+      - NUXT_PUBLIC_API_HOST=http://api:3000
+      - NUXT_PUBLIC_API_BASE=http://api:3000/u
       - NUXT_PUBLIC_TINYMCE_KEY=${TINYMCE_KEY}
       - NUXT_PUBLIC_APP_NAME=E-Learning Portal - Van Phuc Care
-      - NUXT_PUBLIC_APP_URL=http://localhost:3002
+      - NUXT_PUBLIC_APP_URL=http://localhost:3102
     networks:
       - vpc-network
+    depends_on:
+      - api
     healthcheck:
       test: ["CMD", "node", "-e", "require('http').get('http://localhost:3002/api/_health', (r) => {process.exit(r.statusCode === 200 ? 0 : 1)})"]
       interval: 30s
@@ -143,9 +215,13 @@ networks:
     name: van-phuc-care-network
 
 # ============================================
-# Volumes (if needed)
+# Volumes
 # ============================================
 volumes:
+  mongodb-data:
+    name: vpc-mongodb-data
+  mongodb-config:
+    name: vpc-mongodb-config
   admin-data:
   crm-data:
   elearning-data:

@@ -22,6 +22,12 @@ help:
 	@echo "  make dev-down  - Stop development environment"
 	@echo "  make dev-logs  - View development logs"
 	@echo ""
+	@echo "Backend API:"
+	@echo "  make api-logs  - View API logs"
+	@echo "  make api-shell - Shell into API container"
+	@echo "  make db-shell  - Shell into MongoDB"
+	@echo "  make db-backup - Backup MongoDB"
+	@echo ""
 	@echo "Maintenance:"
 	@echo "  make clean     - Clean Docker system"
 	@echo "  make prune     - Remove unused images/containers"
@@ -67,6 +73,14 @@ logs-crm:
 logs-elearning:
 	@echo "📋 Viewing E-Learning logs..."
 	docker compose logs -f elearning
+
+logs-api:
+	@echo "📋 Viewing API logs..."
+	docker compose logs -f api
+
+logs-db:
+	@echo "📋 Viewing MongoDB logs..."
+	docker compose logs -f mongodb
 
 status:
 	@echo "📊 Service Status:"
@@ -124,6 +138,33 @@ shell-elearning:
 	@echo "💻 Opening shell in E-Learning container..."
 	docker compose exec elearning sh
 
+shell-api:
+	@echo "💻 Opening shell in API container..."
+	docker compose exec api sh
+
+shell-db:
+	@echo "💻 Opening MongoDB shell..."
+	docker compose exec mongodb mongosh
+
+# ============================================
+# Database Commands
+# ============================================
+
+db-backup:
+	@echo "💾 Backing up MongoDB..."
+	@mkdir -p backups
+	docker compose exec mongodb mongodump --out=/data/backup
+	@echo "✅ Backup complete!"
+
+db-restore:
+	@echo "📦 Restoring MongoDB from backup..."
+	docker compose exec mongodb mongorestore /data/backup
+	@echo "✅ Restore complete!"
+
+db-stats:
+	@echo "📊 MongoDB statistics:"
+	docker compose exec mongodb mongosh --eval "db.stats()"
+
 # ============================================
 # Maintenance Commands
 # ============================================
@@ -163,9 +204,10 @@ stats:
 
 health:
 	@echo "🏥 Checking health status..."
-	@curl -s http://localhost:3000/api/_health || echo "❌ Admin not healthy"
-	@curl -s http://localhost:3001/api/_health || echo "❌ CRM not healthy"
-	@curl -s http://localhost:3002/api/_health || echo "❌ E-Learning not healthy"
+	@curl -s http://localhost:3000/api/health || echo "❌ API not healthy"
+	@curl -s http://localhost:3100/api/_health || echo "❌ Admin not healthy"
+	@curl -s http://localhost:3101/api/_health || echo "❌ CRM not healthy"
+	@curl -s http://localhost:3102/api/_health || echo "❌ E-Learning not healthy"
 
 disk-usage:
 	@echo "💾 Docker disk usage:"
@@ -206,19 +248,23 @@ rollback:
 # Testing Commands
 # ============================================
 
+test-api:
+	@echo "🧪 Testing API..."
+	@curl -s http://localhost:3000/api/health > /dev/null && echo "✅ API OK" || echo "❌ API Failed"
+
 test-admin:
 	@echo "🧪 Testing Admin Portal..."
-	@curl -s http://localhost:3000 > /dev/null && echo "✅ Admin OK" || echo "❌ Admin Failed"
+	@curl -s http://localhost:3100 > /dev/null && echo "✅ Admin OK" || echo "❌ Admin Failed"
 
 test-crm:
 	@echo "🧪 Testing CRM Portal..."
-	@curl -s http://localhost:3001 > /dev/null && echo "✅ CRM OK" || echo "❌ CRM Failed"
+	@curl -s http://localhost:3101 > /dev/null && echo "✅ CRM OK" || echo "❌ CRM Failed"
 
 test-elearning:
 	@echo "🧪 Testing E-Learning Portal..."
-	@curl -s http://localhost:3002 > /dev/null && echo "✅ E-Learning OK" || echo "❌ E-Learning Failed"
+	@curl -s http://localhost:3102 > /dev/null && echo "✅ E-Learning OK" || echo "❌ E-Learning Failed"
 
-test: test-admin test-crm test-elearning
+test: test-api test-admin test-crm test-elearning
 	@echo "✅ All tests complete!"
 
 # ============================================

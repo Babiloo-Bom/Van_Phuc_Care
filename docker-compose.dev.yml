@@ -1,94 +1,179 @@
 version: '3.9'
 
 # ============================================
-# Van Phuc Care - Development Docker Compose
-# Hot reload enabled
+# Van Phuc Care - Development Environment
+# Hot Reload + Volume Mounts
 # ============================================
 
 services:
   # ============================================
-  # Admin Portal (Development)
+  # Backend API Server (Development)
   # ============================================
-  admin-dev:
+  api:
     build:
-      context: ./admin-vpc-v3
+      context: ./server-vpc
       dockerfile: Dockerfile.dev
-      args:
-        - NODE_ENV=development
-    container_name: vpc-admin-dev
+    container_name: vpc-api-dev
     restart: unless-stopped
     ports:
       - "3000:3000"
+    environment:
+      - NODE_ENV=development
+      - PORT=3000
+      - MONGODB_URI=mongodb://mongodb:27017/vanphuccare
+      - JWT_SECRET=${JWT_SECRET:-dev_jwt_secret}
+      - JWT_EXPIRE=7d
     volumes:
-      - ./admin-vpc-v3:/app
+      - ./server-vpc/src:/app/src:cached
+      - ./server-vpc/dist:/app/dist:cached
+      - ./server-vpc/package.json:/app/package.json:ro
+      - /app/node_modules
+    networks:
+      - vpc-network
+    depends_on:
+      - mongodb
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+  # ============================================
+  # MongoDB Database
+  # ============================================
+  mongodb:
+    image: mongo:7-jammy
+    container_name: vpc-mongodb-dev
+    restart: unless-stopped
+    ports:
+      - "27017:27017"
+    environment:
+      - MONGO_INITDB_ROOT_USERNAME=${MONGO_ROOT_USERNAME:-admin}
+      - MONGO_INITDB_ROOT_PASSWORD=${MONGO_ROOT_PASSWORD:-password}
+      - MONGO_INITDB_DATABASE=vanphuccare
+    volumes:
+      - mongodb-data-dev:/data/db
+      - mongodb-config-dev:/data/configdb
+    networks:
+      - vpc-network
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+  # ============================================
+  # Admin Portal (Development)
+  # ============================================
+  admin:
+    build:
+      context: ./admin-vpc-v3
+      dockerfile: Dockerfile.dev
+    container_name: vpc-admin-dev
+    restart: unless-stopped
+    ports:
+      - "3100:3000"
+    environment:
+      - NODE_ENV=development
+      - NUXT_PUBLIC_API_HOST=http://api:3000
+      - NUXT_PUBLIC_API_BASE=http://api:3000/a
+      - NUXT_PUBLIC_TINYMCE_KEY=${TINYMCE_KEY}
+      - NUXT_PUBLIC_APP_NAME=Admin Portal - Van Phuc Care
+      - NUXT_PUBLIC_APP_URL=http://localhost:3100
+    volumes:
+      - ./admin-vpc-v3:/app:cached
       - /app/node_modules
       - /app/.nuxt
       - /app/.output
-    environment:
-      - NODE_ENV=development
-      - NUXT_PUBLIC_API_HOST=http://103.216.119.104:3000
-      - NUXT_PUBLIC_API_BASE=http://103.216.119.104:3000/a
-      - NUXT_PUBLIC_TINYMCE_KEY=${TINYMCE_KEY}
     networks:
       - vpc-network
-    command: npm run dev
+    depends_on:
+      - api
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
 
   # ============================================
   # CRM Portal (Development)
   # ============================================
-  crm-dev:
+  crm:
     build:
       context: ./crm-vpc-v3
       dockerfile: Dockerfile.dev
-      args:
-        - NODE_ENV=development
     container_name: vpc-crm-dev
     restart: unless-stopped
     ports:
-      - "3001:3001"
+      - "3101:3001"
+    environment:
+      - NODE_ENV=development
+      - NUXT_PUBLIC_API_HOST=http://api:3000
+      - NUXT_PUBLIC_API_BASE=http://api:3000/a
+      - NUXT_PUBLIC_TINYMCE_KEY=${TINYMCE_KEY}
+      - NUXT_PUBLIC_APP_NAME=CRM Portal - Van Phuc Care
+      - NUXT_PUBLIC_APP_URL=http://localhost:3101
     volumes:
-      - ./crm-vpc-v3:/app
+      - ./crm-vpc-v3:/app:cached
       - /app/node_modules
       - /app/.nuxt
       - /app/.output
-    environment:
-      - NODE_ENV=development
-      - NUXT_PUBLIC_API_HOST=http://103.216.119.104:3000
-      - NUXT_PUBLIC_API_BASE=http://103.216.119.104:3000/a
-      - NUXT_PUBLIC_TINYMCE_KEY=${TINYMCE_KEY}
     networks:
       - vpc-network
-    command: npm run dev
+    depends_on:
+      - api
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
 
   # ============================================
   # E-Learning Portal (Development)
   # ============================================
-  elearning-dev:
+  elearning:
     build:
       context: ./elerning-vpc-v3
       dockerfile: Dockerfile.dev
-      args:
-        - NODE_ENV=development
     container_name: vpc-elearning-dev
     restart: unless-stopped
     ports:
-      - "3002:3002"
+      - "3102:3002"
+    environment:
+      - NODE_ENV=development
+      - NUXT_PUBLIC_API_HOST=http://api:3000
+      - NUXT_PUBLIC_API_BASE=http://api:3000/u
+      - NUXT_PUBLIC_TINYMCE_KEY=${TINYMCE_KEY}
+      - NUXT_PUBLIC_APP_NAME=E-Learning Portal - Van Phuc Care
+      - NUXT_PUBLIC_APP_URL=http://localhost:3102
     volumes:
-      - ./elerning-vpc-v3:/app
+      - ./elerning-vpc-v3:/app:cached
       - /app/node_modules
       - /app/.nuxt
       - /app/.output
-    environment:
-      - NODE_ENV=development
-      - NUXT_PUBLIC_API_HOST=http://103.216.119.104:3000
-      - NUXT_PUBLIC_API_BASE=http://103.216.119.104:3000/u
-      - NUXT_PUBLIC_TINYMCE_KEY=${TINYMCE_KEY}
     networks:
       - vpc-network
-    command: npm run dev
+    depends_on:
+      - api
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
 
+# ============================================
+# Networks
+# ============================================
 networks:
   vpc-network:
     driver: bridge
-    name: van-phuc-care-network-dev
+    name: van-phuc-care-dev-network
 
+# ============================================
+# Volumes (Development - Separate from prod)
+# ============================================
+volumes:
+  mongodb-data-dev:
+    name: vpc-mongodb-data-dev
+  mongodb-config-dev:
+    name: vpc-mongodb-config-dev
