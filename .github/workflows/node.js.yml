@@ -19,7 +19,6 @@ jobs:
 
       - name: Restart docker
         run: |
-          cd /home/backend/Van_Phuc_Care  
           docker compose down
-          docker compose build --no-cache
+          # docker compose build --no-cache
           docker compose up -d
