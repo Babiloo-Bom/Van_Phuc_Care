@@ -28,15 +28,27 @@ jobs:
           # Stop all containers
           docker compose down
           
-          # Rebuild images (with cache for speed)
-          # Docker will automatically detect changed files and rebuild affected layers
-          docker compose build
+          # Build images SEQUENTIALLY to avoid memory issues
+          echo "🔨 Building API..."
+          docker compose build api
+          
+          echo "🔨 Building Admin..."
+          docker compose build admin
+          
+          echo "🔨 Building CRM..."
+          docker compose build crm
+          
+          echo "🔨 Building E-Learning..."
+          docker compose build elearning
+          
+          echo "🔨 Building Nginx..."
+          docker compose build nginx || true
           
           # Start all services
           docker compose up -d
           
           # Wait for containers to be healthy
-          sleep 10
+          sleep 15
           
           # Show running containers
           docker ps --format "table {{.Names}}\t{{.Status}}\t{{.Ports}}"
