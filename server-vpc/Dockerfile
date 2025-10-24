@@ -4,28 +4,7 @@
 # ============================================
 
 # ============================================
-# Stage 1: Dependencies
-# ============================================
-FROM node:20-alpine AS deps
-
-# Install dependencies needed for native modules
-RUN apk add --no-cache \
-    python3 \
-    make \
-    g++ \
-    libc6-compat
-
-WORKDIR /app
-
-# Copy package files
-COPY package.json package-lock.json* ./
-
-# Install production dependencies
-RUN npm ci --omit=dev && \
-    npm cache clean --force
-
-# ============================================
-# Stage 2: Builder
+# Stage 1: Builder
 # ============================================
 FROM node:20-alpine AS builder
 
@@ -42,7 +21,7 @@ WORKDIR /app
 COPY package.json package-lock.json* ./
 
 # Install all dependencies (including devDependencies for build)
-RUN npm ci && \
+RUN npm ci --legacy-peer-deps && \
     npm cache clean --force
 
 # Copy source code
@@ -53,7 +32,7 @@ ENV NODE_ENV=production
 RUN npm run build-ts
 
 # ============================================
-# Stage 3: Runner (Production)
+# Stage 2: Runner (Production)
 # ============================================
 FROM node:20-alpine AS runner
 
@@ -72,8 +51,8 @@ ENV PORT=3000
 RUN addgroup --system --gid 1001 nodejs && \
     adduser --system --uid 1001 expressjs
 
-# Copy production dependencies from deps stage
-COPY --from=deps --chown=expressjs:nodejs /app/node_modules ./node_modules
+# Copy node_modules from builder (includes all dependencies)
+COPY --from=builder --chown=expressjs:nodejs /app/node_modules ./node_modules
 
 # Copy built application from builder
 COPY --from=builder --chown=expressjs:nodejs /app/dist ./dist

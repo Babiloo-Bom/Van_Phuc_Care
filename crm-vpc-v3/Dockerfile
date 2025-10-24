@@ -4,20 +4,7 @@
 # ============================================
 
 # ============================================
-# Stage 1: Dependencies
-# ============================================
-FROM node:20-alpine AS deps
-
-RUN apk add --no-cache libc6-compat
-
-WORKDIR /app
-
-COPY package.json package-lock.json* ./
-
-RUN npm ci --omit=dev
-
-# ============================================
-# Stage 2: Builder
+# Stage 1: Builder
 # ============================================
 FROM node:20-alpine AS builder
 
@@ -27,7 +14,7 @@ WORKDIR /app
 COPY package.json package-lock.json* ./
 
 # Install ALL dependencies (including devDependencies for build)
-RUN npm ci && npm cache clean --force
+RUN npm ci --legacy-peer-deps && npm cache clean --force
 
 # Copy all source files
 COPY . .
@@ -38,7 +25,7 @@ ENV NUXT_TELEMETRY_DISABLED=1
 RUN npm run build
 
 # ============================================
-# Stage 3: Runner (Production)
+# Stage 2: Runner (Production)
 # ============================================
 FROM node:20-alpine AS runner
 
