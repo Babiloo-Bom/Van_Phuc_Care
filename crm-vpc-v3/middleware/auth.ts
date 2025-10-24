@@ -1,14 +1,20 @@
-export default defineNuxtRouteMiddleware((to, from) => {
-  const { isAuthenticated } = useAuth()
+/**
+ * Auth Middleware
+ * Protects routes that require authentication
+ * Migrated from @nuxtjs/auth-next
+ */
 
-  // If user is not authenticated and trying to access protected route
-  if (!isAuthenticated.value && to.path !== '/login') {
+export default defineNuxtRouteMiddleware((to, from) => {
+  const authStore = useAuthStore()
+
+  // Check if user is authenticated
+  if (!authStore.isAuthenticated) {
+    // Save the intended destination
+    if (process.client) {
+      localStorage.setItem('redirect_after_login', to.fullPath)
+    }
+
+    // Redirect to login
     return navigateTo('/login')
   }
-
-  // If user is authenticated and trying to access login page
-  if (isAuthenticated.value && to.path === '/login') {
-    return navigateTo('/')
-  }
 })
-

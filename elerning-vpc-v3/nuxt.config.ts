@@ -22,6 +22,11 @@ export default defineNuxtConfig({
     typeCheck: false // Disabled temporarily to avoid build errors
   },
 
+  // Build configuration
+  build: {
+    transpile: ['ant-design-vue']
+  },
+
   // TailwindCSS configuration
   tailwindcss: {
     cssPath: '~/assets/css/tailwind.css',
@@ -31,7 +36,10 @@ export default defineNuxtConfig({
   },
 
   // CSS
-  css: ['~/assets/css/tailwind.css'],
+  css: [
+    '~/assets/css/tailwind.css',
+    'ant-design-vue/dist/reset.css'
+  ],
 
   // Runtime config - Environment variables
   runtimeConfig: {

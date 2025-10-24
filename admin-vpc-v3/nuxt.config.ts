@@ -1,7 +1,11 @@
 // https://nuxt.com/docs/api/configuration/nuxt-config
 export default defineNuxtConfig({
   compatibilityDate: '2025-07-15',
-  
+
+  devServer: {
+    port: 3100,
+    host: '0.0.0.0' // (tùy chọn) để truy cập từ IP mạng LAN
+  },
   devtools: { enabled: true },
   
   // Modules
@@ -22,6 +26,18 @@ export default defineNuxtConfig({
     typeCheck: false // Disabled temporarily to avoid build errors
   },
 
+  // Build configuration
+  build: {
+    transpile: ['ant-design-vue']
+  },
+
+  // Vite configuration
+  vite: {
+    optimizeDeps: {
+      include: ['dayjs', 'dayjs/plugin/customParseFormat', 'dayjs/plugin/advancedFormat', 'dayjs/plugin/weekday', 'dayjs/plugin/localeData', 'dayjs/plugin/weekOfYear', 'dayjs/plugin/weekYear', 'dayjs/plugin/quarterOfYear']
+    }
+  },
+
   // TailwindCSS configuration
   tailwindcss: {
     cssPath: '~/assets/css/tailwind.css',
@@ -31,7 +47,10 @@ export default defineNuxtConfig({
   },
 
   // CSS
-  css: ['~/assets/css/tailwind.css'],
+  css: [
+    '~/assets/css/tailwind.css',
+    'ant-design-vue/dist/reset.css'
+  ],
 
   // Runtime config - Environment variables
   runtimeConfig: {
