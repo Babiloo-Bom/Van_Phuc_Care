@@ -15,7 +15,7 @@ export const useAuthApi = () => {
      * @param remindAccount Remember account
      */
     async login(username: string, password: string, remindAccount = false) {
-      return await $fetch(`${apiBase}/a/sessions/login`, {
+      return await $fetch(`${apiBase}/api/a/sessions/login`, {
         method: 'POST',
         body: {
           username,
@@ -33,7 +33,7 @@ export const useAuthApi = () => {
      * @param repeat_password Repeat password
      */
     async register(email: string, password: string, repeat_password: string) {
-      return await $fetch(`${apiBase}/a/sessions`, {
+      return await $fetch(`${apiBase}/api/a/sessions`, {
         method: 'POST',
         body: {
           email,
@@ -50,7 +50,7 @@ export const useAuthApi = () => {
      * @param otp OTP code
      */
     async verifyEmail(email: string, otp: string) {
-      return await $fetch(`${apiBase}/a/sessions/verify_email`, {
+      return await $fetch(`${apiBase}/api/a/sessions/verify_email`, {
         method: 'POST',
         body: {
           email,
@@ -65,7 +65,7 @@ export const useAuthApi = () => {
      * @param data Profile data
      */
     async updateProfile(data: Record<string, any>) {
-      return await $fetch(`${apiBase}/a/sessions`, {
+      return await $fetch(`${apiBase}/api/a/sessions`, {
         method: 'PATCH',
         body: data
       })
@@ -77,7 +77,7 @@ export const useAuthApi = () => {
      * @param newPassword New password
      */
     async changePassword(oldPassword: string, newPassword: string) {
-      return await $fetch(`${apiBase}/a/sessions/change_password`, {
+      await $fetch(`${apiBase}/api/a/sessions/change_password`, {
         method: 'PATCH',
         body: {
           oldPassword,
@@ -91,7 +91,7 @@ export const useAuthApi = () => {
      * @param email Email
      */
     async forgotPassword(email: string) {
-      return await $fetch(`${apiBase}/a/passwords/forgot_password`, {
+      return await $fetch(`${apiBase}/api/a/passwords/forgot_password`, {
         method: 'POST',
         body: { email }
       })
@@ -103,7 +103,7 @@ export const useAuthApi = () => {
      * @param otp OTP code
      */
     async verifyOtp(email: string, otp: string) {
-      return await $fetch(`${apiBase}/a/passwords/verify_otp`, {
+      return await $fetch(`${apiBase}/api/a/passwords/verify_otp`, {
         method: 'POST',
         body: { email, otp }
       })
@@ -116,7 +116,7 @@ export const useAuthApi = () => {
      * @param newPassword New password
      */
     async resetPassword(email: string, token: string, newPassword: string) {
-      return await $fetch(`${apiBase}/a/passwords`, {
+      return await $fetch(`${apiBase}/api/a/passwords`, {
         method: 'POST',
         params: { email, token },
         body: { password: newPassword }
@@ -128,7 +128,7 @@ export const useAuthApi = () => {
      * @param params Query parameters
      */
     async getActiveLogs(params?: Record<string, any>) {
-      return await $fetch(`${apiBase}/a/active-logs`, {
+      return await $fetch(`${apiBase}/api/a/active-logs`, {
         method: 'GET',
         params
       })
@@ -139,7 +139,7 @@ export const useAuthApi = () => {
      * @param data Log data
      */
     async writeLog(data: Record<string, any>) {
-      return await $fetch(`${apiBase}/a/active-logs`, {
+      return await $fetch(`${apiBase}/api/a/active-logs`, {
         method: 'POST',
         body: data
       })
@@ -149,7 +149,7 @@ export const useAuthApi = () => {
      * Logout
      */
     async logout() {
-      return await $fetch(`${apiBase}/a/active-logs/logout`, {
+      return await $fetch(`${apiBase}/api/a/active-logs/logout`, {
         method: 'PATCH'
       })
     },

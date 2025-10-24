@@ -3,6 +3,11 @@ export default defineNuxtConfig({
   compatibilityDate: '2025-07-15',
   
   devtools: { enabled: true },
+
+  devServer: {
+    port: 3102,
+    host: '0.0.0.0' // (tùy chọn) để truy cập từ IP mạng LAN
+  },
   
   // Modules
   modules: [
@@ -27,6 +32,13 @@ export default defineNuxtConfig({
     transpile: ['ant-design-vue']
   },
 
+  // Vite configuration
+  vite: {
+    optimizeDeps: {
+      include: ['dayjs', 'dayjs/plugin/customParseFormat', 'dayjs/plugin/advancedFormat', 'dayjs/plugin/weekday', 'dayjs/plugin/localeData', 'dayjs/plugin/weekOfYear', 'dayjs/plugin/weekYear', 'dayjs/plugin/quarterOfYear']
+    }
+  },
+
   // TailwindCSS configuration
   tailwindcss: {
     cssPath: '~/assets/css/tailwind.css',
@@ -46,7 +58,7 @@ export default defineNuxtConfig({
     public: {
       // API Configuration
       apiHost: process.env.NUXT_PUBLIC_API_HOST || 'http://103.216.119.104:3000',
-      apiBase: process.env.NUXT_PUBLIC_API_BASE || 'http://103.216.119.104:3000/a',
+      apiBase: process.env.NUXT_PUBLIC_API_BASE || 'http://103.216.119.104:3000/api/a',
       
       // TinyMCE Configuration
       tinymceKey: process.env.NUXT_PUBLIC_TINYMCE_KEY || '',

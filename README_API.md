@@ -50,7 +50,14 @@ Gói tài liệu API bao gồm **2 files chính**:
 4. **Test API**:
    - Mở folder "**Admin APIs → Authentication**"
    - Chọn "**Login Admin**"
-   - Nhập email/password vào Body
+   - Sử dụng tài khoản demo:
+     ```json
+     {
+       "username": "admin001@gmail.com",
+       "password": "admin001",
+       "origin": "vanphuccare.gensi.vn"
+     }
+     ```
    - Click **Send**
    - Token sẽ tự động lưu để dùng cho requests khác
 
@@ -100,17 +107,29 @@ Mở file: VAN_PHUC_CARE_API_DOCUMENTATION.md
 
 ### API Base URL
 ```
-Production: http://103.216.119.104:3000
-Admin API:  /api/a/*
-User API:   /api/u/*
+Production:  http://103.216.119.104:3000
+Admin API:   http://103.216.119.104:3000/api/a/*
+User API:    http://103.216.119.104:3000/api/u/*
+```
+
+### Tài khoản Demo
+```
+Email:    admin001@gmail.com
+Password: admin001
+Role:     Super Admin
 ```
 
 ### Authentication
 ```
-Type: JWT (JSON Web Token)
+Type:   JWT (JSON Web Token)
 Header: Authorization: Bearer {token}
-Login Endpoint: POST /api/a/sessions/login
+Login:  POST /api/a/sessions/login
 ```
+
+**Authentication Flow:**
+1. Login với email/password → nhận `accessToken`
+2. Lấy thông tin user với token
+3. Sử dụng token cho các API requests
 
 ### Response Format
 ```json

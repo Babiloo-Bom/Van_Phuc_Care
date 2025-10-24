@@ -37,21 +37,29 @@ cp server-vpc/.env.example server-vpc/.env
 ```bash
 nano .env
 ```
-Đổi:
+Cấu hình:
 ```env
-MONGO_ROOT_PASSWORD=your_secure_password
-JWT_SECRET=your_random_32_char_string
-TINYMCE_KEY=your_tinymce_key
+# MongoDB
+MONGO_ROOT_USERNAME=admin
+MONGO_ROOT_PASSWORD=vanphuccare2025
+MONGODB_URI=mongodb://admin:vanphuccare2025@mongodb:27017/vanphuccare?authSource=admin
+
+# JWT
+JWT_SECRET=vanphuccare_jwt_secret_key_2025_production
+
+# TinyMCE
+TINYMCE_KEY=g10x6c0ppoj4l6brqkg2j8l5lza4w6vmdu6k80o2g8ilbkju
+
+# URLs
+ADMIN_URL=http://localhost:3100
+CRM_URL=http://localhost:3101
+ELEARNING_URL=http://localhost:3102
+API_URL=http://localhost:3000
+
+NODE_ENV=production
 ```
 
-```bash
-nano server-vpc/.env
-```
-Đổi:
-```env
-MONGODB_URI=mongodb://admin:your_password@mongodb:27017/vanphuccare?authSource=admin
-JWT_SECRET=same_as_above  # PHẢI GIỐNG .env
-```
+**⚠️ PRODUCTION**: Đổi password và JWT_SECRET!
 
 **⚠️ Tạo JWT Secret:**
 ```bash
@@ -76,10 +84,20 @@ make health
 
 ### Access Applications
 
-- **Admin**: http://localhost:3100
-- **CRM**: http://localhost:3101
-- **E-Learning**: http://localhost:3102
-- **API**: http://localhost:3000
+- **Admin Portal**: http://localhost:3100
+- **CRM Portal**: http://localhost:3101
+- **E-Learning Portal**: http://localhost:3102
+- **Backend API**: http://localhost:3000
+  - Admin API: http://localhost:3000/api/a/*
+  - User API: http://localhost:3000/api/u/*
+- **MongoDB**: localhost:27017
+
+### Test Login
+```bash
+# Admin Portal - http://localhost:3100/login
+Email:    admin001@gmail.com
+Password: admin001
+```
 
 ✅ **Thành công nếu thấy:** `✅ API healthy` cho tất cả services
 
@@ -90,19 +108,36 @@ make health
 ### Kiến Trúc
 
 ```
-Internet → Nginx (80/443)
-            │
-    ┌───────┼───────┐
-    ▼       ▼       ▼
-  Admin   CRM   E-Learning
-  (3100) (3101)  (3102)
-    │       │       │
-    └───────┼───────┘
-            ▼
-        Backend API (3000)
-            ▼
-       MongoDB (27017)
+Internet/Users
+       │
+       ▼
+Nginx (80/443)
+       │
+   ┌───┼────────────┬────────────┐
+   │   │            │            │
+   ▼   ▼            ▼            ▼
+Admin CRM      E-Learning    (Direct)
+:3100 :3101      :3102           │
+   │   │            │            │
+   └───┼────────────┴────────────┘
+       │
+       ▼
+  Backend API (:3000)
+    /api/a/*  (Admin APIs)
+    /api/u/*  (User APIs)
+    /api/*    (Public APIs)
+       │
+       ▼
+  MongoDB (:27017)
+  Database: vanphuccare
+  Auth: admin/vanphuccare2025
 ```
+
+**Services Communication:**
+- Frontend Apps (Admin/CRM/E-Learning) → Backend API
+- Backend API → MongoDB
+- Nginx → Frontend Apps (reverse proxy)
+- All services connected via `vpc-network`
 
 ### Yêu Cầu Server
 
@@ -274,10 +309,19 @@ make rebuild
 docker compose exec mongodb mongosh --eval "db.adminCommand('ping')"
 
 # Test API
-curl http://localhost:3000/api/health
+curl http://localhost:3000
+curl http://localhost:3000/api/a/sessions/current_admin
+
+# Test Frontend
+curl http://localhost:3100
+curl http://localhost:3101
+curl http://localhost:3102
 
 # Check network
-docker network inspect van-phuc-care-network
+docker network inspect vpc-network
+
+# Check MongoDB auth
+docker compose exec mongodb mongosh -u admin -p vanphuccare2025 --authenticationDatabase admin
 ```
 
 ### Out of disk space
@@ -337,9 +381,13 @@ sudo ufw enable
 ### Health Checks
 
 ```bash
-make health
-make status
-curl http://localhost:3000/api/health
+make health                              # Check all services
+make status                              # Container status
+curl http://localhost:3000              # API root
+curl http://localhost:3100              # Admin portal
+curl http://localhost:3101              # CRM portal
+curl http://localhost:3102              # E-Learning portal
+docker compose exec mongodb mongosh --eval "db.adminCommand('ping')"  # MongoDB
 ```
 
 ### Resource Usage
@@ -427,18 +475,39 @@ MAIL_PASSWORD=app_password
 
 ## ✅ PRODUCTION CHECKLIST
 
-Trước khi deploy:
-
-- [ ] Đổi `MONGO_ROOT_PASSWORD`
+### Security
+- [ ] Đổi `MONGO_ROOT_PASSWORD` (mặc định: `vanphuccare2025`)
+- [ ] Đổi `MONGO_ROOT_USERNAME` nếu cần
 - [ ] Generate strong `JWT_SECRET` (32+ chars)
-- [ ] Config email settings
-- [ ] Setup SSL certificates
+- [ ] Đổi default admin password trong database
+- [ ] Xóa hoặc disable demo accounts
+
+### Infrastructure
+- [ ] Config email settings (SMTP)
+- [ ] Setup SSL certificates (Let's Encrypt)
 - [ ] Configure domain DNS
-- [ ] Setup firewall
-- [ ] Test backup/restore
-- [ ] Setup monitoring
-- [ ] Document procedures
-- [ ] Train team
+- [ ] Setup firewall (UFW)
+- [ ] Enable fail2ban
+- [ ] Setup monitoring (Prometheus/Grafana)
+
+### Database
+- [ ] Test MongoDB backup/restore
+- [ ] Setup automated backups (cron)
+- [ ] Configure MongoDB replica set (optional)
+- [ ] Set up database indexes
+
+### Application
+- [ ] Test all authentication flows
+- [ ] Verify API endpoints
+- [ ] Check frontend builds
+- [ ] Test file uploads
+- [ ] Verify email sending
+
+### Documentation
+- [ ] Document deployment procedures
+- [ ] Create runbooks for common issues
+- [ ] Train team members
+- [ ] Update API documentation
 
 ---
 
@@ -518,18 +587,24 @@ make stats             # Resource usage
 
 **6 Services:**
 
-| Service | Port | Size | Memory |
-|---------|------|------|--------|
-| Backend API | 3000 | 180MB | ~150MB |
-| MongoDB | 27017 | - | ~300MB |
-| Admin | 3100 | 250MB | ~120MB |
-| CRM | 3101 | 250MB | ~120MB |
-| E-Learning | 3102 | 250MB | ~120MB |
-| Nginx | 80/443 | 50MB | ~10MB |
+| Service | Port | Technology | Memory |
+|---------|------|------------|--------|
+| vpc-api | 3000 | Node.js/TypeScript | ~200MB |
+| vpc-mongodb | 27017 | MongoDB 7 | ~300MB |
+| vpc-admin | 3100 | Nuxt 3 | ~150MB |
+| vpc-crm | 3101 | Nuxt 3 | ~150MB |
+| vpc-elearning | 3102 | Nuxt 3 | ~150MB |
+| vpc-nginx | 80/443 | Nginx Alpine | ~20MB |
 
-**Total:** ~930MB images, ~820MB RAM
+**Total:** ~970MB RAM required
 
-**Optimization:** 85% smaller (5.2GB saved)
+**Features:**
+- ✅ Multi-stage Docker builds
+- ✅ Non-root users for security
+- ✅ Health checks for all services
+- ✅ Optimized MongoDB with mongosh
+- ✅ Nginx reverse proxy
+- ✅ Hot reload in dev mode
 
 ---
 
@@ -584,10 +659,26 @@ make rebuild           # Rebuild
 ### URLs
 
 ```
-Admin:      http://localhost:3100
-CRM:        http://localhost:3101
-E-Learning: http://localhost:3102
-API:        http://localhost:3000
+Admin Portal:      http://localhost:3100
+  Login:           http://localhost:3100/login
+  Dashboard:       http://localhost:3100/dashboard
+
+CRM Portal:        http://localhost:3101
+E-Learning Portal: http://localhost:3102
+
+Backend API:       http://localhost:3000
+  Admin API:       http://localhost:3000/api/a/*
+  User API:        http://localhost:3000/api/u/*
+
+MongoDB:           mongodb://admin:vanphuccare2025@localhost:27017/vanphuccare?authSource=admin
+```
+
+### Demo Account
+
+```
+Email:    admin001@gmail.com
+Password: admin001
+Role:     Super Admin
 ```
 
 ### Files

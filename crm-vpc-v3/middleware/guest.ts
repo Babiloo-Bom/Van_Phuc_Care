@@ -1,15 +1,30 @@
 /**
+ * ====================================
  * Guest Middleware
- * Redirects authenticated users away from guest-only pages (login, register)
- * Migrated from @nuxtjs/auth-next
+ * ====================================
+ * Redirects authenticated users away from guest-only pages
+ * Usage: definePageMeta({ middleware: 'guest' })
+ * 
+ * Use on: Login, Register, Forgot Password pages
  */
 
 export default defineNuxtRouteMiddleware((to, from) => {
   const authStore = useAuthStore()
 
-  // If user is authenticated, redirect to home
+  // If user is already authenticated, redirect to dashboard
   if (authStore.isAuthenticated) {
-    return navigateTo('/')
+    console.log('[Guest Middleware] User already authenticated, redirecting to dashboard')
+    
+    // Check if there's a saved redirect path
+    if (process.client) {
+      const redirectPath = localStorage.getItem('redirect_after_login')
+      if (redirectPath && redirectPath !== '/login') {
+        localStorage.removeItem('redirect_after_login')
+        return navigateTo(redirectPath)
+      }
+    }
+
+    // Default redirect to dashboard
+    return navigateTo('/dashboard')
   }
 })
-

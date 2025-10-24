@@ -16,6 +16,7 @@ export interface User {
 export interface AuthState {
   user: User | null
   token: string | null
+  tokenExpireAt: string | null
   isAuthenticated: boolean
   isLoading: boolean
   rememberAccount: boolean
@@ -25,6 +26,7 @@ export const useAuthStore = defineStore('auth', {
   state: (): AuthState => ({
     user: null,
     token: null,
+    tokenExpireAt: null,
     isAuthenticated: false,
     isLoading: false,
     rememberAccount: false
@@ -52,15 +54,17 @@ export const useAuthStore = defineStore('auth', {
         // Call API login
         const response: any = await authApi.login(username, password, remindAccount)
 
-        // Backend returns: { accessToken, tokenExpireAt }
-        const token = response.accessToken || response.token
+        // Backend returns: { data: { accessToken, tokenExpireAt } }
+        const token = response.data?.accessToken || response.accessToken || response.token
+        const tokenExpireAt = response.data?.tokenExpireAt || response.tokenExpireAt
 
         if (!token) {
           throw new Error('No token received from server')
         }
 
-        // Save token and basic user info
+        // Calculate token expiry time (default 7 days if not provided)
         this.token = token
+        this.tokenExpireAt = tokenExpireAt ? this.calculateExpireTime(tokenExpireAt) : this.calculateExpireTime('7d')
         this.isAuthenticated = true
         this.rememberAccount = remindAccount
         
@@ -75,6 +79,7 @@ export const useAuthStore = defineStore('auth', {
         // Save to localStorage
         if (process.client) {
           localStorage.setItem('auth_token', token)
+          localStorage.setItem('token_expire_at', this.tokenExpireAt || '')
           localStorage.setItem('user', JSON.stringify(this.user))
           
           if (remindAccount) {
@@ -314,12 +319,26 @@ export const useAuthStore = defineStore('auth', {
     initAuth() {
       if (process.client) {
         const token = localStorage.getItem('auth_token')
+        const tokenExpireAt = localStorage.getItem('token_expire_at')
         const userStr = localStorage.getItem('user')
         const authDataStr = localStorage.getItem('auth_data')
 
         if (token && userStr) {
           try {
+            // Check if token is expired
+            if (tokenExpireAt) {
+              const expireTime = new Date(tokenExpireAt).getTime()
+              const now = Date.now()
+              
+              if (now >= expireTime) {
+                // Token expired, clear data
+                this.logout()
+                return
+              }
+            }
+
             this.token = token
+            this.tokenExpireAt = tokenExpireAt
             this.user = JSON.parse(userStr)
             this.isAuthenticated = true
 
@@ -331,12 +350,51 @@ export const useAuthStore = defineStore('auth', {
           } catch (error) {
             console.error('Init auth error:', error)
             // Clear corrupted data
-            localStorage.removeItem('auth_token')
-            localStorage.removeItem('user')
-            localStorage.removeItem('auth_data')
+            this.logout()
           }
         }
       }
+    },
+
+    /**
+     * Calculate token expiry time from TTL string (e.g., '7d', '24h', '1y')
+     */
+    calculateExpireTime(ttl: string): string {
+      const now = new Date()
+      
+      // Parse TTL string (e.g., '7d' = 7 days, '24h' = 24 hours)
+      const match = ttl.match(/^(\d+)([smhdy])$/)
+      
+      if (!match) {
+        // Default to 7 days if format is invalid
+        return new Date(now.getTime() + 7 * 24 * 60 * 60 * 1000).toISOString()
+      }
+
+      const [, value, unit] = match
+      const amount = parseInt(value)
+      
+      let milliseconds = 0
+      switch (unit) {
+        case 's': // seconds
+          milliseconds = amount * 1000
+          break
+        case 'm': // minutes
+          milliseconds = amount * 60 * 1000
+          break
+        case 'h': // hours
+          milliseconds = amount * 60 * 60 * 1000
+          break
+        case 'd': // days
+          milliseconds = amount * 24 * 60 * 60 * 1000
+          break
+        case 'y': // years
+          milliseconds = amount * 365 * 24 * 60 * 60 * 1000
+          break
+        default:
+          milliseconds = 7 * 24 * 60 * 60 * 1000 // default 7 days
+      }
+
+      return new Date(now.getTime() + milliseconds).toISOString()
     },
 
     /**

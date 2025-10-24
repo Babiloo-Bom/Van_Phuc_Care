@@ -69,6 +69,17 @@
       </a-button>
     </a-form>
 
+    <!-- Register Link -->
+    <div class="mt-6 text-center">
+      <span class="text-sm text-gray-600">Chưa có tài khoản? </span>
+      <NuxtLink 
+        to="/register" 
+        class="text-sm text-primary-500 hover:text-primary-600 font-medium underline"
+      >
+        Đăng ký ngay
+      </NuxtLink>
+    </div>
+
     <!-- Forgot Password Dialog -->
     <a-modal
       v-model:open="showForgotPasswordDialog"

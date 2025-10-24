@@ -39,9 +39,11 @@
 | Môi trường | URL |
 |------------|-----|
 | Production | `http://103.216.119.104:3000` |
-| Admin API | `/api/a/*` |
-| User API | `/api/u/*` |
-| Public API | `/api/*` |
+| Admin API | `http://103.216.119.104:3000/api/a/*` |
+| User API | `http://103.216.119.104:3000/api/u/*` |
+| Public API | `http://103.216.119.104:3000/api/*` |
+
+**Lưu ý**: Tất cả endpoints đều có prefix `/api`. Ví dụ: `/api/a/sessions/login`
 
 ### Response Format
 
@@ -91,10 +93,17 @@
 **Request:**
 ```json
 {
-  "email": "admin@vanphuccare.com",
-  "password": "your_password"
+  "username": "admin001@gmail.com",
+  "password": "admin001",
+  "remindAccount": false,
+  "origin": "vanphuccare.gensi.vn"
 }
 ```
+
+**Lưu ý**: 
+- `username` có thể là email hoặc số điện thoại
+- `remindAccount`: true để lưu thông tin đăng nhập
+- `origin`: domain của ứng dụng
 
 **Response (200 OK):**
 ```json
@@ -102,16 +111,15 @@
   "status": true,
   "data": {
     "accessToken": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...",
-    "admin": {
-      "_id": "507f1f77bcf86cd799439011",
-      "fullname": "Nguyễn Văn A",
-      "email": "admin@vanphuccare.com",
-      "role": "admin",
-      "permissions": ["read", "write", "delete"],
-      "status": "active"
-    }
+    "tokenExpireAt": "2025-10-31T00:00:00.000Z"
   }
 }
+```
+
+**Sau khi login**, sử dụng token để lấy thông tin admin:
+```
+GET /api/a/sessions/current_admin
+Authorization: Bearer {accessToken}
 ```
 
 **Sử dụng Token:**
