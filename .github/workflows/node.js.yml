@@ -21,8 +21,18 @@ jobs:
             --exclude='.env' \
             ./ /home/backend/Van_Phuc_Care/
 
-      - name: Restart docker
+      - name: Rebuild and restart docker
         run: |
           cd /home/backend/Van_Phuc_Care
+          
+          # Stop all containers
           docker compose down
+          
+          # Rebuild images with latest code (no cache)
+          docker compose build --no-cache
+          
+          # Start all services
           docker compose up -d
+          
+          # Show running containers
+          docker ps --format "table {{.Names}}\t{{.Status}}\t{{.Ports}}"
