@@ -12,7 +12,7 @@ export default class UserController {
   /**
    * Get all users
    */
-  public async getAllUsers(req: Request, res: Response) {
+  public static async getAllUsers(req: Request, res: Response) {
     try {
       const { page = 1, limit = 10, search = '', provider = '', role = '' } = req.query
       
@@ -63,7 +63,7 @@ export default class UserController {
   /**
    * Get user statistics
    */
-  public async getUserStats(req: Request, res: Response) {
+  public static async getUserStats(req: Request, res: Response) {
     try {
       const total = await MongoDbAdmins.model.countDocuments()
       const active = await MongoDbAdmins.model.countDocuments({ isActive: true })
@@ -96,7 +96,7 @@ export default class UserController {
   /**
    * Create user
    */
-  public async createUser(req: Request, res: Response) {
+  public static async createUser(req: Request, res: Response) {
     try {
       const { email, name, avatar, provider, googleId, role = 'user' } = req.body
 
@@ -124,7 +124,7 @@ export default class UserController {
       if (googleId) userData.googleId = googleId
 
       const user = await MongoDbAdmins.model.create(userData)
-      const userObj = user.toObject()
+      const userObj: any = user.toObject()
 
       sendSuccess(res, {
         user: {
@@ -150,7 +150,7 @@ export default class UserController {
   /**
    * Update user
    */
-  public async updateUser(req: Request, res: Response) {
+  public static async updateUser(req: Request, res: Response) {
     try {
       const { id } = req.params
       const updateData = req.body
@@ -175,7 +175,7 @@ export default class UserController {
   /**
    * Delete user
    */
-  public async deleteUser(req: Request, res: Response) {
+  public static async deleteUser(req: Request, res: Response) {
     try {
       const { id } = req.params
 
@@ -194,7 +194,7 @@ export default class UserController {
   /**
    * Toggle user status
    */
-  public async toggleUserStatus(req: Request, res: Response) {
+  public static async toggleUserStatus(req: Request, res: Response) {
     try {
       const { id } = req.params
       const { isActive } = req.body

@@ -11,7 +11,6 @@ import ProductReviewsRouter from './ProductReviews';
 import CustomersRouter from './Customers';
 import OrdersRouter from './Orders';
 import CartsRouter from './Carts';
-import UserRouter from './User';
 import UsersRouter from './Users';
 import AccessPermissionsRouter from './AccessPermissions';
 import HealthBookRouter from './HealthBook';
@@ -31,7 +30,6 @@ router.use('/product-reviews', adminPassport.authenticate('jwt', { session: fals
 router.use('/customers', adminPassport.authenticate('jwt', { session: false }), CustomersRouter);
 router.use('/orders', adminPassport.authenticate('jwt', { session: false }), OrdersRouter);
 router.use('/carts', adminPassport.authenticate('jwt', { session: false }), CartsRouter);
-router.use('/users', adminPassport.authenticate('jwt', { session: false }), UserRouter);
 router.use('/users-management', adminPassport.authenticate('jwt', { session: false }), UsersRouter);
 router.use('/access-permissions', adminPassport.authenticate('jwt', { session: false }), AccessPermissionsRouter);
 router.use('/health-book', adminPassport.authenticate('jwt', { session: false }), HealthBookRouter);
