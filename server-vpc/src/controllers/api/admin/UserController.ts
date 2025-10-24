@@ -124,20 +124,21 @@ export default class UserController {
       if (googleId) userData.googleId = googleId
 
       const user = await MongoDbAdmins.model.create(userData)
+      const userObj = user.toObject()
 
       sendSuccess(res, {
         user: {
-          id: user._id,
-          email: user.email,
-          name: user.name,
-          avatar: user.avatar,
-          provider: user.provider,
-          googleId: user.googleId,
-          isActive: user.isActive,
-          role: user.role,
-          permissions: user.permissions,
-          createdAt: user.createdAt,
-          updatedAt: user.updatedAt
+          id: userObj._id,
+          email: userObj.email,
+          name: userObj.name || userObj.fullname,
+          avatar: userObj.avatar,
+          provider: userObj.provider,
+          googleId: userObj.googleId,
+          isActive: userObj.isActive,
+          role: userObj.role,
+          permissions: userObj.permissions || [],
+          createdAt: userObj.createdAt,
+          updatedAt: userObj.updatedAt
         }
       })
     } catch (error: any) {
