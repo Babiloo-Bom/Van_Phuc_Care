@@ -12,13 +12,17 @@ jobs:
       - name: Checkout source
         uses: actions/checkout@v3
 
-      - name: Pull latest code on server
+      - name: Sync code to deployment directory
         run: |
-          cd /home/backend/Van_Phuc_Care   
-          git pull origin main
+          # Copy checked out code to deployment directory
+          rsync -av --delete \
+            --exclude='.git' \
+            --exclude='node_modules' \
+            --exclude='.env' \
+            ./ /home/backend/Van_Phuc_Care/
 
       - name: Restart docker
         run: |
+          cd /home/backend/Van_Phuc_Care
           docker compose down
-          # docker compose build --no-cache
           docker compose up -d
