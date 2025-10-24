@@ -11,6 +11,12 @@ export interface User {
   avatar?: string
   verified?: boolean
   status?: string
+  provider?: string
+  googleId?: string
+  isActive?: boolean
+  permissions?: string[]
+  createdAt?: string
+  updatedAt?: string
 }
 
 export interface AuthState {
@@ -428,6 +434,49 @@ export const useAuthStore = defineStore('auth', {
       } finally {
         this.isLoading = false
       }
+    },
+
+    /**
+     * Set token and expiry time
+     * For Google OAuth and other external auth flows
+     */
+    async setToken(accessToken: string, tokenExpireAt: string | number) {
+      this.token = accessToken
+      this.tokenExpireAt = typeof tokenExpireAt === 'number' 
+        ? new Date(tokenExpireAt).toISOString()
+        : tokenExpireAt
+      this.isAuthenticated = true
+
+      // Save to localStorage
+      if (process.client) {
+        localStorage.setItem('auth_token', accessToken)
+        localStorage.setItem('token_expire_at', this.tokenExpireAt || '')
+      }
+    },
+
+    /**
+     * Set user data
+     * For Google OAuth and other external auth flows
+     */
+    async setUser(userData: User) {
+      this.user = userData
+      this.isAuthenticated = true
+
+      // Save to localStorage
+      if (process.client) {
+        localStorage.setItem('user', JSON.stringify(userData))
+      }
+    },
+
+    /**
+     * Complete Google OAuth login
+     * Combines setToken and setUser
+     */
+    async completeGoogleLogin(accessToken: string, tokenExpireAt: string | number, userData: User) {
+      await this.setToken(accessToken, tokenExpireAt)
+      await this.setUser(userData)
+      
+      return { success: true, user: userData, token: accessToken }
     }
   }
 })

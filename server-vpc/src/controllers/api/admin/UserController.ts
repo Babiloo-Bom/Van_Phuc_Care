@@ -1,95 +1,217 @@
-import { sendError, sendSuccess } from '@libs/response';
-import { Request, Response } from 'express';
-import MongoDbUsers from '@mongodb/users';
-import { NoData } from '@libs/errors';
-import bcrypt from 'bcryptjs';
+/**
+ * User Controller
+ * Handles user management operations
+ */
 
-class UserController {
-  public async index (req: Request, res: Response) {
+import { Request, Response } from 'express'
+import MongoDbAdmins from '@mongodb/admins'
+import { sendSuccess, sendError } from '@libs/response'
+import { NoData, InternalError } from '@libs/errors'
+
+export default class UserController {
+  /**
+   * Get all users
+   */
+  public async getAllUsers(req: Request, res: Response) {
     try {
-      const page = parseInt(req.query.page as string || '1');
-      const limit = parseInt(req.query.limit as string || '12');
-      const offset = (page - 1) * limit;
-      const { gender, phoneNumber, email, fullname } = req.query;
-      const queryString: any = {};
-      if (gender) {
-        queryString.gender = gender;
+      const { page = 1, limit = 10, search = '', provider = '', role = '' } = req.query
+      
+      // Build query
+      const query: any = {}
+      
+      if (search) {
+        query.$or = [
+          { name: { $regex: search, $options: 'i' } },
+          { email: { $regex: search, $options: 'i' } }
+        ]
       }
-      if (phoneNumber) {
-        queryString.phoneNumber = { $regex: phoneNumber };
+      
+      if (provider) {
+        query.provider = provider
       }
-      if (email) {
-        queryString.email = { $regex: email };
+      
+      if (role) {
+        query.role = role
       }
-      if (fullname) {
-        queryString.fullname = { $regex: fullname };
-      }
-      const users = await MongoDbUsers.model.find(queryString).skip(offset).limit(limit).sort({ createdAt: -1 });
-      const total = await MongoDbUsers.model.find(queryString).countDocuments();
-      sendSuccess(res, { users, pagination: { total, page, limit } });
+
+      // Get users with pagination
+      const skip = (Number(page) - 1) * Number(limit)
+      const users = await MongoDbAdmins.model
+        .find(query)
+        .skip(skip)
+        .limit(Number(limit))
+        .sort({ createdAt: -1 })
+        .select('-password') // Exclude password
+
+      const total = await MongoDbAdmins.model.countDocuments(query)
+
+      sendSuccess(res, {
+        users,
+        pagination: {
+          page: Number(page),
+          limit: Number(limit),
+          total,
+          pages: Math.ceil(total / Number(limit))
+        }
+      })
     } catch (error: any) {
-      sendError(res, 500, error.message, error as Error);
+      console.error('❌ Get all users failed:', error)
+      sendError(res, 500, InternalError, error)
     }
   }
 
-  public async show (req: Request, res: Response) {
+  /**
+   * Get user statistics
+   */
+  public async getUserStats(req: Request, res: Response) {
     try {
-      const user = await MongoDbUsers.model.findById(req.params.userId);
+      const total = await MongoDbAdmins.model.countDocuments()
+      const active = await MongoDbAdmins.model.countDocuments({ isActive: true })
+      const google = await MongoDbAdmins.model.countDocuments({ provider: 'google' })
+      const local = await MongoDbAdmins.model.countDocuments({ provider: 'local' })
+      
+      // Get role statistics
+      const roleStats = await MongoDbAdmins.model.aggregate([
+        { $group: { _id: '$role', count: { $sum: 1 } } }
+      ])
+      
+      const byRole = roleStats.reduce((acc, item) => {
+        acc[item._id] = item.count
+        return acc
+      }, {} as Record<string, number>)
+
+      sendSuccess(res, {
+        total,
+        active,
+        google,
+        local,
+        byRole
+      })
+    } catch (error: any) {
+      console.error('❌ Get user stats failed:', error)
+      sendError(res, 500, InternalError, error)
+    }
+  }
+
+  /**
+   * Create user
+   */
+  public async createUser(req: Request, res: Response) {
+    try {
+      const { email, name, avatar, provider, googleId, role = 'user' } = req.body
+
+      if (!email || !name || !provider) {
+        return sendError(res, 400, 'Email, name, and provider are required')
+      }
+
+      // Check if user already exists
+      const existingUser = await MongoDbAdmins.model.findOne({ email })
+      if (existingUser) {
+        return sendError(res, 400, 'User with this email already exists')
+      }
+
+      // Create user
+      const userData: any = {
+        email,
+        name,
+        provider,
+        role,
+        isActive: true,
+        permissions: []
+      }
+
+      if (avatar) userData.avatar = avatar
+      if (googleId) userData.googleId = googleId
+
+      const user = await MongoDbAdmins.model.create(userData)
+
+      sendSuccess(res, {
+        user: {
+          id: user._id,
+          email: user.email,
+          name: user.name,
+          avatar: user.avatar,
+          provider: user.provider,
+          googleId: user.googleId,
+          isActive: user.isActive,
+          role: user.role,
+          permissions: user.permissions,
+          createdAt: user.createdAt,
+          updatedAt: user.updatedAt
+        }
+      })
+    } catch (error: any) {
+      console.error('❌ Create user failed:', error)
+      sendError(res, 500, InternalError, error)
+    }
+  }
+
+  /**
+   * Update user
+   */
+  public async updateUser(req: Request, res: Response) {
+    try {
+      const { id } = req.params
+      const updateData = req.body
+
+      const user = await MongoDbAdmins.model.findByIdAndUpdate(
+        id,
+        { ...updateData, updatedAt: new Date() },
+        { new: true }
+      ).select('-password')
+
       if (!user) {
-        return sendError(res, 404, NoData);
+        return sendError(res, 404, NoData)
       }
-      sendSuccess(res, { user });
+
+      sendSuccess(res, { user })
     } catch (error: any) {
-      sendError(res, 500, error.message, error as Error);
+      console.error('❌ Update user failed:', error)
+      sendError(res, 500, InternalError, error)
     }
   }
 
-  public async create (req: Request, res: Response) {
+  /**
+   * Delete user
+   */
+  public async deleteUser(req: Request, res: Response) {
     try {
-      const params = req.parameters.permit(MongoDbUsers.CREATABLE_PARAMETERS).value();
-      const salt = bcrypt.genSaltSync();
-      const passwordEncode = bcrypt.hashSync(params.password, salt);
-      const user = await MongoDbUsers.model.create({
-        ...params,
-        password: passwordEncode,
-      });
-      sendSuccess(res, { user });
-    } catch (error: any) {
-      sendError(res, 500, error.message, error as Error);
-    }
-  }
+      const { id } = req.params
 
-  public async update (req: Request, res: Response) {
-    try {
-      const user = await MongoDbUsers.model.findById(req.params.userId);
+      const user = await MongoDbAdmins.model.findByIdAndDelete(id)
       if (!user) {
-        return sendError(res, 404, NoData);
+        return sendError(res, 404, NoData)
       }
-      const params = req.parameters.permit(MongoDbUsers.ADMIN_UPDATABLE_PARAMETERS).value();
-      if (params.password && !(await bcrypt.compare(params.password, user.get('password')))) {
-        const salt = bcrypt.genSaltSync();
-        const passwordEncode = bcrypt.hashSync(params.password, salt);
-        params.password = passwordEncode;
-      }
-      await user.update(params);
-      const record = await MongoDbUsers.model.findOne({ _id: user.get('_id') });
-      sendSuccess(res, { user: record });
+
+      sendSuccess(res, { message: 'User deleted successfully' })
     } catch (error: any) {
-      sendError(res, 500, error.message, error as Error);
+      console.error('❌ Delete user failed:', error)
+      sendError(res, 500, InternalError, error)
     }
   }
 
-  public async delete (req: Request, res: Response) {
+  /**
+   * Toggle user status
+   */
+  public async toggleUserStatus(req: Request, res: Response) {
     try {
-      const user = await MongoDbUsers.model.findById(req.params.userId);
+      const { id } = req.params
+      const { isActive } = req.body
+
+      const user = await MongoDbAdmins.model.findByIdAndUpdate(
+        id,
+        { isActive, updatedAt: new Date() },
+        { new: true }
+      ).select('-password')
+
       if (!user) {
-        return sendError(res, 404, NoData);
+        return sendError(res, 404, NoData)
       }
-      await user.delete();
-      sendSuccess(res, { });
+
+      sendSuccess(res, { user })
     } catch (error: any) {
-      sendError(res, 500, error.message, error as Error);
+      console.error('❌ Toggle user status failed:', error)
+      sendError(res, 500, InternalError, error)
     }
   }
 }
-export default new UserController();

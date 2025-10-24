@@ -69,6 +69,23 @@
       </a-button>
     </a-form>
 
+    <!-- Divider -->
+    <div class="relative w-full max-w-md my-6">
+      <div class="absolute inset-0 flex items-center">
+        <div class="w-full border-t border-gray-300"></div>
+      </div>
+      <div class="relative flex justify-center text-sm">
+        <span class="px-2 bg-white text-gray-500">Hoặc</span>
+      </div>
+    </div>
+
+    <!-- Google Login Button -->
+    <GoogleLoginButton 
+      class="w-full max-w-md"
+      @success="handleGoogleSuccess"
+      @error="handleGoogleError"
+    />
+
     <!-- Register Link -->
     <div class="mt-6 text-center">
       <span class="text-sm text-gray-600">Chưa có tài khoản? </span>
@@ -100,6 +117,7 @@
 
 <script setup lang="ts">
 import { message } from 'ant-design-vue'
+import GoogleLoginButton from '~/components/auth/GoogleLoginButton.vue'
 
 // Page setup
 definePageMeta({
@@ -173,6 +191,18 @@ const handleLogin = async () => {
   } finally {
     loading.value = false
   }
+}
+
+// Handle Google login success
+const handleGoogleSuccess = (result: any) => {
+  message.success('Đăng nhập Google thành công')
+  navigateTo('/')
+}
+
+// Handle Google login error
+const handleGoogleError = (errorMessage: string) => {
+  error.value = errorMessage || 'Đăng nhập Google thất bại'
+  message.error(error.value)
 }
 
 // Load saved credentials if "Remember Account" was checked

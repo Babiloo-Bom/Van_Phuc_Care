@@ -69,6 +69,25 @@
       </a-button>
     </a-form>
 
+    <!-- Divider -->
+    <div class="relative my-6">
+      <div class="absolute inset-0 flex items-center">
+        <div class="w-full border-t border-gray-300" />
+      </div>
+      <div class="relative flex justify-center text-sm">
+        <span class="px-2 bg-white text-gray-500">Hoặc</span>
+      </div>
+    </div>
+
+    <!-- Google Login Button -->
+    <div class="w-full">
+      <GoogleLoginButton
+        redirect-after-login="/"
+        @success="handleGoogleSuccess"
+        @error="handleGoogleError"
+      />
+    </div>
+
     <!-- Register Link -->
     <div class="mt-6 text-center">
       <span class="text-sm text-gray-600">Chưa có tài khoản? </span>
@@ -100,6 +119,7 @@
 
 <script setup lang="ts">
 import { message } from 'ant-design-vue'
+import GoogleLoginButton from '~/components/auth/GoogleLoginButton.vue'
 
 // Page setup
 definePageMeta({
@@ -125,6 +145,19 @@ const form = reactive({
 const loading = ref(false)
 const error = ref('')
 const showForgotPasswordDialog = ref(false)
+
+// ===== GOOGLE LOGIN HANDLERS =====
+const handleGoogleSuccess = (data: any) => {
+  console.log('✅ Google login success:', data)
+  message.success('Đăng nhập Google thành công!')
+  // Redirect will be handled by the auth store
+}
+
+const handleGoogleError = (errorMessage: string) => {
+  console.error('❌ Google login error:', errorMessage)
+  error.value = errorMessage
+  message.error(errorMessage)
+}
 
 // Validation rules
 const rules = {

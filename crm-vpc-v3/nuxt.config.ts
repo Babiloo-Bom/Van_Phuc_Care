@@ -54,17 +54,29 @@ export default defineNuxtConfig({
 
   // Runtime config - Environment variables
   runtimeConfig: {
+    // Private keys (server-side only)
+    googleClientSecret: process.env.GOOGLE_CLIENT_SECRET || '',
+    
     public: {
       // API Configuration
       apiHost: process.env.NUXT_PUBLIC_API_HOST || 'http://103.216.119.104:3000',
       apiBase: process.env.NUXT_PUBLIC_API_BASE || 'http://103.216.119.104:3000/api/a',
+      
+      // Google OAuth Configuration
+      googleClientId: process.env.NUXT_PUBLIC_GOOGLE_CLIENT_ID || '',
+      googleAuthUrl: 'https://accounts.google.com/o/oauth2/v2/auth',
+      googleTokenUrl: 'https://oauth2.googleapis.com/token',
+      googleUserInfoUrl: 'https://www.googleapis.com/oauth2/v2/userinfo',
+      
+      // Base URL for OAuth redirects
+      baseUrl: process.env.NUXT_PUBLIC_BASE_URL || 'http://localhost:3101',
       
       // TinyMCE Configuration
       tinymceKey: process.env.NUXT_PUBLIC_TINYMCE_KEY || '',
       
       // App Configuration
       appName: process.env.NUXT_PUBLIC_APP_NAME || 'CRM Portal - Van Phuc Care',
-      appUrl: process.env.NUXT_PUBLIC_APP_URL || 'http://localhost:3001',
+      appUrl: process.env.NUXT_PUBLIC_APP_URL || 'http://localhost:3101',
       
       // Environment
       isDevelopment: process.env.NODE_ENV === 'development',
