@@ -398,6 +398,31 @@ export const useAuthStore = defineStore('auth', {
     },
 
     /**
+     * Complete Google Login
+     * Store token and user data from Google OAuth
+     */
+    async completeGoogleLogin(accessToken: string, tokenExpireAt: number, userData: User) {
+      try {
+        this.token = accessToken
+        this.tokenExpireAt = new Date(tokenExpireAt).toISOString()
+        this.user = userData
+        this.isAuthenticated = true
+
+        // Save to localStorage
+        if (process.client) {
+          localStorage.setItem('auth_token', accessToken)
+          localStorage.setItem('token_expire_at', this.tokenExpireAt)
+          localStorage.setItem('user', JSON.stringify(userData))
+        }
+
+        return { success: true }
+      } catch (error: any) {
+        console.error('Complete Google login error:', error)
+        return { success: false, error: error.message }
+      }
+    },
+
+    /**
      * Update user profile
      * Migrated from admin-vpc/api/auth.js
      */

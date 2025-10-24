@@ -78,7 +78,7 @@ export const useGoogleAuth = () => {
   // ===== GOOGLE LOGIN API =====
   const googleLogin = async (request: GoogleLoginRequest): Promise<GoogleLoginResponse> => {
     try {
-      const { data } = await useFetch<GoogleLoginResponse>('/api/auth/google/login', {
+      const { data } = await useFetch<GoogleLoginResponse>('/api/auth/google/login-backend', {
         method: 'POST',
         body: request
       })

@@ -88,7 +88,7 @@ export const useGoogleAuth = () => {
     // ===== GOOGLE LOGIN (Complete flow via backend) =====
     const googleLogin = async (code: string): Promise<GoogleLoginResponse> => {
       try {
-        const { data, error } = await useFetch<GoogleLoginResponse>('/api/auth/google/login', {
+        const { data, error } = await useFetch<GoogleLoginResponse>('/api/auth/google/login-backend', {
           method: 'POST',
           body: { code }
         })

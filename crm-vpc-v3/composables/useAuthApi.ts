@@ -1,11 +1,98 @@
 /**
- * Auth API Composable
+ * Auth API Composable with Enhanced Error Handling
  * Migrated from admin-vpc/api/auth.js
  */
+
+import {
+  AuthError,
+  NetworkError,
+  TimeoutError,
+  isRetryableError,
+  createErrorMessage,
+  detectErrorType,
+  AuthErrorCode
+} from '~/types/errors'
+
+// ===== RETRY CONFIG =====
+const RETRY_CONFIG = {
+  maxRetries: 3,
+  retryDelay: 1000, // 1 second
+  timeout: 30000 // 30 seconds
+}
 
 export const useAuthApi = () => {
   const config = useRuntimeConfig()
   const apiBase = config.public.apiHost
+
+  /**
+   * Exponential backoff delay
+   */
+  const delay = (ms: number) => new Promise(resolve => setTimeout(resolve, ms))
+
+  /**
+   * Retry wrapper with exponential backoff
+   */
+  const withRetry = async <T>(
+    operation: () => Promise<T>,
+    retries = RETRY_CONFIG.maxRetries
+  ): Promise<T> => {
+    for (let attempt = 0; attempt <= retries; attempt++) {
+      try {
+        return await operation()
+      } catch (error: any) {
+        // Don't retry if not retryable or last attempt
+        if (!isRetryableError(error) || attempt === retries) {
+          throw error
+        }
+
+        // Exponential backoff: 1s, 2s, 4s, 8s...
+        const backoffDelay = RETRY_CONFIG.retryDelay * Math.pow(2, attempt)
+        console.warn(`🔄 Retry attempt ${attempt + 1}/${retries} after ${backoffDelay}ms`)
+        await delay(backoffDelay)
+      }
+    }
+
+    throw new Error('Max retries exceeded')
+  }
+
+  /**
+   * Transform raw error to AuthError with Vietnamese message
+   */
+  const transformError = (error: any): AuthError => {
+    // Already an AuthError
+    if (error instanceof AuthError) {
+      return error
+    }
+
+    // Detect error type and create AuthError
+    const errorCode = detectErrorType(error)
+    const statusCode = error.statusCode || error.status || 500
+
+    return new AuthError(errorCode, statusCode, error)
+  }
+
+  /**
+   * Fetch with timeout support
+   */
+  const fetchWithTimeout = async <T>(url: string, options: any): Promise<T> => {
+    const controller = new AbortController()
+    const timeoutId = setTimeout(() => controller.abort(), RETRY_CONFIG.timeout)
+
+    try {
+      const response = await $fetch<T>(url, {
+        ...options,
+        signal: controller.signal
+      })
+      return response
+    } catch (error: any) {
+      if (error.name === 'AbortError') {
+        throw new TimeoutError(error)
+      }
+      throw error
+    } finally {
+      clearTimeout(timeoutId)
+    }
+  }
 
   return {
     /**
@@ -15,15 +102,21 @@ export const useAuthApi = () => {
      * @param remindAccount Remember account
      */
     async login(username: string, password: string, remindAccount = false) {
-      return await $fetch(`${apiBase}/api/a/sessions/login`, {
-        method: 'POST',
-        body: {
-          username,
-          password,
-          remindAccount,
-          origin: 'vanphuccare.gensi.vn'
-        }
-      })
+      try {
+        return await withRetry(() => 
+          fetchWithTimeout(`${apiBase}/api/a/sessions/login`, {
+            method: 'POST',
+            body: {
+              username,
+              password,
+              remindAccount,
+              origin: 'vanphuccare.gensi.vn'
+            }
+          })
+        )
+      } catch (error: any) {
+        throw transformError(error)
+      }
     },
 
     /**
@@ -33,15 +126,21 @@ export const useAuthApi = () => {
      * @param repeat_password Repeat password
      */
     async register(email: string, password: string, repeat_password: string) {
-      return await $fetch(`${apiBase}/api/a/sessions`, {
-        method: 'POST',
-        body: {
-          email,
-          password,
-          repeat_password,
-          domain: 'vanphuccare.gensi.vn'
-        }
-      })
+      try {
+        return await withRetry(() =>
+          fetchWithTimeout(`${apiBase}/api/a/sessions`, {
+            method: 'POST',
+            body: {
+              email,
+              password,
+              repeat_password,
+              domain: 'vanphuccare.gensi.vn'
+            }
+          })
+        )
+      } catch (error: any) {
+        throw transformError(error)
+      }
     },
 
     /**
@@ -50,14 +149,20 @@ export const useAuthApi = () => {
      * @param otp OTP code
      */
     async verifyEmail(email: string, otp: string) {
-      return await $fetch(`${apiBase}/api/a/sessions/verify_email`, {
-        method: 'POST',
-        body: {
-          email,
-          otp,
-          origin: 'vanphuccare.gensi.vn'
-        }
-      })
+      try {
+        return await withRetry(() =>
+          fetchWithTimeout(`${apiBase}/api/a/sessions/verify_email`, {
+            method: 'POST',
+            body: {
+              email,
+              otp,
+              origin: 'vanphuccare.gensi.vn'
+            }
+          })
+        )
+      } catch (error: any) {
+        throw transformError(error)
+      }
     },
 
     /**
@@ -65,10 +170,16 @@ export const useAuthApi = () => {
      * @param data Profile data
      */
     async updateProfile(data: Record<string, any>) {
-      return await $fetch(`${apiBase}/api/a/sessions`, {
-        method: 'PATCH',
-        body: data
-      })
+      try {
+        return await withRetry(() =>
+          fetchWithTimeout(`${apiBase}/api/a/sessions`, {
+            method: 'PATCH',
+            body: data
+          })
+        )
+      } catch (error: any) {
+        throw transformError(error)
+      }
     },
 
     /**
@@ -77,13 +188,19 @@ export const useAuthApi = () => {
      * @param newPassword New password
      */
     async changePassword(oldPassword: string, newPassword: string) {
-      await $fetch(`${apiBase}/api/a/sessions/change_password`, {
-        method: 'PATCH',
-        body: {
-          oldPassword,
-          newPassword
-        }
-      })
+      try {
+        await withRetry(() =>
+          fetchWithTimeout(`${apiBase}/api/a/sessions/change_password`, {
+            method: 'PATCH',
+            body: {
+              oldPassword,
+              newPassword
+            }
+          })
+        )
+      } catch (error: any) {
+        throw transformError(error)
+      }
     },
 
     /**
@@ -91,10 +208,16 @@ export const useAuthApi = () => {
      * @param email Email
      */
     async forgotPassword(email: string) {
-      return await $fetch(`${apiBase}/api/a/passwords/forgot_password`, {
-        method: 'POST',
-        body: { email }
-      })
+      try {
+        return await withRetry(() =>
+          fetchWithTimeout(`${apiBase}/api/a/passwords/forgot_password`, {
+            method: 'POST',
+            body: { email }
+          })
+        )
+      } catch (error: any) {
+        throw transformError(error)
+      }
     },
 
     /**
@@ -103,10 +226,16 @@ export const useAuthApi = () => {
      * @param otp OTP code
      */
     async verifyOtp(email: string, otp: string) {
-      return await $fetch(`${apiBase}/api/a/passwords/verify_otp`, {
-        method: 'POST',
-        body: { email, otp }
-      })
+      try {
+        return await withRetry(() =>
+          fetchWithTimeout(`${apiBase}/api/a/passwords/verify_otp`, {
+            method: 'POST',
+            body: { email, otp }
+          })
+        )
+      } catch (error: any) {
+        throw transformError(error)
+      }
     },
 
     /**
@@ -116,11 +245,17 @@ export const useAuthApi = () => {
      * @param newPassword New password
      */
     async resetPassword(email: string, token: string, newPassword: string) {
-      return await $fetch(`${apiBase}/api/a/passwords`, {
-        method: 'POST',
-        params: { email, token },
-        body: { password: newPassword }
-      })
+      try {
+        return await withRetry(() =>
+          fetchWithTimeout(`${apiBase}/api/a/passwords`, {
+            method: 'POST',
+            params: { email, token },
+            body: { password: newPassword }
+          })
+        )
+      } catch (error: any) {
+        throw transformError(error)
+      }
     },
 
     /**
@@ -128,10 +263,16 @@ export const useAuthApi = () => {
      * @param params Query parameters
      */
     async getActiveLogs(params?: Record<string, any>) {
-      return await $fetch(`${apiBase}/api/a/active-logs`, {
-        method: 'GET',
-        params
-      })
+      try {
+        return await withRetry(() =>
+          fetchWithTimeout(`${apiBase}/api/a/active-logs`, {
+            method: 'GET',
+            params
+          })
+        )
+      } catch (error: any) {
+        throw transformError(error)
+      }
     },
 
     /**
@@ -139,28 +280,46 @@ export const useAuthApi = () => {
      * @param data Log data
      */
     async writeLog(data: Record<string, any>) {
-      return await $fetch(`${apiBase}/api/a/active-logs`, {
-        method: 'POST',
-        body: data
-      })
+      try {
+        return await withRetry(() =>
+          fetchWithTimeout(`${apiBase}/api/a/active-logs`, {
+            method: 'POST',
+            body: data
+          })
+        )
+      } catch (error: any) {
+        throw transformError(error)
+      }
     },
 
     /**
      * Logout
      */
     async logout() {
-      return await $fetch(`${apiBase}/api/a/active-logs/logout`, {
-        method: 'PATCH'
-      })
+      try {
+        return await withRetry(() =>
+          fetchWithTimeout(`${apiBase}/api/a/active-logs/logout`, {
+            method: 'PATCH'
+          })
+        )
+      } catch (error: any) {
+        throw transformError(error)
+      }
     },
 
     /**
      * Get geo IP information
      */
     async getGeoIp() {
-      return await $fetch('https://get.geojs.io/v1/ip/geo.json', {
-        method: 'GET'
-      })
+      try {
+        return await withRetry(() =>
+          fetchWithTimeout('https://get.geojs.io/v1/ip/geo.json', {
+            method: 'GET'
+          })
+        )
+      } catch (error: any) {
+        throw transformError(error)
+      }
     }
   }
 }
