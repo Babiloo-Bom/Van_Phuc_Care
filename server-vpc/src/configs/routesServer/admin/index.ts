@@ -12,6 +12,7 @@ import CustomersRouter from './Customers';
 import OrdersRouter from './Orders';
 import CartsRouter from './Carts';
 import UsersRouter from './Users';
+import GoogleAuthRouter from './GoogleAuth';
 import AccessPermissionsRouter from './AccessPermissions';
 import HealthBookRouter from './HealthBook';
 import TransactionsRouter from './Transactions';
@@ -23,6 +24,7 @@ router.use('/categories', adminPassport.authenticate('jwt', { session: false }),
 router.use('/faqs', adminPassport.authenticate('jwt', { session: false }), FaqRouter);
 router.use('/courses', adminPassport.authenticate('jwt', { session: false }), CoursesRouter);
 router.use('/sessions', SessionRouter);
+router.use('/auth/google', GoogleAuthRouter);
 router.use('/feedbacks', adminPassport.authenticate('jwt', { session: false }), FeedbackRouter);
 router.use('/products', adminPassport.authenticate('jwt', { session: false }), ProductsRouter);
 router.use('/product-collections', adminPassport.authenticate('jwt', { session: false }), ProductCollectionsRouter);
