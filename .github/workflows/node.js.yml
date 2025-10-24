@@ -21,7 +21,7 @@ jobs:
             --exclude='.env' \
             ./ /home/backend/Van_Phuc_Care/
 
-      - name: Rebuild and restart docker
+      - name: Build and deploy all services
         run: |
           cd /home/backend/Van_Phuc_Care
           
@@ -29,26 +29,39 @@ jobs:
           docker compose down
           
           # Build images SEQUENTIALLY to avoid memory issues
+          # Requires: 6-8GB RAM for successful build
+          
           echo "🔨 Building API..."
           docker compose build api
           
-          echo "🔨 Building Admin..."
+          echo "🔨 Building Admin Portal..."
           docker compose build admin
           
-          echo "🔨 Building CRM..."
+          echo "🔨 Building CRM Portal..."
           docker compose build crm
           
-          echo "🔨 Building E-Learning..."
+          echo "🔨 Building E-Learning Portal..."
           docker compose build elearning
           
           echo "🔨 Building Nginx..."
           docker compose build nginx || true
           
           # Start all services
+          echo "🚀 Starting all services..."
           docker compose up -d
           
           # Wait for containers to be healthy
           sleep 15
           
           # Show running containers
+          echo ""
+          echo "📊 Container Status:"
           docker ps --format "table {{.Names}}\t{{.Status}}\t{{.Ports}}"
+          
+          echo ""
+          echo "✅ Deployment completed!"
+          echo "🌐 Access URLs:"
+          echo "   • API:        http://103.216.119.104:3000"
+          echo "   • Admin:      http://103.216.119.104:3100"
+          echo "   • CRM:        http://103.216.119.104:3101"
+          echo "   • E-Learning: http://103.216.119.104:3102"
