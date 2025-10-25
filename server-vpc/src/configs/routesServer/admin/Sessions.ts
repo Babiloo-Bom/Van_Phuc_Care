@@ -3,16 +3,15 @@ import { adminPassport } from '@middlewares/passport';
 import { Router } from 'express';
 
 const router = Router();
-const sessionController = new SessionController();
 
-router.post('/login', sessionController.login.bind(sessionController));
-router.post('/', sessionController.signup.bind(sessionController));
-router.get('/current_admin', adminPassport.authenticate('jwt', { session: false }), sessionController.getCurrentAdmin.bind(sessionController));
-router.patch('/', adminPassport.authenticate('jwt', { session: false }), sessionController.update.bind(sessionController));
-router.patch('/change_password', adminPassport.authenticate('jwt', { session: false }), sessionController.changePassword.bind(sessionController));
-router.post('/forgot_password', sessionController.forgotPassword.bind(sessionController));
-router.post('/verify_otp', sessionController.verifyOtp.bind(sessionController));
-router.post('/verify_email', sessionController.verifyEmail.bind(sessionController));
-router.post('/reset_password', sessionController.resetPassword.bind(sessionController));
+router.post('/login', SessionController.login);
+router.post('/', SessionController.signup);
+router.get('/current_admin', adminPassport.authenticate('jwt', { session: false }), SessionController.getCurrentAdmin);
+router.patch('/', adminPassport.authenticate('jwt', { session: false }), SessionController.update);
+router.patch('/change_password', adminPassport.authenticate('jwt', { session: false }), SessionController.changePassword);
+router.post('/forgot_password', SessionController.forgotPassword);
+router.post('/verify_otp', SessionController.verifyOtp);
+router.post('/verify_email', SessionController.verifyEmail);
+router.post('/reset_password', SessionController.resetPassword);
 
 export default router;

@@ -11,7 +11,7 @@ import dayjs from 'dayjs';
 import randomString from 'randomstring';
 
 class SessionController {
-  public async login (req: Request, res: Response) {
+  public static async login (req: Request, res: Response) {
     try {
       const { username, password } = req.body;
       let admin = null;
@@ -26,7 +26,7 @@ class SessionController {
     }
   }
 
-  public async signup (req: Request, res: Response) {
+  public static async signup (req: Request, res: Response) {
     try {
       const params = req.body;
       const checkExisted = await MongoDbAdmins.model.findOne({ email: params.email });
@@ -52,7 +52,7 @@ class SessionController {
     }
   }
 
-  public async verifyEmail (req: Request, res: Response) {
+  public static async verifyEmail (req: Request, res: Response) {
     try {
       const { email, otp } = req.body;
       const admin: any = await MongoDbAdmins.model.findOne({ email });
@@ -69,7 +69,7 @@ class SessionController {
     }
   }
 
-  public async sendBackOtp (req: Request, res: Response) {
+  public static async sendBackOtp (req: Request, res: Response) {
     try {
       const { email } = req.body;
       const admin = await MongoDbAdmins.model.findOne({ email });
@@ -85,7 +85,7 @@ class SessionController {
     }
   }
 
-  public async getCurrentAdmin (req: Request, res: Response) {
+  public static async getCurrentAdmin (req: Request, res: Response) {
     try {
       const admin = req.currentAdmin;
       sendSuccess(res, { admin });
@@ -94,7 +94,7 @@ class SessionController {
     }
   }
 
-  public async update (req: Request, res: Response) {
+  public static async update (req: Request, res: Response) {
     try {
       const admin: Document = req.currentAdmin;
       const params = req.body;
@@ -113,7 +113,7 @@ class SessionController {
     }
   }
 
-  public async changePassword (req: Request, res: Response) {
+  public static async changePassword (req: Request, res: Response) {
     try {
       const admin: Document = req.currentAdmin;
       const { oldPassword, newPassword, confirmPassword } = req.body;
@@ -129,7 +129,7 @@ class SessionController {
     }
   }
 
-  public async forgotPassword (req:Request, res: Response) {
+  public static async forgotPassword (req:Request, res: Response) {
     try {
       const email = req.body.email;
       const admin = await MongoDbAdmins.model.findOne({ email });
@@ -147,7 +147,7 @@ class SessionController {
     }
   }
 
-  public async verifyOtp (req: Request, res: Response) {
+  public static async verifyOtp (req: Request, res: Response) {
     try {
       const { email, otp } = req.body;
       const admin = await MongoDbAdmins.model.findOne({ email });
@@ -163,7 +163,7 @@ class SessionController {
     }
   }
 
-  public async resetPassword (req:Request, res:Response) {
+  public static async resetPassword (req:Request, res:Response) {
     try {
       const { newPassword, confirmPassword, email, token } = req.body;
       const admin = await MongoDbAdmins.model.findOne({ email });
