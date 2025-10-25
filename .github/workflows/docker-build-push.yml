@@ -14,7 +14,34 @@ env:
   IMAGE_PREFIX: babiloo-bom/vanphuccare
 
 jobs:
+  # Detect which services changed
+  detect-changes:
+    runs-on: ubuntu-latest
+    outputs:
+      api: ${{ steps.filter.outputs.api }}
+      admin: ${{ steps.filter.outputs.admin }}
+      crm: ${{ steps.filter.outputs.crm }}
+      elearning: ${{ steps.filter.outputs.elearning }}
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+      
+      - name: Check for changes
+        uses: dorny/paths-filter@v2
+        id: filter
+        with:
+          filters: |
+            api:
+              - 'server-vpc/**'
+            admin:
+              - 'admin-vpc-v3/**'
+            crm:
+              - 'crm-vpc-v3/**'
+            elearning:
+              - 'elerning-vpc-v3/**'
+
   build-and-push:
+    needs: detect-changes
     runs-on: ubuntu-latest
     permissions:
       contents: read
@@ -27,15 +54,22 @@ jobs:
           - name: api
             context: ./server-vpc
             dockerfile: ./server-vpc/Dockerfile
+            changed: ${{ needs.detect-changes.outputs.api }}
           - name: admin
             context: ./admin-vpc-v3
             dockerfile: ./admin-vpc-v3/Dockerfile
+            changed: ${{ needs.detect-changes.outputs.admin }}
           - name: crm
             context: ./crm-vpc-v3
             dockerfile: ./crm-vpc-v3/Dockerfile
+            changed: ${{ needs.detect-changes.outputs.crm }}
           - name: elearning
             context: ./elerning-vpc-v3
             dockerfile: ./elerning-vpc-v3/Dockerfile
+            changed: ${{ needs.detect-changes.outputs.elearning }}
+    
+    # Only run if this service changed
+    if: matrix.service.changed == 'true'
 
     steps:
       - name: Checkout code
