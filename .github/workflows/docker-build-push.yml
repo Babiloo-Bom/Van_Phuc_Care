@@ -32,9 +32,10 @@ jobs:
           - name: crm
             context: ./crm-vpc-v3
             dockerfile: ./crm-vpc-v3/Dockerfile
-          - name: elearning
-            context: ./elerning-vpc-v3
-            dockerfile: ./elerning-vpc-v3/Dockerfile
+          # Temporarily disabled - fix npm ci error
+          # - name: elearning
+          #   context: ./elerning-vpc-v3
+          #   dockerfile: ./elerning-vpc-v3/Dockerfile
 
     steps:
       - name: Checkout code
@@ -100,4 +101,4 @@ jobs:
             
             # Clean up old images
             docker image prune -af
-            
+            # Trên máy local
