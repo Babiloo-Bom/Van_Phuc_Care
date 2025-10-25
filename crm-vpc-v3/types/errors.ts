@@ -235,3 +235,17 @@ export function isRetryableError(error: any): boolean {
   ].includes(code)
 }
 
+/**
+ * Get error code from error object (alias for detectErrorType)
+ */
+export function getErrorCode(error: any): AuthErrorCode {
+  return detectErrorType(error)
+}
+
+/**
+ * Get error message from error object
+ */
+export function getErrorMessage(error: any): string {
+  return createErrorMessage(error)
+}
+

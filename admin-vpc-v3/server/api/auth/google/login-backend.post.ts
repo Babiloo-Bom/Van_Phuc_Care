@@ -17,20 +17,34 @@ export default defineEventHandler(async (event): Promise<GoogleLoginResponse> =>
       }
     }
 
-    const config = useRuntimeConfig()
+    const config = useRuntimeConfig(event)
 
     console.log('🔄 Step 1: Exchange code for Google token...')
+    console.log('🔍 Config check:', {
+      clientId: config.public.googleClientId,
+      hasClientSecret: !!config.googleClientSecret,
+      clientSecretLength: config.googleClientSecret?.length || 0,
+      baseUrl: config.public.baseUrl,
+      redirectUri: `${config.public.baseUrl}/auth/google/callback`
+    })
     
     // Step 1: Exchange authorization code for Google access token
+    const params = new URLSearchParams({
+      code,
+      client_id: config.public.googleClientId,
+      client_secret: config.googleClientSecret,
+      redirect_uri: `${config.public.baseUrl}/auth/google/callback`,
+      grant_type: 'authorization_code'
+    })
+    
+    console.log('🔍 Request params:', params.toString())
+    
     const tokenResponse = await $fetch<any>('https://oauth2.googleapis.com/token', {
       method: 'POST',
-      body: {
-        code,
-        client_id: config.public.googleClientId,
-        client_secret: config.googleClientSecret,
-        redirect_uri: `${config.public.baseUrl}/auth/google/callback`,
-        grant_type: 'authorization_code'
-      }
+      headers: {
+        'Content-Type': 'application/x-www-form-urlencoded'
+      },
+      body: params.toString()
     })
 
     if (!tokenResponse.access_token) {
@@ -52,7 +66,8 @@ export default defineEventHandler(async (event): Promise<GoogleLoginResponse> =>
 
     // Step 3: Send to backend API to create/update user and get JWT
     try {
-      const backendResponse = await $fetch<any>(`${config.public.apiHost}/api/a/auth/google/login`, {
+      const apiHost = config.apiHostInternal || config.public.apiHost
+      const backendResponse = await $fetch<any>(`${apiHost}/api/a/auth/google/login`, {
         method: 'POST',
         body: {
           googleProfile: userProfile,

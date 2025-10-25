@@ -22,7 +22,10 @@ const RETRY_CONFIG = {
 
 export const useAuthApi = () => {
   const config = useRuntimeConfig()
-  const apiBase = config.public.apiHost
+  const apiBase = config.public.apiBase || 'http://103.216.119.104:3000/api/a'
+  
+  // Debug: Log API base URL
+  console.log('🔍 API Base URL:', apiBase)
 
   /**
    * Exponential backoff delay
@@ -64,9 +67,24 @@ export const useAuthApi = () => {
       return error
     }
 
+    // Try to extract message from API response
+    let customMessage = null
+    if (error.data?.error) {
+      customMessage = error.data.error
+    } else if (error.data?.message) {
+      customMessage = error.data.message
+    }
+
     // Get error code and create AuthError
     const errorCode = getErrorCode(error)
     const statusCode = error.statusCode || error.status || 500
+
+    // Create AuthError with custom message if available
+    if (customMessage) {
+      const authError = new AuthError(errorCode as AuthErrorCode, statusCode, error)
+      authError.message = customMessage
+      return authError
+    }
 
     return new AuthError(errorCode as AuthErrorCode, statusCode, error)
   }
@@ -104,7 +122,7 @@ export const useAuthApi = () => {
     async login(username: string, password: string, remindAccount = false) {
       try {
         return await withRetry(() => 
-          fetchWithTimeout(`${apiBase}/api/a/sessions/login`, {
+          fetchWithTimeout(`${apiBase}/sessions/login`, {
             method: 'POST',
             body: {
               username,
@@ -124,16 +142,18 @@ export const useAuthApi = () => {
      * @param email Email
      * @param password Password
      * @param repeat_password Repeat password
+     * @param fullname Full name
      */
-    async register(email: string, password: string, repeat_password: string) {
+    async register(email: string, password: string, repeat_password: string, fullname?: string) {
       try {
         return await withRetry(() =>
-          fetchWithTimeout(`${apiBase}/api/a/sessions`, {
+          fetchWithTimeout(`${apiBase}/sessions`, {
             method: 'POST',
             body: {
               email,
               password,
               repeat_password,
+              fullname: fullname || email.split('@')[0], // Use email prefix if no fullname
               domain: 'vanphuccare.gensi.vn'
             }
           })
@@ -151,7 +171,7 @@ export const useAuthApi = () => {
     async verifyEmail(email: string, otp: string) {
       try {
         return await withRetry(() =>
-          fetchWithTimeout(`${apiBase}/api/a/sessions/verify_email`, {
+          fetchWithTimeout(`${apiBase}/sessions/verify_email`, {
             method: 'POST',
             body: {
               email,
@@ -172,7 +192,7 @@ export const useAuthApi = () => {
     async updateProfile(data: Record<string, any>) {
       try {
         return await withRetry(() =>
-          fetchWithTimeout(`${apiBase}/api/a/sessions`, {
+          fetchWithTimeout(`${apiBase}/sessions`, {
             method: 'PATCH',
             body: data
           })
@@ -190,7 +210,7 @@ export const useAuthApi = () => {
     async changePassword(oldPassword: string, newPassword: string) {
       try {
         await withRetry(() =>
-          fetchWithTimeout(`${apiBase}/api/a/sessions/change_password`, {
+          fetchWithTimeout(`${apiBase}/sessions/change_password`, {
             method: 'PATCH',
             body: {
               oldPassword,
@@ -210,7 +230,7 @@ export const useAuthApi = () => {
     async forgotPassword(email: string) {
       try {
         return await withRetry(() =>
-          fetchWithTimeout(`${apiBase}/api/a/passwords/forgot_password`, {
+          fetchWithTimeout(`${apiBase}/passwords/forgot_password`, {
             method: 'POST',
             body: { email }
           })
@@ -228,7 +248,7 @@ export const useAuthApi = () => {
     async verifyOtp(email: string, otp: string) {
       try {
         return await withRetry(() =>
-          fetchWithTimeout(`${apiBase}/api/a/passwords/verify_otp`, {
+          fetchWithTimeout(`${apiBase}/passwords/verify_otp`, {
             method: 'POST',
             body: { email, otp }
           })
@@ -247,7 +267,7 @@ export const useAuthApi = () => {
     async resetPassword(email: string, token: string, newPassword: string) {
       try {
         return await withRetry(() =>
-          fetchWithTimeout(`${apiBase}/api/a/passwords`, {
+          fetchWithTimeout(`${apiBase}/passwords`, {
             method: 'POST',
             params: { email, token },
             body: { password: newPassword }
@@ -265,7 +285,7 @@ export const useAuthApi = () => {
     async getActiveLogs(params?: Record<string, any>) {
       try {
         return await withRetry(() =>
-          fetchWithTimeout(`${apiBase}/api/a/active-logs`, {
+          fetchWithTimeout(`${apiBase}/active-logs`, {
             method: 'GET',
             params
           })
@@ -282,7 +302,7 @@ export const useAuthApi = () => {
     async writeLog(data: Record<string, any>) {
       try {
         return await withRetry(() =>
-          fetchWithTimeout(`${apiBase}/api/a/active-logs`, {
+          fetchWithTimeout(`${apiBase}/active-logs`, {
             method: 'POST',
             body: data
           })
@@ -298,7 +318,7 @@ export const useAuthApi = () => {
     async logout() {
       try {
         return await withRetry(() =>
-          fetchWithTimeout(`${apiBase}/api/a/active-logs/logout`, {
+          fetchWithTimeout(`${apiBase}/active-logs/logout`, {
             method: 'PATCH'
           })
         )
@@ -320,7 +340,38 @@ export const useAuthApi = () => {
       } catch (error: any) {
         throw transformError(error)
       }
+    },
+
+    /**
+     * Google Login
+     * Exchange authorization code for user data and JWT
+     */
+    async googleLogin(code: string, state: string) {
+      try {
+        return await withRetry(() =>
+          fetchWithTimeout(`${apiBase}/api/auth/google/login`, {
+            method: 'POST',
+            body: { code, state }
+          })
+        )
+      } catch (error: any) {
+        throw transformError(error)
+      }
+    },
+
+    /**
+     * Get Google OAuth URL
+     */
+    async getGoogleAuthUrl() {
+      try {
+        return await withRetry(() =>
+          fetchWithTimeout(`${apiBase}/api/auth/google/url`, {
+            method: 'GET'
+          })
+        )
+      } catch (error: any) {
+        throw transformError(error)
+      }
     }
   }
 }
-

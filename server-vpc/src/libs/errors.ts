@@ -67,7 +67,7 @@ export const InvalidPassword = {
 
 export const InvalidOtp = {
   code: 426,
-  message: 'invalid otp',
+  message: 'Mã OTP không đúng. Vui lòng kiểm tra lại.',
 };
 
 export const DiscountRegistered = {

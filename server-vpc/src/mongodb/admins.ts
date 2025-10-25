@@ -4,7 +4,7 @@ class Admins {
   public schema: Schema;
   public model: Model<unknown>;
   static readonly COLLECTION_NAME = 'admins';
-  public readonly STATUS_ENUM = { ACTIVE: 'active', INACTIVE: 'inactive' };
+  public readonly STATUS_ENUM = { ACTIVE: 'active', INACTIVE: 'inactive', PENDING_VERIFICATION: 'pending_verification' };
   constructor () {
     this.generateSchema();
   }
@@ -87,7 +87,7 @@ class Admins {
       status: {
         type: String,
         default: 'active',
-        enum: ['active', 'inactive'],
+        enum: ['active', 'inactive', 'pending_verification'],
       },
     },
     {

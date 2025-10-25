@@ -255,13 +255,13 @@ const handleRegister = async () => {
 
 // Handle verify email
 const handleVerifyEmail = async () => {
-  console.log('🔍 Admin handleVerifyEmail called with OTP:', otpCode.value)
+  console.log('🔍 handleVerifyEmail called with OTP:', otpCode.value)
   verifyError.value = ''
 
   const result = await verifyEmail(otpCode.value)
-  console.log('🔍 Admin verifyEmail result:', result)
-  console.log('🔍 Admin verifyEmail result.success:', result.success)
-  console.log('🔍 Admin verifyEmail result.error:', result.error)
+  console.log('🔍 verifyEmail result:', result)
+  console.log('🔍 verifyEmail result.success:', result.success)
+  console.log('🔍 verifyEmail result.error:', result.error)
 
   if (result.success) {
     message.success('Xác thực thành công! Đang đăng nhập...')

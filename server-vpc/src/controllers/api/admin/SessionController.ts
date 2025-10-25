@@ -14,14 +14,22 @@ class SessionController {
   public static async login (req: Request, res: Response) {
     try {
       const { username, password } = req.body;
+      console.log('🔐 Login request:', { username, hasPassword: !!password });
+      
       let admin = null;
       admin = await MongoDbAdmins.model.findOne({ email: username, status: MongoDbAdmins.STATUS_ENUM.ACTIVE });
+      console.log('🔍 Found admin:', admin ? `Yes (${admin.get('email')})` : 'No');
+      
       if (!admin || !await bcrypt.compare(password, admin.get('password'))) {
+        console.log('❌ Login failed:', !admin ? 'User not found or not active' : 'Password mismatch');
         return sendError(res, 404, BadAuthentication);
       }
+      
       const accessToken = jwt.sign({ id: admin.get('_id') }, settings.jwt.adminSecret, { expiresIn: settings.jwt.ttl });
+      console.log('✅ Login successful for:', username);
       sendSuccess(res, { accessToken, tokenExpireAt: settings.jwt.ttl });
     } catch (error: any) {
+      console.error('❌ Login error:', error);
       sendError(res, 500, error.message, error as Error);
     }
   }
@@ -29,7 +37,20 @@ class SessionController {
   public static async signup (req: Request, res: Response) {
     try {
       const params = req.body;
-      const checkExisted = await MongoDbAdmins.model.findOne({ email: params.email });
+      console.log('📝 Signup request:', { email: params.email, fullname: params.fullname, hasPassword: !!params.password });
+      // Chỉ kiểm tra user đã được xác thực, bỏ qua user chưa xác thực
+      const checkExisted = await MongoDbAdmins.model.findOne({ 
+        email: params.email, 
+        status: { $ne: MongoDbAdmins.STATUS_ENUM.PENDING_VERIFICATION } 
+      });
+      
+      // Xóa tất cả user cũ với email này (cả verified và pending)
+      const existingUsers = await MongoDbAdmins.model.find({ email: params.email });
+      if (existingUsers.length > 0) {
+        console.log('🔄 Found existing users, deleting all:', existingUsers.length, 'users for email:', params.email);
+        await MongoDbAdmins.model.deleteMany({ email: params.email });
+      }
+      console.log('🔍 Check existed:', checkExisted ? 'User exists' : 'New user');
       if (!checkExisted && params.email && params.fullname && params.password) {
         const salt = bcrypt.genSaltSync();
         const passwordEncode = bcrypt.hashSync(params.password, salt);
@@ -41,11 +62,31 @@ class SessionController {
           verified: false,
           password: passwordEncode,
           verifyOtp: otp,
+          status: MongoDbAdmins.STATUS_ENUM.PENDING_VERIFICATION, // Status đặc biệt cho user chưa xác thực
         });
-        MailerService.verifyAccountOTP(admin.get('email'), otp);
+        try {
+          await MailerService.verifyAccountOTP(admin.get('email'), otp);
+          console.log('✅ Email OTP sent successfully to:', admin.get('email'));
+        } catch (emailError) {
+          console.log('⚠️ Email sending failed, but user created successfully');
+          console.log('📧 OTP Code (for manual verification):', otp);
+          console.log('Email error:', emailError);
+        }
+        console.log('✅ Signup success:', admin.get('email'));
         sendSuccess(res, { status: true });
       } else {
-        sendError(res, 404, BadAuthentication);
+        if (checkExisted) {
+          console.log('❌ Signup failed - user already exists:', params.email);
+          return sendError(res, 400, 'Email đã được sử dụng. Vui lòng sử dụng email khác hoặc đăng nhập.');
+        } else {
+          console.log('❌ Signup failed - validation:', { 
+            checkExisted: !!checkExisted, 
+            email: !!params.email, 
+            fullname: !!params.fullname, 
+            password: !!params.password 
+          });
+          return sendError(res, 400, 'Vui lòng điền đầy đủ thông tin bắt buộc.');
+        }
       }
     } catch (error: any) {
       sendError(res, 500, error.message, error as Error);
@@ -55,16 +96,27 @@ class SessionController {
   public static async verifyEmail (req: Request, res: Response) {
     try {
       const { email, otp } = req.body;
+      console.log('🔍 Verify email request:', { email, otp });
+      
       const admin: any = await MongoDbAdmins.model.findOne({ email });
       if (!admin) {
+        console.log('❌ User not found:', email);
         return sendError(res, 404, NoData);
       }
-      if (otp !== admin.get('verifyOtp')) {
+      
+      const storedOtp = admin.get('verifyOtp');
+      console.log('🔍 Stored OTP:', storedOtp, 'Received OTP:', otp);
+      
+      if (otp !== storedOtp) {
+        console.log('❌ OTP mismatch');
         return sendError(res, 400, InvalidOtp);
       }
+      
       await admin.update({ status: MongoDbAdmins.STATUS_ENUM.ACTIVE, verified: true });
+      console.log('✅ Email verification successful for:', admin.get('email'));
       sendSuccess(res, { status: true });
     } catch (error: any) {
+      console.log('❌ Verify email error:', error);
       sendError(res, 500, error.message, error as Error);
     }
   }
@@ -150,15 +202,39 @@ class SessionController {
   public static async verifyOtp (req: Request, res: Response) {
     try {
       const { email, otp } = req.body;
+      console.log('🔍 Verifying OTP for:', email, 'OTP:', otp);
       const admin = await MongoDbAdmins.model.findOne({ email });
-      if (!admin || !(admin.get('forgotPasswordToken') === otp) || !admin.get('forgotPasswordExpireAt')) return sendError(res, 404, NoData);
-      const token = randomString.generate(64);
-      await MongoDbAdmins.model.updateOne({ _id: admin.get('_id') }, {
-        forgotPasswordToken: token,
-        forgotPasswordExpireAt: null,
-      });
-      sendSuccess(res, { token });
+      
+      if (!admin) {
+        console.log('❌ User not found');
+        return sendError(res, 404, NoData);
+      }
+      
+      // Check for registration OTP (verifyOtp field)
+      if (admin.get('verifyOtp') === otp) {
+        console.log('✅ Registration OTP verified');
+        await MongoDbAdmins.model.updateOne({ _id: admin.get('_id') }, {
+          verified: true,
+          verifyOtp: null, // Clear OTP after verification
+        });
+        return sendSuccess(res, { message: 'Email verified successfully', verified: true });
+      }
+      
+      // Check for forgot password OTP (forgotPasswordToken field)
+      if (admin.get('forgotPasswordToken') === otp && admin.get('forgotPasswordExpireAt')) {
+        console.log('✅ Forgot password OTP verified');
+        const token = randomString.generate(64);
+        await MongoDbAdmins.model.updateOne({ _id: admin.get('_id') }, {
+          forgotPasswordToken: token,
+          forgotPasswordExpireAt: null,
+        });
+        return sendSuccess(res, { token });
+      }
+      
+      console.log('❌ Invalid OTP');
+      return sendError(res, 404, NoData);
     } catch (error: any) {
+      console.log('❌ Verify OTP error:', error);
       sendError(res, 500, error.message, error as Error);
     }
   }

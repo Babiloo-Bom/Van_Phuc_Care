@@ -64,6 +64,7 @@ export const useAuthStore = defineStore('auth', {
 
         // Calculate token expiry time (default 7 days if not provided)
         this.token = token
+        console.log('🔍 tokenExpireAt from API:', tokenExpireAt, 'type:', typeof tokenExpireAt)
         this.tokenExpireAt = tokenExpireAt ? this.calculateExpireTime(tokenExpireAt) : this.calculateExpireTime('7d')
         this.isAuthenticated = true
         this.rememberAccount = remindAccount
@@ -242,6 +243,33 @@ export const useAuthStore = defineStore('auth', {
     },
 
     /**
+     * Verify email with OTP
+     * For user registration verification
+     */
+    async verifyEmail(email: string, otp: string) {
+      this.isLoading = true
+      
+      try {
+        const authApi = useAuthApi()
+        
+        const response: any = await authApi.verifyEmail(email, otp)
+        console.log('🔍 authStore.verifyEmail response:', response)
+
+        return { success: true, data: response.data }
+      } catch (error: any) {
+        console.error('🔍 authStore.verifyEmail error:', error)
+        console.error('🔍 error.data:', error.data)
+        console.error('🔍 error.message:', error.message)
+        return { 
+          success: false, 
+          error: error.data?.message || error.message || 'Xác thực email thất bại'
+        }
+      } finally {
+        this.isLoading = false
+      }
+    },
+
+    /**
      * Change password (logged in user)
      * Migrated from admin-vpc/components/auth/dialogs/UpdatePassword.vue
      */
@@ -364,8 +392,28 @@ export const useAuthStore = defineStore('auth', {
     /**
      * Calculate token expiry time from TTL string (e.g., '7d', '24h', '1y')
      */
-    calculateExpireTime(ttl: string): string {
+    calculateExpireTime(ttl: string | Date | number): string {
+      console.log('🔍 calculateExpireTime called with:', ttl, 'type:', typeof ttl)
       const now = new Date()
+      
+      // If ttl is already a Date object, return it
+      if (ttl instanceof Date) {
+        console.log('🔍 ttl is Date object')
+        return ttl.toISOString()
+      }
+      
+      // If ttl is a number (timestamp), convert to Date
+      if (typeof ttl === 'number') {
+        console.log('🔍 ttl is number')
+        return new Date(ttl).toISOString()
+      }
+      
+      // If ttl is a string, parse it
+      if (typeof ttl !== 'string') {
+        console.log('🔍 ttl is not string, using default')
+        // Default to 7 days if format is invalid
+        return new Date(now.getTime() + 7 * 24 * 60 * 60 * 1000).toISOString()
+      }
       
       // Parse TTL string (e.g., '7d' = 7 days, '24h' = 24 hours)
       const match = ttl.match(/^(\d+)([smhdy])$/)

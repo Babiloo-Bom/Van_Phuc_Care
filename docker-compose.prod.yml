@@ -1,0 +1,151 @@
+version: '3.8'
+
+services:
+  mongodb:
+    image: mongo:7.0
+    container_name: vpc-mongodb
+    restart: unless-stopped
+    ports:
+      - "27017:27017"
+    environment:
+      - MONGO_INITDB_ROOT_USERNAME=admin
+      - MONGO_INITDB_ROOT_PASSWORD=vanphuccare2025
+      - MONGO_INITDB_DATABASE=vanphuccare
+    volumes:
+      - mongodb_data:/data/db
+      - mongodb_config:/data/configdb
+    networks:
+      - vpc-network
+    healthcheck:
+      test: echo 'db.runCommand("ping").ok' | mongosh localhost:27017/test --quiet
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  api:
+    image: ghcr.io/anhttdevbm/vanphuccare-api:latest
+    container_name: vpc-api
+    restart: unless-stopped
+    ports:
+      - "3000:3000"
+    environment:
+      - NODE_ENV=production
+      - PORT=3000
+      - MONGODB_URI=mongodb://admin:vanphuccare2025@mongodb:27017/vanphuccare?authSource=admin
+      - JWT_SECRET=${JWT_SECRET}
+      - JWT_ADMIN_SECRET=${JWT_ADMIN_SECRET}
+      - JWT_TTL=7d
+      - MAIL_HOST=${MAIL_HOST}
+      - MAIL_PORT=${MAIL_PORT}
+      - MAIL_USER=${MAIL_USER}
+      - MAIL_PASSWORD=${MAIL_PASSWORD}
+      - MAIL_FROM=${MAIL_FROM}
+    networks:
+      - vpc-network
+    depends_on:
+      mongodb:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:3000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+
+  admin:
+    image: ghcr.io/anhttdevbm/vanphuccare-admin:latest
+    container_name: vpc-admin
+    restart: unless-stopped
+    ports:
+      - "3100:3000"
+    environment:
+      - NODE_ENV=production
+      - NUXT_PUBLIC_API_HOST=http://localhost:3000
+      - NUXT_PUBLIC_API_BASE=http://localhost:3000/api/a
+      - NUXT_API_HOST_INTERNAL=http://api:3000
+      - NUXT_PUBLIC_TINYMCE_KEY=${TINYMCE_KEY}
+      - NUXT_PUBLIC_APP_NAME=Admin Portal - Van Phuc Care
+      - NUXT_PUBLIC_APP_URL=http://localhost:3100
+      # Google OAuth Configuration
+      - NUXT_PUBLIC_GOOGLE_CLIENT_ID=${NUXT_PUBLIC_GOOGLE_CLIENT_ID}
+      - NUXT_GOOGLE_CLIENT_SECRET=${GOOGLE_CLIENT_SECRET}
+      - NUXT_PUBLIC_BASE_URL=http://localhost:3100
+    networks:
+      - vpc-network
+    depends_on:
+      - api
+    healthcheck:
+      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:3000/"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+
+  crm:
+    image: ghcr.io/anhttdevbm/vanphuccare-crm:latest
+    container_name: vpc-crm
+    restart: unless-stopped
+    ports:
+      - "3101:3000"
+    environment:
+      - NODE_ENV=production
+      - NUXT_PUBLIC_API_HOST=http://localhost:3000
+      - NUXT_PUBLIC_API_BASE=http://localhost:3000/api/a
+      - NUXT_API_HOST_INTERNAL=http://api:3000
+      - NUXT_PUBLIC_TINYMCE_KEY=${TINYMCE_KEY}
+      - NUXT_PUBLIC_APP_NAME=CRM Portal - Van Phuc Care
+      - NUXT_PUBLIC_APP_URL=http://localhost:3101
+      # Google OAuth Configuration
+      - NUXT_PUBLIC_GOOGLE_CLIENT_ID=${NUXT_PUBLIC_GOOGLE_CLIENT_ID}
+      - NUXT_GOOGLE_CLIENT_SECRET=${GOOGLE_CLIENT_SECRET}
+      - NUXT_PUBLIC_BASE_URL=http://localhost:3101
+    networks:
+      - vpc-network
+    depends_on:
+      - api
+    healthcheck:
+      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:3000/"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+
+  elearning:
+    image: ghcr.io/anhttdevbm/vanphuccare-elearning:latest
+    container_name: vpc-elearning
+    restart: unless-stopped
+    ports:
+      - "3102:3000"
+    environment:
+      - NODE_ENV=production
+      - NUXT_PUBLIC_API_HOST=http://localhost:3000
+      - NUXT_PUBLIC_API_BASE=http://localhost:3000/api/a
+      - NUXT_API_HOST_INTERNAL=http://api:3000
+      - NUXT_PUBLIC_TINYMCE_KEY=${TINYMCE_KEY}
+      - NUXT_PUBLIC_APP_NAME=E-Learning Portal - Van Phuc Care
+      - NUXT_PUBLIC_APP_URL=http://localhost:3102
+      # Google OAuth Configuration
+      - NUXT_PUBLIC_GOOGLE_CLIENT_ID=${NUXT_PUBLIC_GOOGLE_CLIENT_ID}
+      - NUXT_GOOGLE_CLIENT_SECRET=${GOOGLE_CLIENT_SECRET}
+      - NUXT_PUBLIC_BASE_URL=http://localhost:3102
+    networks:
+      - vpc-network
+    depends_on:
+      - api
+    healthcheck:
+      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:3000/"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+
+networks:
+  vpc-network:
+    driver: bridge
+
+volumes:
+  mongodb_data:
+    driver: local
+  mongodb_config:
+    driver: local
+

@@ -57,11 +57,12 @@ export default defineNuxtConfig({
   runtimeConfig: {
     // Private keys (server-side only)
     googleClientSecret: process.env.GOOGLE_CLIENT_SECRET || '',
+    apiHostInternal: process.env.NUXT_API_HOST_INTERNAL || 'http://localhost:3000',
     
     public: {
       // API Configuration
-      apiHost: process.env.NUXT_PUBLIC_API_HOST || 'http://103.216.119.104:3000',
-      apiBase: process.env.NUXT_PUBLIC_API_BASE || 'http://103.216.119.104:3000/api/a',
+      apiHost: process.env.NUXT_PUBLIC_API_HOST || 'http://localhost:3000',
+      apiBase: process.env.NUXT_PUBLIC_API_BASE || 'http://localhost:3000/api/a',
       
       // Google OAuth Configuration
       googleClientId: process.env.NUXT_PUBLIC_GOOGLE_CLIENT_ID || '',
