@@ -8,8 +8,8 @@ import {
   NetworkError,
   TimeoutError,
   isRetryableError,
-  createErrorMessage,
-  detectErrorType,
+  getErrorCode,
+  getErrorMessage,
   AuthErrorCode
 } from '~/types/errors'
 
@@ -64,11 +64,11 @@ export const useAuthApi = () => {
       return error
     }
 
-    // Detect error type and create AuthError
-    const errorCode = detectErrorType(error)
+    // Get error code and create AuthError
+    const errorCode = getErrorCode(error)
     const statusCode = error.statusCode || error.status || 500
 
-    return new AuthError(errorCode, statusCode, error)
+    return new AuthError(errorCode as AuthErrorCode, statusCode, error)
   }
 
   /**

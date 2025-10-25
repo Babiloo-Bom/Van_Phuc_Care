@@ -4,9 +4,14 @@
  * ====================================
  * Automatically checks and refreshes token before expiry
  * Runs every 5 minutes in the background
+ * 
+ * TEMPORARILY DISABLED - Causing Premature Close errors
  */
 
 export default defineNuxtPlugin((nuxtApp) => {
+  // DISABLED: Causing too many premature close errors
+  return
+  
   const authStore = useAuthStore()
   let refreshInterval: NodeJS.Timeout | null = null
 
@@ -52,7 +57,12 @@ export default defineNuxtPlugin((nuxtApp) => {
               }
             }
           }
-        } catch (error) {
+        } catch (error: any) {
+          // Ignore AbortError (request cancelled due to navigation/reload)
+          if (error?.name === 'AbortError' || error?.message?.includes('aborted')) {
+            console.log('[Auth] Token renewal cancelled (navigation/reload)')
+            return
+          }
           console.error('[Auth] Token renewal error:', error)
         }
       } else {
@@ -68,10 +78,13 @@ export default defineNuxtPlugin((nuxtApp) => {
 
   // Start refresh interval on client side
   if (process.client) {
-    // Check immediately on app start
-    setTimeout(() => {
-      checkAndRefreshToken()
-    }, 2000)
+    // Wait for app to be fully mounted before checking
+    nuxtApp.hook('app:mounted', () => {
+      // Check after 5 seconds (give time for app to stabilize)
+      setTimeout(() => {
+        checkAndRefreshToken()
+      }, 5000)
+    })
 
     // Then check every 5 minutes
     refreshInterval = setInterval(() => {

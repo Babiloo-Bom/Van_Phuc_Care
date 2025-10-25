@@ -60,7 +60,7 @@ export default defineNuxtConfig({
     public: {
       // API Configuration
       apiHost: process.env.NUXT_PUBLIC_API_HOST || 'http://103.216.119.104:3000',
-      apiBase: process.env.NUXT_PUBLIC_API_BASE || 'http://103.216.119.104:3000/api/a',
+      apiBase: 'http://103.216.119.104:3000/api/a', // Fixed: force correct value
       
       // Google OAuth Configuration
       googleClientId: process.env.NUXT_PUBLIC_GOOGLE_CLIENT_ID || '',

@@ -8,8 +8,8 @@ import {
   NetworkError,
   TimeoutError,
   isRetryableError,
-  createErrorMessage,
-  detectErrorType,
+  getErrorCode,
+  getErrorMessage,
   AuthErrorCode
 } from '~/types/errors'
 
@@ -22,7 +22,10 @@ const RETRY_CONFIG = {
 
 export const useAuthApi = () => {
   const config = useRuntimeConfig()
-  const apiBase = config.public.apiHost
+  const apiBase = config.public.apiBase || 'http://103.216.119.104:3000/api/a'
+  
+  // Debug: Log API base URL
+  console.log('🔍 API Base URL:', apiBase)
 
   /**
    * Exponential backoff delay
@@ -64,11 +67,11 @@ export const useAuthApi = () => {
       return error
     }
 
-    // Detect error type and create AuthError
-    const errorCode = detectErrorType(error)
+    // Get error code and create AuthError
+    const errorCode = getErrorCode(error)
     const statusCode = error.statusCode || error.status || 500
 
-    return new AuthError(errorCode, statusCode, error)
+    return new AuthError(errorCode as AuthErrorCode, statusCode, error)
   }
 
   /**
@@ -128,7 +131,7 @@ export const useAuthApi = () => {
     async register(email: string, password: string, repeat_password: string) {
       try {
         return await withRetry(() =>
-          fetchWithTimeout(`${apiBase}/api/a/sessions`, {
+          fetchWithTimeout(`${apiBase}/sessions`, {
             method: 'POST',
             body: {
               email,
@@ -151,7 +154,7 @@ export const useAuthApi = () => {
     async verifyEmail(email: string, otp: string) {
       try {
         return await withRetry(() =>
-          fetchWithTimeout(`${apiBase}/api/a/sessions/verify_email`, {
+          fetchWithTimeout(`${apiBase}/sessions/verify_email`, {
             method: 'POST',
             body: {
               email,

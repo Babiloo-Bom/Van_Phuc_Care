@@ -1,152 +1,191 @@
 <template>
-  <div class="flex flex-col items-center max-w-md mx-auto">
-    <!-- Success Message -->
-    <a-alert
-      v-if="success"
-      class="!mt-3 w-full"
-      :message="success"
-      type="success"
-      show-icon
-      closable
-      @close="success = ''"
-    />
+  <div class="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-50 to-indigo-100 py-12 px-4 sm:px-6 lg:px-8">
+    <div class="max-w-md w-full space-y-8">
+      <!-- Logo & Title -->
+      <div class="text-center">
+        <h2 class="mt-6 text-3xl font-extrabold text-gray-900">
+          Đăng ký tài khoản
+        </h2>
+        <p class="mt-2 text-sm text-gray-600">
+          Hoặc
+          <NuxtLink to="/login" class="font-medium text-primary-600 hover:text-primary-500">
+            đăng nhập nếu đã có tài khoản
+          </NuxtLink>
+        </p>
+      </div>
 
-    <!-- Error Alert -->
-    <a-alert
-      v-if="error"
-      class="!mt-3 w-full"
-      :message="error"
-      type="error"
-      show-icon
-      closable
-      @close="error = ''"
-    />
+      <!-- Registration Steps -->
+      <div class="bg-white shadow-xl rounded-lg p-8">
+        <!-- Step 1: Register Form -->
+        <div v-if="registrationStep === 'register'">
+          <a-form
+            :model="formData"
+            @finish="handleRegister"
+            layout="vertical"
+          >
+            <!-- Email -->
+            <a-form-item
+              label="Email"
+              :validate-status="formErrors.email ? 'error' : ''"
+              :help="formErrors.email"
+            >
+              <a-input
+                v-model:value="formData.email"
+                type="email"
+                size="large"
+                placeholder="example@email.com"
+                :disabled="isRegistering"
+              />
+            </a-form-item>
 
-    <!-- Register Form -->
-    <a-form
-      v-if="!showVerification"
-      ref="formRef"
-      :model="form"
-      :rules="rules"
-      class="!mt-3 w-full"
-      @finish="handleRegister"
-    >
-      <a-form-item name="email">
-        <label for="email" class="block text-sm font-medium text-gray-700 mb-2">
-          Địa chỉ Email
-        </label>
-        <a-input
-          id="email"
-          v-model:value="form.email"
-          size="large"
-          type="email"
-          placeholder="example@email.com"
-          @pressEnter="handleRegister"
-        />
-      </a-form-item>
+            <!-- Fullname -->
+            <a-form-item
+              label="Họ và tên"
+              :validate-status="formErrors.fullname ? 'error' : ''"
+              :help="formErrors.fullname"
+            >
+              <a-input
+                v-model:value="formData.fullname"
+                size="large"
+                placeholder="Nguyễn Văn A"
+                :disabled="isRegistering"
+              />
+            </a-form-item>
 
-      <a-form-item name="password">
-        <label for="password" class="block text-sm font-medium text-gray-700 mb-2">
-          Mật khẩu
-        </label>
-        <a-input-password
-          id="password"
-          v-model:value="form.password"
-          size="large"
-          placeholder="Tối thiểu 8 ký tự"
-          @pressEnter="handleRegister"
-        />
-      </a-form-item>
+            <!-- Phone (Optional) -->
+            <a-form-item
+              label="Số điện thoại (không bắt buộc)"
+              :validate-status="formErrors.phone ? 'error' : ''"
+              :help="formErrors.phone"
+            >
+              <a-input
+                v-model:value="formData.phone"
+                size="large"
+                placeholder="0123456789"
+                :disabled="isRegistering"
+              />
+            </a-form-item>
 
-      <a-form-item name="repeat_password">
-        <label for="repeat_password" class="block text-sm font-medium text-gray-700 mb-2">
-          Nhập lại mật khẩu
-        </label>
-        <a-input-password
-          id="repeat_password"
-          v-model:value="form.repeat_password"
-          size="large"
-          placeholder="Nhập lại mật khẩu"
-          @pressEnter="handleRegister"
-        />
-      </a-form-item>
+            <!-- Password -->
+            <a-form-item
+              label="Mật khẩu"
+              :validate-status="formErrors.password ? 'error' : ''"
+              :help="formErrors.password"
+            >
+              <a-input-password
+                v-model:value="formData.password"
+                size="large"
+                placeholder="Ít nhất 6 ký tự"
+                :disabled="isRegistering"
+              />
+            </a-form-item>
 
-      <a-button
-        type="primary"
-        html-type="submit"
-        size="large"
-        class="w-full"
-        :loading="loading"
-      >
-        Đăng ký tài khoản
-      </a-button>
-    </a-form>
+            <!-- Repeat Password -->
+            <a-form-item
+              label="Nhập lại mật khẩu"
+              :validate-status="formErrors.repeat_password ? 'error' : ''"
+              :help="formErrors.repeat_password"
+            >
+              <a-input-password
+                v-model:value="formData.repeat_password"
+                size="large"
+                placeholder="Nhập lại mật khẩu"
+                :disabled="isRegistering"
+              />
+            </a-form-item>
 
-    <!-- OTP Verification Form -->
-    <a-form
-      v-else
-      ref="formVerifyRef"
-      :model="formVerify"
-      :rules="rulesVerify"
-      class="!mt-3 w-full"
-      @finish="handleVerifyEmail"
-    >
-      <a-form-item name="otp">
-        <label for="otp" class="block text-sm font-medium text-gray-700 mb-2">
-          Mã xác thực
-        </label>
-        <div class="text-sm text-gray-600 mb-3">
-          Mã xác thực đã được gửi đến email: <strong>{{ form.email }}</strong>
+            <!-- Error Alert -->
+            <a-alert
+              v-if="registerError"
+              :message="registerError"
+              type="error"
+              show-icon
+              closable
+              class="mb-4"
+              @close="registerError = ''"
+            />
+
+            <!-- Submit Button -->
+            <a-form-item>
+              <a-button
+                type="primary"
+                html-type="submit"
+                size="large"
+                block
+                :loading="isRegistering"
+              >
+                Đăng ký
+              </a-button>
+            </a-form-item>
+          </a-form>
         </div>
-        <a-input
-          id="otp"
-          v-model:value="formVerify.otp"
-          size="large"
-          placeholder="Nhập mã 6 số"
-          maxlength="6"
-          @pressEnter="handleVerifyEmail"
-        />
-      </a-form-item>
 
-      <a-button
-        type="primary"
-        html-type="submit"
-        size="large"
-        class="w-full"
-        :loading="loading"
-        :disabled="!formVerify.otp || formVerify.otp.length < 6"
-      >
-        Xác thực
-      </a-button>
+        <!-- Step 2: Verify Email -->
+        <div v-else-if="registrationStep === 'verify'" class="text-center">
+          <div class="mb-6">
+            <div class="text-6xl mb-4">✅</div>
+            <h3 class="text-xl font-semibold text-gray-900 mb-2">
+              Xác thực email
+            </h3>
+            <p class="text-gray-600">
+              Chúng tôi đã gửi mã OTP đến email <strong>{{ registeredEmail }}</strong>
+            </p>
+            <p class="text-sm text-gray-500 mt-2">
+              Vui lòng kiểm tra hộp thư và nhập mã OTP bên dưới
+            </p>
+          </div>
 
-      <a-button
-        type="link"
-        class="w-full mt-2"
-        @click="showVerification = false"
-      >
-        Quay lại
-      </a-button>
-    </a-form>
+          <a-form @finish="handleVerifyEmail" layout="vertical">
+            <!-- OTP Input -->
+            <a-form-item
+              label="Mã OTP (6 chữ số)"
+              :validate-status="verifyError ? 'error' : ''"
+              :help="verifyError"
+            >
+              <a-input
+                v-model:value="otpCode"
+                size="large"
+                placeholder="123456"
+                maxlength="6"
+                :disabled="isVerifying"
+                class="text-center text-2xl tracking-widest"
+              />
+            </a-form-item>
 
-    <!-- Login Link -->
-    <div class="mt-6 text-center">
-      <span class="text-sm text-gray-600">
-        Đã có tài khoản?
-      </span>
-      <nuxt-link to="/login" class="text-sm text-primary-500 hover:text-primary-600 ml-1 underline">
-        Đăng nhập ngay
-      </nuxt-link>
-    </div>
+            <!-- Verify Button -->
+            <a-form-item>
+              <a-button
+                type="primary"
+                html-type="submit"
+                size="large"
+                block
+                :loading="isVerifying"
+              >
+                Xác thực
+              </a-button>
+            </a-form-item>
+          </a-form>
+        </div>
 
-    <!-- Home Link -->
-    <div class="mt-4 text-center">
-      <a
-        href="https://vanphuccare.vn"
-        target="_blank"
-        class="text-sm text-gray-500 hover:text-gray-700 underline"
-      >
-        Về trang chủ →
-      </a>
+        <!-- Step 3: Complete -->
+        <div v-else-if="registrationStep === 'complete'" class="text-center">
+          <div class="text-6xl text-green-500 mb-4">✅</div>
+          <h3 class="text-xl font-semibold text-gray-900 mb-2">
+            Đăng ký thành công!
+          </h3>
+          <p class="text-gray-600 mb-6">
+            Tài khoản của bạn đã được xác thực. Đang chuyển hướng...
+          </p>
+          <a-spin size="large" />
+        </div>
+      </div>
+
+      <!-- Back to Login -->
+      <div class="text-center">
+        <NuxtLink to="/login" class="text-sm text-gray-600 hover:text-gray-900">
+          ← Quay lại đăng nhập
+        </NuxtLink>
+      </div>
     </div>
   </div>
 </template>
@@ -154,7 +193,7 @@
 <script setup lang="ts">
 import { message } from 'ant-design-vue'
 
-// Page setup
+// Page meta
 definePageMeta({
   layout: 'auth',
   middleware: 'guest'
@@ -164,155 +203,73 @@ useHead({
   title: 'Đăng ký - Van Phuc Care'
 })
 
-// Store
-const authStore = useAuthStore()
+// Composables
+const {
+  isRegistering,
+  isVerifying,
+  registrationStep,
+  registeredEmail,
+  register,
+  verifyEmail,
+  resetRegistration
+} = useRegister()
 
-// Form state
-const formRef = ref()
-const formVerifyRef = ref()
-
-const form = reactive({
+// Form data
+const formData = reactive({
   email: '',
+  fullname: '',
+  phone: '',
   password: '',
-  repeat_password: ''
+  repeat_password: '',
+  domain: 'vanphuccare.gensi.vn',
+  origin: 'vanphuccare.gensi.vn'
 })
 
-const formVerify = reactive({
-  otp: ''
-})
-
-const loading = ref(false)
-const error = ref('')
-const success = ref('')
-const showVerification = ref(false)
-
-// Validation rules
-const rules = {
-  email: [
-    {
-      required: true,
-      message: 'Vui lòng nhập email',
-      trigger: 'blur'
-    },
-    {
-      type: 'email',
-      message: 'Email không hợp lệ',
-      trigger: 'blur'
-    }
-  ],
-  password: [
-    {
-      required: true,
-      message: 'Vui lòng nhập mật khẩu',
-      trigger: 'blur'
-    },
-    {
-      min: 8,
-      message: 'Mật khẩu phải có ít nhất 8 ký tự',
-      trigger: 'blur'
-    }
-  ],
-  repeat_password: [
-    {
-      required: true,
-      message: 'Vui lòng nhập lại mật khẩu',
-      trigger: 'blur'
-    },
-    {
-      validator: (_rule: any, value: string) => {
-        if (value !== form.password) {
-          return Promise.reject('Mật khẩu không khớp')
-        }
-        return Promise.resolve()
-      },
-      trigger: 'blur'
-    }
-  ]
-}
-
-const rulesVerify = {
-  otp: [
-    {
-      required: true,
-      message: 'Vui lòng nhập mã xác thực',
-      trigger: 'blur'
-    },
-    {
-      len: 6,
-      message: 'Mã xác thực phải có 6 số',
-      trigger: 'blur'
-    }
-  ]
-}
+const formErrors = reactive<Record<string, string>>({})
+const registerError = ref('')
+const verifyError = ref('')
+const otpCode = ref('')
 
 // Handle register
 const handleRegister = async () => {
-  try {
-    await formRef.value.validate()
+  // Clear previous errors
+  Object.keys(formErrors).forEach(key => delete formErrors[key])
+  registerError.value = ''
 
-    loading.value = true
-    error.value = ''
+  // Register
+  const result = await register(formData)
 
-    // Call register action
-    const result = await authStore.register(
-      form.email,
-      form.password,
-      form.repeat_password
-    )
-
-    if (result.success) {
-      success.value = 'Đăng ký thành công! Vui lòng kiểm tra email để nhận mã xác thực.'
-      showVerification.value = true
-    } else {
-      error.value = result.error || 'Email đã được sử dụng, vui lòng nhập email khác!'
+  if (result.success) {
+    message.success('Đăng ký thành công! Vui lòng kiểm tra email để xác thực')
+  } else {
+    if (result.errors) {
+      Object.assign(formErrors, result.errors)
     }
-  } catch (validationError) {
-    console.error('Validation error:', validationError)
-  } finally {
-    loading.value = false
+    if (result.error) {
+      registerError.value = result.error
+      message.error(result.error)
+    }
   }
 }
 
 // Handle verify email
 const handleVerifyEmail = async () => {
-  try {
-    await formVerifyRef.value.validate()
+  verifyError.value = ''
 
-    loading.value = true
-    error.value = ''
+  const result = await verifyEmail(otpCode.value)
 
-    // Step 1: Verify OTP
-    const verifyResult = await authStore.verifyEmail(form.email, formVerify.otp)
-
-    if (verifyResult.success) {
-      message.success('Xác thực thành công!')
-
-      // Step 2: Auto login
-      const loginResult = await authStore.loginAfterRegister(
-        form.email,
-        form.password
-      )
-
-      if (loginResult.success) {
-        message.success('Đăng nhập thành công!')
-
-        // Redirect to dashboard
-        navigateTo('/')
-      } else {
-        error.value = 'Xác thực thành công nhưng đăng nhập thất bại. Vui lòng đăng nhập thủ công.'
-        setTimeout(() => {
-          navigateTo('/login')
-        }, 2000)
-      }
-    } else {
-      error.value = verifyResult.error || 'Mã xác thực không chính xác!'
-    }
-  } catch (validationError) {
-    console.error('Validation error:', validationError)
-  } finally {
-    loading.value = false
+  if (result.success) {
+    message.success('Xác thực thành công! Đang đăng nhập...')
+  } else {
+    verifyError.value = result.error || 'Xác thực thất bại'
+    message.error(result.error || 'Xác thực thất bại')
   }
 }
+
+// Reset on unmount
+onUnmounted(() => {
+  resetRegistration()
+})
 </script>
 
 <style scoped>

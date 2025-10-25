@@ -93,6 +93,11 @@ export const useAuthStore = defineStore('auth', {
 
         return { success: true, user: this.user, token }
       } catch (error: any) {
+        // Ignore AbortError (request cancelled due to navigation/reload)
+        if (error?.name === 'AbortError' || error?.message?.includes('aborted')) {
+          console.log('[Auth] Login cancelled (navigation/reload)')
+          return { success: false, error: 'Request cancelled' }
+        }
         console.error('Login error:', error)
         return { 
           success: false, 
