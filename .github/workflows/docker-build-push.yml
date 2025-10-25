@@ -90,14 +90,5 @@ jobs:
           key: ${{ secrets.SERVER_SSH_KEY }}
           port: 24700
           script: |
-            cd /path/to/Van_Phuc_Care
-            
-            # Pull latest images
-            docker-compose pull
-            
-            # Restart services
-            docker-compose up -d
-            
-            # Clean up old images
-            docker image prune -af
-            # Trên máy local
+            cd /opt/vanphuccare
+            ./deploy.sh production
