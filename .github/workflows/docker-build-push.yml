@@ -40,37 +40,15 @@ jobs:
             elearning:
               - 'elerning-vpc-v3/**'
 
-  build-and-push:
+  # Build API
+  build-api:
     needs: detect-changes
+    if: needs.detect-changes.outputs.api == 'true'
     runs-on: ubuntu-latest
     permissions:
       contents: read
       packages: write
     
-    strategy:
-      fail-fast: false
-      matrix:
-        include:
-          - name: api
-            context: ./server-vpc
-            dockerfile: ./server-vpc/Dockerfile
-            changed: ${{ needs.detect-changes.outputs.api }}
-          - name: admin
-            context: ./admin-vpc-v3
-            dockerfile: ./admin-vpc-v3/Dockerfile
-            changed: ${{ needs.detect-changes.outputs.admin }}
-          - name: crm
-            context: ./crm-vpc-v3
-            dockerfile: ./crm-vpc-v3/Dockerfile
-            changed: ${{ needs.detect-changes.outputs.crm }}
-          - name: elearning
-            context: ./elerning-vpc-v3
-            dockerfile: ./elerning-vpc-v3/Dockerfile
-            changed: ${{ needs.detect-changes.outputs.elearning }}
-    
-    # Only run if this service changed
-    if: ${{ matrix.changed == 'true' }}
-
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -89,7 +67,7 @@ jobs:
         id: meta
         uses: docker/metadata-action@v5
         with:
-          images: ${{ env.REGISTRY }}/${{ env.IMAGE_PREFIX }}-${{ matrix.name }}
+          images: ${{ env.REGISTRY }}/${{ env.IMAGE_PREFIX }}-api
           tags: |
             type=ref,event=branch
             type=ref,event=pr
@@ -98,23 +76,177 @@ jobs:
             type=sha,prefix={{branch}}-
             type=raw,value=latest,enable={{is_default_branch}}
 
-      - name: Build and push ${{ matrix.name }}
+      - name: Build and push API
         uses: docker/build-push-action@v5
         with:
-          context: ${{ matrix.context }}
-          file: ${{ matrix.dockerfile }}
+          context: ./server-vpc
+          file: ./server-vpc/Dockerfile
           push: true
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
-          cache-from: type=registry,ref=${{ env.REGISTRY }}/${{ env.IMAGE_PREFIX }}-${{ matrix.name }}:buildcache
-          cache-to: type=registry,ref=${{ env.REGISTRY }}/${{ env.IMAGE_PREFIX }}-${{ matrix.name }}:buildcache,mode=max
+          cache-from: type=registry,ref=${{ env.REGISTRY }}/${{ env.IMAGE_PREFIX }}-api:buildcache
+          cache-to: type=registry,ref=${{ env.REGISTRY }}/${{ env.IMAGE_PREFIX }}-api:buildcache,mode=max
           build-args: |
             NODE_ENV=production
 
-  deploy:
-    needs: build-and-push
+  # Build Admin
+  build-admin:
+    needs: detect-changes
+    if: needs.detect-changes.outputs.admin == 'true'
     runs-on: ubuntu-latest
-    if: github.ref == 'refs/heads/main'
+    permissions:
+      contents: read
+      packages: write
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Log in to Container Registry
+        uses: docker/login-action@v3
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Extract metadata
+        id: meta
+        uses: docker/metadata-action@v5
+        with:
+          images: ${{ env.REGISTRY }}/${{ env.IMAGE_PREFIX }}-admin
+          tags: |
+            type=ref,event=branch
+            type=ref,event=pr
+            type=semver,pattern={{version}}
+            type=semver,pattern={{major}}.{{minor}}
+            type=sha,prefix={{branch}}-
+            type=raw,value=latest,enable={{is_default_branch}}
+
+      - name: Build and push Admin
+        uses: docker/build-push-action@v5
+        with:
+          context: ./admin-vpc-v3
+          file: ./admin-vpc-v3/Dockerfile
+          push: true
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
+          cache-from: type=registry,ref=${{ env.REGISTRY }}/${{ env.IMAGE_PREFIX }}-admin:buildcache
+          cache-to: type=registry,ref=${{ env.REGISTRY }}/${{ env.IMAGE_PREFIX }}-admin:buildcache,mode=max
+          build-args: |
+            NODE_ENV=production
+
+  # Build CRM
+  build-crm:
+    needs: detect-changes
+    if: needs.detect-changes.outputs.crm == 'true'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Log in to Container Registry
+        uses: docker/login-action@v3
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Extract metadata
+        id: meta
+        uses: docker/metadata-action@v5
+        with:
+          images: ${{ env.REGISTRY }}/${{ env.IMAGE_PREFIX }}-crm
+          tags: |
+            type=ref,event=branch
+            type=ref,event=pr
+            type=semver,pattern={{version}}
+            type=semver,pattern={{major}}.{{minor}}
+            type=sha,prefix={{branch}}-
+            type=raw,value=latest,enable={{is_default_branch}}
+
+      - name: Build and push CRM
+        uses: docker/build-push-action@v5
+        with:
+          context: ./crm-vpc-v3
+          file: ./crm-vpc-v3/Dockerfile
+          push: true
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
+          cache-from: type=registry,ref=${{ env.REGISTRY }}/${{ env.IMAGE_PREFIX }}-crm:buildcache
+          cache-to: type=registry,ref=${{ env.REGISTRY }}/${{ env.IMAGE_PREFIX }}-crm:buildcache,mode=max
+          build-args: |
+            NODE_ENV=production
+
+  # Build E-Learning
+  build-elearning:
+    needs: detect-changes
+    if: needs.detect-changes.outputs.elearning == 'true'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Log in to Container Registry
+        uses: docker/login-action@v3
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Extract metadata
+        id: meta
+        uses: docker/metadata-action@v5
+        with:
+          images: ${{ env.REGISTRY }}/${{ env.IMAGE_PREFIX }}-elearning
+          tags: |
+            type=ref,event=branch
+            type=ref,event=pr
+            type=semver,pattern={{version}}
+            type=semver,pattern={{major}}.{{minor}}
+            type=sha,prefix={{branch}}-
+            type=raw,value=latest,enable={{is_default_branch}}
+
+      - name: Build and push E-Learning
+        uses: docker/build-push-action@v5
+        with:
+          context: ./elerning-vpc-v3
+          file: ./elerning-vpc-v3/Dockerfile
+          push: true
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
+          cache-from: type=registry,ref=${{ env.REGISTRY }}/${{ env.IMAGE_PREFIX }}-elearning:buildcache
+          cache-to: type=registry,ref=${{ env.REGISTRY }}/${{ env.IMAGE_PREFIX }}-elearning:buildcache,mode=max
+          build-args: |
+            NODE_ENV=production
+
+  # Deploy to production
+  deploy:
+    needs: [build-api, build-admin, build-crm, build-elearning]
+    runs-on: ubuntu-latest
+    if: |
+      always() &&
+      github.ref == 'refs/heads/main' &&
+      (needs.build-api.result == 'success' || needs.build-api.result == 'skipped') &&
+      (needs.build-admin.result == 'success' || needs.build-admin.result == 'skipped') &&
+      (needs.build-crm.result == 'success' || needs.build-crm.result == 'skipped') &&
+      (needs.build-elearning.result == 'success' || needs.build-elearning.result == 'skipped')
     
     steps:
       - name: Deploy to Server
