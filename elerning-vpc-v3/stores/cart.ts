@@ -98,9 +98,9 @@ export const useCartStore = defineStore('cart', {
       if (!process.client) return
 
       const authStore = useAuthStore()
-      if (!authStore.user?.id) return
+      if (!authStore.user?._id) return
 
-      const userId = String(authStore.user.id)
+      const userId = String(authStore.user._id)
       const cachedCart = loadCartFromCache(userId)
       
       if (cachedCart) {
@@ -114,9 +114,9 @@ export const useCartStore = defineStore('cart', {
       if (!process.client) return
 
       const authStore = useAuthStore()
-      if (!authStore.user?.id || !this.cart) return
+      if (!authStore.user?._id || !this.cart) return
 
-      const userId = String(authStore.user.id)
+      const userId = String(authStore.user._id)
       saveCartToCache(userId, this.cart)
     },
 
@@ -128,13 +128,13 @@ export const useCartStore = defineStore('cart', {
 
         const authStore = useAuthStore()
         
-        if (!authStore.isLoggedIn || !authStore.user?.id) {
+        if (!authStore.isLoggedIn || !authStore.user?._id) {
           console.log('❌ User not logged in, cannot fetch cart')
           this.updateCart(null)
           return
         }
         
-        const userId = String(authStore.user.id)
+        const userId = String(authStore.user._id)
         
         // Try cache first
         this.loadCartFromCache()
@@ -166,7 +166,7 @@ export const useCartStore = defineStore('cart', {
 
         const authStore = useAuthStore()
         
-        if (!authStore.isLoggedIn || !authStore.user?.id) {
+        if (!authStore.isLoggedIn || !authStore.user?._id) {
           console.log('❌ User not logged in, redirecting to login')
           await navigateTo('/login')
           return
@@ -233,7 +233,7 @@ export const useCartStore = defineStore('cart', {
         this.setError(null)
 
         const authStore = useAuthStore()
-        if (!authStore.isLoggedIn || !authStore.user?.id) {
+        if (!authStore.isLoggedIn || !authStore.user?._id) {
           console.log('❌ User not logged in, cannot remove from cart')
           return
         }
@@ -269,7 +269,7 @@ export const useCartStore = defineStore('cart', {
         this.setError(null)
 
         const authStore = useAuthStore()
-        if (!authStore.isLoggedIn || !authStore.user?.id) {
+        if (!authStore.isLoggedIn || !authStore.user?._id) {
           console.log('❌ User not logged in, cannot update cart')
           return
         }
@@ -298,7 +298,7 @@ export const useCartStore = defineStore('cart', {
         this.setError(null)
 
         const authStore = useAuthStore()
-        if (!authStore.isLoggedIn || !authStore.user?.id) {
+        if (!authStore.isLoggedIn || !authStore.user?._id) {
           console.log('❌ User not logged in, cannot clear cart')
           return
         }
@@ -337,7 +337,7 @@ export const useCartStore = defineStore('cart', {
         this.setError(null)
 
         const authStore = useAuthStore()
-        if (!authStore.isLoggedIn || !authStore.user?.id) {
+        if (!authStore.isLoggedIn || !authStore.user?._id) {
           console.log('❌ User not logged in, cannot apply coupon')
           return
         }
@@ -366,7 +366,7 @@ export const useCartStore = defineStore('cart', {
         this.setError(null)
 
         const authStore = useAuthStore()
-        if (!authStore.isLoggedIn || !authStore.user?.id) {
+        if (!authStore.isLoggedIn || !authStore.user?._id) {
           console.log('❌ User not logged in, cannot remove coupon')
           return
         }
@@ -413,9 +413,9 @@ export const useCartStore = defineStore('cart', {
       if (!process.client) return
 
       const authStore = useAuthStore()
-      if (!authStore.user?.id) return
+      if (!authStore.user?._id) return
 
-      const userId = String(authStore.user.id)
+      const userId = String(authStore.user._id)
       clearCartCache(userId)
     },
 

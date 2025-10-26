@@ -23,8 +23,50 @@
             <h3 class="text-2xl font-bold text-gray-800">Khóa học đã mua</h3>
           </div>
 
+          <!-- Loading State -->
+          <div v-if="loading" class="text-center py-8">
+            <div class="inline-flex items-center gap-2 text-gray-600">
+              <svg class="animate-spin h-5 w-5" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+              </svg>
+              Đang tải khóa học...
+            </div>
+          </div>
+
+          <!-- Error State -->
+          <div v-else-if="error" class="text-center py-8">
+            <div class="text-red-600 mb-4">
+              <svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 24 24" class="fill-none stroke-current mx-auto">
+                <circle cx="12" cy="12" r="10" stroke-width="1.5"/>
+                <path d="M15 9l-6 6M9 9l6 6" stroke-width="1.5" stroke-linecap="round"/>
+              </svg>
+            </div>
+            <p class="text-gray-600">Có lỗi xảy ra khi tải khóa học</p>
+            <button @click="fetchMyCourses" class="mt-4 px-4 py-2 bg-primary-100 text-white rounded-lg hover:bg-blue-600 transition-colors">
+              Thử lại
+            </button>
+          </div>
+
+          <!-- Empty State -->
+          <div v-else-if="myCourses.length === 0" class="text-center py-12">
+            <div class="w-20 h-20 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-6">
+              <svg xmlns="http://www.w3.org/2000/svg" width="40" height="40" viewBox="0 0 24 24" class="fill-none stroke-gray-400">
+                <path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+              </svg>
+            </div>
+            <h4 class="text-xl font-semibold text-gray-800 mb-2">Chưa có khóa học nào</h4>
+            <p class="text-gray-600 mb-6">Bạn chưa mua khóa học nào. Hãy khám phá các khóa học thú vị!</p>
+            <NuxtLink to="/" class="inline-flex items-center gap-2 px-6 py-3 bg-primary-100 text-white rounded-lg hover:bg-blue-600 transition-colors">
+              <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" class="fill-none stroke-current">
+                <path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+              </svg>
+              Khám phá khóa học
+            </NuxtLink>
+          </div>
+
           <!-- Courses List -->
-          <div v-if="myCourses.length > 0" class="space-y-6">
+          <div v-else class="space-y-6">
             <div 
               v-for="(course, index) in myCourses" 
               :key="`my_course_${index}`"
@@ -86,20 +128,33 @@
               <!-- Actions -->
               <div class="flex flex-col gap-3 flex-shrink-0">
                 <a-button
+                  v-if="course.progress < 100"
                   type="primary"
                   class="!bg-prim-100 !py-3 !h-[50px] !text-white !border-prim-100 !text-lg !font-semibold !rounded-xl !shadow-lg hover:!shadow-xl transition-all duration-300 !flex !items-center !justify-center !gap-2 !min-w-[140px]"
-                  @click="navigateTo(`/courses/${course.slug}`)"
+                  @click="continueLearning(course)"
                 >
                   <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" class="fill-none stroke-current">
-                    <path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+                    <polygon points="5,3 19,12 5,21" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
                   </svg>
                   <span>Tiếp tục học</span>
                 </a-button>
                 
                 <a-button
+                  v-else
+                  type="primary"
+                  class="!bg-green-600 !py-3 !h-[50px] !text-white !border-green-600 !text-lg !font-semibold !rounded-xl !shadow-lg hover:!shadow-xl transition-all duration-300 !flex !items-center !justify-center !gap-2 !min-w-[140px]"
+                  @click="viewCertificate(course)"
+                >
+                  <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" class="fill-none stroke-current">
+                    <path d="M9 12l2 2 4-4M21 12c0 4.97-4.03 9-9 9s-9-4.03-9-9 4.03-9 9-9c1.3 0 2.52.28 3.6.8" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+                  </svg>
+                  <span>Xem chứng chỉ</span>
+                </a-button>
+                
+                <a-button
                   size="large"
                   class="!py-2 !h-[40px] !text-primary-100 !border-2 !border-prim-100 hover:!bg-prim-100 hover:!text-white transition-all duration-300 !rounded-lg !font-medium !text-base !flex !items-center !justify-center !gap-2 !min-w-[140px]"
-                  @click="navigateTo(`/courses/${course.slug}`)"
+                  @click="viewCourseDetails(course)"
                 >
                   <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" class="fill-none stroke-current">
                     <path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4M10 17l5-5-5-5M21 12H9" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
@@ -110,29 +165,6 @@
             </div>
           </div>
 
-          <!-- Empty State -->
-          <div v-else class="text-center py-16">
-            <div class="w-32 h-32 mx-auto mb-6 bg-gray-100 rounded-full flex items-center justify-center">
-              <svg xmlns="http://www.w3.org/2000/svg" width="64" height="64" viewBox="0 0 24 24" class="fill-none stroke-gray-400">
-                <path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
-              </svg>
-            </div>
-            <h3 class="text-2xl font-bold text-gray-700 mb-3">Chưa có khóa học nào</h3>
-            <p class="text-gray-500 mb-8 text-lg">Hãy mua khóa học đầu tiên để bắt đầu hành trình học tập!</p>
-            <a-button
-              type="primary"
-              size="large"
-              class="!bg-prim-100 !py-3 !h-[50px] !text-white !border-prim-100 !text-lg !font-semibold !rounded-lg shadow-lg hover:shadow-xl transition-all duration-300"
-              @click="navigateTo('/')"
-            >
-              <template #icon>
-                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" class="fill-none stroke-current">
-                  <path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
-                </svg>
-              </template>
-              Khám phá khóa học
-            </a-button>
-          </div>
         </div>
 
         <!-- Learning Stats -->
@@ -176,43 +208,13 @@
 <script setup lang="ts">
 import { ref, computed, onMounted } from 'vue'
 
-// Sample data for demo
-const myCourses = ref([
-  {
-    _id: '1',
-    title: 'Lập trình Python từ cơ bản đến nâng cao',
-    slug: 'lap-trinh-python-tu-co-ban-den-nang-cao',
-    description: 'Khóa học toàn diện về Python cho người mới bắt đầu',
-    shortDescription: 'Học Python từ cơ bản đến nâng cao',
-    thumbnail: '/images/courses/python-course.jpg',
-    lessons: 45,
-    duration: 1200,
-    progress: 75,
-    purchasedAt: new Date('2024-01-15'),
-    price: 299000,
-    instructor: {
-      name: 'Nguyễn Văn A',
-      avatar: '/images/instructors/instructor-1.jpg'
-    }
-  },
-  {
-    _id: '2',
-    title: 'React.js - Xây dựng ứng dụng web hiện đại',
-    slug: 'react-js-xay-dung-ung-dung-web-hien-dai',
-    description: 'Học React.js để xây dựng các ứng dụng web tương tác',
-    shortDescription: 'Học React.js từ cơ bản',
-    thumbnail: '/images/courses/react-course.jpg',
-    lessons: 32,
-    duration: 800,
-    progress: 30,
-    purchasedAt: new Date('2024-01-20'),
-    price: 399000,
-    instructor: {
-      name: 'Trần Thị B',
-      avatar: '/images/instructors/instructor-2.jpg'
-    }
-  }
-])
+const authStore = useAuthStore()
+const coursesStore = useCoursesStore()
+
+// Real data from courseRegister
+const myCourses = ref([])
+const loading = ref(true)
+const error = ref(null)
 
 const completedCourses = computed(() => {
   return myCourses.value.filter(course => course.progress === 100).length
@@ -232,9 +234,97 @@ const formatDate = (date: Date) => {
   })
 }
 
-onMounted(() => {
+// Navigation methods
+const navigateToCourse = (course: any) => {
+  if (!course || !course.slug) {
+    console.error('❌ Course or slug is missing:', course)
+    return
+  }
+  
+  console.log('📚 Navigating to course:', course.title)
+  navigateTo(`/courses/${course.slug}`)
+}
+
+const continueLearning = (course: any) => {
+  console.log('📚 Continuing learning:', course.title)
+  // TODO: Navigate to last lesson or first lesson
+  navigateToCourse(course)
+}
+
+const viewCourseDetails = (course: any) => {
+  console.log('📚 Viewing course details:', course.title)
+  navigateToCourse(course)
+}
+
+const viewCertificate = (course: any) => {
+  console.log('📚 Viewing certificate for:', course.title)
+  // TODO: Navigate to certificate page
+  navigateTo(`/certificate/${course._id}`)
+}
+
+// Fetch my courses from courseRegister
+const fetchMyCourses = async () => {
+  try {
+    loading.value = true
+    error.value = null
+    
+    console.log('📚 Fetching my courses...')
+    console.log('📚 Auth state:', {
+      isLoggedIn: authStore.isLoggedIn,
+      user: authStore.user,
+      courseRegister: authStore.user?.courseRegister
+    })
+    
+    if (!authStore.isLoggedIn || !authStore.user?.courseRegister) {
+      console.log('⚠️ User not logged in or no courseRegister')
+      myCourses.value = []
+      return
+    }
+    
+    // Get all courses from store
+    const allCourses = coursesStore.courses || []
+    console.log('📚 All courses from store:', allCourses.length)
+    
+    // Filter courses that user has purchased
+    const purchasedCourseIds = authStore.user.courseRegister || []
+    console.log('📚 Purchased course IDs:', purchasedCourseIds)
+    
+    const purchasedCourses = allCourses.filter(course => 
+      purchasedCourseIds.includes(course._id)
+    )
+    
+    console.log('📚 Purchased courses found:', purchasedCourses.length)
+    
+    // Add mock progress for now (TODO: implement real progress tracking)
+    myCourses.value = purchasedCourses.map(course => ({
+      ...course,
+      progress: Math.floor(Math.random() * 100), // Mock progress
+      purchasedAt: new Date() // Mock purchase date
+    }))
+    
+    console.log('✅ My courses loaded:', myCourses.value.length)
+    
+  } catch (err) {
+    console.error('❌ Error fetching my courses:', err)
+    error.value = err
+  } finally {
+    loading.value = false
+  }
+}
+
+onMounted(async () => {
   console.log('📚 My courses page mounted')
-  // TODO: Fetch real data from API
+  
+  // Refresh user data to ensure courseRegister is up to date
+  await authStore.refreshUserData()
+  
+  // Fetch courses if not already loaded
+  if (!coursesStore.courses || coursesStore.courses.length === 0) {
+    await coursesStore.fetchAll()
+  }
+  
+  // Fetch my courses
+  await fetchMyCourses()
 })
 </script>
 

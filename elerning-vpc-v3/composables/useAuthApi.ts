@@ -387,6 +387,62 @@ export const useAuthApi = () => {
       } catch (error: any) {
         throw transformError(error)
       }
+    },
+
+    /**
+     * Get user profile
+     */
+    async getUserProfile() {
+      try {
+        const authStore = useAuthStore()
+        const token = authStore.token
+        
+        console.log('🔍 JWT Token for getUserProfile:', token ? token.substring(0, 20) + '...' : 'null')
+        console.log('🔍 API URL:', `${apiBase}/admins/profile`)
+        
+        return await withRetry(() =>
+          fetchWithTimeout(`${apiBase}/admins/profile`, {
+            method: 'GET',
+            headers: {
+              'Authorization': `Bearer ${token}`
+            }
+          })
+        )
+      } catch (error: any) {
+        console.error('❌ getUserProfile error:', error)
+        throw transformError(error)
+      }
+    },
+
+    /**
+     * Update course register
+     */
+    async updateCourseRegister(courseIds: string[], action: 'add' | 'remove' = 'add') {
+      try {
+        const authStore = useAuthStore()
+        const token = authStore.token
+        
+        console.log('🔍 JWT Token for updateCourseRegister:', token ? token.substring(0, 20) + '...' : 'null')
+        console.log('🔍 API URL:', `${apiBase}/admins/course-register`)
+        console.log('🔍 Request body:', { courseIds, action })
+        
+        return await withRetry(() =>
+          fetchWithTimeout(`${apiBase}/admins/course-register`, {
+            method: 'PUT',
+            headers: {
+              'Authorization': `Bearer ${token}`,
+              'Content-Type': 'application/json'
+            },
+            body: {
+              courseIds,
+              action
+            }
+          })
+        )
+      } catch (error: any) {
+        console.error('❌ updateCourseRegister error:', error)
+        throw transformError(error)
+      }
     }
   }
 }

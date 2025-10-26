@@ -89,6 +89,12 @@ class Admins {
         default: 'active',
         enum: ['active', 'inactive', 'pending_verification'],
       },
+      courseRegister: [{
+        type: String
+      }],
+      courseCompleted: [{
+        type: String
+      }],
     },
     {
       strict: false,

@@ -195,30 +195,27 @@ const updateUserCourseRegister = async () => {
   }
 
   try {
-    console.log('🔄 Updating user courseRegister...')
+    console.log('🔄 Updating user courseRegister via API...')
     
     // Get course IDs from order
     const courseIds = order.value.items.map((item: any) => item.courseId || item._id)
     console.log('📚 Course IDs to add:', courseIds)
     
-    // Update user's courseRegister
-    if (!authStore.user.courseRegister) {
-      authStore.user.courseRegister = []
+    // Call API to update courseRegister
+    const authApi = useAuthApi()
+    const response = await authApi.updateCourseRegister(courseIds, 'add') as any
+    
+    console.log('📡 API response:', response)
+    
+    if (response.data?.user) {
+      // Update local user data
+      authStore.user.courseRegister = response.data.user.courseRegister
+      authStore.saveAuth()
+      console.log('✅ Course register updated via API:', authStore.user.courseRegister)
+    } else {
+      console.error('❌ Failed to update courseRegister via API:', response)
     }
     
-    // Add new courses to courseRegister (avoid duplicates)
-    const newCourses = courseIds.filter((id: string) => !authStore.user.courseRegister.includes(id))
-    authStore.user.courseRegister = [...authStore.user.courseRegister, ...newCourses]
-    
-    console.log('✅ Updated courseRegister:', authStore.user.courseRegister)
-    
-    // Save to localStorage (both formats for compatibility)
-    authStore.saveAuth()
-    
-    // Also save to old format for immediate compatibility
-    localStorage.setItem('user', JSON.stringify(authStore.user))
-    
-    console.log('✅ User courseRegister updated successfully')
   } catch (error) {
     console.error('❌ Error updating courseRegister:', error)
   }

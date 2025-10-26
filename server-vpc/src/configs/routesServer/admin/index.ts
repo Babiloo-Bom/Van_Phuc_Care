@@ -13,6 +13,7 @@ import OrdersRouter from './Orders';
 import CartRouter from './Cart';
 import ReviewsRouter from './Reviews';
 import UsersRouter from './Users';
+import AdminsRouter from './Admins';
 import GoogleAuthRouter from './GoogleAuth';
 import AccessPermissionsRouter from './AccessPermissions';
 import HealthBookRouter from './HealthBook';
@@ -37,6 +38,7 @@ router.use('/orders', adminPassport.authenticate('jwt', { session: false }), Ord
 router.use('/cart', CartRouter); // Public cart routes
 router.use('/reviews', ReviewsRouter); // Public reviews routes
 router.use('/users-management', adminPassport.authenticate('jwt', { session: false }), UsersRouter);
+router.use('/admins', AdminsRouter);
 router.use('/access-permissions', adminPassport.authenticate('jwt', { session: false }), AccessPermissionsRouter);
 router.use('/health-book', adminPassport.authenticate('jwt', { session: false }), HealthBookRouter);
 router.use('/transactions', adminPassport.authenticate('jwt', { session: false }), TransactionsRouter);

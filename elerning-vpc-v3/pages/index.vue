@@ -390,6 +390,8 @@ const isPurchased = (courseId: string) => {
   console.log(`🔍 isPurchased check for ${courseId}:`, {
     user: authStore.user?.email,
     courseRegister: authStore.user?.courseRegister,
+    courseRegisterLength: authStore.user?.courseRegister?.length,
+    courseRegisterContent: JSON.stringify(authStore.user?.courseRegister),
     purchased
   })
   return purchased
@@ -451,7 +453,7 @@ onMounted(async () => {
     courseRegister: authStore.user?.courseRegister
   })
   
-  authStore.initAuth()
+  await authStore.initAuth()
   
   console.log('🏠 Home page mounted - Auth state after init:', {
     isLoggedIn: authStore.isLoggedIn,

@@ -430,7 +430,7 @@ const handleSubmit = async (e?: Event) => {
     
     // Create order first
     const orderData = {
-      userId: authStore.user.id,
+      userId: authStore.user._id,
       customerInfo: {
         fullName: checkoutForm.value.fullName,
         phone: checkoutForm.value.phone,

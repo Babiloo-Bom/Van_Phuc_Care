@@ -112,6 +112,81 @@ export const useAuthStore = defineStore('auth', {
     },
 
     /**
+     * Update course register via API
+     */
+    async updateCourseRegister(courseIds: string[], action: 'add' | 'remove' = 'add') {
+      if (!this.user || !this.token) {
+        console.log('⚠️ No user or token to update course register')
+        return false
+      }
+
+      try {
+        console.log('🔄 Updating course register via API...', { courseIds, action })
+        console.log('📚 Current courseRegister before API call:', this.user?.courseRegister)
+        console.log('📚 Current courseRegister length before API call:', this.user?.courseRegister?.length)
+        console.log('📚 Current courseRegister values before API call:', [...(this.user?.courseRegister || [])])
+        
+        const authApi = useAuthApi()
+        const response = await authApi.updateCourseRegister(courseIds, action) as any
+        
+        console.log('📡 API response:', response)
+        
+        if (response.data?.user) {
+          // Update local user data
+          this.user.courseRegister = response.data.user.courseRegister
+          this.saveAuth()
+          console.log('✅ Course register updated:', {
+            courseRegister: this.user.courseRegister,
+            courseRegisterLength: this.user.courseRegister?.length,
+            courseRegisterArray: Array.from(this.user.courseRegister || []),
+            courseRegisterValues: [...(this.user.courseRegister || [])],
+            courseIds
+          })
+          return true
+        }
+        return false
+      } catch (error) {
+        console.error('❌ Error updating course register:', error)
+        return false
+      }
+    },
+
+    /**
+     * Refresh user data from backend
+     */
+    async refreshUserData() {
+      if (!this.user || !this.token) {
+        console.log('⚠️ No user or token to refresh')
+        return
+      }
+
+      try {
+        console.log('🔄 Refreshing user data from backend...')
+        
+        const authApi = useAuthApi()
+        const response = await authApi.getUserProfile() as any
+        
+        if (response.data?.user) {
+          // Update user data with fresh data from backend
+          this.user = response.data.user
+          this.saveAuth()
+        console.log('✅ User data refreshed:', {
+          courseRegister: this.user?.courseRegister,
+          courseCompleted: this.user?.courseCompleted,
+          courseRegisterLength: this.user?.courseRegister?.length,
+          courseRegisterContent: JSON.stringify(this.user?.courseRegister),
+          responseData: response.data?.user,
+          responseDataCourseRegister: response.data?.user?.courseRegister,
+          responseDataCourseRegisterLength: response.data?.user?.courseRegister?.length,
+          responseDataCourseRegisterContent: JSON.stringify(response.data?.user?.courseRegister)
+        })
+        }
+      } catch (error) {
+        console.error('❌ Error refreshing user data:', error)
+      }
+    },
+
+    /**
      * Register new account (CRM/E-Learning)
      * Migrated from crm-vpc/components/auth/forms/SignUp.vue
      */
@@ -345,7 +420,7 @@ export const useAuthStore = defineStore('auth', {
      * Check and restore session from localStorage
      * Migrated from @nuxtjs/auth-next behavior
      */
-    initAuth() {
+    async initAuth() {
       if (process.client) {
         const token = localStorage.getItem('auth_token')
         const tokenExpireAt = localStorage.getItem('token_expire_at')
@@ -446,6 +521,9 @@ export const useAuthStore = defineStore('auth', {
               const authData = JSON.parse(authDataStr)
               this.rememberAccount = authData.remindAccount || false
             }
+            
+            // Refresh user data from backend to get latest courseRegister
+            await this.refreshUserData()
           } catch (error) {
             console.error('❌ Init auth error:', error)
             // Clear corrupted data

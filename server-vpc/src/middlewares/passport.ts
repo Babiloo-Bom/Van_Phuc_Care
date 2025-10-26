@@ -14,6 +14,15 @@ const adminOptions = {
   passReqToCallback: true,
 };
 
+const userOptions = {
+  jwtFromRequest: ExtractJwt.fromExtractors([
+    ExtractJwt.fromUrlQueryParameter('accessToken'),
+    ExtractJwt.fromAuthHeaderAsBearerToken(),
+  ]),
+  secretOrKey: settings.jwt.adminSecret,
+  passReqToCallback: true,
+};
+
 const adminPassport = new Passport();
 const userPassport = new Passport();
 
@@ -30,17 +39,21 @@ const adminStrategy = new Strategy(adminOptions, async (req: Request, payload: {
     console.log(error);
   }
 });
-const userStrategy = new Strategy(adminOptions, async (req: Request, payload: {id: string}, next: any) => {
+const userStrategy = new Strategy(userOptions, async (req: Request, payload: {id: string}, next: any) => {
   try {
-    const user = await MongodbUsers.model.findOne({ _id: payload.id, status: MongodbUsers.STATUS_ENUM.ACTIVE });
+    console.log('🔍 userStrategy called with payload:', payload);
+    // Find user in admins collection since Google login creates users there
+    const user = await MongoDbAdmins.model.findOne({ _id: payload.id, status: MongoDbAdmins.STATUS_ENUM.ACTIVE });
+    console.log('🔍 user found:', user ? 'exists' : 'null');
     if (user) {
       req.currentUser = user;
       next(null, user);
     } else {
+      console.log('❌ User not found or inactive');
       next(null, false);
     }
   } catch (error: any) {
-    console.log(error);
+    console.log('❌ userStrategy error:', error);
   }
 });
 adminPassport.use(adminStrategy);
