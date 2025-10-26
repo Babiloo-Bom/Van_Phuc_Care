@@ -1,137 +1,480 @@
 <template>
-  <div>
-    <!-- Page Header -->
-    <div class="mb-8">
-      <h1 class="text-3xl font-bold text-gray-900">Learning Dashboard</h1>
-      <p class="text-gray-600 mt-2">Welcome back! Continue your learning journey</p>
-    </div>
-
-    <!-- Stats Grid -->
-    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-      <div class="card bg-gradient-to-br from-pink-500 to-pink-600 text-white">
-        <div class="flex items-center justify-between">
-          <div>
-            <p class="text-pink-100 text-sm font-medium">Total Courses</p>
-            <p class="text-3xl font-bold mt-2">124</p>
-          </div>
-          <div class="w-12 h-12 bg-white/20 rounded-lg flex items-center justify-center">
-            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" />
-            </svg>
-          </div>
-        </div>
-        <p class="text-pink-100 text-sm mt-4">15 categories available</p>
-      </div>
-
-      <div class="card bg-gradient-to-br from-purple-500 to-purple-600 text-white">
-        <div class="flex items-center justify-between">
-          <div>
-            <p class="text-purple-100 text-sm font-medium">Enrolled</p>
-            <p class="text-3xl font-bold mt-2">12</p>
-          </div>
-          <div class="w-12 h-12 bg-white/20 rounded-lg flex items-center justify-center">
-            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4M7.835 4.697a3.42 3.42 0 001.946-.806 3.42 3.42 0 014.438 0 3.42 3.42 0 001.946.806 3.42 3.42 0 013.138 3.138 3.42 3.42 0 00.806 1.946 3.42 3.42 0 010 4.438 3.42 3.42 0 00-.806 1.946 3.42 3.42 0 01-3.138 3.138 3.42 3.42 0 00-1.946.806 3.42 3.42 0 01-4.438 0 3.42 3.42 0 00-1.946-.806 3.42 3.42 0 01-3.138-3.138 3.42 3.42 0 00-.806-1.946 3.42 3.42 0 010-4.438 3.42 3.42 0 00.806-1.946 3.42 3.42 0 013.138-3.138z" />
-            </svg>
-          </div>
-        </div>
-        <p class="text-purple-100 text-sm mt-4">8 in progress</p>
-      </div>
-
-      <div class="card bg-gradient-to-br from-blue-500 to-blue-600 text-white">
-        <div class="flex items-center justify-between">
-          <div>
-            <p class="text-blue-100 text-sm font-medium">Completed</p>
-            <p class="text-3xl font-bold mt-2">4</p>
-          </div>
-          <div class="w-12 h-12 bg-white/20 rounded-lg flex items-center justify-center">
-            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
-            </svg>
-          </div>
-        </div>
-        <p class="text-blue-100 text-sm mt-4">4 certificates earned</p>
-      </div>
-
-      <div class="card bg-gradient-to-br from-orange-500 to-orange-600 text-white">
-        <div class="flex items-center justify-between">
-          <div>
-            <p class="text-orange-100 text-sm font-medium">Study Hours</p>
-            <p class="text-3xl font-bold mt-2">156</p>
-          </div>
-          <div class="w-12 h-12 bg-white/20 rounded-lg flex items-center justify-center">
-            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
-            </svg>
-          </div>
-        </div>
-        <p class="text-orange-100 text-sm mt-4">This month: 24 hours</p>
-      </div>
-    </div>
-
-    <!-- Content Grid -->
-    <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
-      <!-- Continue Learning -->
-      <div class="card">
-        <h3 class="text-lg font-semibold text-gray-900 mb-4">Continue Learning</h3>
-        <div class="space-y-4">
-          <div v-for="i in 3" :key="i" class="flex gap-4 p-3 border border-gray-200 rounded-lg hover:border-primary-500 transition-colors">
-            <div class="w-20 h-20 bg-gradient-to-br from-pink-400 to-pink-600 rounded-lg flex items-center justify-center text-3xl flex-shrink-0">
-              📚
+  <div class="">
+    <!-- Hero Banner -->
+    <div
+      class="h-auto sm:h-[500px] py-10 sm:pt-20 sm:pb-20 md:pb-60 bg-cover bg-center bg-no-repeat bg-[url('https://cdn.synck.io.vn/vanphuccare/banner/main.webp')]
+             relative z-[0] after:absolute after:content-[''] after:top-0 after:left-0 after:w-full after:h-full after:opacity-60 after:bg-prim-100"
+    >
+      <div class="container h-full">
+        <div class="relative z-[1] flex flex-col h-full gap-6">
+          <!-- Centered Content -->
+          <div class="text-white text-center">
+            <div class="flex items-center justify-center gap-4 flex-wrap mb-4">
+              <h4 class="text-3xl sm:text-4xl font-bold text-white">
+                Tất cả khóa học
+              </h4>
+              <div class="flex items-center rounded-full py-1.5 px-5 border-[1px] border-solid border-white gap-2">
+                <span>
+                  <svg
+                    xmlns="http://www.w3.org/2000/svg"
+                    width="20"
+                    height="20"
+                    viewBox="0 0 24 24"
+                    class="fill-none stroke-white"
+                  >
+                    <path
+                      d="M3.17 7.44 12 12.55l8.77-5.08M12 21.61v-9.07"
+                      stroke-width="1.5"
+                      stroke-linecap="round"
+                      stroke-linejoin="round"
+                    />
+                    <path
+                      d="M9.93 2.48 4.59 5.44c-1.21.67-2.2 2.35-2.2 3.73v5.65c0 1.38.99 3.06 2.2 3.73l5.34 2.97c1.14.63 3.01.63 4.15 0l5.34-2.97c1.21-.67 2.2-2.35 2.2-3.73V9.17c0-1.38-.99-3.06-2.2-3.73l-5.34-2.97c-1.15-.63-3.01-.63-4.15.01Z"
+                      stroke-width="1.5"
+                      stroke-linecap="round"
+                      stroke-linejoin="round"
+                    />
+                  </svg>
+                </span>
+                <span>{{ coursesStore.courses?.length || 0 }} khóa học</span>
+              </div>
             </div>
-            <div class="flex-1">
-              <h4 class="font-semibold text-gray-900">Course {{ i }}</h4>
-              <p class="text-sm text-gray-500">Lesson {{ i * 2 }} of 20</p>
-              <div class="mt-2 bg-gray-200 rounded-full h-2">
-                <div class="bg-primary-500 h-2 rounded-full" :style="{ width: `${i * 30}%` }"></div>
+            <div class="max-w-4xl mx-auto">
+              <p class="mb-0 text-lg">
+                Vạn Phúc Care cung cấp những khóa học chất lượng, chuyên sâu nhất để hỗ trợ bậc phụ huynh trong hành trình nuôi dưỡng và chăm sóc con cái. Các khóa học không chỉ mang đến các chủ đề đa dạng, những kiến thức chuyên môn chuẩn Y khoa, mà còn chia sẻ những kinh nghiệm thực tế được giảng dạy bởi đội ngũ chuyên gia và cố vấn giàu kinh nghiệm trong lĩnh vực Mẹ và Bé.
+              </p>
+            </div>
+          </div>
+          
+          <!-- Bottom Section -->
+          <div class="mt-auto">
+            <div class="flex flex-col items-center gap-6">
+              <!-- Search Bar -->
+              <div class="w-full max-w-md">
+                <a-input
+                  v-model:value="searchKey"
+                  placeholder="Tìm kiếm khóa học"
+                  class="!bg-transparent custom_input"
+                  @change="handleSearch"
+                >
+                  <template #suffix>
+                    <svg
+                      xmlns="http://www.w3.org/2000/svg"
+                      width="20"
+                      height="20"
+                      viewBox="0 0 24 24"
+                      class="fill-none stroke-white"
+                    >
+                      <path
+                        d="M11.5 21a9.5 9.5 0 1 0 0-19 9.5 9.5 0 0 0 0 19ZM22 22l-2-2"
+                        stroke-width="1.5"
+                        stroke-linecap="round"
+                        stroke-linejoin="round"
+                      />
+                    </svg>
+                  </template>
+                </a-input>
+              </div>
+              
+              <!-- App Download Buttons -->
+              <div class="flex flex-col sm:flex-row items-center gap-4">
+                <div class="w-auto cursor-pointer">
+                  <img class="w-[140px] h-auto object-contain" src="/images/download-google-app.png" alt="Google Play" />
+                </div>
+                <div class="w-auto cursor-pointer">
+                  <img class="w-[140px] h-auto object-contain" src="/images/download-iphone-app.png" alt="App Store" />
+                </div>
               </div>
             </div>
           </div>
         </div>
       </div>
+    </div>
 
-      <!-- Quick Actions -->
-      <div class="card">
-        <h3 class="text-lg font-semibold text-gray-900 mb-4">Quick Actions</h3>
-        <div class="grid grid-cols-2 gap-4">
-          <NuxtLink to="/courses" class="p-4 border-2 border-gray-200 rounded-lg hover:border-primary-500 hover:bg-pink-50 transition-all text-center">
-            <div class="text-3xl mb-2">📚</div>
-            <p class="font-medium text-gray-900">Browse Courses</p>
-          </NuxtLink>
-          <NuxtLink to="/my-learning" class="p-4 border-2 border-gray-200 rounded-lg hover:border-primary-500 hover:bg-pink-50 transition-all text-center">
-            <div class="text-3xl mb-2">🎓</div>
-            <p class="font-medium text-gray-900">My Learning</p>
-          </NuxtLink>
-          <NuxtLink to="/instructors" class="p-4 border-2 border-gray-200 rounded-lg hover:border-primary-500 hover:bg-pink-50 transition-all text-center">
-            <div class="text-3xl mb-2">👨‍🏫</div>
-            <p class="font-medium text-gray-900">Instructors</p>
-          </NuxtLink>
-          <button class="p-4 border-2 border-gray-200 rounded-lg hover:border-primary-500 hover:bg-pink-50 transition-all text-center">
-            <div class="text-3xl mb-2">🏆</div>
-            <p class="font-medium text-gray-900">Certificates</p>
-          </button>
+    <!-- Courses Section -->
+    <section class="pb-20 p-4 lg:pt-20 sm:pt-0 bg-[#f4f7f9]">
+      <div class="container mx-auto !px-0 md:!px-auto">
+        <div v-if="!loading">
+          <div v-if="filteredCourses.length > 0" class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 xl:grid-cols-4 gap-6 sm:-mt-32">
+            <CourseCard
+              v-for="(course, index) in filteredCourses"
+              :key="index"
+              :course="course"
+              :is-purchased="isPurchased(course._id)"
+              @add-to-cart="handleAddToCart"
+              @buy-now="handleBuyNow"
+              @view-detail="handleViewDetail"
+            />
+          </div>
+          <div v-else class="pt-20">
+            <a-empty description="Chưa có khóa học nào" />
+          </div>
+        </div>
+        <div v-else class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 xl:grid-cols-4 gap-6 sm:-mt-32">
+          <div
+            v-for="index in [1, 2, 3, 4]"
+            :key="index"
+            class="bg-white rounded-lg shadow-sm animate-pulse"
+          >
+            <div class="h-48 bg-gray-200 rounded-t-lg" />
+            <div class="p-4 space-y-3">
+              <div class="h-4 bg-gray-200 rounded w-3/4" />
+              <div class="h-4 bg-gray-200 rounded w-1/2" />
+              <div class="h-8 bg-gray-200 rounded w-full mt-4" />
+            </div>
+          </div>
         </div>
       </div>
-    </div>
+    </section>
 
-    <!-- API Config -->
-    <div class="card mt-6 bg-pink-50 border-2 border-pink-200">
-      <h3 class="text-lg font-semibold text-gray-900 mb-4">🔌 API Configuration</h3>
-      <div class="space-y-2 font-mono text-sm">
-        <p><strong>API Host:</strong> {{ apiHost }}</p>
-        <p><strong>API Base:</strong> {{ apiBase }}</p>
-        <p><strong>Environment:</strong> 
-          <span class="px-2 py-1 rounded text-white text-xs" :class="isDevelopment ? 'bg-yellow-500' : 'bg-green-500'">
-            {{ isDevelopment ? 'Development' : 'Production' }}
-          </span>
-        </p>
-      </div>
-    </div>
+    <!-- Cart Toast -->
+    <CartToast />
   </div>
 </template>
 
 <script setup lang="ts">
-definePageMeta({ layout: 'default' })
-useHead({ title: 'Dashboard' })
-const { apiHost, apiBase, isDevelopment } = useEnvConfig()
+import { ref, computed, onMounted } from 'vue'
+import { useCoursesStore } from '~/stores/courses'
+import { useCartStore } from '~/stores/cart'
+import { useAuthStore } from '~/stores/auth'
+import { useCourseApi } from '~/composables/useCourseApi'
+import CourseCard from '~/components/courses/CourseCard.vue'
+import CartToast from '~/components/cart/Toast.vue'
+
+// SEO Configuration for SPA mode
+console.log('🔍 Setting up SEO for home page...')
+
+// Function to update SEO meta tags
+const updateSEOMetaTags = () => {
+  // Update document title
+  document.title = 'Van Phuc Care E-Learning - Nền Tảng Học Trực Tuyến Hàng Đầu Việt Nam'
+  
+  // Update meta description
+  const metaDescription = document.querySelector('meta[name="description"]')
+  if (metaDescription) {
+    metaDescription.setAttribute('content', 'Van Phuc Care E-Learning - Nền tảng học trực tuyến hàng đầu Việt Nam với các khóa học chất lượng cao về lập trình, marketing, thiết kế, khoa học dữ liệu. Học mọi lúc, mọi nơi với giáo viên chuyên nghiệp.')
+  }
+  
+  // Add Open Graph tags
+  const addMetaTag = (property: string, content: string) => {
+    let meta = document.querySelector(`meta[property="${property}"]`)
+    if (!meta) {
+      meta = document.createElement('meta')
+      meta.setAttribute('property', property)
+      document.head.appendChild(meta)
+    }
+    meta.setAttribute('content', content)
+  }
+  
+  const addMetaName = (name: string, content: string) => {
+    let meta = document.querySelector(`meta[name="${name}"]`)
+    if (!meta) {
+      meta = document.createElement('meta')
+      meta.setAttribute('name', name)
+      document.head.appendChild(meta)
+    }
+    meta.setAttribute('content', content)
+  }
+  
+  // Open Graph tags
+  addMetaTag('og:title', 'Van Phuc Care E-Learning - Nền Tảng Học Trực Tuyến Hàng Đầu Việt Nam')
+  addMetaTag('og:description', 'Van Phuc Care E-Learning - Nền tảng học trực tuyến hàng đầu Việt Nam với các khóa học chất lượng cao về lập trình, marketing, thiết kế, khoa học dữ liệu. Học mọi lúc, mọi nơi với giáo viên chuyên nghiệp.')
+  addMetaTag('og:url', 'https://vanphuccare.com')
+  addMetaTag('og:image', 'https://vanphuccare.com/images/og-home.jpg')
+  addMetaTag('og:image:width', '1200')
+  addMetaTag('og:image:height', '630')
+  
+  // Twitter Card tags
+  addMetaName('twitter:card', 'summary_large_image')
+  addMetaName('twitter:title', 'Van Phuc Care E-Learning - Nền Tảng Học Trực Tuyến Hàng Đầu Việt Nam')
+  addMetaName('twitter:description', 'Van Phuc Care E-Learning - Nền tảng học trực tuyến hàng đầu Việt Nam với các khóa học chất lượng cao về lập trình, marketing, thiết kế, khoa học dữ liệu. Học mọi lúc, mọi nơi với giáo viên chuyên nghiệp.')
+  addMetaName('twitter:image', 'https://vanphuccare.com/images/og-home.jpg')
+  
+  // Keywords
+  addMetaName('keywords', 'học trực tuyến, e-learning, khóa học online, lập trình, marketing, thiết kế, khoa học dữ liệu, Van Phuc Care, học online, giáo dục trực tuyến')
+  
+  // Canonical URL
+  let canonical = document.querySelector('link[rel="canonical"]')
+  if (!canonical) {
+    canonical = document.createElement('link')
+    canonical.setAttribute('rel', 'canonical')
+    document.head.appendChild(canonical)
+  }
+  canonical.setAttribute('href', 'https://vanphuccare.com')
+  
+  console.log('✅ SEO meta tags updated for home page')
+}
+
+// Also use useHead as fallback
+useHead({
+  title: 'Van Phuc Care E-Learning - Nền Tảng Học Trực Tuyến Hàng Đầu Việt Nam',
+  meta: [
+    {
+      name: 'description',
+      content: 'Van Phuc Care E-Learning - Nền tảng học trực tuyến hàng đầu Việt Nam với các khóa học chất lượng cao về lập trình, marketing, thiết kế, khoa học dữ liệu. Học mọi lúc, mọi nơi với giáo viên chuyên nghiệp.'
+    },
+    {
+      name: 'keywords',
+      content: 'học trực tuyến, e-learning, khóa học online, lập trình, marketing, thiết kế, khoa học dữ liệu, Van Phuc Care, học online, giáo dục trực tuyến'
+    },
+    {
+      property: 'og:title',
+      content: 'Van Phuc Care E-Learning - Nền Tảng Học Trực Tuyến Hàng Đầu Việt Nam'
+    },
+    {
+      property: 'og:description',
+      content: 'Van Phuc Care E-Learning - Nền tảng học trực tuyến hàng đầu Việt Nam với các khóa học chất lượng cao về lập trình, marketing, thiết kế, khoa học dữ liệu. Học mọi lúc, mọi nơi với giáo viên chuyên nghiệp.'
+    },
+    {
+      property: 'og:type',
+      content: 'website'
+    },
+    {
+      property: 'og:url',
+      content: 'https://vanphuccare.com'
+    },
+    {
+      property: 'og:image',
+      content: 'https://vanphuccare.com/images/og-home.jpg'
+    },
+    {
+      property: 'og:image:width',
+      content: '1200'
+    },
+    {
+      property: 'og:image:height',
+      content: '630'
+    },
+    {
+      name: 'twitter:card',
+      content: 'summary_large_image'
+    },
+    {
+      name: 'twitter:title',
+      content: 'Van Phuc Care E-Learning - Nền Tảng Học Trực Tuyến Hàng Đầu Việt Nam'
+    },
+    {
+      name: 'twitter:description',
+      content: 'Van Phuc Care E-Learning - Nền tảng học trực tuyến hàng đầu Việt Nam với các khóa học chất lượng cao về lập trình, marketing, thiết kế, khoa học dữ liệu. Học mọi lúc, mọi nơi với giáo viên chuyên nghiệp.'
+    },
+    {
+      name: 'twitter:image',
+      content: 'https://vanphuccare.com/images/og-home.jpg'
+    }
+  ],
+  link: [
+    {
+      rel: 'canonical',
+      href: 'https://vanphuccare.com'
+    }
+  ]
+})
+
+console.log('✅ SEO configuration applied for home page')
+
+// Schema.org markup for Homepage (temporarily disabled for testing)
+// useSchemaOrg([
+//   {
+//     '@type': 'WebSite',
+//     name: 'Van Phuc Care E-Learning',
+//     url: 'https://vanphuccare.com',
+//     description: 'Nền tảng học trực tuyến hàng đầu Việt Nam với các khóa học chất lượng cao',
+//     publisher: {
+//       '@type': 'Organization',
+//       name: 'Van Phuc Care',
+//       url: 'https://vanphuccare.com',
+//       logo: 'https://vanphuccare.com/images/logo.png'
+//     },
+//     potentialAction: {
+//       '@type': 'SearchAction',
+//       target: 'https://vanphuccare.com/courses?search={search_term_string}',
+//       'query-input': 'required name=search_term_string'
+//     }
+//   },
+//   {
+//     '@type': 'Organization',
+//     name: 'Van Phuc Care',
+//     url: 'https://vanphuccare.com',
+//     logo: 'https://vanphuccare.com/images/logo.png',
+//     description: 'Nền tảng học trực tuyến hàng đầu Việt Nam với các khóa học chất lượng cao',
+//     foundingDate: '2024',
+//     address: {
+//       '@type': 'PostalAddress',
+//       addressCountry: 'VN',
+//       addressLocality: 'Việt Nam'
+//     },
+//     contactPoint: {
+//       '@type': 'ContactPoint',
+//       telephone: '+84-xxx-xxx-xxx',
+//       contactType: 'customer service',
+//       availableLanguage: 'Vietnamese'
+//     },
+//     sameAs: [
+//       'https://facebook.com/vanphuccare',
+//       'https://youtube.com/vanphuccare',
+//       'https://linkedin.com/company/vanphuccare'
+//     ]
+//   },
+//   {
+//     '@type': 'EducationalOrganization',
+//     name: 'Van Phuc Care E-Learning',
+//     url: 'https://vanphuccare.com',
+//     description: 'Nền tảng học trực tuyến hàng đầu Việt Nam với các khóa học chất lượng cao',
+//     address: {
+//       '@type': 'PostalAddress',
+//       addressCountry: 'VN',
+//       addressLocality: 'Việt Nam'
+//     },
+//     hasOfferCatalog: {
+//       '@type': 'OfferCatalog',
+//       name: 'Khóa học trực tuyến',
+//       itemListElement: computed(() => 
+//         courses.value.map((course, index) => ({
+//           '@type': 'Course',
+//           name: course.title,
+//           description: course.shortDescription,
+//           url: `https://vanphuccare.com/courses/${course.slug}`,
+//           image: `https://vanphuccare.com${course.thumbnail}`,
+//           offers: {
+//             '@type': 'Offer',
+//             price: course.price,
+//             priceCurrency: 'VND',
+//             availability: 'https://schema.org/InStock'
+//           }
+//         }))
+//       )
+//     }
+//   }
+// ])
+
+const coursesStore = useCoursesStore()
+const cartStore = useCartStore()
+const authStore = useAuthStore()
+const courseApi = useCourseApi()
+
+const loading = ref(false)
+const searchKey = ref('')
+const courses = ref([]) // Local reactive state
+
+
+// Computed
+const filteredCourses = computed(() => {
+  console.log('🔍 filteredCourses computed - local courses:', courses.value.length)
+  console.log('🔍 filteredCourses computed - store courses:', coursesStore.courses.length)
+  console.log('🔍 filteredCourses computed - searchKey:', searchKey.value)
+  
+  // Use local state as primary source
+  const sourceCourses = courses.value.length > 0 ? courses.value : coursesStore.courses
+  
+  if (!searchKey.value) {
+    console.log('🔍 No search key, returning all courses:', sourceCourses.length)
+    return sourceCourses
+  }
+  
+  const filtered = sourceCourses.filter(course =>
+    course.title.toLowerCase().includes(searchKey.value.toLowerCase()) ||
+    course.shortDescription?.toLowerCase().includes(searchKey.value.toLowerCase())
+  )
+  console.log('🔍 Filtered courses:', filtered.length)
+  return filtered
+})
+
+// Methods
+const handleSearch = (e: Event) => {
+  const target = e.target as HTMLInputElement
+  searchKey.value = target.value || ''
+}
+
+const isPurchased = (courseId: string) => {
+  const purchased = authStore.user?.courseRegister?.includes(courseId) || false
+  console.log(`🔍 isPurchased check for ${courseId}:`, {
+    user: authStore.user?.email,
+    courseRegister: authStore.user?.courseRegister,
+    purchased
+  })
+  return purchased
+}
+
+// Cart handlers
+const handleAddToCart = async (course: any) => {
+  console.log('🛒 Adding to cart:', course.title)
+  try {
+    await cartStore.addToCart({ courseId: course._id, quantity: 1 })
+    console.log('✅ Added to cart successfully')
+  } catch (error) {
+    console.error('❌ Error adding to cart:', error)
+  }
+}
+
+const handleBuyNow = async (course: any) => {
+  console.log('💳 Buy now:', course.title)
+  try {
+    // Add to cart first
+    await cartStore.addToCart({ courseId: course._id, quantity: 1 })
+    // Navigate to checkout
+    navigateTo('/checkout')
+  } catch (error) {
+    console.error('❌ Error buying now:', error)
+  }
+}
+
+const handleViewDetail = (course: any) => {
+  console.log('👁️ View detail:', course.title)
+  try {
+    // Navigate to course detail page
+    navigateTo(`/courses/${course.slug}`)
+  } catch (error) {
+    console.error('❌ Error viewing detail:', error)
+  }
+}
+
+const fetchData = async () => {
+  try {
+    loading.value = true
+    await coursesStore.fetchAll()
+  } catch (error) {
+    console.error('Error fetching courses:', error)
+  } finally {
+    loading.value = false
+  }
+}
+
+// Lifecycle
+onMounted(async () => {
+  // Update SEO meta tags first
+  updateSEOMetaTags()
+  
+  // Initialize auth first to ensure user data is loaded
+  console.log('🏠 Home page mounted - Auth state before init:', {
+    isLoggedIn: authStore.isLoggedIn,
+    user: authStore.user,
+    courseRegister: authStore.user?.courseRegister
+  })
+  
+  authStore.initAuth()
+  
+  console.log('🏠 Home page mounted - Auth state after init:', {
+    isLoggedIn: authStore.isLoggedIn,
+    user: authStore.user,
+    courseRegister: authStore.user?.courseRegister
+  })
+  
+  // Fetch courses
+  await fetchData()
+  
+  // Only load cart if user is logged in
+  if (authStore.isLoggedIn) {
+    await cartStore.fetchCart()
+  }
+})
 </script>
+
+<style scoped>
+.custom_input :deep(.ant-input) {
+  @apply bg-transparent placeholder:text-white rounded-full hover:border-white focus:border-white outline-none text-white py-6 px-4;
+}
+
+.card-img-loading {
+  min-height: 400px;
+}
+</style>

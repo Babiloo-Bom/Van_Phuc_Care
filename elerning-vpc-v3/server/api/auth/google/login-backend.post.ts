@@ -7,10 +7,13 @@ import type { GoogleLoginResponse } from '~/types/google'
 
 export default defineEventHandler(async (event): Promise<GoogleLoginResponse> => {
   try {
+    console.log('🔄 Google login API endpoint called')
     const body = await readBody(event)
+    console.log('🔍 Request body:', body)
     const { code } = body
 
     if (!code) {
+      console.log('❌ No authorization code provided')
       return {
         success: false,
         error: 'Authorization code is required'
@@ -45,6 +48,15 @@ export default defineEventHandler(async (event): Promise<GoogleLoginResponse> =>
         'Content-Type': 'application/x-www-form-urlencoded'
       },
       body: params.toString()
+    }).catch((error: any) => {
+      console.error('❌ Google token exchange error:', error)
+      console.error('❌ Error details:', {
+        message: error.message,
+        status: error.status,
+        statusText: error.statusText,
+        data: error.data
+      })
+      throw new Error(`Google OAuth error: ${error.message || 'Invalid authorization code'}`)
     })
 
     if (!tokenResponse.access_token) {
@@ -52,6 +64,11 @@ export default defineEventHandler(async (event): Promise<GoogleLoginResponse> =>
     }
 
     console.log('✅ Step 1: Access token received')
+    console.log('🔍 Token response:', { 
+      hasAccessToken: !!tokenResponse.access_token,
+      tokenType: tokenResponse.token_type,
+      expiresIn: tokenResponse.expires_in
+    })
     console.log('🔄 Step 2: Fetching user profile from Google...')
 
     // Step 2: Get user profile from Google
@@ -59,6 +76,15 @@ export default defineEventHandler(async (event): Promise<GoogleLoginResponse> =>
       headers: {
         Authorization: `Bearer ${tokenResponse.access_token}`
       }
+    }).catch((error: any) => {
+      console.error('❌ Google user profile error:', error)
+      console.error('❌ Error details:', {
+        message: error.message,
+        status: error.status,
+        statusText: error.statusText,
+        data: error.data
+      })
+      throw new Error(`Failed to get user profile: ${error.message || 'Invalid access token'}`)
     })
 
     console.log('✅ Step 2: User profile received:', userProfile.email)
@@ -76,10 +102,12 @@ export default defineEventHandler(async (event): Promise<GoogleLoginResponse> =>
       })
 
       console.log('✅ Step 3: Backend response received')
+      console.log('📦 Backend response type:', typeof backendResponse)
+      console.log('📦 Backend response keys:', Object.keys(backendResponse || {}))
       console.log('📦 Backend response:', JSON.stringify(backendResponse, null, 2))
 
       // Check if backend returned success
-      if (!backendResponse || (!backendResponse.status && !backendResponse.data)) {
+      if (!backendResponse || !backendResponse.data) {
         console.error('❌ Invalid backend response:', backendResponse)
         throw new Error(backendResponse?.message || 'Backend authentication failed')
       }
@@ -95,35 +123,35 @@ export default defineEventHandler(async (event): Promise<GoogleLoginResponse> =>
         success: true,
         data: {
           user: {
-            id: userInfo._id || userInfo.id,
+            _id: userInfo._id,
             email: userInfo.email,
-            name: userInfo.fullname || userInfo.name,
+            fullname: userInfo.fullname,
             avatar: userInfo.avatar,
-            provider: userInfo.provider || 'google',
-            googleId: userInfo.googleId || userProfile.id,
-            isActive: userInfo.isActive !== false,
             role: userInfo.role || 'user',
-            permissions: userInfo.permissions || []
+            permissions: userInfo.permissions || [],
+            provider: userInfo.provider || 'google',
+            googleId: userInfo.googleId
           },
           accessToken: userData.accessToken,
-          refreshToken: userData.refreshToken || userData.accessToken,
-          tokenExpireAt: Date.now() + 24 * 60 * 60 * 1000 // 24h from now
+          tokenExpireAt: userData.tokenExpireAt
         }
       }
 
     } catch (backendError: any) {
       console.error('❌ Backend API error:', backendError)
-      
-      // If backend fails, we can't proceed (no fallback to MockService for security)
-      throw new Error(`Backend authentication failed: ${backendError.message}`)
+      throw new Error(backendError.message || 'Backend authentication failed')
     }
 
   } catch (error: any) {
     console.error('❌ Google login failed:', error)
+    console.error('❌ Error details:', {
+      message: error.message,
+      stack: error.stack,
+      name: error.name
+    })
     return {
       success: false,
-      error: error.message || 'Failed to complete Google login'
+      error: error.message || 'Google login failed'
     }
   }
 })
-

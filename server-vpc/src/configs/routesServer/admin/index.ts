@@ -10,19 +10,22 @@ import ProductCollectionsRouter from './ProductCollections';
 import ProductReviewsRouter from './ProductReviews';
 import CustomersRouter from './Customers';
 import OrdersRouter from './Orders';
-import CartsRouter from './Carts';
+import CartRouter from './Cart';
+import ReviewsRouter from './Reviews';
 import UsersRouter from './Users';
 import GoogleAuthRouter from './GoogleAuth';
 import AccessPermissionsRouter from './AccessPermissions';
 import HealthBookRouter from './HealthBook';
 import TransactionsRouter from './Transactions';
 import ScheduleVaccinRouter from './ScheduleVaccins';
+import CouponsRouter from './Coupons';
+import SeedRouter from './Seed';
 
 const router = Router();
 
 router.use('/categories', adminPassport.authenticate('jwt', { session: false }), CategoryRouter);
 router.use('/faqs', adminPassport.authenticate('jwt', { session: false }), FaqRouter);
-router.use('/courses', adminPassport.authenticate('jwt', { session: false }), CoursesRouter);
+router.use('/courses', CoursesRouter);
 router.use('/sessions', SessionRouter);
 router.use('/auth/google', GoogleAuthRouter);
 router.use('/feedbacks', adminPassport.authenticate('jwt', { session: false }), FeedbackRouter);
@@ -31,11 +34,17 @@ router.use('/product-collections', adminPassport.authenticate('jwt', { session: 
 router.use('/product-reviews', adminPassport.authenticate('jwt', { session: false }), ProductReviewsRouter);
 router.use('/customers', adminPassport.authenticate('jwt', { session: false }), CustomersRouter);
 router.use('/orders', adminPassport.authenticate('jwt', { session: false }), OrdersRouter);
-router.use('/carts', adminPassport.authenticate('jwt', { session: false }), CartsRouter);
+router.use('/cart', CartRouter); // Public cart routes
+router.use('/reviews', ReviewsRouter); // Public reviews routes
 router.use('/users-management', adminPassport.authenticate('jwt', { session: false }), UsersRouter);
 router.use('/access-permissions', adminPassport.authenticate('jwt', { session: false }), AccessPermissionsRouter);
 router.use('/health-book', adminPassport.authenticate('jwt', { session: false }), HealthBookRouter);
 router.use('/transactions', adminPassport.authenticate('jwt', { session: false }), TransactionsRouter);
 router.use('/schedule-vaccin', adminPassport.authenticate('jwt', { session: false }), ScheduleVaccinRouter);
+router.use('/coupons', CouponsRouter); // Public coupon routes
+router.use('/orders', OrdersRouter); // Public order routes
+
+// Seed routes (no auth required)
+router.use('/seed', SeedRouter);
 
 export default router;

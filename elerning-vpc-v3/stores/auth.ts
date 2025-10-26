@@ -11,6 +11,8 @@ export interface User {
   avatar?: string
   verified?: boolean
   status?: string
+  courseRegister?: string[] // Danh sách khóa học đã mua
+  courseCompleted?: string[] // Danh sách khóa học đã hoàn thành
 }
 
 export interface AuthState {
@@ -113,7 +115,7 @@ export const useAuthStore = defineStore('auth', {
      * Register new account (CRM/E-Learning)
      * Migrated from crm-vpc/components/auth/forms/SignUp.vue
      */
-    async register(email: string, password: string, repeatPassword: string) {
+    async register(email: string, password: string, repeatPassword: string, fullname?: string) {
       this.isLoading = true
       
       try {
@@ -124,7 +126,7 @@ export const useAuthStore = defineStore('auth', {
         const authApi = useAuthApi()
         
         // Call API register
-        const response: any = await authApi.register(email, password, repeatPassword)
+        const response: any = await authApi.register(email, password, repeatPassword, fullname)
 
         return { success: true, data: response }
       } catch (error: any) {
@@ -242,32 +244,6 @@ export const useAuthStore = defineStore('auth', {
       }
     },
 
-    /**
-     * Verify email with OTP
-     * For user registration verification
-     */
-    async verifyEmail(email: string, otp: string) {
-      this.isLoading = true
-      
-      try {
-        const authApi = useAuthApi()
-        
-        const response: any = await authApi.verifyEmail(email, otp)
-        console.log('🔍 authStore.verifyEmail response:', response)
-
-        return { success: true, data: response.data }
-      } catch (error: any) {
-        console.error('🔍 authStore.verifyEmail error:', error)
-        console.error('🔍 error.data:', error.data)
-        console.error('🔍 error.message:', error.message)
-        return { 
-          success: false, 
-          error: error.data?.message || error.message || 'Xác thực email thất bại'
-        }
-      } finally {
-        this.isLoading = false
-      }
-    },
 
     /**
      * Change password (logged in user)
@@ -346,6 +322,26 @@ export const useAuthStore = defineStore('auth', {
     },
 
     /**
+     * Save current auth state to localStorage
+     */
+    saveAuth() {
+      if (process.client && this.user && this.token) {
+        try {
+          const authData = {
+            user: this.user,
+            token: this.token,
+            tokenExpireAt: this.tokenExpireAt,
+            rememberAccount: this.rememberAccount
+          }
+          localStorage.setItem('authData', JSON.stringify(authData))
+          console.log('✅ Auth data saved to localStorage')
+        } catch (error) {
+          console.error('❌ Error saving auth data:', error)
+        }
+      }
+    },
+
+    /**
      * Check and restore session from localStorage
      * Migrated from @nuxtjs/auth-next behavior
      */
@@ -356,14 +352,77 @@ export const useAuthStore = defineStore('auth', {
         const userStr = localStorage.getItem('user')
         const authDataStr = localStorage.getItem('auth_data')
 
-        if (token && userStr) {
+        console.log('🔍 initAuth - localStorage data:', {
+          token: token ? 'exists' : 'null',
+          tokenExpireAt,
+          userStr: userStr ? 'exists' : 'null',
+          authDataStr: authDataStr ? 'exists' : 'null'
+        })
+
+        // Try to restore from authData first (new format), then fallback to old format
+        let authData = null
+        if (authDataStr) {
+          try {
+            authData = JSON.parse(authDataStr)
+            console.log('🔍 Found authData in localStorage:', authData)
+          } catch (e) {
+            console.log('⚠️ Failed to parse authData:', e)
+          }
+        }
+
+        if (authData && authData.user && authData.token) {
+          // Use new format (authData)
+          try {
+            // Check if token is expired
+            if (authData.tokenExpireAt) {
+              const expireTime = new Date(authData.tokenExpireAt).getTime()
+              const now = Date.now()
+              
+              console.log('🔍 Token expiry check:', {
+                expireTime: new Date(expireTime).toISOString(),
+                now: new Date(now).toISOString(),
+                isExpired: now >= expireTime
+              })
+              
+              if (now >= expireTime) {
+                console.log('⚠️ Token expired, clearing data')
+                // Token expired, clear data
+                this.logout()
+                return
+              }
+            }
+
+            this.token = authData.token
+            this.tokenExpireAt = authData.tokenExpireAt
+            this.user = authData.user
+            this.isAuthenticated = true
+
+            console.log('✅ Auth restored from authData:', {
+              isAuthenticated: this.isAuthenticated,
+              user: this.user,
+              token: this.token ? 'exists' : 'null'
+            })
+          } catch (e) {
+            console.error('❌ Error restoring from authData:', e)
+            this.logout()
+            return
+          }
+        } else if (token && userStr) {
+          // Fallback to old format
           try {
             // Check if token is expired
             if (tokenExpireAt) {
               const expireTime = new Date(tokenExpireAt).getTime()
               const now = Date.now()
               
+              console.log('🔍 Token expiry check:', {
+                expireTime: new Date(expireTime).toISOString(),
+                now: new Date(now).toISOString(),
+                isExpired: now >= expireTime
+              })
+              
               if (now >= expireTime) {
+                console.log('⚠️ Token expired, clearing data')
                 // Token expired, clear data
                 this.logout()
                 return
@@ -375,16 +434,25 @@ export const useAuthStore = defineStore('auth', {
             this.user = JSON.parse(userStr)
             this.isAuthenticated = true
 
+            console.log('✅ Auth restored from localStorage:', {
+              isAuthenticated: this.isAuthenticated,
+              user: this.user,
+              token: this.token ? 'exists' : 'null',
+              courseRegister: this.user?.courseRegister
+            })
+
             // Check for remember account
             if (authDataStr) {
               const authData = JSON.parse(authDataStr)
               this.rememberAccount = authData.remindAccount || false
             }
           } catch (error) {
-            console.error('Init auth error:', error)
+            console.error('❌ Init auth error:', error)
             // Clear corrupted data
             this.logout()
           }
+        } else {
+          console.log('ℹ️ No auth data found in localStorage')
         }
       }
     },
@@ -457,15 +525,36 @@ export const useAuthStore = defineStore('auth', {
     async completeGoogleLogin(accessToken: string, tokenExpireAt: number, userData: User) {
       try {
         this.token = accessToken
-        this.tokenExpireAt = new Date(tokenExpireAt).toISOString()
+        
+        // Handle tokenExpireAt properly
+        if (typeof tokenExpireAt === 'number') {
+          this.tokenExpireAt = new Date(tokenExpireAt).toISOString()
+        } else {
+          // Default to 7 days if not provided
+          this.tokenExpireAt = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString()
+        }
+        
         this.user = userData
         this.isAuthenticated = true
+
+        console.log('🔐 Google login completed:', {
+          token: accessToken ? 'exists' : 'null',
+          user: userData,
+          expireAt: this.tokenExpireAt,
+          isAuthenticated: this.isAuthenticated
+        })
 
         // Save to localStorage
         if (process.client) {
           localStorage.setItem('auth_token', accessToken)
           localStorage.setItem('token_expire_at', this.tokenExpireAt)
           localStorage.setItem('user', JSON.stringify(userData))
+          
+          console.log('💾 Auth data saved to localStorage:', {
+            token: accessToken ? 'exists' : 'null',
+            user: userData,
+            expireAt: this.tokenExpireAt
+          })
         }
 
         return { success: true }
@@ -509,4 +598,9 @@ export const useAuthStore = defineStore('auth', {
     }
   }
 })
+
+// Expose store to window for console debugging
+if (process.client) {
+  (window as any).authStore = useAuthStore
+}
 

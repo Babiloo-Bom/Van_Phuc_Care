@@ -22,10 +22,12 @@ const RETRY_CONFIG = {
 
 export const useAuthApi = () => {
   const config = useRuntimeConfig()
-  const apiBase = config.public.apiBase || 'http://103.216.119.104:3000/api/a'
+  // Hardcode for testing - should be http://localhost:3000/api/a
+  const apiBase = 'http://localhost:3000/api/a'
   
   // Debug: Log API base URL
   console.log('🔍 API Base URL:', apiBase)
+  console.log('🔍 Config public.apiBase:', config.public.apiBase)
 
   /**
    * Exponential backoff delay
@@ -146,7 +148,15 @@ export const useAuthApi = () => {
      */
     async register(email: string, password: string, repeat_password: string, fullname?: string) {
       try {
-        return await withRetry(() =>
+        console.log('🔍 Register API call:', {
+          url: `${apiBase}/sessions`,
+          email,
+          fullname: fullname || email.split('@')[0],
+          domain: 'vanphuccare.gensi.vn',
+          origin: 'vanphuccare.gensi.vn'
+        })
+        
+        const result = await withRetry(() =>
           fetchWithTimeout(`${apiBase}/sessions`, {
             method: 'POST',
             body: {
@@ -154,11 +164,16 @@ export const useAuthApi = () => {
               password,
               repeat_password,
               fullname: fullname || email.split('@')[0], // Use email prefix if no fullname
-              domain: 'vanphuccare.gensi.vn'
+              domain: 'vanphuccare.gensi.vn',
+              origin: 'vanphuccare.gensi.vn'
             }
           })
         )
+        
+        console.log('🔍 Register API response:', result)
+        return result
       } catch (error: any) {
+        console.error('🔍 Register API error:', error)
         throw transformError(error)
       }
     },

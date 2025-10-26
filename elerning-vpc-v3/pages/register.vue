@@ -109,47 +109,45 @@
             <a-form-item>
               <a-button
                 type="primary"
-                html-type="submit"
                 size="large"
                 block
                 :loading="isRegistering"
+                html-type="submit"
               >
-                Đăng ký
+                {{ isRegistering ? 'Đang đăng ký...' : 'Đăng ký' }}
               </a-button>
             </a-form-item>
           </a-form>
         </div>
 
-        <!-- Step 2: Verify Email -->
-        <div v-else-if="registrationStep === 'verify'" class="text-center">
-          <div class="mb-6">
-            <div class="text-6xl mb-4">✅</div>
+        <!-- Step 2: Email Verification -->
+        <div v-else-if="registrationStep === 'verify'">
+          <div class="text-center mb-6">
+            <div class="text-4xl mb-4">📧</div>
             <h3 class="text-xl font-semibold text-gray-900 mb-2">
               Xác thực email
             </h3>
             <p class="text-gray-600">
-              Chúng tôi đã gửi mã OTP đến email <strong>{{ registeredEmail }}</strong>
+              Chúng tôi đã gửi mã xác thực đến <strong>{{ registeredEmail }}</strong>
             </p>
             <p class="text-sm text-gray-500 mt-2">
-              Vui lòng kiểm tra hộp thư và nhập mã OTP bên dưới
+              Vui lòng kiểm tra hộp thư và nhập mã 6 chữ số
             </p>
           </div>
 
           <a-form layout="vertical">
-            <!-- OTP Input -->
             <a-form-item
-              label="Mã OTP (6 chữ số)"
+              label="Mã xác thực"
               :validate-status="verifyError ? 'error' : ''"
               :help="verifyError"
             >
               <a-input
                 v-model:value="otpCode"
                 size="large"
-                placeholder="123456"
+                placeholder="Nhập mã 6 chữ số"
                 maxlength="6"
                 :disabled="isVerifying"
-                class="text-center text-2xl tracking-widest"
-                @keyup.enter="handleVerifyEmail"
+                @input="formatOtpInput"
               />
             </a-form-item>
 
@@ -237,49 +235,51 @@ const handleRegister = async () => {
   Object.keys(formErrors).forEach(key => delete formErrors[key])
   registerError.value = ''
 
-  // Register
   const result = await register(formData)
 
   if (result.success) {
-    message.success('Đăng ký thành công! Vui lòng kiểm tra email để xác thực')
+    message.success('Đăng ký thành công! Vui lòng kiểm tra email để xác thực.')
   } else {
     if (result.errors) {
+      // Set field-specific errors
       Object.assign(formErrors, result.errors)
-    }
-    if (result.error) {
-      registerError.value = result.error
-      message.error(result.error)
+    } else {
+      registerError.value = result.error || 'Đăng ký thất bại'
     }
   }
 }
 
-// Handle verify email
+// Handle email verification
 const handleVerifyEmail = async () => {
-  console.log('🔍 handleVerifyEmail called with OTP:', otpCode.value)
   verifyError.value = ''
 
+  if (!otpCode.value) {
+    verifyError.value = 'Vui lòng nhập mã xác thực'
+    return
+  }
+
   const result = await verifyEmail(otpCode.value)
-  console.log('🔍 verifyEmail result:', result)
-  console.log('🔍 verifyEmail result.success:', result.success)
-  console.log('🔍 verifyEmail result.error:', result.error)
 
   if (result.success) {
     message.success('Xác thực thành công! Đang đăng nhập...')
   } else {
-    // Extract message from error object if it exists
-    const errorMessage = result.error?.message || result.error || 'Xác thực thất bại'
-    verifyError.value = errorMessage
-    message.error(errorMessage)
+    verifyError.value = result.error || 'Xác thực thất bại'
   }
 }
 
-// Reset on unmount
+// Format OTP input (only numbers)
+const formatOtpInput = (event: Event) => {
+  const target = event.target as HTMLInputElement
+  const value = target.value.replace(/\D/g, '') // Remove non-digits
+  otpCode.value = value
+}
+
+// Reset form when component unmounts
 onUnmounted(() => {
   resetRegistration()
 })
 </script>
 
 <style scoped>
-/* Custom styles */
+/* Custom styles if needed */
 </style>
-

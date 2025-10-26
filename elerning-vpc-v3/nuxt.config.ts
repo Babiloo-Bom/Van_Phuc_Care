@@ -12,14 +12,15 @@ export default defineNuxtConfig({
   // Modules
   modules: [
     '@nuxtjs/tailwindcss',
-    '@pinia/nuxt'
+    '@pinia/nuxt',
+    '@nuxtjs/seo'
   ],
   
   // Enable pages module for routing
   pages: true,
   
-  // SPA mode (can enable SSR later if needed)
-  ssr: false,
+  // SSR mode for better SEO
+  ssr: true,
   
   // TypeScript support
   typescript: {
@@ -89,11 +90,11 @@ export default defineNuxtConfig({
   // App config
   app: {
     head: {
-      title: 'E-Learning Portal - Van Phuc Care',
+      title: 'Van Phuc Care E-Learning',
       meta: [
         { charset: 'utf-8' },
         { name: 'viewport', content: 'width=device-width, initial-scale=1' },
-        { name: 'description', content: 'Van Phuc Care E-Learning Portal' }
+        { name: 'description', content: 'Nền tảng học trực tuyến hàng đầu Việt Nam với các khóa học chất lượng cao' }
       ],
       link: [
         { rel: 'icon', type: 'image/x-icon', href: '/favicon.ico' }

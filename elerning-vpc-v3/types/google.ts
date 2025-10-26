@@ -1,8 +1,7 @@
 /**
- * Google OAuth Types and Interfaces
+ * Google OAuth Types
  */
 
-// ===== GOOGLE OAUTH CONFIG =====
 export interface GoogleOAuthConfig {
   clientId: string
   clientSecret: string
@@ -10,43 +9,45 @@ export interface GoogleOAuthConfig {
   scope: string[]
 }
 
-// ===== GOOGLE USER PROFILE =====
 export interface GoogleUserProfile {
   id: string
   email: string
-  verified_email: boolean
   name: string
-  given_name: string
-  family_name: string
   picture: string
-  locale: string
+  verified_email: boolean
+  given_name?: string
+  family_name?: string
 }
 
-// ===== GOOGLE TOKEN RESPONSE =====
 export interface GoogleTokenResponse {
   access_token: string
+  token_type: string
   expires_in: number
   refresh_token?: string
   scope: string
-  token_type: string
-  id_token?: string
 }
 
-// ===== GOOGLE LOGIN REQUEST =====
 export interface GoogleLoginRequest {
   code: string
   state?: string
+  redirectUri: string
 }
 
-// ===== GOOGLE LOGIN RESPONSE =====
 export interface GoogleLoginResponse {
   success: boolean
   data?: {
-    user: any
+    user: {
+      _id: string
+      email: string
+      fullname: string
+      avatar: string
+      role: string
+      permissions: string[]
+      provider: string
+      googleId: string
+    }
     accessToken: string
-    refreshToken: string
-    tokenExpireAt: number
+    tokenExpireAt: string
   }
   error?: string
 }
-
