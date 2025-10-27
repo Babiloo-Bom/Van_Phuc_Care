@@ -433,6 +433,11 @@ export const useAuthStore = defineStore('auth', {
           userStr: userStr ? 'exists' : 'null',
           authDataStr: authDataStr ? 'exists' : 'null'
         })
+        
+        // Debug: Show actual values
+        if (token) console.log('🔍 Token:', token.substring(0, 20) + '...')
+        if (userStr) console.log('🔍 User:', JSON.parse(userStr))
+        if (tokenExpireAt) console.log('🔍 Token Expire At:', tokenExpireAt)
 
         // Try to restore from authData first (new format), then fallback to old format
         let authData = null
@@ -482,7 +487,7 @@ export const useAuthStore = defineStore('auth', {
             this.logout()
             return
           }
-        } else if (token && userStr) {
+        } else if (token && userStr && tokenExpireAt) {
           // Fallback to old format
           try {
             // Check if token is expired

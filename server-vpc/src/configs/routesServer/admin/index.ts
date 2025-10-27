@@ -21,6 +21,10 @@ import TransactionsRouter from './Transactions';
 import ScheduleVaccinRouter from './ScheduleVaccins';
 import CouponsRouter from './Coupons';
 import SeedRouter from './Seed';
+import ProgressRouter from './Progress';
+import QuizzesRouter from './Quizzes';
+import DocumentsRouter from './Documents';
+import UpdateVideoRouter from './UpdateVideo';
 
 const router = Router();
 
@@ -45,6 +49,10 @@ router.use('/transactions', adminPassport.authenticate('jwt', { session: false }
 router.use('/schedule-vaccin', adminPassport.authenticate('jwt', { session: false }), ScheduleVaccinRouter);
 router.use('/coupons', CouponsRouter); // Public coupon routes
 router.use('/orders', OrdersRouter); // Public order routes
+router.use('/progress', ProgressRouter); // Progress tracking routes
+router.use('/quizzes', QuizzesRouter); // Quiz routes
+router.use('/documents', DocumentsRouter); // Document routes
+router.use('/update-video', UpdateVideoRouter); // Update video routes
 
 // Seed routes (no auth required)
 router.use('/seed', SeedRouter);

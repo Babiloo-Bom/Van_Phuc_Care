@@ -28,6 +28,7 @@
         </template>
         <div class="flex flex-col gap-3">
           <div v-for="(lesson, lessonIndex) in chapter.lessons" :key="`lesson_${chapterIndex}_${lessonIndex}`" class="!flex items-start">
+            <div class="text-xs text-gray-500 mb-1">Debug: Chapter {{ chapterIndex }}, Lesson {{ lessonIndex }}</div>
             <svg
               v-if="isLessonCompleted(chapterIndex, lessonIndex)"
               xmlns="http://www.w3.org/2000/svg"
@@ -127,6 +128,15 @@ const activeKey = ref<string>('chapter_0')
 const course = computed(() => coursesStore.course)
 const processing = computed(() => coursesStore.processing)
 
+// Debug: Log chapters data
+watch(() => props.chapters, (chapters) => {
+  console.log('🔍 NavCourse: Chapters data:', chapters)
+  if (chapters && chapters.length > 0) {
+    console.log('🔍 NavCourse: First chapter:', chapters[0])
+    console.log('🔍 NavCourse: First chapter lessons:', chapters[0]?.lessons)
+  }
+}, { immediate: true, deep: true })
+
 // Methods
 const isLessonCompleted = (chapterIndex: number, lessonIndex: number) => {
   if (!processing.value?.complete) return false
@@ -151,10 +161,14 @@ const handlePanelClick = (chapter: number) => {
 }
 
 const handleLessonClick = (chapterIndex: number, lessonIndex: number) => {
+  console.log('🔍 NavCourse: Lesson clicked:', { chapterIndex, lessonIndex })
+  
   const slug = route.params.slug
+  console.log('🔍 NavCourse: Current slug:', slug)
   
   // Create the new URL including lessonIndex within the slug
   const newPath = `/my-learning/${slug}/${lessonIndex}?chapter=${chapterIndex}`
+  console.log('🔍 NavCourse: Navigating to:', newPath)
   
   // Navigate to the new URL
   router.push(newPath)

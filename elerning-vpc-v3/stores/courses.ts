@@ -115,6 +115,13 @@ export const useCoursesStore = defineStore('courses', {
     // Loading states
     loading: false,
     loadingDetail: false,
+    
+    // Course counts
+    courseCounts: {
+      videoCount: 0,
+      documentCount: 0,
+      examCount: 0
+    }
   }),
 
   getters: {
@@ -158,6 +165,27 @@ export const useCoursesStore = defineStore('courses', {
     isLessonCompleted: (state) => (lessonId: string) => {
       return state.processing?.complete?.includes(lessonId) || false
     },
+
+    // Tính số lượng video từ chapters
+    videoCount: (state) => {
+      if (!state.course?.chapters) return state.courseCounts.videoCount
+      
+      let count = 0
+      state.course.chapters.forEach(chapter => {
+        chapter.lessons?.forEach(lesson => {
+          if (lesson.type === 'video' || lesson.videoUrl) {
+            count++
+          }
+        })
+      })
+      return count
+    },
+
+    // Lấy document count từ state
+    documentCount: (state) => state.courseCounts.documentCount,
+
+    // Lấy exam count từ state  
+    examCount: (state) => state.courseCounts.examCount,
   },
 
   actions: {
@@ -215,11 +243,66 @@ export const useCoursesStore = defineStore('courses', {
         console.log('🔍 Store fetchDetail response:', response)
         this.course = response.data?.course || response.data || response.course || response
         console.log('🔍 Store course after set:', this.course)
+        
+        // Tính toán counts sau khi load course
+        await this.calculateCourseCounts()
       } catch (error) {
         console.error('Error fetching course detail:', error)
         throw error
       } finally {
         this.loadingDetail = false
+      }
+    },
+
+    // Tính toán số lượng documents và quizzes
+    async calculateCourseCounts() {
+      if (!this.course?._id || !this.course.chapters) {
+        this.courseCounts = { videoCount: 0, documentCount: 0, examCount: 0 }
+        return
+      }
+
+      let documentCount = 0
+      let examCount = 0
+
+      try {
+        // Đếm documents và quizzes từ tất cả chapters và lessons
+        for (let chapterIndex = 0; chapterIndex < this.course.chapters.length; chapterIndex++) {
+          const chapter = this.course.chapters[chapterIndex]
+          for (let lessonIndex = 0; lessonIndex < (chapter.lessons || []).length; lessonIndex++) {
+            const lesson = chapter.lessons[lessonIndex]
+            try {
+              // Đếm documents - gọi trực tiếp backend API
+              const docResponse: any = await $fetch(`http://localhost:3000/api/a/documents/course/${this.course._id}/chapter/${chapterIndex}/lesson/${lessonIndex}`)
+              if (docResponse?.data?.documents) {
+                documentCount += docResponse.data.documents.length
+              }
+            } catch (error) {
+              console.log('No documents for lesson:', chapterIndex, lessonIndex)
+            }
+
+            try {
+              // Đếm quizzes - gọi trực tiếp backend API
+              const quizResponse: any = await $fetch(`http://localhost:3000/api/a/quizzes/course/${this.course._id}/chapter/${chapterIndex}/lesson/${lessonIndex}`)
+              if (quizResponse?.data?.quiz) {
+                examCount += 1
+              }
+            } catch (error) {
+              console.log('No quiz for lesson:', chapterIndex, lessonIndex)
+            }
+          }
+        }
+
+        // Cập nhật state
+        this.courseCounts = {
+          videoCount: this.videoCount, // Sử dụng getter
+          documentCount,
+          examCount
+        }
+
+        console.log('🔍 Calculated course counts:', this.courseCounts)
+      } catch (error) {
+        console.error('Error calculating course counts:', error)
+        this.courseCounts = { videoCount: 0, documentCount: 0, examCount: 0 }
       }
     },
 
@@ -324,6 +407,11 @@ export const useCoursesStore = defineStore('courses', {
         limit: 12,
         total: 0,
         totalPages: 0,
+      }
+      this.courseCounts = {
+        videoCount: 0,
+        documentCount: 0,
+        examCount: 0
       }
     },
   },

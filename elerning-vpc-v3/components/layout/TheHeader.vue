@@ -16,7 +16,7 @@
           <NuxtLink to="/courses" class="hover:text-gray-200 transition-colors">
             Tất cả khóa học
           </NuxtLink>
-          <NuxtLink to="/khoa-hoc-cua-toi" class="hover:text-gray-200 transition-colors">
+          <NuxtLink to="/my-learning" class="hover:text-gray-200 transition-colors">
             Khóa học của tôi
           </NuxtLink>
         </nav>
@@ -92,7 +92,7 @@
           <NuxtLink to="/courses" class="hover:text-gray-200 transition-colors py-2">
             Tất cả khóa học
           </NuxtLink>
-          <NuxtLink to="/khoa-hoc-cua-toi" class="hover:text-gray-200 transition-colors py-2">
+          <NuxtLink to="/my-learning" class="hover:text-gray-200 transition-colors py-2">
             Khóa học của tôi
           </NuxtLink>
         </nav>

@@ -6,9 +6,9 @@ const router = Router();
 // Course routes
 router.get('/', CourseController.getAllCourses);
 router.post('/', CourseController.createCourse);
-router.put('/:slug/chapters', CourseController.updateCourseChapters);
 router.get('/id/:id', CourseController.getCourseById);
 router.get('/:slug', CourseController.getCourseBySlug);
+router.put('/:slug/chapters', CourseController.updateCourseChapters);
 router.put('/:id', CourseController.updateCourse);
 router.delete('/:id', CourseController.deleteCourse);
 

@@ -1,6 +1,10 @@
 <template>
   <div class="card !p-0 bg-white !rounded-[12px] h-full">
-    <NuxtLink :to="`${isRegister ? '/khoa-hoc-cua-toi' : '/courses'}/${course.slug}`" class="h-full flex flex-col justify-between">
+    <NuxtLink 
+      :to="`${isRegister ? '/my-learning' : '/courses'}/${course.slug}`" 
+      class="h-full flex flex-col justify-between"
+      @click="handleCardClick"
+    >
       <div class="relative">
         <div class="relative">
           <img class="rounded-t-md h-[201px] w-[100%] object-cover" :src="course.thumbnail" :alt="course.slug">
@@ -19,14 +23,14 @@
           </div>
           
           <div class="absolute bg-[#1A75BB] px-4 bottom-[20px] left-0 h-[27px] flex items-center justify-center">
-            <NuxtLink :to="`${isRegister ? '/khoa-hoc-cua-toi' : '/courses'}/${course.slug}`" class="!text-white font-[500]">
+            <NuxtLink :to="`${isRegister ? '/my-learning' : '/courses'}/${course.slug}`" class="!text-white font-[500]">
               Truy cập
             </NuxtLink>
           </div>
         </div>
         <div class="p-4">
           <div class="flex justify-between items-start mb-2">
-            <NuxtLink :to="`${isRegister ? '/khoa-hoc-cua-toi' : '/courses'}/${course.slug}`" class="flex-1">
+            <NuxtLink :to="`${isRegister ? '/my-learning' : '/courses'}/${course.slug}`" class="flex-1">
               <h4 class="text-[18px] m-0 font-bold text-[#1A75BB] line-clamp-2">
                 {{ course.title || 'Đang cập nhật' }}
               </h4>
@@ -189,6 +193,13 @@ interface Props {
 const props = defineProps<Props>()
 const cartStore = useCartStore()
 
+// Debug props
+console.log('🔍 CourseCard props:', {
+  course: props.course?.title,
+  isRegister: props.isRegister,
+  courseId: props.course?._id
+})
+
 // Computed để xác định trạng thái khóa học
 const courseStatus = computed(() => {
   const authStore = useAuthStore()
@@ -203,6 +214,16 @@ const courseStatus = computed(() => {
 const isInCart = computed(() => {
   return cartStore.isInCart(props.course._id)
 })
+
+// Handle card click
+const handleCardClick = () => {
+  console.log('🔍 CourseCard clicked:', {
+    course: props.course?.title,
+    slug: props.course?.slug,
+    isRegister: props.isRegister,
+    targetUrl: `${props.isRegister ? '/my-learning' : '/courses'}/${props.course.slug}`
+  })
+}
 
 // Toggle course trong giỏ hàng
 const toggleCourse = () => {

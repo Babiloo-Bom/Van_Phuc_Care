@@ -14,12 +14,13 @@ import type {
 
 export const useGoogleAuth = () => {
   const config = useRuntimeConfig()
+  const { baseUrl } = useBaseUrl()
 
   // ===== GOOGLE OAUTH CONFIG =====
   const googleConfig: GoogleOAuthConfig = {
     clientId: config.public.googleClientId || '',
     clientSecret: '', // Client secret không được expose ra client-side
-    redirectUri: `${config.public.baseUrl}/auth/google/callback`,
+    redirectUri: `${baseUrl}/auth/google/callback`,
     scope: ['openid', 'email', 'profile']
   }
 

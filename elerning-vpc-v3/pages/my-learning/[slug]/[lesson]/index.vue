@@ -1,6 +1,18 @@
 <template>
   <div v-if="!loading" class="pt-5 py-20">
     <div class="container">
+      <!-- Debug Info -->
+      <div class="mb-4 p-4 bg-yellow-100 rounded">
+        <h4 class="font-bold text-yellow-800 mb-2">Lesson Page Debug:</h4>
+        <p><strong>Loading:</strong> {{ loading }}</p>
+        <p><strong>Course:</strong> {{ course ? 'Loaded' : 'Not loaded' }}</p>
+        <p><strong>Chapter:</strong> {{ chapter ? 'Loaded' : 'Not loaded' }}</p>
+        <p><strong>Lesson:</strong> {{ lesson ? 'Found' : 'Not found' }}</p>
+        <p><strong>Lesson Index:</strong> {{ lessonIndex }}</p>
+        <p><strong>Route Params:</strong> {{ JSON.stringify($route.params) }}</p>
+        <p><strong>Route Query:</strong> {{ JSON.stringify($route.query) }}</p>
+      </div>
+      
       <div>
         <ul id="courseList" ref="courseListRef" class="text-primary-100 flex items-center gap-3 font-semibold w-full overflow-auto">
           <li class="w-full sm:w-auto min-w-fit">
@@ -68,41 +80,58 @@
                   </div>
                 </div>
                 <div v-if="lesson?.videoIframe" class="mb-4" v-html="lesson?.videoIframe" />
-                <div v-if="chapter?.documents?.length" class="flex items-center gap-1 align-bottom border-t-[1px] border-b-[1px] border-[#7C8A96] py-4">
-                  <a-button :loading="loadingDownload" class="!bg-prim-100 !text-white !flex items-center gap-2" @click="handleDownloadDocuments">
-                    <span class="text-[16px] font-[500]">Tài liệu</span>
-                    <svg
-                      class="transition-all duration-300"
-                      xmlns="http://www.w3.org/2000/svg"
-                      width="18"
-                      height="18"
-                      viewBox="0 0 24 24"
-                      fill="none"
-                    >
-                      <path
-                        d="M9 11v6l2-2M9 17l-2-2"
-                        stroke="#fff"
-                        stroke-width="1.5"
-                        stroke-linecap="round"
-                        stroke-linejoin="round"
-                      />
-                      <path
-                        d="M22 10v5c0 5-2 7-7 7H9c-5 0-7-2-7-7V9c0-5 2-7 7-7h5"
-                        stroke="#fff"
-                        stroke-width="1.5"
-                        stroke-linecap="round"
-                        stroke-linejoin="round"
-                      />
-                      <path
-                        d="M22 10h-4c-3 0-4-1-4-4V2l8 8Z"
-                        stroke="#fff"
-                        stroke-width="1.5"
-                        stroke-linecap="round"
-                        stroke-linejoin="round"
-                      />
-                    </svg>
-                  </a-button>
-                  <span class="text-[#798894]">(* Tải xuống)</span>
+                
+                <!-- Video Component -->
+                <div v-if="lesson?.videoUrl || lesson?.videoIframe" class="mb-6">
+                  <div class="mb-4 p-4 bg-gray-100 rounded">
+                    <h4 class="font-bold text-gray-800 mb-2">Debug Info:</h4>
+                    <p><strong>Lesson Title:</strong> {{ lesson?.title }}</p>
+                    <p><strong>Video URL:</strong> {{ lesson?.videoUrl }}</p>
+                    <p><strong>Thumbnail:</strong> {{ lesson?.thumbnail }}</p>
+                    <p><strong>File Size:</strong> {{ lesson?.fileSize }}</p>
+                    <p><strong>Quality:</strong> {{ lesson?.quality }}</p>
+                  </div>
+                  <VideoComponent 
+                    v-if="course"
+                    :course-id="course._id"
+                    :chapter-index="chapterIndex"
+                    :lesson-index="lessonIndex"
+                    :lesson-title="lesson?.title"
+                    :lesson-description="lesson?.description"
+                    :video-url="lesson?.videoUrl"
+                    :thumbnail-url="lesson?.thumbnail"
+                    :file-size="lesson?.fileSize"
+                    :quality="lesson?.quality || '720'"
+                    :show-stats="true"
+                    @watched="handleVideoWatched"
+                    @progress="handleVideoProgress"
+                  />
+                </div>
+                <div v-else class="mb-6 p-4 bg-red-100 rounded">
+                  <p class="text-red-800">❌ No video URL found for this lesson</p>
+                  <p class="text-sm text-red-600">Lesson data: {{ JSON.stringify(lesson) }}</p>
+                </div>
+                
+                <!-- Documents Section -->
+                <div class="mt-6">
+                  <DocumentsComponent 
+                    v-if="course"
+                    :course-id="course._id"
+                    :chapter-index="chapterIndex"
+                    :lesson-index="lessonIndex"
+                  />
+                </div>
+                
+                <!-- Quiz Section -->
+                <div class="mt-6">
+                  <QuizComponent 
+                    v-if="course"
+                    :course-id="course._id"
+                    :chapter-index="chapterIndex"
+                    :lesson-index="lessonIndex"
+                    @completed="handleQuizCompleted"
+                    @close="handleQuizClose"
+                  />
                 </div>
                 <div class="mt-6">
                   <div v-if="lesson?.content" v-html="lesson?.content" />
@@ -160,7 +189,7 @@
             </div>
           </div>
           <div class="col-span-12 lg:col-span-4">
-            <NavCourse :chapters="course.chapters" />
+            <NavCourse v-if="course" :chapters="course.chapters" />
           </div>
         </div>
       </section>
@@ -176,6 +205,10 @@ import { ref, computed, onMounted, nextTick } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useCoursesStore } from '~/stores/courses'
 import NavCourse from '~/components/courses/NavCourse.vue'
+import DocumentsComponent from '~/components/lessons/DocumentsComponent.vue'
+import QuizComponent from '~/components/lessons/QuizComponent.vue'
+import VideoComponent from '~/components/lessons/VideoComponent.vue'
+import { useProgressTracking } from '~/composables/useProgressTracking'
 
 // SEO
 useHead({
@@ -199,6 +232,10 @@ const loadingDownload = ref(false)
 const isCompleted = ref(false)
 const totalLessonCount = ref(0)
 const courseListRef = ref<HTMLElement | null>(null)
+
+// Route params
+const slug = route.params.slug as string
+const chapterIndex = ref(parseInt(route.query.chapter as string) || 0)
 
 // Computed
 const course = computed(() => coursesStore.course)
@@ -228,7 +265,9 @@ const handleCheckCompleted = (chapterIndex: number, lessonIdx: number) => {
 }
 
 const handleDownloadDocuments = async () => {
-  const documents = chapter.value?.documents || []
+  if (!chapter.value) return
+  
+  const documents = chapter.value.documents || []
   if (documents.length) {
     try {
       loadingDownload.value = true
@@ -259,21 +298,61 @@ const handleDownloadDocuments = async () => {
 }
 
 const handleExam = () => {
-  router.push(`/my-learning/${course.value.slug}/${lessonIndex.value}/trac-nghiem?chapter=${chapter.value.index}`)
+  if (course.value && chapter.value) {
+    router.push(`/my-learning/${course.value.slug}/${lessonIndex.value}/trac-nghiem?chapter=${chapter.value.order}`)
+  }
+}
+
+// Progress tracking
+const progressTracking = useProgressTracking()
+
+const handleQuizCompleted = async (result: any) => {
+  console.log('Quiz completed:', result)
+  
+  if (result.passed && course.value) {
+    // Mark lesson as completed
+    await progressTracking.markLessonCompleted(
+      course.value._id,
+      chapterIndex.value,
+      lessonIndex.value
+    )
+    
+    // Show success message
+    console.log('✅ Lesson marked as completed after passing quiz')
+  }
+}
+
+const handleQuizClose = () => {
+  console.log('Quiz closed')
+}
+
+// Video handling
+const handleVideoWatched = (stats: any) => {
+  console.log('Video watched:', stats)
+  // Video watching is automatically tracked by VideoComponent
+}
+
+const handleVideoProgress = (percentage: number) => {
+  console.log('Video progress:', percentage + '%')
+  // Progress is automatically tracked by VideoComponent
 }
 
 const nextCourse = () => {
+  if (!course.value || !chapter.value) return
+  
   if (lessonIndex.value + 1 === chapter.value.lessons.length && isCompleted.value) {
     return router.push(`/my-learning/${course.value.slug}`)
   }
   if (lessonIndex.value + 1 < chapter.value.lessons.length) {
-    return router.push(`/my-learning/${course.value.slug}/${lessonIndex.value + 1}?chapter=${chapter.value.index}`)
+    return router.push(`/my-learning/${course.value.slug}/${lessonIndex.value + 1}?chapter=${chapter.value.order}`)
   }
   return router.push(`/my-learning/${course.value.slug}/0?chapter=${Number(route.query.chapter) + 1}`)
 }
 
 const goBack = () => {
-  router.push(`/my-learning/${course.value.slug}`)
+  if (course.value) {
+    router.push(`/my-learning/${course.value.slug}`)
+  }
 }
 
 const fetchData = async () => {
@@ -282,31 +361,70 @@ const fetchData = async () => {
     const slug = route.params.slug as string
     const lessonParam = route.params.lesson as string
     const chapterQuery = route.query.chapter as string
+    
+    console.log('🔍 Lesson Page Debug:')
+    console.log('🔍 Route params:', route.params)
+    console.log('🔍 Route query:', route.query)
+    console.log('🔍 Slug:', slug)
+    console.log('🔍 Lesson param:', lessonParam)
+    console.log('🔍 Chapter query:', chapterQuery)
 
     // Fetch course detail if not already loaded
     if (!course.value?._id) {
+      console.log('🔍 Fetching course detail for slug:', slug)
       await coursesStore.fetchDetail(slug)
+      console.log('🔍 Course fetched:', course.value)
+    } else {
+      console.log('🔍 Course already loaded:', course.value)
     }
 
     // Fetch chapter data
-    await coursesStore.fetchChapter({
-      origin: 'vanphuccare.gensi.vn',
-      courseId: course.value._id,
-      chapter: chapterQuery,
-    })
+    if (course.value?._id) {
+      console.log('🔍 Fetching chapter data for course:', course.value._id, 'chapter:', chapterQuery)
+      await coursesStore.fetchChapter({
+        origin: 'vanphuccare.gensi.vn',
+        courseId: course.value._id,
+        chapter: chapterQuery,
+      })
+      console.log('🔍 Chapter fetched:', chapter.value)
+    }
 
     // Fetch processing data
-    await coursesStore.fetchProcessing(course.value._id)
+    if (course.value?._id) {
+      await coursesStore.fetchProcessing(course.value._id)
+    }
 
     // Calculate total lessons
-    calculateTotalLessons(course.value.chapters)
+    if (course.value?.chapters) {
+      calculateTotalLessons(course.value.chapters)
+    }
 
     // Find current lesson
-    lessonIndex.value = (chapter.value.lessons || []).findIndex((e: any) => e.index === Number(lessonParam))
-    lesson.value = chapter.value.lessons[lessonIndex.value]
+    console.log('🔍 Finding lesson...')
+    console.log('🔍 Chapter lessons:', chapter.value?.lessons)
+    console.log('🔍 Lesson param as number:', Number(lessonParam))
+    
+    if (chapter.value?.lessons) {
+      // Use lessonParam directly as array index since lessons don't have 'index' field
+      lessonIndex.value = Number(lessonParam)
+      console.log('🔍 Lesson index:', lessonIndex.value)
+      console.log('🔍 Lessons length:', chapter.value.lessons.length)
+      
+      if (lessonIndex.value >= 0 && lessonIndex.value < chapter.value.lessons.length) {
+        lesson.value = chapter.value.lessons[lessonIndex.value]
+        console.log('🔍 Found lesson:', lesson.value)
+        console.log('🔍 Lesson videoUrl:', lesson.value?.videoUrl)
+      } else {
+        console.log('❌ Lesson index out of range:', lessonIndex.value, '>=', chapter.value.lessons.length)
+      }
+    } else {
+      console.log('❌ No lessons found in chapter')
+    }
     
     // Find next lesson
-    lessonNext.value = chapter.value.lessons[lessonIndex.value + 1] || course.value.chapters[Number(chapterQuery) + 1]
+    if (chapter.value?.lessons && lessonIndex.value >= 0) {
+      lessonNext.value = chapter.value.lessons[lessonIndex.value + 1] || course.value?.chapters?.[Number(chapterQuery) + 1]
+    }
 
     // Check if lesson is completed
     isCompleted.value = handleCheckCompleted(Number(chapterQuery), lessonIndex.value)

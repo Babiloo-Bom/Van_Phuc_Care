@@ -71,8 +71,8 @@ export default defineNuxtConfig({
       googleTokenUrl: 'https://oauth2.googleapis.com/token',
       googleUserInfoUrl: 'https://www.googleapis.com/oauth2/v2/userinfo',
       
-      // Base URL for OAuth redirects
-      baseUrl: process.env.NUXT_PUBLIC_BASE_URL || 'http://localhost:3102',
+      // Base URL for OAuth redirects - Dynamic detection
+      baseUrl: process.env.NUXT_PUBLIC_BASE_URL || (process.env.NODE_ENV === 'production' ? process.env.NUXT_PUBLIC_APP_URL || 'https://your-domain.com' : 'http://localhost:3102'),
       
       // TinyMCE Configuration
       tinymceKey: process.env.NUXT_PUBLIC_TINYMCE_KEY || '',

@@ -1,16 +1,21 @@
 export default defineNuxtPlugin((nuxtApp) => {
   const config = useRuntimeConfig()
-  const token = useCookie('auth_token')
 
   const api = $fetch.create({
     baseURL: config.public.apiBase as string,
     
     onRequest({ request, options }) {
       // Add auth token to all requests
-      if (token.value) {
-        options.headers = {
-          ...options.headers as Record<string, string>,
-          Authorization: `Bearer ${token.value}`
+      if (process.client) {
+        const token = localStorage.getItem('auth_token')
+        if (token) {
+          options.headers = {
+            ...options.headers as Record<string, string>,
+            Authorization: `Bearer ${token}`
+          }
+          console.log('🔍 API Plugin: Adding token to request:', token.substring(0, 20) + '...')
+        } else {
+          console.log('🔍 API Plugin: No token found in localStorage')
         }
       }
     },
@@ -19,7 +24,12 @@ export default defineNuxtPlugin((nuxtApp) => {
       // Handle errors globally
       if (response.status === 401) {
         // Unauthorized - redirect to login
-        token.value = null
+        console.log('🔍 API Plugin: 401 Unauthorized, clearing token and redirecting')
+        if (process.client) {
+          localStorage.removeItem('auth_token')
+          localStorage.removeItem('user')
+          localStorage.removeItem('token_expire_at')
+        }
         navigateTo('/login')
       }
       

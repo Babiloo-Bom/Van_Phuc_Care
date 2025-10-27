@@ -271,7 +271,21 @@ const totalLessonCount = ref(0)
 const courseListRef = ref<HTMLElement | null>(null)
 
 // Computed
-const course = computed(() => coursesStore.course)
+const course = computed(() => {
+  if (!coursesStore.course) return null
+  
+  // Tính toán counts từ store getters
+  const videoCount = coursesStore.videoCount
+  const documentCount = coursesStore.documentCount  
+  const examCount = coursesStore.examCount
+  
+  return {
+    ...coursesStore.course,
+    videoCount,
+    documentCount,
+    examCount
+  }
+})
 const processing = computed(() => coursesStore.processing)
 
 const progressPercentage = computed(() => {
@@ -296,8 +310,8 @@ const calculateTotalLessons = (chapters: any[] = []) => {
 
 const startCourse = () => {
   if (course.value?.chapters?.[0]?.lessons?.[0]) {
-    const firstLesson = course.value.chapters[0].lessons[0]
-    router.push(`/my-learning/${course.value.slug}/${firstLesson.index}?chapter=0`)
+    // Use array index (0) instead of lesson.index property
+    router.push(`/my-learning/${course.value.slug}/0?chapter=0`)
   }
 }
 

@@ -607,7 +607,22 @@ const socialMediaArray = ref<Array<{ icon: string; link: string }>>([])
 const course = computed(() => {
   console.log('🔍 Course computed:', coursesStore.course)
   console.log('🔍 Course chapters:', coursesStore.course?.chapters)
-  return coursesStore.course
+  
+  if (!coursesStore.course) return null
+  
+  // Tính toán counts từ store getters
+  const videoCount = coursesStore.videoCount
+  const documentCount = coursesStore.documentCount  
+  const examCount = coursesStore.examCount
+  
+  console.log('🔍 Calculated counts:', { videoCount, documentCount, examCount })
+  
+  return {
+    ...coursesStore.course,
+    videoCount,
+    documentCount,
+    examCount
+  }
 })
 
 // SEO Configuration

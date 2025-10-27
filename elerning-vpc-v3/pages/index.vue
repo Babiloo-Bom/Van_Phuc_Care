@@ -76,6 +76,53 @@
                 </a-input>
               </div>
               
+              <!-- Filter Options -->
+              <div class="flex flex-wrap items-center gap-4 justify-center">
+                <!-- Category Filter -->
+                <a-select
+                  v-model:value="selectedCategory"
+                  placeholder="Chọn danh mục"
+                  class="!w-48 !bg-white/10 !border-white/30"
+                  @change="handleCategoryChange"
+                >
+                  <a-select-option value="">Tất cả danh mục</a-select-option>
+                  <a-select-option 
+                    v-for="category in categories" 
+                    :key="category" 
+                    :value="category"
+                  >
+                    {{ category }}
+                  </a-select-option>
+                </a-select>
+                
+                <!-- Level Filter -->
+                <a-select
+                  v-model:value="selectedLevel"
+                  placeholder="Chọn cấp độ"
+                  class="!w-48 !bg-white/10 !border-white/30"
+                  @change="handleLevelChange"
+                >
+                  <a-select-option value="">Tất cả cấp độ</a-select-option>
+                  <a-select-option value="beginner">Cơ bản</a-select-option>
+                  <a-select-option value="intermediate">Trung bình</a-select-option>
+                  <a-select-option value="advanced">Nâng cao</a-select-option>
+                </a-select>
+                
+                <!-- Sort Options -->
+                <a-select
+                  v-model:value="sortBy"
+                  placeholder="Sắp xếp theo"
+                  class="!w-48 !bg-white/10 !border-white/30"
+                  @change="handleSortChange"
+                >
+                  <a-select-option value="priority">Ưu tiên (Đã mua → Chưa mua → Hoàn thành)</a-select-option>
+                  <a-select-option value="price-low">Giá thấp → cao</a-select-option>
+                  <a-select-option value="price-high">Giá cao → thấp</a-select-option>
+                  <a-select-option value="newest">Mới nhất</a-select-option>
+                  <a-select-option value="rating">Đánh giá cao nhất</a-select-option>
+                </a-select>
+              </div>
+              
               <!-- App Download Buttons -->
               <div class="flex flex-col sm:flex-row items-center gap-4">
                 <div class="w-auto cursor-pointer">
@@ -356,33 +403,96 @@ const loading = ref(false)
 const searchKey = ref('')
 const courses = ref([]) // Local reactive state
 
+// Filter states
+const selectedCategory = ref('')
+const selectedLevel = ref('')
+const sortBy = ref('priority')
 
 // Computed
+const categories = computed(() => {
+  const sourceCourses = courses.value.length > 0 ? courses.value : coursesStore.courses
+  const cats = [...new Set(sourceCourses.map(course => course.category).filter(Boolean))]
+  return cats
+})
+
 const filteredCourses = computed(() => {
   console.log('🔍 filteredCourses computed - local courses:', courses.value.length)
   console.log('🔍 filteredCourses computed - store courses:', coursesStore.courses.length)
   console.log('🔍 filteredCourses computed - searchKey:', searchKey.value)
   
   // Use local state as primary source
-  const sourceCourses = courses.value.length > 0 ? courses.value : coursesStore.courses
+  let sourceCourses = courses.value.length > 0 ? courses.value : coursesStore.courses
   
-  if (!searchKey.value) {
-    console.log('🔍 No search key, returning all courses:', sourceCourses.length)
-    return sourceCourses
+  // Apply search filter
+  if (searchKey.value) {
+    sourceCourses = sourceCourses.filter(course =>
+      course.title.toLowerCase().includes(searchKey.value.toLowerCase()) ||
+      course.shortDescription?.toLowerCase().includes(searchKey.value.toLowerCase())
+    )
   }
   
-  const filtered = sourceCourses.filter(course =>
-    course.title.toLowerCase().includes(searchKey.value.toLowerCase()) ||
-    course.shortDescription?.toLowerCase().includes(searchKey.value.toLowerCase())
-  )
-  console.log('🔍 Filtered courses:', filtered.length)
-  return filtered
+  // Apply category filter
+  if (selectedCategory.value) {
+    sourceCourses = sourceCourses.filter(course => course.category === selectedCategory.value)
+  }
+  
+  // Apply level filter
+  if (selectedLevel.value) {
+    sourceCourses = sourceCourses.filter(course => course.level === selectedLevel.value)
+  }
+  
+  // Apply sorting
+  switch (sortBy.value) {
+    case 'priority':
+      // Đã mua → Chưa mua → Hoàn thành
+      sourceCourses = sourceCourses.sort((a, b) => {
+        const aPurchased = isPurchased(a._id)
+        const bPurchased = isPurchased(b._id)
+        const aCompleted = authStore.user?.courseCompleted?.includes(a._id) || false
+        const bCompleted = authStore.user?.courseCompleted?.includes(b._id) || false
+        
+        if (aPurchased && !bPurchased) return -1
+        if (!aPurchased && bPurchased) return 1
+        if (aCompleted && !bCompleted) return 1
+        if (!aCompleted && bCompleted) return -1
+        return 0
+      })
+      break
+    case 'price-low':
+      sourceCourses = sourceCourses.sort((a, b) => (a.price || 0) - (b.price || 0))
+      break
+    case 'price-high':
+      sourceCourses = sourceCourses.sort((a, b) => (b.price || 0) - (a.price || 0))
+      break
+    case 'newest':
+      sourceCourses = sourceCourses.sort((a, b) => new Date(b.createdAt || 0) - new Date(a.createdAt || 0))
+      break
+    case 'rating':
+      sourceCourses = sourceCourses.sort((a, b) => (b.rating || 0) - (a.rating || 0))
+      break
+  }
+  
+  console.log('🔍 Filtered courses:', sourceCourses.length)
+  return sourceCourses
 })
 
 // Methods
 const handleSearch = (e: Event) => {
   const target = e.target as HTMLInputElement
   searchKey.value = target.value || ''
+}
+
+// Filter handlers
+const handleCategoryChange = (value: string) => {
+  selectedCategory.value = value
+}
+
+const handleLevelChange = (value: string) => {
+  selectedLevel.value = value
+}
+
+const handleSortChange = (value: string) => {
+  sortBy.value = value
 }
 
 const isPurchased = (courseId: string) => {

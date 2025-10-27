@@ -21,14 +21,33 @@ export default defineEventHandler(async (event): Promise<GoogleLoginResponse> =>
     }
 
     const config = useRuntimeConfig(event)
+    
+    // Dynamic baseUrl detection
+    const getBaseUrl = () => {
+      // Try to get from request headers first (for production)
+      const host = getHeader(event, 'host')
+      const protocol = getHeader(event, 'x-forwarded-proto') || 'https'
+      
+      if (host && process.env.NODE_ENV === 'production') {
+        return `${protocol}://${host}`
+      }
+      
+      // Fallback to config
+      return config.public.baseUrl || 'http://localhost:3102'
+    }
+    
+    const baseUrl = getBaseUrl()
+    const redirectUri = `${baseUrl}/auth/google/callback`
 
     console.log('🔄 Step 1: Exchange code for Google token...')
     console.log('🔍 Config check:', {
       clientId: config.public.googleClientId,
       hasClientSecret: !!config.googleClientSecret,
       clientSecretLength: config.googleClientSecret?.length || 0,
-      baseUrl: config.public.baseUrl,
-      redirectUri: `${config.public.baseUrl}/auth/google/callback`
+      baseUrl: baseUrl,
+      redirectUri: redirectUri,
+      host: getHeader(event, 'host'),
+      protocol: getHeader(event, 'x-forwarded-proto')
     })
     
     // Step 1: Exchange authorization code for Google access token
@@ -36,7 +55,7 @@ export default defineEventHandler(async (event): Promise<GoogleLoginResponse> =>
       code,
       client_id: config.public.googleClientId,
       client_secret: config.googleClientSecret,
-      redirect_uri: `${config.public.baseUrl}/auth/google/callback`,
+      redirect_uri: redirectUri,
       grant_type: 'authorization_code'
     })
     

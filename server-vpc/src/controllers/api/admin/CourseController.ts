@@ -108,6 +108,22 @@ const courseSchema = new mongoose.Schema({
         type: String,
         enum: ['video', 'quiz', 'project', 'document'],
         default: 'video'
+      },
+      videoUrl: {
+        type: String,
+        default: ''
+      },
+      thumbnail: {
+        type: String,
+        default: ''
+      },
+      fileSize: {
+        type: Number,
+        default: 0
+      },
+      quality: {
+        type: String,
+        default: '720'
       }
     }]
   }],
@@ -313,6 +329,47 @@ class CourseController {
             count: 320
           },
           tags: ["React", "JavaScript", "Frontend", "Web Development"],
+          chapters: [
+            {
+              title: "Giới thiệu React.js",
+              description: "Tìm hiểu về React.js và cách thiết lập môi trường phát triển",
+              lessons: [
+                {
+                  title: "React.js là gì?",
+                  duration: 15,
+                  type: "video",
+                  videoUrl: "https://sample-videos.com/zip/10/mp4/SampleVideo_1280x720_1mb.mp4",
+                  thumbnail: "https://via.placeholder.com/1280x720/4F46E5/FFFFFF?text=React+Introduction",
+                  fileSize: 1048576,
+                  quality: "720"
+                },
+                {
+                  title: "Cài đặt Node.js và npm",
+                  duration: 10,
+                  type: "video",
+                  videoUrl: "https://sample-videos.com/zip/10/mp4/SampleVideo_1280x720_2mb.mp4",
+                  thumbnail: "https://via.placeholder.com/1280x720/059669/FFFFFF?text=Node.js+Setup",
+                  fileSize: 2097152,
+                  quality: "720"
+                }
+              ]
+            },
+            {
+              title: "Components và JSX",
+              description: "Học cách tạo và sử dụng React components",
+              lessons: [
+                {
+                  title: "Tạo Component đầu tiên",
+                  duration: 20,
+                  type: "video",
+                  videoUrl: "https://sample-videos.com/zip/10/mp4/SampleVideo_1280x720_1mb.mp4",
+                  thumbnail: "https://via.placeholder.com/1280x720/DC2626/FFFFFF?text=First+Component",
+                  fileSize: 1048576,
+                  quality: "720"
+                }
+              ]
+            }
+          ],
           isPublished: true,
           isFeatured: true,
           status: "active"
@@ -369,6 +426,56 @@ class CourseController {
             count: 445
           },
           tags: ["Python", "Data Analysis", "Machine Learning", "Pandas", "NumPy"],
+          chapters: [
+            {
+              title: "Python cơ bản",
+              description: "Học các khái niệm cơ bản của Python",
+              lessons: [
+                {
+                  title: "Giới thiệu Python",
+                  duration: 20,
+                  type: "video",
+                  videoUrl: "https://sample-videos.com/zip/10/mp4/SampleVideo_1280x720_1mb.mp4",
+                  thumbnail: "https://via.placeholder.com/1280x720/4F46E5/FFFFFF?text=Python+Introduction",
+                  fileSize: 1048576,
+                  quality: "720"
+                },
+                {
+                  title: "Biến và Kiểu dữ liệu",
+                  duration: 25,
+                  type: "video",
+                  videoUrl: "https://sample-videos.com/zip/10/mp4/SampleVideo_1280x720_2mb.mp4",
+                  thumbnail: "https://via.placeholder.com/1280x720/059669/FFFFFF?text=Variables+Types",
+                  fileSize: 2097152,
+                  quality: "720"
+                },
+                {
+                  title: "Cấu trúc điều khiển",
+                  duration: 30,
+                  type: "video",
+                  videoUrl: "https://sample-videos.com/zip/10/mp4/SampleVideo_1280x720_1mb.mp4",
+                  thumbnail: "https://via.placeholder.com/1280x720/DC2626/FFFFFF?text=Control+Structures",
+                  fileSize: 1048576,
+                  quality: "720"
+                }
+              ]
+            },
+            {
+              title: "Pandas và NumPy",
+              description: "Thư viện xử lý dữ liệu quan trọng",
+              lessons: [
+                {
+                  title: "Giới thiệu Pandas",
+                  duration: 35,
+                  type: "video",
+                  videoUrl: "https://sample-videos.com/zip/10/mp4/SampleVideo_1280x720_2mb.mp4",
+                  thumbnail: "https://via.placeholder.com/1280x720/7C3AED/FFFFFF?text=Pandas+Introduction",
+                  fileSize: 2097152,
+                  quality: "720"
+                }
+              ]
+            }
+          ],
           isPublished: true,
           isFeatured: false,
           status: "active"

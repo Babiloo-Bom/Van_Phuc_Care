@@ -16,7 +16,8 @@ export default defineNuxtRouteMiddleware(async (to, from) => {
     isAuthenticated: authStore.isAuthenticated,
     hasToken: !!authStore.token,
     hasUser: !!authStore.user,
-    route: to.path
+    route: to.path,
+    timestamp: new Date().toISOString()
   })
 
   // Initialize auth if not already done
