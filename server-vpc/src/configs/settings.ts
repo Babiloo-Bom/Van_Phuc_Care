@@ -11,6 +11,11 @@ export default {
     ttl: 60 * 60 * 24 * 1000,
   },
   sessionSecret: process.env.SESSION_SECRET || 'bUfxkJXG5xOtaOqRyTmXqWGl4ZxNSyAPbJGVfc7DKix2lyBMJn6TtmKQER52q2eD',
+  google: {
+    clientId: process.env.GOOGLE_CLIENT_ID || '625263472933-tbu2huc6j45fo65459r4891nfcrbr6hd.apps.googleusercontent.com',
+    clientSecret: process.env.GOOGLE_CLIENT_SECRET || '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',
+    redirectUri: process.env.GOOGLE_REDIRECT_URI || 'http://localhost:3102/auth/google/callback',
+  },
   prefix: {
     imageMime: 'image',
     videoMime: 'video',

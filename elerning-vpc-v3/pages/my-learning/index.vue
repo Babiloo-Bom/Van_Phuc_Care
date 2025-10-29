@@ -96,8 +96,9 @@
               v-for="(course, index) in filteredCourses"
               :key="index"
               :course="course"
-              :is-register="true"
+              :is-purchased="true"
               :progress="getProgress(course._id)"
+              @view-detail="handleViewDetail"
             />
           </div>
           <div v-else class="pt-20">
@@ -170,6 +171,13 @@ const getProgress = (courseId: string) => {
   return 0
 }
 
+const handleViewDetail = (course: any) => {
+  console.log('🔍 Viewing course detail:', course)
+  console.log('🔍 Navigating to:', `/my-learning/${course.slug}`)
+  // Navigate to the course learning page
+  navigateTo(`/my-learning/${course.slug}`)
+}
+
 const fetchData = async () => {
   try {
     loading.value = true
@@ -197,6 +205,7 @@ const fetchData = async () => {
       )
       
       console.log('🔍 Purchased courses found:', purchasedCourses.length)
+      console.log('🔍 Purchased courses data:', purchasedCourses)
       coursesStore.myCourses = purchasedCourses
     } else {
       console.log('⚠️ No courseRegister or courses found')

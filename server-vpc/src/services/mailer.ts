@@ -19,6 +19,18 @@ class MailerService {
     await this.sendMail(mailerOptions, 'forgotPasswordMailer', templateArgs);
   }
 
+  public static async sendForgotPasswordLink (email: string, resetLink: string) {
+    const mailerOptions: Mail.Options = {
+      to: email,
+      subject: '[Van Phuc Care] Đặt lại mật khẩu',
+    };
+    const templateArgs: any = {
+      resetLink,
+      expireTime: '24 giờ',
+    };
+    await this.sendMail(mailerOptions, 'forgotPasswordLink', templateArgs);
+  }
+
   public static async verifyAccountOTP (email: string, otp: string) {
     const mailerOptions: Mail.Options = {
       to: email,
@@ -32,19 +44,25 @@ class MailerService {
   }
 
   private static async sendMail (args: Mail.Options, templateName: string, templateArgs: any = {}) {
-    const transporter = nodemailer.createTransport(configs.mailerTransporter);
-    const templateSrc = path.join(__dirname, `../../views/mailer/${templateName}.hbs`);
-    const template = handlebars.compile(fs.readFileSync(templateSrc, 'utf-8'));
-    const html = template(templateArgs);
-    args.html = html;
+    try {
+      const transporter = nodemailer.createTransport(configs.mailerTransporter);
+      
+      // Verify connection configuration
+      await transporter.verify();
+      console.log('✅ SMTP connection verified');
+      
+      const templateSrc = path.join(__dirname, `../../views/mailer/${templateName}.hbs`);
+      const template = handlebars.compile(fs.readFileSync(templateSrc, 'utf-8'));
+      const html = template(templateArgs);
+      args.html = html;
 
-    await transporter.sendMail(args, (err) => {
-      if (!err) {
-        console.log('send success!!');
-      } else {
-        console.log(err);
-      }
-    });
+      const result = await transporter.sendMail(args);
+      console.log('✅ Email sent successfully:', result.messageId);
+      return result;
+    } catch (error) {
+      console.error('❌ Email sending failed:', error);
+      throw error;
+    }
   }
 }
 

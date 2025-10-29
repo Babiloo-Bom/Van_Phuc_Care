@@ -99,10 +99,10 @@ export const useAuthApi = () => {
     const timeoutId = setTimeout(() => controller.abort(), RETRY_CONFIG.timeout)
 
     try {
-      const response = await $fetch<T>(url, {
+      const response = await $fetch(url, {
         ...options,
         signal: controller.signal
-      })
+      }) as T
       return response
     } catch (error: any) {
       if (error.name === 'AbortError') {
@@ -146,7 +146,7 @@ export const useAuthApi = () => {
      * @param repeat_password Repeat password
      * @param fullname Full name
      */
-    async register(email: string, password: string, repeat_password: string, fullname?: string) {
+    async register(email: string, password: string, repeat_password: string, fullname?: string, phone?: string) {
       try {
         console.log('🔍 Register API call:', {
           url: `${apiBase}/sessions`,
@@ -164,6 +164,7 @@ export const useAuthApi = () => {
               password,
               repeat_password,
               fullname: fullname || email.split('@')[0], // Use email prefix if no fullname
+              phone: phone || '',
               domain: 'vanphuccare.gensi.vn',
               origin: 'vanphuccare.gensi.vn'
             }
@@ -245,7 +246,7 @@ export const useAuthApi = () => {
     async forgotPassword(email: string) {
       try {
         return await withRetry(() =>
-          fetchWithTimeout(`${apiBase}/api/a/passwords/forgot_password`, {
+          fetchWithTimeout(`${apiBase}/passwords/forgot_password`, {
             method: 'POST',
             body: { email }
           })
@@ -255,37 +256,21 @@ export const useAuthApi = () => {
       }
     },
 
-    /**
-     * Verify OTP for forgot password
-     * @param email Email
-     * @param otp OTP code
-     */
-    async verifyOtp(email: string, otp: string) {
-      try {
-        return await withRetry(() =>
-          fetchWithTimeout(`${apiBase}/api/a/passwords/verify_otp`, {
-            method: 'POST',
-            body: { email, otp }
-          })
-        )
-      } catch (error: any) {
-        throw transformError(error)
-      }
-    },
 
     /**
      * Reset password with token
-     * @param email Email
      * @param token Token from OTP verification
      * @param newPassword New password
      */
-    async resetPassword(email: string, token: string, newPassword: string) {
+    async resetPassword(token: string, newPassword: string) {
       try {
         return await withRetry(() =>
-          fetchWithTimeout(`${apiBase}/api/a/passwords`, {
+          fetchWithTimeout(`${apiBase}/passwords/reset`, {
             method: 'POST',
-            params: { email, token },
-            body: { password: newPassword }
+            body: { 
+              token,
+              password: newPassword 
+            }
           })
         )
       } catch (error: any) {
@@ -300,7 +285,7 @@ export const useAuthApi = () => {
     async getActiveLogs(params?: Record<string, any>) {
       try {
         return await withRetry(() =>
-          fetchWithTimeout(`${apiBase}/api/a/active-logs`, {
+          fetchWithTimeout(`${apiBase}/active-logs`, {
             method: 'GET',
             params
           })
@@ -317,7 +302,7 @@ export const useAuthApi = () => {
     async writeLog(data: Record<string, any>) {
       try {
         return await withRetry(() =>
-          fetchWithTimeout(`${apiBase}/api/a/active-logs`, {
+          fetchWithTimeout(`${apiBase}/active-logs`, {
             method: 'POST',
             body: data
           })
@@ -333,7 +318,7 @@ export const useAuthApi = () => {
     async logout() {
       try {
         return await withRetry(() =>
-          fetchWithTimeout(`${apiBase}/api/a/active-logs/logout`, {
+          fetchWithTimeout(`${apiBase}/active-logs/logout`, {
             method: 'PATCH'
           })
         )
@@ -364,7 +349,7 @@ export const useAuthApi = () => {
     async googleLogin(code: string, state: string) {
       try {
         return await withRetry(() =>
-          fetchWithTimeout(`${apiBase}/api/auth/google/login`, {
+          fetchWithTimeout(`${apiBase}/auth/google/login`, {
             method: 'POST',
             body: { code, state }
           })
@@ -380,7 +365,7 @@ export const useAuthApi = () => {
     async getGoogleAuthUrl() {
       try {
         return await withRetry(() =>
-          fetchWithTimeout(`${apiBase}/api/auth/google/url`, {
+          fetchWithTimeout(`${apiBase}/auth/google/url`, {
             method: 'GET'
           })
         )

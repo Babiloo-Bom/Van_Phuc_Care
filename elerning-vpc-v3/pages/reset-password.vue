@@ -1,181 +1,185 @@
 <template>
-  <div class="flex flex-col items-center max-w-md mx-auto">
-    <h2 class="text-2xl font-bold text-gray-900 text-center mb-2">
-      Đặt lại mật khẩu
-    </h2>
-    <p class="text-sm text-gray-600 text-center mb-6">
-      Nhập mật khẩu mới cho tài khoản của bạn
-    </p>
+  <div class="reset-password-container">
+    <!-- Logo (mobile absolute positioning) -->
+    <div class="logo-section">
+        <img src="/images/logo_van_phuc.png" alt="Van Phuc Care" class="logo" />
+    </div>
 
-    <!-- Error Alert -->
-    <a-alert
-      v-if="error"
-      class="!mb-4 w-full"
-      :message="error"
-      type="error"
-      show-icon
-      closable
-      @close="error = ''"
-    />
+    <!-- Title and Subtitle (mobile absolute positioning) -->
+    <div class="title-section">
+      <h1 class="main-title">Tạo mật khẩu mới</h1>
+      <p class="subtitle">Chào mừng bạn đến với Vạn Phúc Care</p>
+    </div>
 
+    <!-- Left Side - Reset Password Form -->
+    <div class="reset-password-form-section">
+      <div class="content-wrapper">
     <!-- Reset Password Form -->
-    <a-form
-      ref="formRef"
-      :model="form"
-      :rules="rules"
-      class="w-full"
-      @finish="handleResetPassword"
-    >
-      <a-form-item name="newPassword">
-        <label for="newPassword" class="block text-sm font-medium text-gray-700 mb-2">
-          Mật khẩu mới
-        </label>
-        <a-input-password
-          id="newPassword"
-          v-model:value="form.newPassword"
-          size="large"
-          placeholder="Tối thiểu 8 ký tự"
-          @pressEnter="handleResetPassword"
-        />
-      </a-form-item>
+        <form @submit.prevent="handleSubmit" class="reset-password-form">
+          <!-- New Password Field -->
+          <div class="form-group">
+            <label class="form-label">Mật khẩu</label>
+            <div class="input-container">
+              <input
+                v-model="form.newPassword"
+                :type="showNewPassword ? 'text' : 'password'"
+                placeholder="Mật khẩu"
+                class="form-input"
+                required
+              />
+              <button
+                type="button"
+                @click="showNewPassword = !showNewPassword"
+                class="password-toggle"
+              >
+                <svg v-if="showNewPassword" width="20" height="20" viewBox="0 0 24 24" fill="none">
+                  <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z" stroke="currentColor" stroke-width="2"/>
+                  <circle cx="12" cy="12" r="3" stroke="currentColor" stroke-width="2"/>
+                </svg>
+                <svg v-else width="20" height="20" viewBox="0 0 24 24" fill="none">
+                  <path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24" stroke="currentColor" stroke-width="2"/>
+                  <line x1="1" y1="1" x2="23" y2="23" stroke="currentColor" stroke-width="2"/>
+                </svg>
+              </button>
+            </div>
+          </div>
 
-      <a-form-item name="confirmPassword">
-        <label for="confirmPassword" class="block text-sm font-medium text-gray-700 mb-2">
-          Xác nhận mật khẩu mới
-        </label>
-        <a-input-password
-          id="confirmPassword"
-          v-model:value="form.confirmPassword"
-          size="large"
-          placeholder="Nhập lại mật khẩu mới"
-          @pressEnter="handleResetPassword"
-        />
-      </a-form-item>
+          <!-- Confirm Password Field -->
+          <div class="form-group">
+            <label class="form-label">Xác nhận mật khẩu</label>
+            <div class="input-container">
+              <input
+                v-model="form.confirmPassword"
+                :type="showConfirmPassword ? 'text' : 'password'"
+                placeholder="Mật khẩu"
+                class="form-input"
+                required
+              />
+              <button
+                type="button"
+                @click="showConfirmPassword = !showConfirmPassword"
+                class="password-toggle"
+              >
+                <svg v-if="showConfirmPassword" width="20" height="20" viewBox="0 0 24 24" fill="none">
+                  <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z" stroke="currentColor" stroke-width="2"/>
+                  <circle cx="12" cy="12" r="3" stroke="currentColor" stroke-width="2"/>
+                </svg>
+                <svg v-else width="20" height="20" viewBox="0 0 24 24" fill="none">
+                  <path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24" stroke="currentColor" stroke-width="2"/>
+                  <line x1="1" y1="1" x2="23" y2="23" stroke="currentColor" stroke-width="2"/>
+                </svg>
+              </button>
+            </div>
+          </div>
 
-      <a-button
-        type="primary"
-        html-type="submit"
-        size="large"
-        class="w-full"
-        :loading="loading"
-      >
-        Đặt lại mật khẩu
-      </a-button>
-    </a-form>
+          <!-- Submit Button -->
+          <button type="submit" :disabled="loading || !isFormValid" class="submit-btn">
+            {{ loading ? 'Đang xử lý...' : 'Tạo mật khẩu mới' }}
+          </button>
 
-    <!-- Back to Login -->
-    <div class="mt-6 text-center w-full">
-      <nuxt-link
-        to="/login"
-        class="text-sm text-gray-600 hover:text-gray-800 underline"
-      >
-        ← Quay lại đăng nhập
-      </nuxt-link>
+          <!-- Login Link -->
+          <div class="login-link">
+            <span>Bạn đã có tài khoản.</span>
+            <a href="/login" class="login-text">Đăng nhập ngay</a>
+          </div>
+        </form>
+      </div>
+    </div>
+
+    <!-- Right Side - Marketing Section -->
+    <div class="marketing-section">
+      <!-- Background Circles -->
+      <div class="background-circles">
+        <div class="circle circle-1"></div>
+        <div class="circle circle-2"></div>
+        <div class="circle circle-3"></div>
+      </div>
+
+      <!-- Dragon Banner -->
+      <div class="dragon-banner">
+        <img src="/images/dragon_banner.png" alt="Dragon Character" class="dragon-image" />
+      </div>
+
+      <!-- Marketing Text -->
+      <div class="marketing-text">
+        <h2 class="marketing-title">Hành trình cùng mẹ, trải đầy yêu thương</h2>
+        <p class="marketing-description">
+          Vạn Phúc Care là người bạn đồng hành đáng tin cậy của cha mẹ trong hành trình chăm sóc sức khoẻ Mẹ và Bé
+        </p>
+      </div>
     </div>
   </div>
 </template>
 
 <script setup lang="ts">
+import { ref, reactive, computed } from 'vue'
+import { useAuthStore } from '~/stores/auth'
 import { message } from 'ant-design-vue'
 
-// Page setup
+// Use auth layout
 definePageMeta({
-  layout: 'auth',
-  middleware: 'guest'
+  layout: 'auth'
 })
 
+// SEO
 useHead({
-  title: 'Đặt lại mật khẩu - Van Phuc Care'
+  title: 'Lấy lại mật khẩu - Van Phuc Care E-Learning',
+  meta: [
+    {
+      name: 'description',
+      content: 'Tạo mật khẩu mới tại Van Phuc Care E-Learning',
+    },
+  ],
 })
 
-// Store & Router
 const authStore = useAuthStore()
-const route = useRoute()
-const router = useRouter()
+const loading = ref(false)
+const showNewPassword = ref(false)
+const showConfirmPassword = ref(false)
 
-// Get email and token from query params
-const email = ref(route.query.email as string || '')
-const token = ref(route.query.token as string || '')
-
-// Form refs
-const formRef = ref()
-
-// Form state
 const form = reactive({
   newPassword: '',
-  confirmPassword: ''
+  confirmPassword: '',
 })
 
-const loading = ref(false)
-const error = ref('')
+// Form validation
+const isFormValid = computed(() => {
+  return form.newPassword.length >= 6 && 
+         form.confirmPassword.length >= 6 && 
+         form.newPassword === form.confirmPassword
+})
 
-// Validation rules
-const rules = {
-  newPassword: [
-    {
-      required: true,
-      message: 'Vui lòng nhập mật khẩu mới',
-      trigger: 'blur'
-    },
-    {
-      min: 8,
-      message: 'Mật khẩu phải có ít nhất 8 ký tự',
-      trigger: 'blur'
-    }
-  ],
-  confirmPassword: [
-    {
-      required: true,
-      message: 'Vui lòng xác nhận mật khẩu',
-      trigger: 'blur'
-    },
-    {
-      validator: (_rule: any, value: string) => {
-        if (value !== form.newPassword) {
-          return Promise.reject('Mật khẩu không khớp')
-        }
-        return Promise.resolve()
-      },
-      trigger: 'blur'
-    }
-  ]
-}
-
-// Check if email and token exist
-onMounted(() => {
-  if (!email.value || !token.value) {
-    message.error('Thiếu thông tin xác thực. Vui lòng thực hiện lại quá trình quên mật khẩu.')
-    router.push('/forgot-password')
+const handleSubmit = async () => {
+  if (!isFormValid.value) {
+    message.error('Mật khẩu phải có ít nhất 6 ký tự và khớp nhau')
+    return
   }
-})
 
-// Handle reset password
-const handleResetPassword = async () => {
   try {
-    await formRef.value.validate()
-
     loading.value = true
-    error.value = ''
-
-    // Reset password with token
-    const result = await authStore.resetPassword(
-      email.value,
-      token.value,
-      form.newPassword
-    )
+    
+    // Get token from URL params
+    const route = useRoute()
+    const token = route.query.token as string
+    
+    if (!token) {
+      message.error('Token không hợp lệ')
+      return
+    }
+    
+    // Call reset password API
+    const result = await authStore.resetPassword(token, form.newPassword)
 
     if (result.success) {
-      message.success('Đổi mật khẩu thành công!')
-
-      // Redirect to login after 1 second
-      setTimeout(() => {
-        router.push('/login')
-      }, 1000)
+      message.success('Mật khẩu đã được cập nhật thành công')
+      // Redirect to login page
+      await navigateTo('/login')
     } else {
-      error.value = result.error || 'Đổi mật khẩu thất bại. Token có thể đã hết hạn.'
+      message.error(result.error || 'Không thể cập nhật mật khẩu')
     }
-  } catch (validationError) {
-    console.error('Validation error:', validationError)
+  } catch (error: any) {
+    console.error('Reset password error:', error)
+    message.error('Không thể cập nhật mật khẩu')
   } finally {
     loading.value = false
   }
@@ -183,6 +187,438 @@ const handleResetPassword = async () => {
 </script>
 
 <style scoped>
-/* Custom styles */
-</style>
+.reset-password-container {
+  position: relative;
+  width: 100vw;
+  height: 100vh;
+  display: flex;
+  background: #FFFFFF;
+  font-family: 'SVN-Gilroy', sans-serif;
+  overflow: hidden;
+}
 
+/* Left Side - Reset Password Form */
+.reset-password-form-section {
+  position: relative;
+  width: 50%;
+  height: 100vh;
+  background: #FFFFFF;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+  flex: 0 0 50%;
+}
+
+.content-wrapper {
+  width: 430px;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 24px;
+  padding: 40px 20px;
+}
+
+.logo-section {
+  position: relative;
+  width: 100%;
+  margin-top: 0;
+  text-align: center;
+}
+
+.logo {
+  width: 149.71px;
+  height: 70.48px;
+  object-fit: contain;
+}
+
+.title-section {
+  position: relative;
+  width: 100%;
+  text-align: center;
+  margin-top: 20px;
+}
+
+.main-title {
+  font-family: 'SVN-Gilroy';
+  font-style: normal;
+  font-weight: 700;
+  font-size: 32px;
+  line-height: 60px;
+  letter-spacing: 0.3px;
+  text-transform: capitalize;
+  color: #000000;
+  margin: 0;
+}
+
+.subtitle {
+  font-family: 'SVN-Gilroy';
+  font-style: normal;
+  font-weight: 500;
+  font-size: 16px;
+  line-height: 24px;
+  letter-spacing: 0.3px;
+  color: #4A4A4A;
+  margin: 0;
+}
+
+.reset-password-form {
+  position: relative;
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 36px;
+}
+
+.form-group {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  width: 100%;
+  max-width: 400px;
+}
+
+.form-label {
+  font-family: 'SVN-Gilroy';
+  font-style: normal;
+  font-weight: 700;
+  font-size: 20px;
+  line-height: 24px;
+  letter-spacing: 0.3px;
+  color: #4A4A4A;
+}
+
+.input-container {
+  position: relative;
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  padding: 15px 20px;
+  gap: 10px;
+  width: 100%;
+  height: 54px;
+  background: #FAFBFF;
+  border: 1px solid #D9D9D9;
+  border-radius: 12px;
+  box-sizing: border-box;
+}
+
+.form-input {
+  flex: 1;
+  border: none;
+  background: transparent;
+  font-family: 'SVN-Gilroy';
+  font-style: normal;
+  font-weight: 500;
+  font-size: 16px;
+  line-height: 24px;
+  letter-spacing: 0.3px;
+  color: #4A4A4A;
+  outline: none;
+}
+
+.form-input::placeholder {
+  color: #8C8C8C;
+  text-align: left;
+}
+
+.password-toggle {
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 4px;
+  color: #8C8C8C;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: color 0.2s ease;
+}
+
+.password-toggle:hover {
+  color: #4A4A4A;
+}
+
+.submit-btn {
+  display: flex;
+  flex-direction: row;
+  justify-content: center;
+  align-items: center;
+  padding: 15px 30px;
+  gap: 10px;
+  width: 100%;
+  height: 60px;
+  background: #317BC4;
+  border-radius: 12px;
+  border: none;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  margin-top: 12px;
+}
+
+.submit-btn:hover:not(:disabled) {
+  background: #2563eb;
+}
+
+.submit-btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.submit-btn span {
+  font-family: 'SVN-Gilroy';
+  font-style: normal;
+  font-weight: 700;
+  font-size: 20px;
+  line-height: 30px;
+  text-align: center;
+  letter-spacing: 0.3px;
+  color: #FFFFFF;
+}
+
+.login-link {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  gap: 5px;
+  width: 242px;
+  height: 24px;
+  margin: 0 auto;
+  justify-content: center;
+}
+
+.login-link span {
+  font-family: 'SVN-Gilroy';
+  font-style: italic;
+  font-weight: 600;
+  font-size: 13px;
+  line-height: 24px;
+  text-align: center;
+  letter-spacing: 0.3px;
+  color: #4A4A4A;
+}
+
+.login-text {
+  font-family: 'SVN-Gilroy';
+  font-style: italic;
+  font-weight: 600;
+  font-size: 13px;
+  line-height: 24px;
+  text-align: center;
+  letter-spacing: 0.3px;
+  color: #317BC4;
+  text-decoration: none;
+}
+
+.login-text:hover {
+  text-decoration: underline;
+}
+
+/* Right Side - Marketing Section */
+.marketing-section {
+  position: relative;
+  width: 50%;
+  height: 100vh;
+  background: #317BC4;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+  flex: 0 0 50%;
+}
+
+.background-circles {
+  position: absolute;
+  width: 100%;
+  height: 100%;
+  top: 0;
+  left: 0;
+}
+
+.circle {
+  position: absolute;
+  border-radius: 50%;
+  background: linear-gradient(180deg, rgba(59, 140, 220, 0.9) 0%, rgba(73, 145, 216, 0.351) 100%);
+}
+
+.circle-1 {
+  width: 488.7px;
+  height: 488.7px;
+  left: 50%;
+  top: 20%;
+  transform: translate(-50%, -50%);
+}
+
+.circle-2 {
+  width: 278.9px;
+  height: 277.38px;
+  right: 10%;
+  top: 5%;
+}
+
+.circle-3 {
+  width: 109.28px;
+  height: 108.69px;
+  left: 5%;
+  bottom: 20%;
+  transform: rotate(-32.63deg);
+}
+
+.dragon-banner {
+  position: absolute;
+  width: 603.74px;
+  height: 603.74px;
+  left: 50%;
+  top: 35%;
+  transform: translate(-50%, -50%);
+  z-index: 2;
+}
+
+.dragon-image {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+}
+
+.marketing-text {
+  position: absolute;
+  width: 526.45px;
+  left: 50%;
+  top: 75%;
+  transform: translateX(-50%);
+  z-index: 2;
+  text-align: center;
+}
+
+.marketing-title {
+  font-family: 'SVN-Gilroy';
+  font-style: normal;
+  font-weight: 700;
+  font-size: 24px;
+  line-height: 36px;
+  letter-spacing: 0.3px;
+  color: #FFFFFF;
+  margin: 0 0 12px 0;
+}
+
+.marketing-description {
+  font-family: 'SVN-Gilroy';
+  font-style: italic;
+  font-weight: 500;
+  font-size: 16px;
+  line-height: 24px;
+  text-align: center;
+  letter-spacing: 0.3px;
+  color: #FFFFFF;
+  margin: 0;
+}
+
+/* Responsive Design */
+@media (max-width: 1024px) {
+  .reset-password-container {
+    flex-direction: column;
+    height: auto;
+    min-height: 100vh;
+  }
+  
+  .reset-password-form-section,
+  .marketing-section {
+    width: 100%;
+    height: 50vh;
+    min-height: 500px;
+  }
+  
+  .reset-password-form-section {
+    padding: 40px 20px;
+  }
+  
+  .logo-section,
+  .title-section,
+  .reset-password-form {
+    position: static;
+    margin-bottom: 20px;
+  }
+  
+  .background-circles,
+  .dragon-banner,
+  .marketing-text {
+    display: none;
+  }
+}
+
+@media (max-width: 768px) {
+  .reset-password-container {
+    position: relative;
+    width: 375px;
+    height: 812px;
+    margin: 0 auto;
+    flex-direction: column;
+  }
+
+  .marketing-section { display: none; }
+
+  .reset-password-form-section {
+    position: absolute;
+    width: 343px;
+    height: 453.04px;
+    left: 16px;
+    top: calc(50% - 453.04px/2 - 12px);
+    background: transparent;
+    padding: 0;
+  }
+
+  .content-wrapper { width: 100%; gap: 0; padding: 0; }
+
+  /* Logo */
+  .logo-section {
+    position: absolute;
+    width: 80.1px;
+    height: 62.09px;
+    left: calc(50% - 80.1px/2 - 1.14px);
+    top: 167.48px;
+    text-align: center;
+  }
+  .logo { width: 80.1px; height: 62.09px; }
+
+  /* Title group */
+  .title-section {
+    position: absolute;
+    width: 265px;
+    height: 56px;
+    left: 55px;
+    top: 243.56px;
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    padding: 0;
+  }
+  .main-title { width: 265px; height: 32px; font-size: 24px; line-height: 32px; text-align: left; letter-spacing: 0.3px; margin: 0; }
+  .subtitle { width: 265px; height: 24px; font-size: 14px; line-height: 24px; letter-spacing: 0.3px; margin: 0; text-align: left; }
+
+  /* Form */
+  .reset-password-form {
+    position: absolute;
+    width: 343px;
+    height: 296px;
+    left: 16px;
+    top: 324.52px;
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 36px;
+  }
+
+  /* First field block */
+  .form-group { width: 343px; }
+  .form-label { width: 343px; font-size: 16px; }
+  .input-container { width: 343px; height: 48px; padding: 15px 20px; }
+  .form-input { font-size: 14px; }
+
+  /* Submit */
+  .submit-btn { width: 343px; height: 52px; align-self: flex-start; }
+
+  .login-link { width: 242px; height: 24px; align-self: flex-start; }
+}
+</style>
