@@ -190,7 +190,7 @@ export const useAuthStore = defineStore('auth', {
      * Register new account (CRM/E-Learning)
      * Migrated from crm-vpc/components/auth/forms/SignUp.vue
      */
-    async register(email: string, password: string, repeatPassword: string, fullname?: string) {
+    async register(email: string, password: string, repeatPassword: string, fullname?: string, phone?: string) {
       this.isLoading = true
       
       try {
@@ -201,7 +201,7 @@ export const useAuthStore = defineStore('auth', {
         const authApi = useAuthApi()
         
         // Call API register
-        const response: any = await authApi.register(email, password, repeatPassword, fullname)
+        const response: any = await authApi.register(email, password, repeatPassword, fullname, phone)
 
         return { success: true, data: response }
       } catch (error: any) {
@@ -272,40 +272,18 @@ export const useAuthStore = defineStore('auth', {
       }
     },
 
-    /**
-     * Verify OTP for password reset
-     */
-    async verifyOtpForPassword(email: string, otp: string) {
-      this.isLoading = true
-      
-      try {
-        const authApi = useAuthApi()
-        
-        const response: any = await authApi.verifyOtp(email, otp)
-
-        return { success: true, token: response.data?.token }
-      } catch (error: any) {
-        console.error('Verify OTP error:', error)
-        return { 
-          success: false, 
-          error: error.data?.message || error.message || 'Mã OTP không chính xác'
-        }
-      } finally {
-        this.isLoading = false
-      }
-    },
 
     /**
      * Reset password with token
      * Migrated from admin-vpc/components/auth/forms/NewPassword.vue
      */
-    async resetPassword(email: string, token: string, newPassword: string) {
+    async resetPassword(token: string, newPassword: string) {
       this.isLoading = true
       
       try {
         const authApi = useAuthApi()
         
-        await authApi.resetPassword(email, token, newPassword)
+        await authApi.resetPassword(token, newPassword)
 
         return { success: true }
       } catch (error: any) {
@@ -575,7 +553,7 @@ export const useAuthStore = defineStore('auth', {
       }
 
       const [, value, unit] = match
-      const amount = parseInt(value)
+      const amount = parseInt(value || '0')
       
       let milliseconds = 0
       switch (unit) {

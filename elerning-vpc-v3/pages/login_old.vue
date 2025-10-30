@@ -1,11 +1,22 @@
 <template>
   <div class="login-container">
+    <!-- Mobile Header -->
+    <div class="mobile-header">
+      <h1 class="mobile-title">Đăng nhập</h1>
+    </div>
+
     <!-- Left Side - Login Form -->
     <div class="login-form-section">
       <div class="content-wrapper">
         <!-- Logo -->
         <div class="logo-section">
           <img src="/images/logo_van_phuc.png" alt="Van Phuc Care" class="logo" />
+        </div>
+
+        <!-- Title and Subtitle -->
+        <div class="title-section">
+          <h1 class="main-title">Đăng nhập</h1>
+          <p class="subtitle">Chào mừng bạn đến với Vạn Phúc Care</p>
         </div>
 
         <!-- Google Login Button -->
@@ -34,14 +45,13 @@
         <form @submit.prevent="handleSubmit" class="login-form">
         <!-- Email/Phone Field -->
         <div class="form-group">
-          <label for="email" class="form-label">Email/ Số điện thoại</label>
+          <label class="form-label">Email/ Số điện thoại</label>
           <div class="input-container">
             <input
-              id="email"
-              v-model="form.email"
+              v-model="form.username"
               type="text"
-              class="form-input"
               placeholder="Email/SĐT"
+              class="form-input"
               required
             />
           </div>
@@ -49,39 +59,50 @@
 
         <!-- Password Field -->
         <div class="form-group">
-          <label for="password" class="form-label">Mật khẩu</label>
+          <label class="form-label">Mật khẩu</label>
           <div class="input-container">
             <input
-              id="password"
               v-model="form.password"
-              type="password"
-              class="form-input"
+              :type="showPassword ? 'text' : 'password'"
               placeholder="Mật khẩu"
+              class="form-input"
               required
             />
+            <button
+              type="button"
+              @click="togglePassword"
+              class="password-toggle"
+            >
+              {{ showPassword ? '👁️' : '👁️‍🗨️' }}
+            </button>
           </div>
         </div>
 
-        <!-- Remember Me & Forgot Password -->
+        <!-- Remember Me and Forgot Password -->
         <div class="form-options">
           <div class="remember-me">
-            <input type="checkbox" id="remember" class="remember-checkbox" v-model="form.remember" />
-            <label for="remember" class="remember-text">Nhớ tài khoản</label>
+            <input
+              v-model="form.remindAccount"
+              type="checkbox"
+              id="remember"
+              class="checkbox"
+            />
+            <label for="remember" class="checkbox-label">Nhớ tài khoản</label>
           </div>
           <a href="/forgot-password" class="forgot-password">Quên mật khẩu?</a>
         </div>
 
-        <!-- Submit Button -->
-        <button type="submit" class="submit-btn" :disabled="loading">
+        <!-- Login Button -->
+        <button type="submit" :disabled="loading" class="login-btn">
           {{ loading ? 'Đang đăng nhập...' : 'Đăng nhập' }}
         </button>
 
         <!-- Register Link -->
         <div class="register-link">
-          <span class="register-text">Bạn chưa có tài khoản.</span>
-          <a href="/register" class="register-link-text">Đăng ký ngay</a>
+          <span>Bạn chưa có tài khoản.</span>
+          <a href="/register" class="register-text">Đăng ký ngay</a>
         </div>
-        </form>
+      </form>
       </div>
     </div>
 
@@ -89,107 +110,94 @@
     <div class="marketing-section">
       <!-- Background Circles -->
       <div class="background-circles">
-        <div class="circle-1"></div>
-        <div class="circle-2"></div>
-        <div class="circle-3"></div>
+        <div class="circle circle-1"></div>
+        <div class="circle circle-2"></div>
+        <div class="circle circle-3"></div>
       </div>
 
       <!-- Dragon Banner -->
       <div class="dragon-banner">
-        <img src="/images/dragon_banner.png" alt="Dragon Banner" class="dragon-image" />
+        <img src="/images/dragon_banner.png" alt="Dragon Character" class="dragon-image" />
       </div>
 
       <!-- Marketing Text -->
       <div class="marketing-text">
-        <h2 class="marketing-title">Chào mừng đến với Vạn Phúc Care</h2>
-        <p class="marketing-description">Hệ thống chăm sóc sức khỏe toàn diện và hiện đại</p>
+        <h2 class="marketing-title">Hành trình cùng mẹ, trải đầy yêu thương</h2>
+        <p class="marketing-description">
+          Vạn Phúc Care là người bạn đồng hành đáng tin cậy của cha mẹ trong hành trình chăm sóc sức khoẻ Mẹ và Bé
+        </p>
       </div>
     </div>
   </div>
 </template>
 
 <script setup lang="ts">
-import { ref, reactive, onMounted } from 'vue'
+import { ref, reactive } from 'vue'
 import { useAuthStore } from '~/stores/auth'
 import { message } from 'ant-design-vue'
 
-// SEO
-useHead({
-  title: 'Đăng nhập - Vạn Phúc Care',
-  meta: [
-    { name: 'description', content: 'Đăng nhập vào hệ thống Vạn Phúc Care để truy cập các dịch vụ chăm sóc sức khỏe' }
-  ]
-})
-
-// Page meta
+// Use auth layout
 definePageMeta({
   layout: 'auth'
 })
 
-// Auth store
-const authStore = useAuthStore()
-
-// Form data
-const form = reactive({
-  email: '',
-  password: '',
-  remember: false
+// SEO
+useHead({
+  title: 'Đăng nhập - Van Phuc Care E-Learning',
+  meta: [
+    {
+      name: 'description',
+      content: 'Đăng nhập vào hệ thống E-Learning Van Phuc Care',
+    },
+  ],
 })
 
-// Loading state
+const authStore = useAuthStore()
 const loading = ref(false)
+const showPassword = ref(false)
 
-// Handle Google OAuth callback
-const handleGoogleCallback = () => {
-  const urlParams = new URLSearchParams(window.location.search)
-  const googleSuccess = urlParams.get('google_success')
-  const googleError = urlParams.get('google_error')
-  const token = urlParams.get('token')
-  
-  if (googleSuccess && token) {
-    // Store token and redirect
-    localStorage.setItem('auth_token', token)
-    message.success('Đăng nhập Google thành công!')
-    navigateTo('/')
-  } else if (googleError) {
-    message.error('Đăng nhập Google thất bại')
+const form = reactive({
+  username: '',
+  password: '',
+  remindAccount: true,
+})
+
+const togglePassword = () => {
+  showPassword.value = !showPassword.value
+}
+
+const handleGoogleLogin = async () => {
+  try {
+    const { getGoogleLoginUrl } = useGoogleAuth()
+    const authUrl = getGoogleLoginUrl()
+    window.location.href = authUrl
+  } catch (error: any) {
+    console.error('Google login error:', error)
+    message.error(error.message || 'Lỗi đăng nhập Google')
   }
 }
 
-// Check for Google callback on mount
-onMounted(() => {
-  handleGoogleCallback()
-})
-
-// Handle form submission
 const handleSubmit = async () => {
   try {
     loading.value = true
     
-    const result = await authStore.login(form.email, form.password)
+    const result = await authStore.login(
+      form.username,
+      form.password,
+      form.remindAccount
+    )
     
     if (result.success) {
-      message.success('Đăng nhập thành công!')
+      message.success('Đăng nhập thành công')
       await navigateTo('/')
     } else {
-      message.error(result.error || 'Đăng nhập thất bại')
+      message.error(result.error || 'Tên đăng nhập hoặc mật khẩu không chính xác')
     }
   } catch (error: any) {
     console.error('Login error:', error)
     message.error('Tên đăng nhập hoặc mật khẩu không chính xác')
   } finally {
     loading.value = false
-  }
-}
-
-// Handle Google login
-const handleGoogleLogin = async () => {
-  try {
-    // Redirect to Google OAuth
-    window.location.href = 'http://localhost:3000/api/a/auth/google'
-  } catch (error: any) {
-    console.error('Google login error:', error)
-    message.error('Đăng nhập Google thất bại')
   }
 }
 </script>
@@ -202,7 +210,7 @@ const handleGoogleLogin = async () => {
   display: flex;
   background: #FFFFFF;
   font-family: 'SVN-Gilroy', sans-serif;
-  overflow: hidden;
+  overflow: hidden; /* avoid horizontal whitespace */
 }
 
 .mobile-header {
@@ -255,10 +263,7 @@ const handleGoogleLogin = async () => {
     object-fit: contain;
   }
   
-  .title-section {
-    display: none;
-  }
-  
+  .title-section,
   .google-login-section,
   .divider,
   .login-form {
@@ -301,32 +306,6 @@ const handleGoogleLogin = async () => {
     border: 1px solid #D9D9D9;
     border-radius: 12px;
     background: #FFFFFF;
-    font-family: 'SVN-Gilroy';
-    font-style: normal;
-    font-weight: 600;
-    font-size: 16px;
-    line-height: 30px;
-    text-align: center;
-    letter-spacing: 0.3px;
-    color: #4A4A4A;
-    cursor: pointer;
-    transition: all 0.3s ease;
-  }
-  
-  .google-login-btn:hover {
-    background: #F8F9FA;
-    border-color: #B0B0B0;
-  }
-  
-  .google-icon {
-    width: 24px;
-    height: 24px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-  }
-  
-  .google-text {
     font-family: 'SVN-Gilroy';
     font-style: normal;
     font-weight: 600;
@@ -487,17 +466,6 @@ const handleGoogleLogin = async () => {
     text-align: center;
     letter-spacing: 0.3px;
     color: #FFFFFF;
-    cursor: pointer;
-    transition: all 0.3s ease;
-  }
-  
-  .submit-btn:hover {
-    background: #2563EB;
-  }
-  
-  .submit-btn:disabled {
-    background: #9CA3AF;
-    cursor: not-allowed;
   }
   
   .register-link {
@@ -506,7 +474,6 @@ const handleGoogleLogin = async () => {
     align-items: center;
     gap: 5px;
     justify-content: center;
-    margin-top: 20px;
   }
   
   .register-text {
@@ -531,109 +498,423 @@ const handleGoogleLogin = async () => {
     color: #317BC4;
     text-decoration: none;
   }
-  
-  /* Right Side - Marketing Section */
-  .marketing-section {
-    position: relative;
-    width: 50%;
-    height: 100vh;
-    background: #317BC4;
-    display: flex;
+}
+
+/* Left Side - Login Form - Desktop styles moved to media query above */
+
+/* All desktop styles moved to media query above */
+
+.subtitle {
+  font-family: 'SVN-Gilroy';
+  font-style: normal;
+  font-weight: 500;
+  font-size: 16px;
+  line-height: 24px;
+  letter-spacing: 0.3px;
+  color: #4A4A4A;
+  margin: 0;
+}
+
+.google-login-section {
+  position: relative;
+  width: 100%;
+}
+
+.google-login-btn {
+  display: flex;
+  flex-direction: row;
+  justify-content: center;
+  align-items: center;
+  padding: 15px 30px;
+  gap: 10px;
+  width: 100%;
+  height: 60px;
+  border: 1px solid #D9D9D9;
+  border-radius: 12px;
+  background: #FFFFFF;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.google-login-btn:hover {
+  background: #FAFBFF;
+  border-color: #317BC4;
+}
+
+.google-icon {
+  width: 24px;
+  height: 24px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.google-text {
+  font-family: 'SVN-Gilroy';
+  font-style: normal;
+  font-weight: 600;
+  font-size: 20px;
+  line-height: 30px;
+  text-align: center;
+  letter-spacing: 0.3px;
+  color: #4A4A4A;
+}
+
+.divider {
+  position: relative;
+  width: 100%;
+  height: 24px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 11px;
+}
+
+.divider-line {
+  width: 170.94px;
+  height: 0px;
+  border: 1px solid #D9D9D9;
+}
+
+.divider-text {
+  font-family: 'SVN-Gilroy';
+  font-style: normal;
+  font-weight: 500;
+  font-size: 16px;
+  line-height: 24px;
+  letter-spacing: 0.3px;
+  color: #4A4A4A;
+}
+
+.login-form {
+  position: relative;
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 24px;
+}
+
+.form-group {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  width: 100%;
+}
+
+.form-label {
+  font-family: 'SVN-Gilroy';
+  font-style: normal;
+  font-weight: 700;
+  font-size: 20px;
+  line-height: 24px;
+  letter-spacing: 0.3px;
+  color: #4A4A4A;
+}
+
+.input-container {
+  position: relative;
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  padding: 15px 20px;
+  gap: 10px;
+  width: 100%;
+  height: 54px;
+  background: #FAFBFF;
+  border: 1px solid #D9D9D9;
+  border-radius: 12px;
+  box-sizing: border-box;
+}
+
+.form-input {
+  flex: 1;
+  border: none;
+  background: transparent;
+  font-family: 'SVN-Gilroy';
+  font-style: normal;
+  font-weight: 500;
+  font-size: 16px;
+  line-height: 24px;
+  letter-spacing: 0.3px;
+  color: #4A4A4A;
+  outline: none;
+}
+
+.form-input::placeholder {
+  color: #8C8C8C;
+  text-align: center;
+}
+
+.password-toggle {
+  background: none;
+  border: none;
+  cursor: pointer;
+  font-size: 16px;
+  padding: 0;
+  margin: 0;
+}
+
+.form-options {
+  display: flex;
+  flex-direction: row;
+  align-items: flex-end;
+  justify-content: space-between;
+  width: 100%;
+  height: 24px;
+}
+
+.remember-me {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.checkbox {
+  width: 14.88px;
+  height: 14.88px;
+  border: 1px solid #D9D9D9;
+  border-radius: 2px;
+  cursor: pointer;
+}
+
+.checkbox-label {
+  font-family: 'SVN-Gilroy';
+  font-style: normal;
+  font-weight: 600;
+  font-size: 14px;
+  line-height: 15px;
+  color: #4A4A4A;
+  cursor: pointer;
+}
+
+.forgot-password {
+  font-family: 'SVN-Gilroy';
+  font-style: normal;
+  font-weight: 700;
+  font-size: 14px;
+  line-height: 24px;
+  text-align: right;
+  letter-spacing: 0.3px;
+  color: #317BC4;
+  text-decoration: none;
+}
+
+.forgot-password:hover {
+  text-decoration: underline;
+}
+
+.login-btn {
+  display: flex;
+  flex-direction: row;
+  justify-content: center;
+  align-items: center;
+  padding: 15px 30px;
+  gap: 10px;
+  width: 100%;
+  height: 60px;
+  background: #317BC4;
+  border-radius: 12px;
+  border: none;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.login-btn:hover:not(:disabled) {
+  background: #2563eb;
+}
+
+.login-btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.login-btn span {
+  font-family: 'SVN-Gilroy';
+  font-style: normal;
+  font-weight: 700;
+  font-size: 20px;
+  line-height: 30px;
+  text-align: center;
+  letter-spacing: 0.3px;
+  color: #FFFFFF;
+}
+
+.register-link {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  gap: 5px;
+  width: 238px;
+  height: 24px;
+}
+
+.register-link span {
+  font-family: 'SVN-Gilroy';
+  font-style: italic;
+  font-weight: 600;
+  font-size: 13px;
+  line-height: 24px;
+  text-align: left;
+  letter-spacing: 0.3px;
+  color: #4A4A4A;
+}
+
+.register-text {
+  font-family: 'SVN-Gilroy';
+  font-style: italic;
+  font-weight: 600;
+  font-size: 13px;
+  line-height: 24px;
+  text-align: left;
+  letter-spacing: 0.3px;
+  color: #317BC4;
+  text-decoration: none;
+}
+
+.register-text:hover {
+  text-decoration: underline;
+}
+
+/* Right Side - Marketing Section */
+.marketing-section {
+  position: relative;
+  width: 50%;
+  height: 100vh;
+  background: #317BC4;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+  flex: 0 0 50%; /* equal width with white section */
+}
+
+.background-circles {
+  position: absolute;
+  width: 100%;
+  height: 100%;
+  top: 0;
+  left: 0;
+}
+
+.circle {
+  position: absolute;
+  border-radius: 50%;
+  background: linear-gradient(180deg, rgba(59, 140, 220, 0.9) 0%, rgba(73, 145, 216, 0.351) 100%);
+}
+
+.circle-1 {
+  width: 488.7px;
+  height: 488.7px;
+  left: 50%;
+  top: 20%;
+  transform: translate(-50%, -50%);
+}
+
+.circle-2 {
+  width: 278.9px;
+  height: 277.38px;
+  right: 10%;
+  top: 5%;
+}
+
+.circle-3 {
+  width: 109.28px;
+  height: 108.69px;
+  left: 5%;
+  bottom: 20%;
+  transform: rotate(-32.63deg);
+}
+
+.dragon-banner {
+  position: absolute;
+  width: 603.74px;
+  height: 603.74px;
+  left: 50%;
+  top: 35%;
+  transform: translate(-50%, -50%);
+  z-index: 2;
+}
+
+.dragon-image {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+}
+
+.marketing-text {
+  position: absolute;
+  width: 526.45px;
+  left: 50%;
+  top: 75%;
+  transform: translateX(-50%);
+  z-index: 2;
+  text-align: center;
+}
+
+.marketing-title {
+  font-family: 'SVN-Gilroy';
+  font-style: normal;
+  font-weight: 700;
+  font-size: 24px;
+  line-height: 36px;
+  letter-spacing: 0.3px;
+  color: #FFFFFF;
+  margin: 0 0 12px 0;
+}
+
+.marketing-description {
+  font-family: 'SVN-Gilroy';
+  font-style: italic;
+  font-weight: 500;
+  font-size: 16px;
+  line-height: 24px;
+  text-align: center;
+  letter-spacing: 0.3px;
+  color: #FFFFFF;
+  margin: 0;
+}
+
+/* Responsive Design */
+@media (max-width: 1440px) {
+  .login-container {
+    transform: scale(0.8);
+    transform-origin: top left;
+  }
+}
+
+@media (max-width: 1024px) {
+  .login-container {
     flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    padding: 0;
-    flex: 0 0 50%;
-    overflow: hidden;
+    height: auto;
+    min-height: 100vh;
   }
   
-  .background-circles {
-    position: absolute;
+  .login-form-section,
+  .marketing-section {
     width: 100%;
-    height: 100%;
-    z-index: 1;
+    height: 50vh;
+    min-height: 500px;
   }
   
-  .circle-1 {
-    position: absolute;
-    width: 200px;
-    height: 200px;
-    left: 10%;
-    top: 10%;
-    background: rgba(255, 255, 255, 0.1);
-    border-radius: 50%;
-    transform: rotate(45deg);
+  .login-form-section {
+    padding: 40px 20px;
   }
   
-  .circle-2 {
-    position: absolute;
-    width: 150px;
-    height: 150px;
-    right: 15%;
-    top: 20%;
-    background: rgba(255, 255, 255, 0.08);
-    border-radius: 50%;
-    transform: rotate(-30deg);
+  .logo-section,
+  .title-section,
+  .google-login-section,
+  .divider,
+  .login-form {
+    position: static;
+    margin-bottom: 20px;
   }
   
-  .circle-3 {
-    position: absolute;
-    width: 109.28px;
-    height: 108.69px;
-    left: 5%;
-    bottom: 20%;
-    background: rgba(255, 255, 255, 0.06);
-    border-radius: 50%;
-    transform: rotate(-32.63deg);
-  }
-  
-  .dragon-banner {
-    position: absolute;
-    width: 603.74px;
-    height: 603.74px;
-    left: 50%;
-    top: 35%;
-    transform: translate(-50%, -50%);
-    z-index: 2;
-  }
-  
-  .dragon-image {
-    width: 100%;
-    height: 100%;
-    object-fit: contain;
-  }
-  
+  .background-circles,
+  .dragon-banner,
   .marketing-text {
-    position: absolute;
-    width: 526.45px;
-    left: 50%;
-    top: 75%;
-    transform: translateX(-50%);
-    z-index: 2;
-    text-align: center;
-  }
-  
-  .marketing-title {
-    font-family: 'SVN-Gilroy';
-    font-style: normal;
-    font-weight: 700;
-    font-size: 24px;
-    line-height: 36px;
-    letter-spacing: 0.3px;
-    color: #FFFFFF;
-    margin: 0 0 12px 0;
-  }
-  
-  .marketing-description {
-    font-family: 'SVN-Gilroy';
-    font-style: italic;
-    font-weight: 500;
-    font-size: 16px;
-    line-height: 24px;
-    text-align: center;
-    letter-spacing: 0.3px;
-    color: #FFFFFF;
-    margin: 0;
+    display: none;
   }
 }
 
@@ -650,17 +931,7 @@ const handleGoogleLogin = async () => {
   }
   
   .mobile-header {
-    display: block;
-    padding: 20px;
-    background: #f5f5f5;
-  }
-  
-  .mobile-title {
-    font-family: 'SVN-Gilroy', sans-serif;
-    font-size: 18px;
-    font-weight: 600;
-    color: #333;
-    margin: 0;
+    display: none;
   }
   
   .login-form-section {
@@ -700,7 +971,43 @@ const handleGoogleLogin = async () => {
   }
   
   .title-section {
-    display: none;
+    position: absolute;
+    width: 265px;
+    height: 56px;
+    left: 55px;
+    top: 197.04px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0;
+  }
+  
+  .main-title {
+    width: 265px;
+    height: 32px;
+    font-family: 'SVN-Gilroy';
+    font-style: normal;
+    font-weight: 700;
+    font-size: 24px;
+    line-height: 32px;
+    text-align: center;
+    letter-spacing: 0.3px;
+    text-transform: capitalize;
+    color: #000000;
+    margin: 0;
+  }
+  
+  .subtitle {
+    width: 265px;
+    height: 24px;
+    font-family: 'SVN-Gilroy';
+    font-style: normal;
+    font-weight: 500;
+    font-size: 14px;
+    line-height: 24px;
+    letter-spacing: 0.3px;
+    color: #4A4A4A;
+    margin: 0;
   }
   
   .google-login-section {
@@ -708,7 +1015,7 @@ const handleGoogleLogin = async () => {
     width: 343px;
     height: 48px;
     left: 16px;
-    top: 197.04px;
+    top: 261.04px;
   }
   
   .google-login-btn {
@@ -731,26 +1038,6 @@ const handleGoogleLogin = async () => {
     text-align: center;
     letter-spacing: 0.3px;
     color: #4A4A4A;
-    cursor: pointer;
-  }
-  
-  .google-icon {
-    width: 24px;
-    height: 24px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-  }
-  
-  .google-text {
-    font-family: 'SVN-Gilroy';
-    font-style: normal;
-    font-weight: 600;
-    font-size: 14px;
-    line-height: 30px;
-    text-align: center;
-    letter-spacing: 0.3px;
-    color: #4A4A4A;
   }
   
   .divider {
@@ -758,7 +1045,7 @@ const handleGoogleLogin = async () => {
     width: 343px;
     height: 24px;
     left: 16px;
-    top: 259.04px;
+    top: 323.04px;
     display: flex;
     align-items: center;
     justify-content: center;
@@ -801,7 +1088,7 @@ const handleGoogleLogin = async () => {
     width: 343px;
     height: 330px;
     left: calc(50% - 343px/2);
-    top: 297.04px;
+    top: 361.04px;
     display: flex;
     flex-direction: column;
     align-items: center;
@@ -910,7 +1197,6 @@ const handleGoogleLogin = async () => {
     text-align: right;
     letter-spacing: 0.3px;
     color: #317BC4;
-    text-decoration: none;
   }
   
   .submit-btn {
@@ -933,7 +1219,6 @@ const handleGoogleLogin = async () => {
     text-align: center;
     letter-spacing: 0.3px;
     color: #FFFFFF;
-    cursor: pointer;
   }
   
   .register-link {
@@ -965,7 +1250,6 @@ const handleGoogleLogin = async () => {
     text-align: center;
     letter-spacing: 0.3px;
     color: #317BC4;
-    text-decoration: none;
   }
   
   /* Hide marketing section on mobile */
@@ -975,42 +1259,37 @@ const handleGoogleLogin = async () => {
 }
 
 @media (max-width: 480px) {
-  .login-container {
-    width: 100%;
-    max-width: 375px;
-  }
-  
   .login-form-section {
-    width: calc(100% - 32px);
-    left: 16px;
+    padding: 16px;
   }
   
-  .google-login-section,
-  .divider,
-  .login-form {
-    width: calc(100% - 32px);
-    left: 16px;
+  .content-wrapper {
+    gap: 20px;
   }
   
-  .form-group {
-    width: 100%;
+  .main-title {
+    font-size: 24px;
+    line-height: 32px;
+  }
+  
+  .subtitle {
+    font-size: 14px;
+    line-height: 20px;
+  }
+  
+  .google-login-btn {
+    height: 48px;
+    font-size: 14px;
   }
   
   .input-container {
-    width: 100%;
-  }
-  
-  .form-options {
-    width: 100%;
+    height: 48px;
+    padding: 12px 16px;
   }
   
   .submit-btn {
-    width: 100%;
-  }
-  
-  .register-link {
-    width: 100%;
-    justify-content: center;
+    height: 48px;
+    font-size: 16px;
   }
 }
 </style>

@@ -26,6 +26,7 @@ import QuizzesRouter from './Quizzes';
 import DocumentsRouter from './Documents';
 import UpdateVideoRouter from './UpdateVideo';
 import LessonsRouter from './Lessons';
+import PasswordsRouter from './Passwords';
 
 const router = Router();
 
@@ -33,6 +34,7 @@ router.use('/categories', adminPassport.authenticate('jwt', { session: false }),
 router.use('/faqs', adminPassport.authenticate('jwt', { session: false }), FaqRouter);
 router.use('/courses', CoursesRouter);
 router.use('/sessions', SessionRouter);
+router.use('/passwords', PasswordsRouter);
 router.use('/auth/google', GoogleAuthRouter);
 router.use('/feedbacks', adminPassport.authenticate('jwt', { session: false }), FeedbackRouter);
 router.use('/products', adminPassport.authenticate('jwt', { session: false }), ProductsRouter);

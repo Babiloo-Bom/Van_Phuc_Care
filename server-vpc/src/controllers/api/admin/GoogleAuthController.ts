@@ -19,10 +19,15 @@ export default class GoogleAuthController {
     try {
       // If GET request, redirect to Google OAuth
       if (req.method === 'GET') {
-        const clientId = process.env.GOOGLE_CLIENT_ID
-        const redirectUri = process.env.GOOGLE_REDIRECT_URI || `http://localhost:3000/a/sessions/google/callback`
+        const clientId = settings.google.clientId
+        const redirectUri = settings.google.redirectUri
         
-        if (!clientId) {
+        console.log('🔍 Google OAuth Configuration:')
+        console.log('  - Client ID:', clientId)
+        console.log('  - Redirect URI:', redirectUri)
+        console.log('  - Redirect URI (encoded):', encodeURIComponent(redirectUri))
+        
+        if (!clientId || clientId === 'your_google_client_id_here') {
           return sendError(res, 500, 'Google Client ID not configured')
         }
         
@@ -35,21 +40,70 @@ export default class GoogleAuthController {
           `scope=openid%20email%20profile&` +
           `state=${state}`
         
+        console.log('🔍 Full Google OAuth URL:', googleAuthUrl)
+        
         return res.redirect(googleAuthUrl)
       }
       
-      // If POST request, handle Google profile
-      const { googleProfile, googleAccessToken } = req.body
+      // If POST request, handle Google OAuth code exchange or profile
+      const { code, redirectUri, googleProfile, googleAccessToken } = req.body
 
-      if (!googleProfile || !googleProfile.email) {
+      let googleProfileData = googleProfile
+
+      // If code is provided, exchange it for access token and get profile
+      if (code) {
+        console.log('🔍 Google OAuth code exchange:', { code, redirectUri })
+
+        // Exchange code for access token
+        const tokenResponse = await fetch('https://oauth2.googleapis.com/token', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/x-www-form-urlencoded',
+          },
+          body: new URLSearchParams({
+            client_id: settings.google.clientId,
+            client_secret: settings.google.clientSecret,
+            code: code,
+            grant_type: 'authorization_code',
+            redirect_uri: redirectUri || settings.google.redirectUri
+          })
+        })
+        
+        const tokenData = await tokenResponse.json()
+        console.log('🔍 Google token response:', tokenData)
+        
+        if (tokenData.error) {
+          console.error('❌ Google token error:', tokenData.error)
+          return sendError(res, 400, tokenData.error_description || 'Failed to exchange code for token')
+        }
+        
+        const { access_token } = tokenData
+        
+        // Get user profile from Google
+        const profileResponse = await fetch('https://www.googleapis.com/oauth2/v2/userinfo', {
+          headers: {
+            Authorization: `Bearer ${access_token}`
+          }
+        })
+        
+        googleProfileData = await profileResponse.json()
+        console.log('🔍 Google profile:', googleProfileData)
+      }
+
+      // If googleProfile is provided directly, use it
+      if (!googleProfileData) {
         return sendError(res, 400, 'Google profile is required')
       }
 
-      console.log('🔐 Google Auth: Processing login for', googleProfile.email)
+      if (!googleProfileData.email) {
+        return sendError(res, 400, 'Failed to get Google profile')
+      }
+
+      console.log('🔐 Google Auth: Processing login for', googleProfileData.email)
 
       // Find or create user in admins collection
       let admin = await MongoDbAdmins.model.findOne({ 
-        email: googleProfile.email 
+        email: googleProfileData.email 
       })
 
       if (admin) {
@@ -57,10 +111,10 @@ export default class GoogleAuthController {
         console.log('✅ Existing user found, updating...')
         
         admin.set({
-          fullname: googleProfile.name,
-          avatar: googleProfile.picture,
+          fullname: googleProfileData.name,
+          avatar: googleProfileData.picture,
           provider: 'google',
-          googleId: googleProfile.id,
+          googleId: googleProfileData.id,
           verified: true,
           status: MongoDbAdmins.STATUS_ENUM.ACTIVE,
           updatedAt: new Date()
@@ -72,11 +126,11 @@ export default class GoogleAuthController {
         console.log('✅ New user, creating...')
         
         admin = await MongoDbAdmins.model.create({
-          email: googleProfile.email,
-          fullname: googleProfile.name,
-          avatar: googleProfile.picture,
+          email: googleProfileData.email,
+          fullname: googleProfileData.name,
+          avatar: googleProfileData.picture,
           provider: 'google',
-          googleId: googleProfile.id,
+          googleId: googleProfileData.id,
           role: 'user',
           permissions: [],
           verified: true,
@@ -96,7 +150,7 @@ export default class GoogleAuthController {
         { expiresIn: settings.jwt.ttl }
       )
 
-      console.log('✅ JWT token generated for', googleProfile.email)
+      console.log('✅ JWT token generated for', googleProfileData.email)
 
       sendSuccess(res, {
         user: {
@@ -138,11 +192,11 @@ export default class GoogleAuthController {
           'Content-Type': 'application/x-www-form-urlencoded',
         },
         body: new URLSearchParams({
-          client_id: process.env.GOOGLE_CLIENT_ID!,
-          client_secret: process.env.GOOGLE_CLIENT_SECRET!,
+          client_id: settings.google.clientId,
+          client_secret: settings.google.clientSecret,
           code: code as string,
           grant_type: 'authorization_code',
-          redirect_uri: process.env.GOOGLE_REDIRECT_URI || `http://localhost:3000/a/sessions/google/callback`
+          redirect_uri: settings.google.redirectUri
         })
       })
       
