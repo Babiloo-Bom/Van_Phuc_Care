@@ -1,6 +1,7 @@
 import { sendError, sendSuccess } from '@libs/response';
 import { Request, Response } from 'express';
 import mongoose from 'mongoose';
+import CourseModulesModel from '@mongodb/course-modules';
 
 // Course schema for E-Learning
 const courseSchema = new mongoose.Schema({
@@ -85,47 +86,6 @@ const courseSchema = new mongoose.Schema({
   },
   tags: [{
     type: String
-  }],
-  chapters: [{
-    title: {
-      type: String,
-      required: true
-    },
-    description: {
-      type: String,
-      default: ''
-    },
-    lessons: [{
-      title: {
-        type: String,
-        required: true
-      },
-      duration: {
-        type: Number,
-        default: 0
-      },
-      type: {
-        type: String,
-        enum: ['video', 'quiz', 'project', 'document'],
-        default: 'video'
-      },
-      videoUrl: {
-        type: String,
-        default: ''
-      },
-      thumbnail: {
-        type: String,
-        default: ''
-      },
-      fileSize: {
-        type: Number,
-        default: 0
-      },
-      quality: {
-        type: String,
-        default: '720'
-      }
-    }]
   }],
   isPublished: {
     type: Boolean,
@@ -217,7 +177,23 @@ class CourseController {
       
       const course = await Course.create(courseData);
       console.log(`✅ Created course: ${course.title}`);
-      sendSuccess(res, { course });
+      let modules = [];
+      if (Array.isArray(req.body.modules)) {
+        for (const [idx, mod] of req.body.modules.entries()) {
+          const newModule = await CourseModulesModel.model.create({
+            courseId: course._id,
+            title: mod.title,
+            description: mod.description || '',
+            index: typeof mod.index === 'number' ? mod.index : idx,
+            status: mod.status || 'active'
+          });
+          modules.push(newModule);
+        }
+      }
+      if (modules.length > 0)
+        sendSuccess(res, { course, modules });
+      else
+        sendSuccess(res, { course });
     } catch (error: any) {
       console.error('❌ Create course error:', error);
       sendError(res, 500, error.message, error as Error);
@@ -236,9 +212,37 @@ class CourseController {
       if (!course) {
         return sendError(res, 404, 'Khóa học không tồn tại');
       }
-      
-      console.log(`✅ Updated course: ${course.title}`);
-      sendSuccess(res, { course });
+
+      let modules = [];
+      if (Array.isArray(req.body.modules)) {
+        for (const [idx, mod] of req.body.modules.entries()) {
+          if (mod._id) {
+            // Update existing module
+            const updated = await CourseModulesModel.model.findByIdAndUpdate(mod._id, {
+              title: mod.title,
+              description: mod.description || '',
+              index: typeof mod.index === 'number' ? mod.index : idx,
+              status: mod.status || 'active'
+            }, { new: true });
+            if (updated) modules.push(updated);
+          } else {
+            // Create new module
+            const newModule = await CourseModulesModel.model.create({
+              courseId: course._id,
+              title: mod.title,
+              description: mod.description || '',
+              index: typeof mod.index === 'number' ? mod.index : idx,
+              status: mod.status || 'active'
+            });
+            modules.push(newModule);
+          }
+        }
+      }
+
+      if (modules.length > 0)
+        sendSuccess(res, { course, modules });
+      else
+        sendSuccess(res, { course });
     } catch (error: any) {
       console.error('❌ Update course error:', error);
       sendError(res, 500, error.message, error as Error);

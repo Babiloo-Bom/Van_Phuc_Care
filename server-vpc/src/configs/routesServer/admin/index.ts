@@ -25,6 +25,7 @@ import ProgressRouter from './Progress';
 import QuizzesRouter from './Quizzes';
 import DocumentsRouter from './Documents';
 import UpdateVideoRouter from './UpdateVideo';
+import LessonsRouter from './Lessons';
 import PasswordsRouter from './Passwords';
 
 const router = Router();
@@ -55,6 +56,7 @@ router.use('/progress', ProgressRouter); // Progress tracking routes
 router.use('/quizzes', QuizzesRouter); // Quiz routes
 router.use('/documents', DocumentsRouter); // Document routes
 router.use('/update-video', UpdateVideoRouter); // Update video routes
+router.use('/lessons', LessonsRouter); // Lesson routes
 
 // Seed routes (no auth required)
 router.use('/seed', SeedRouter);

@@ -21,6 +21,12 @@ services:
       - MONGODB_URI=mongodb://admin:password@mongodb:27017/vanphuccare?authSource=admin
       - JWT_SECRET=${JWT_SECRET:-dev_jwt_secret}
       - JWT_EXPIRE=7d
+      - MINIO_ENDPOINT=minio
+      - MINIO_PORT=9000
+      - MINIO_USE_SSL=false
+      - MINIO_ACCESS_KEY=${MINIO_ROOT_USER:-minioadmin}
+      - MINIO_SECRET_KEY=${MINIO_ROOT_PASSWORD:-minioadmin}
+      - MINIO_BUCKET_NAME=van-phuc-care
     volumes:
       - ./server-vpc/src:/app/src:cached
       - ./server-vpc/dist:/app/dist:cached
@@ -30,6 +36,31 @@ services:
       - vpc-network
     depends_on:
       - mongodb
+      - minio
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+  # ============================================
+  # MinIO Object Storage
+  # ============================================
+  minio:
+    image: minio/minio:latest
+    container_name: vpc-minio-dev
+    restart: unless-stopped
+    ports:
+      - "9000:9000"
+      - "9001:9001"
+    environment:
+      - MINIO_ROOT_USER=${MINIO_ROOT_USER:-minioadmin}
+      - MINIO_ROOT_PASSWORD=${MINIO_ROOT_PASSWORD:-minioadmin}
+    volumes:
+      - minio-data-dev:/data
+    command: server /data --console-address ":9001"
+    networks:
+      - vpc-network
     logging:
       driver: "json-file"
       options:
@@ -137,7 +168,7 @@ services:
     restart: unless-stopped
     ports:
       - "3102:3002"
-    environment:
+    environment: 
       - NODE_ENV=development
       - NUXT_PUBLIC_API_HOST=http://api:3000
       - NUXT_PUBLIC_API_BASE=http://api:3000/u
@@ -175,3 +206,5 @@ volumes:
     name: vpc-mongodb-data-dev
   mongodb-config-dev:
     name: vpc-mongodb-config-dev
+  minio-data-dev:
+    name: vpc-minio-data-dev
