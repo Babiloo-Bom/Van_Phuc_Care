@@ -26,6 +26,7 @@ RUN npm ci && \
 COPY . .
 
 # Expose port
+ENV PORT=3000
 EXPOSE 3000
 
 # Start development server with watch mode
