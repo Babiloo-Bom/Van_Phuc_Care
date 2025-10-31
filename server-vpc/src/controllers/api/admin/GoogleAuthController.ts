@@ -20,22 +20,33 @@ export default class GoogleAuthController {
       // If GET request, redirect to Google OAuth
       if (req.method === 'GET') {
         const clientId = settings.google.clientId
-        const redirectUri = settings.google.redirectUri
-        
+        // Prefer query-provided redirect_uri/frontend_url for per-site behavior
+        const requestedRedirectUri = (req.query.redirect_uri as string) || process.env.GOOGLE_REDIRECT_URI || settings.google.redirectUri
+        const requestedFrontendUrl = (req.query.frontend_url as string) || process.env.FRONTEND_URL
+
         console.log('🔍 Google OAuth Configuration:')
         console.log('  - Client ID:', clientId)
-        console.log('  - Redirect URI:', redirectUri)
-        console.log('  - Redirect URI (encoded):', encodeURIComponent(redirectUri))
+        console.log('  - Redirect URI (requested):', requestedRedirectUri)
+        console.log('  - Redirect URI (encoded):', encodeURIComponent(requestedRedirectUri))
+        console.log('  - Frontend URL (requested):', requestedFrontendUrl)
         
         if (!clientId || clientId === 'your_google_client_id_here') {
           return sendError(res, 500, 'Google Client ID not configured')
         }
+        if (!requestedRedirectUri) {
+          return sendError(res, 400, 'redirect_uri is required')
+        }
         
-        const state = Math.random().toString(36).substring(2, 15)
+        // Pack requested redirect/frontend in state for callback
+        const statePayload = {
+          redirectUri: requestedRedirectUri,
+          frontendUrl: requestedFrontendUrl,
+        }
+        const state = encodeURIComponent(JSON.stringify(statePayload))
         
         const googleAuthUrl = `https://accounts.google.com/o/oauth2/v2/auth?` +
           `client_id=${clientId}&` +
-          `redirect_uri=${encodeURIComponent(redirectUri)}&` +
+          `redirect_uri=${encodeURIComponent(requestedRedirectUri)}&` +
           `response_type=code&` +
           `scope=openid%20email%20profile&` +
           `state=${state}`
@@ -181,8 +192,21 @@ export default class GoogleAuthController {
     try {
       const { code, state } = req.query
       
+      // Decode state to get per-site redirect/frontend
+      let stateRedirectUri: string | undefined
+      let stateFrontendUrl: string | undefined
+      try {
+        if (typeof state === 'string' && state.length > 0) {
+          const decoded = JSON.parse(decodeURIComponent(state as string))
+          stateRedirectUri = decoded?.redirectUri
+          stateFrontendUrl = decoded?.frontendUrl
+        }
+      } catch {}
+
       if (!code) {
-        return res.redirect(`http://localhost:3102/login?google_error=true`)
+        const baseFrontend = (stateFrontendUrl || process.env.FRONTEND_URL || '').replace(/\/$/, '')
+        if (baseFrontend) return res.redirect(`${baseFrontend}/login?google_error=true`)
+        return sendError(res, 400, 'Missing OAuth code')
       }
       
       // Exchange code for access token
@@ -196,7 +220,7 @@ export default class GoogleAuthController {
           client_secret: settings.google.clientSecret,
           code: code as string,
           grant_type: 'authorization_code',
-          redirect_uri: settings.google.redirectUri
+          redirect_uri: stateRedirectUri || process.env.GOOGLE_REDIRECT_URI || settings.google.redirectUri
         })
       })
       
@@ -258,12 +282,14 @@ export default class GoogleAuthController {
       )
 
       // Redirect to frontend with token
-      const frontendUrl = `http://localhost:3102/login?google_success=true&token=${accessToken}`
+      const baseFrontend = (stateFrontendUrl || process.env.FRONTEND_URL || '').replace(/\/$/, '')
+      const frontendUrl = baseFrontend ? `${baseFrontend}/login?google_success=true&token=${accessToken}` : `/login?google_success=true&token=${accessToken}`
       return res.redirect(frontendUrl)
       
     } catch (error: any) {
       console.error('❌ Google callback error:', error)
-      const frontendUrl = `http://localhost:3102/login?google_error=true`
+      const baseFrontend = (process.env.FRONTEND_URL || '').replace(/\/$/, '')
+      const frontendUrl = baseFrontend ? `${baseFrontend}/login?google_error=true` : `/login?google_error=true`
       return res.redirect(frontendUrl)
     }
   }

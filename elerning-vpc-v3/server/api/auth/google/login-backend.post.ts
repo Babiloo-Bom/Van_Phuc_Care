@@ -10,7 +10,7 @@ export default defineEventHandler(async (event): Promise<GoogleLoginResponse> =>
     console.log('🔄 Google login API endpoint called')
     const body = await readBody(event)
     console.log('🔍 Request body:', body)
-    const { code } = body
+    const { code, redirectUri: bodyRedirectUri } = body
 
     if (!code) {
       console.log('❌ No authorization code provided')
@@ -22,101 +22,25 @@ export default defineEventHandler(async (event): Promise<GoogleLoginResponse> =>
 
     const config = useRuntimeConfig(event)
     
-    // Dynamic baseUrl detection
-    const getBaseUrl = () => {
-      // Try to get from request headers first (for production)
-      const host = getHeader(event, 'host')
-      const protocol = getHeader(event, 'x-forwarded-proto') || 'https'
-      
-      if (host && process.env.NODE_ENV === 'production') {
-        return `${protocol}://${host}`
-      }
-      
-      // Fallback to config
-      return config.public.baseUrl || 'http://localhost:3102'
-    }
-    
-    const baseUrl = getBaseUrl()
-    const redirectUri = `${baseUrl}/auth/google/callback`
+    // Build redirectUri for this site (prefer provided in body)
+    const host = getHeader(event, 'host')
+    const forwardedProto = getHeader(event, 'x-forwarded-proto')
+    const isLocal = (host || '').includes('localhost') || (host || '').startsWith('127.0.0.1')
+    const protocol = bodyRedirectUri ? undefined : (isLocal ? 'http' : (forwardedProto || 'https'))
+    const baseUrl = bodyRedirectUri ? undefined : `${protocol}://${host}`
+    const redirectUri = bodyRedirectUri || `${baseUrl}/auth/google/callback`
 
-    console.log('🔄 Step 1: Exchange code for Google token...')
-    console.log('🔍 Config check:', {
-      clientId: config.public.googleClientId,
-      hasClientSecret: !!config.googleClientSecret,
-      clientSecretLength: config.googleClientSecret?.length || 0,
-      baseUrl: baseUrl,
-      redirectUri: redirectUri,
-      host: getHeader(event, 'host'),
-      protocol: getHeader(event, 'x-forwarded-proto')
-    })
-    
-    // Step 1: Exchange authorization code for Google access token
-    const params = new URLSearchParams({
-      code,
-      client_id: config.public.googleClientId,
-      client_secret: config.googleClientSecret,
-      redirect_uri: redirectUri,
-      grant_type: 'authorization_code'
-    })
-    
-    console.log('🔍 Request params:', params.toString())
-    
-    const tokenResponse = await $fetch<any>('https://oauth2.googleapis.com/token', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/x-www-form-urlencoded'
-      },
-      body: params.toString()
-    }).catch((error: any) => {
-      console.error('❌ Google token exchange error:', error)
-      console.error('❌ Error details:', {
-        message: error.message,
-        status: error.status,
-        statusText: error.statusText,
-        data: error.data
-      })
-      throw new Error(`Google OAuth error: ${error.message || 'Invalid authorization code'}`)
-    })
+    console.log('🔄 Proxy code to backend for token exchange...')
+    console.log('🔍 Redirect URI used for backend exchange:', redirectUri)
 
-    if (!tokenResponse.access_token) {
-      throw new Error('Failed to get access token from Google')
-    }
-
-    console.log('✅ Step 1: Access token received')
-    console.log('🔍 Token response:', { 
-      hasAccessToken: !!tokenResponse.access_token,
-      tokenType: tokenResponse.token_type,
-      expiresIn: tokenResponse.expires_in
-    })
-    console.log('🔄 Step 2: Fetching user profile from Google...')
-
-    // Step 2: Get user profile from Google
-    const userProfile = await $fetch<any>('https://www.googleapis.com/oauth2/v2/userinfo', {
-      headers: {
-        Authorization: `Bearer ${tokenResponse.access_token}`
-      }
-    }).catch((error: any) => {
-      console.error('❌ Google user profile error:', error)
-      console.error('❌ Error details:', {
-        message: error.message,
-        status: error.status,
-        statusText: error.statusText,
-        data: error.data
-      })
-      throw new Error(`Failed to get user profile: ${error.message || 'Invalid access token'}`)
-    })
-
-    console.log('✅ Step 2: User profile received:', userProfile.email)
-    console.log('🔄 Step 3: Sending to backend API for user creation & JWT generation...')
-
-    // Step 3: Send to backend API to create/update user and get JWT
+    // Delegate code exchange to main backend
     try {
       const apiHost = config.apiHostInternal || config.public.apiHost
       const backendResponse = await $fetch<any>(`${apiHost}/api/a/auth/google/login`, {
         method: 'POST',
         body: {
-          googleProfile: userProfile,
-          googleAccessToken: tokenResponse.access_token
+          code,
+          redirectUri
         }
       })
 

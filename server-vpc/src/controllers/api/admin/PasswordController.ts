@@ -48,8 +48,11 @@ class PasswordController {
         }
       );
 
-      // Generate reset link
-      const resetLink = `${process.env.FRONTEND_URL || 'http://localhost:3102'}/reset-password?token=${resetToken}`;
+      // Generate reset link (per-site): prefer request Origin, then ENV
+      const origin = (req.get('origin') || req.headers['x-forwarded-host'] as string || '').toString()
+      const baseFrontend = (origin ? (origin.startsWith('http') ? origin : `http://${origin}`) : process.env.FRONTEND_URL || '').replace(/\/$/, '')
+      const resetBase = baseFrontend || process.env.FRONTEND_URL || ''
+      const resetLink = `${resetBase}/reset-password?token=${resetToken}`;
 
       // Send reset link via email
       try {

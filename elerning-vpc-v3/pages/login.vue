@@ -185,8 +185,11 @@ const handleSubmit = async () => {
 // Handle Google login
 const handleGoogleLogin = async () => {
   try {
-    // Redirect to Google OAuth
-    window.location.href = 'http://localhost:3000/api/a/auth/google'
+    const baseFrontend = window.location.origin.replace(/\/$/, '')
+    const redirectUri = `${baseFrontend}/auth/google/callback`
+    const frontendUrl = baseFrontend
+    const url = `http://localhost:3000/api/a/auth/google?redirect_uri=${encodeURIComponent(redirectUri)}&frontend_url=${encodeURIComponent(frontendUrl)}`
+    window.location.href = url
   } catch (error: any) {
     console.error('Google login error:', error)
     message.error('Đăng nhập Google thất bại')

@@ -14,7 +14,7 @@ export default {
   google: {
     clientId: process.env.GOOGLE_CLIENT_ID || '625263472933-tbu2huc6j45fo65459r4891nfcrbr6hd.apps.googleusercontent.com',
     clientSecret: process.env.GOOGLE_CLIENT_SECRET || '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',
-    redirectUri: process.env.GOOGLE_REDIRECT_URI || 'http://localhost:3102/auth/google/callback',
+    redirectUri: process.env.GOOGLE_REDIRECT_URI || '',
   },
   prefix: {
     imageMime: 'image',
