@@ -7,14 +7,20 @@
 set -e
 
 ENVIRONMENT=${1:-production}
-COMPOSE_FILE="docker-compose.prod.yml"
+
+# Select compose file by environment
+if [ "$ENVIRONMENT" = "production" ]; then
+    COMPOSE_FILE="docker-compose.prod.yml"
+else
+    COMPOSE_FILE="docker-compose.yml"
+fi
 
 echo "🚀 Deploying Van Phuc Care - Environment: $ENVIRONMENT"
 
 # Load environment variables
 if [ -f ".env.$ENVIRONMENT" ]; then
     echo "📦 Loading environment variables from .env.$ENVIRONMENT"
-    export $(cat .env.$ENVIRONMENT | grep -v '^#' | xargs)
+    export $(grep -v '^#' .env.$ENVIRONMENT | xargs -d '\n')
 else
     echo "⚠️  Warning: .env.$ENVIRONMENT not found, using existing environment variables"
 fi
@@ -27,15 +33,15 @@ fi
 
 # Pull latest images
 echo "⬇️  Pulling latest Docker images..."
-docker-compose -f $COMPOSE_FILE pull
+docker compose -f $COMPOSE_FILE pull
 
 # Stop and remove old containers
 echo "🛑 Stopping old containers..."
-docker-compose -f $COMPOSE_FILE down
+docker compose -f $COMPOSE_FILE down
 
 # Start new containers
 echo "▶️  Starting new containers..."
-docker-compose -f $COMPOSE_FILE up -d
+docker compose -f $COMPOSE_FILE up -d --build
 
 # Wait for services to be healthy
 echo "⏳ Waiting for services to be healthy..."
@@ -43,7 +49,7 @@ sleep 10
 
 # Check service status
 echo "✅ Checking service status..."
-docker-compose -f $COMPOSE_FILE ps
+docker compose -f $COMPOSE_FILE ps
 
 # Clean up old images
 echo "🧹 Cleaning up old Docker images..."
