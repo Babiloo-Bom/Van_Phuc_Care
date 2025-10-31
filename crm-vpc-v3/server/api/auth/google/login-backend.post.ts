@@ -7,10 +7,13 @@ import type { GoogleLoginResponse } from '~/types/google'
 
 export default defineEventHandler(async (event): Promise<GoogleLoginResponse> => {
   try {
+    console.log('🔄 Google login API endpoint called')
     const body = await readBody(event)
-    const { code } = body
+    console.log('🔍 Request body:', body)
+    const { code, redirectUri: bodyRedirectUri } = body
 
     if (!code) {
+      console.log('❌ No authorization code provided')
       return {
         success: false,
         error: 'Authorization code is required'
@@ -18,68 +21,36 @@ export default defineEventHandler(async (event): Promise<GoogleLoginResponse> =>
     }
 
     const config = useRuntimeConfig(event)
-
-    console.log('🔄 Step 1: Exchange code for Google token...')
-    console.log('🔍 Config check:', {
-      clientId: config.public.googleClientId,
-      hasClientSecret: !!config.googleClientSecret,
-      clientSecretLength: config.googleClientSecret?.length || 0,
-      baseUrl: config.public.baseUrl,
-      redirectUri: `${config.public.baseUrl}/auth/google/callback`
-    })
     
-    // Step 1: Exchange authorization code for Google access token
-    const params = new URLSearchParams({
-      code,
-      client_id: config.public.googleClientId,
-      client_secret: config.googleClientSecret,
-      redirect_uri: `${config.public.baseUrl}/auth/google/callback`,
-      grant_type: 'authorization_code'
-    })
-    
-    console.log('🔍 Request params:', params.toString())
-    
-    const tokenResponse = await $fetch<any>('https://oauth2.googleapis.com/token', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/x-www-form-urlencoded'
-      },
-      body: params.toString()
-    })
+    // Build redirectUri for this site (prefer provided in body)
+    const host = getHeader(event, 'host')
+    const forwardedProto = getHeader(event, 'x-forwarded-proto')
+    const isLocal = (host || '').includes('localhost') || (host || '').startsWith('127.0.0.1')
+    const protocol = bodyRedirectUri ? undefined : (isLocal ? 'http' : (forwardedProto || 'https'))
+    const baseUrl = bodyRedirectUri ? undefined : `${protocol}://${host}`
+    const redirectUri = bodyRedirectUri || `${baseUrl}/auth/google/callback`
 
-    if (!tokenResponse.access_token) {
-      throw new Error('Failed to get access token from Google')
-    }
+    console.log('🔄 Proxy code to backend for token exchange...')
+    console.log('🔍 Redirect URI used for backend exchange:', redirectUri)
 
-    console.log('✅ Step 1: Access token received')
-    console.log('🔄 Step 2: Fetching user profile from Google...')
-
-    // Step 2: Get user profile from Google
-    const userProfile = await $fetch<any>('https://www.googleapis.com/oauth2/v2/userinfo', {
-      headers: {
-        Authorization: `Bearer ${tokenResponse.access_token}`
-      }
-    })
-
-    console.log('✅ Step 2: User profile received:', userProfile.email)
-    console.log('🔄 Step 3: Sending to backend API for user creation & JWT generation...')
-
-    // Step 3: Send to backend API to create/update user and get JWT
+    // Delegate code exchange to main backend
     try {
       const apiHost = config.apiHostInternal || config.public.apiHost
       const backendResponse = await $fetch<any>(`${apiHost}/api/a/auth/google/login`, {
         method: 'POST',
         body: {
-          googleProfile: userProfile,
-          googleAccessToken: tokenResponse.access_token
+          code,
+          redirectUri
         }
       })
 
       console.log('✅ Step 3: Backend response received')
+      console.log('📦 Backend response type:', typeof backendResponse)
+      console.log('📦 Backend response keys:', Object.keys(backendResponse || {}))
       console.log('📦 Backend response:', JSON.stringify(backendResponse, null, 2))
 
       // Check if backend returned success
-      if (!backendResponse || (!backendResponse.status && !backendResponse.data)) {
+      if (!backendResponse || !backendResponse.data) {
         console.error('❌ Invalid backend response:', backendResponse)
         throw new Error(backendResponse?.message || 'Backend authentication failed')
       }
@@ -95,34 +66,35 @@ export default defineEventHandler(async (event): Promise<GoogleLoginResponse> =>
         success: true,
         data: {
           user: {
-            id: userInfo._id || userInfo.id,
+            _id: userInfo._id,
             email: userInfo.email,
-            name: userInfo.fullname || userInfo.name,
+            fullname: userInfo.fullname,
             avatar: userInfo.avatar,
-            provider: userInfo.provider || 'google',
-            googleId: userInfo.googleId || userProfile.id,
-            isActive: userInfo.isActive !== false,
             role: userInfo.role || 'user',
-            permissions: userInfo.permissions || []
+            permissions: userInfo.permissions || [],
+            provider: userInfo.provider || 'google',
+            googleId: userInfo.googleId
           },
           accessToken: userData.accessToken,
-          refreshToken: userData.refreshToken || userData.accessToken,
-          tokenExpireAt: Date.now() + 24 * 60 * 60 * 1000 // 24h from now
+          tokenExpireAt: userData.tokenExpireAt
         }
       }
 
     } catch (backendError: any) {
       console.error('❌ Backend API error:', backendError)
-      
-      // If backend fails, we can't proceed (no fallback to MockService for security)
-      throw new Error(`Backend authentication failed: ${backendError.message}`)
+      throw new Error(backendError.message || 'Backend authentication failed')
     }
 
   } catch (error: any) {
     console.error('❌ Google login failed:', error)
+    console.error('❌ Error details:', {
+      message: error.message,
+      stack: error.stack,
+      name: error.name
+    })
     return {
       success: false,
-      error: error.message || 'Failed to complete Google login'
+      error: error.message || 'Google login failed'
     }
   }
 })
