@@ -22,7 +22,18 @@ const RETRY_CONFIG = {
 
 export const useAuthApi = () => {
   const config = useRuntimeConfig()
-  const apiBase = config.public.apiBase || 'http://103.216.119.104:3000/api/a'
+  let apiBase = config.public.apiBase || 'http://103.216.119.104:3000/api/a'
+  
+  // Ensure apiBase ends with /api/a (fix for server misconfiguration)
+  if (!apiBase.endsWith('/api/a') && !apiBase.endsWith('/api/a/')) {
+    // If it ends with /a, replace with /api/a
+    if (apiBase.endsWith('/a') || apiBase.endsWith('/a/')) {
+      apiBase = apiBase.replace(/\/a\/?$/, '/api/a')
+    } else {
+      // Otherwise append /api/a
+      apiBase = apiBase.replace(/\/$/, '') + '/api/a'
+    }
+  }
   
   // Debug: Log API base URL
   console.log('🔍 API Base URL:', apiBase)
@@ -100,7 +111,7 @@ export const useAuthApi = () => {
       const response = await $fetch<T>(url, {
         ...options,
         signal: controller.signal
-      })
+      }) as T
       return response
     } catch (error: any) {
       if (error.name === 'AbortError') {
@@ -143,10 +154,19 @@ export const useAuthApi = () => {
      * @param password Password
      * @param repeat_password Repeat password
      * @param fullname Full name
+     * @param phone Phone number
      */
-    async register(email: string, password: string, repeat_password: string, fullname?: string) {
+    async register(email: string, password: string, repeat_password: string, fullname?: string, phone?: string) {
       try {
-        return await withRetry(() =>
+        console.log('🔍 Register API call:', {
+          url: `${apiBase}/sessions`,
+          email,
+          fullname: fullname || email.split('@')[0],
+          domain: 'vanphuccare.gensi.vn',
+          origin: 'vanphuccare.gensi.vn'
+        })
+        
+        const result = await withRetry(() =>
           fetchWithTimeout(`${apiBase}/sessions`, {
             method: 'POST',
             body: {
@@ -154,11 +174,17 @@ export const useAuthApi = () => {
               password,
               repeat_password,
               fullname: fullname || email.split('@')[0], // Use email prefix if no fullname
-              domain: 'vanphuccare.gensi.vn'
+              phone: phone || '',
+              domain: 'vanphuccare.gensi.vn',
+              origin: 'vanphuccare.gensi.vn'
             }
           })
         )
+        
+        console.log('🔍 Register API response:', result)
+        return result
       } catch (error: any) {
+        console.error('🔍 Register API error:', error)
         throw transformError(error)
       }
     },

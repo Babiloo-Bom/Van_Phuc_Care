@@ -116,7 +116,7 @@ export const useAuthStore = defineStore('auth', {
      * Register new account (CRM/E-Learning)
      * Migrated from crm-vpc/components/auth/forms/SignUp.vue
      */
-    async register(email: string, password: string, repeatPassword: string) {
+    async register(email: string, password: string, repeatPassword: string, fullname?: string, phone?: string) {
       this.isLoading = true
       
       try {
@@ -127,7 +127,7 @@ export const useAuthStore = defineStore('auth', {
         const authApi = useAuthApi()
         
         // Call API register
-        const response: any = await authApi.register(email, password, repeatPassword)
+        const response: any = await authApi.register(email, password, repeatPassword, fullname, phone)
 
         return { success: true, data: response }
       } catch (error: any) {

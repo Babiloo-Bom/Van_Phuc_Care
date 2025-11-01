@@ -78,8 +78,9 @@ const handleOverlayClick = () => {
 
 .modal-container {
   position: relative;
-  width: 332px;
-  height: 312px;
+  width: 420px;
+  height: auto;
+  min-height: 312px;
   background: #FFFFFF;
   box-shadow: 0px 1px 10px rgba(0, 0, 0, 0.05), 0px 2px 4px rgba(0, 0, 0, 0.1);
   border-radius: 12px;
@@ -100,10 +101,11 @@ const handleOverlayClick = () => {
   flex-direction: column;
   justify-content: center;
   align-items: center;
-  padding: 24px 40px;
+  padding: 24px 48px;
   gap: 16px;
-  width: 332px;
-  height: 224px;
+  width: 100%;
+  height: auto;
+  min-height: 224px;
   background: #FFFFFF;
   flex: none;
   order: 0;
@@ -118,8 +120,9 @@ const handleOverlayClick = () => {
   align-items: center;
   padding: 0px;
   gap: 0;
-  width: 252px;
-  height: 48px;
+  width: 100%;
+  height: auto;
+  min-height: 48px;
   flex: none;
   order: 0;
   align-self: stretch;
@@ -160,8 +163,10 @@ const handleOverlayClick = () => {
 }
 
 .modal-description {
-  width: 252px;
-  height: 72px;
+  width: 100%;
+  max-width: 324px;
+  height: auto;
+  min-height: 48px;
   font-family: 'SVN-Gilroy';
   font-style: normal;
   font-weight: 500;
@@ -180,11 +185,12 @@ const handleOverlayClick = () => {
 .cta-container {
   display: flex;
   flex-direction: row;
-  justify-content: flex-end;
+  justify-content: center;
   align-items: center;
-  padding: 16px 40px 24px;
-  width: 332px;
-  height: 88px;
+  padding: 16px 48px 24px;
+  width: 100%;
+  height: auto;
+  min-height: 88px;
   background: #FFFFFF;
   flex: none;
   order: 1;
@@ -199,7 +205,8 @@ const handleOverlayClick = () => {
   align-items: center;
   padding: 12px;
   gap: 10px;
-  width: 252px;
+  width: 100%;
+  max-width: 324px;
   height: 48px;
   background: #317BC4;
   border-radius: 8px;
@@ -221,17 +228,76 @@ const handleOverlayClick = () => {
 .confirm-button:hover { background: #2563EB; }
 .confirm-button:active { background: #1D4ED8; }
 
-/* Responsive */
+/* Mobile - smaller modal */
 @media (max-width: 480px) {
-  .modal-overlay { padding: 16px; }
-  .modal-container { width: 90vw; max-width: 332px; height: auto; min-height: 312px; }
-  .text-content { width: 100%; padding: 20px 24px; gap: 12px; height: auto; min-height: 224px; }
-  .title-container { width: 100%; gap: 20px; justify-content: center; height: auto; }
-  .success-icon { width: 40px; height: 40px; }
-  .success-icon svg { width: 20px; height: 20px; }
-  .modal-title { width: auto; font-size: 18px; line-height: 22px; }
-  .modal-description { width: 100%; font-size: 14px; line-height: 20px; height: auto; min-height: 72px; }
-  .cta-container { width: 100%; padding: 16px 24px 20px; justify-content: center; height: auto; min-height: 88px; }
-  .confirm-button { width: 100%; max-width: 252px; font-size: 14px; }
+  .modal-overlay { 
+    padding: 16px; 
+  }
+  
+  .modal-container { 
+    width: 90vw; 
+    max-width: 332px; 
+    height: auto; 
+    min-height: 312px; 
+  }
+  
+  .text-content { 
+    width: 100%; 
+    padding: 20px 20px; 
+    gap: 12px; 
+    height: auto; 
+    min-height: 200px; 
+  }
+  
+  .title-container { 
+    width: 100%; 
+    gap: 20px; 
+    justify-content: center; 
+    height: auto; 
+  }
+  
+  .success-icon { 
+    width: 40px; 
+    height: 40px; 
+  }
+  
+  .success-icon svg { 
+    width: 20px; 
+    height: 20px; 
+  }
+  
+  .modal-title { 
+    width: auto; 
+    font-size: 18px; 
+    line-height: 22px; 
+  }
+  
+  .modal-description { 
+    width: auto; 
+    max-width: 200px;
+    margin: 0 auto;
+    font-size: 13px; 
+    line-height: 18px; 
+    height: auto; 
+    min-height: 54px; 
+    letter-spacing: 0.2px;
+    text-align: center;
+    align-self: center;
+    flex: 0 0 auto;
+  }
+  
+  .cta-container { 
+    width: 100%; 
+    padding: 16px 24px 20px; 
+    justify-content: center; 
+    height: auto; 
+    min-height: 88px; 
+  }
+  
+  .confirm-button { 
+    width: 100%; 
+    max-width: 252px; 
+    font-size: 14px; 
+  }
 }
 </style>
