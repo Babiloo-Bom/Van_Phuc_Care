@@ -190,12 +190,13 @@ const handleGoogleLogin = async () => {
     const redirectUri = `${baseFrontend}/auth/google/callback`
     const frontendUrl = `${baseFrontend}/`
 
-    const runtime = useRuntimeConfig()
-    const apiBase = runtime.public.apiBase || '/api/a'
-    const backendBase = apiBase.startsWith('http') ? apiBase : `${baseFrontend}${apiBase}`
+    // Google OAuth always uses /api/a (admin endpoint), not /api/u
+    const isAbsolutePath = baseFrontend.startsWith('http://localhost') || baseFrontend.includes('localhost')
+    const googleApiBase = isAbsolutePath ? 'http://localhost:3000/api/a' : '/api/a'
+    const backendBase = googleApiBase.startsWith('http') ? googleApiBase : `${baseFrontend}${googleApiBase}`
 
     const url = `${backendBase}/auth/google?redirect_uri=${encodeURIComponent(redirectUri)}&frontend_url=${encodeURIComponent(frontendUrl)}`
-    console.log('🔐 Google OAuth start →', { baseFrontend, redirectUri, frontendUrl, backendBase, url })
+    console.log('🔐 Google OAuth start →', { baseFrontend, redirectUri, frontendUrl, googleApiBase, backendBase, url })
     window.location.href = url
   } catch (error: any) {
     console.error('Google login error:', error)

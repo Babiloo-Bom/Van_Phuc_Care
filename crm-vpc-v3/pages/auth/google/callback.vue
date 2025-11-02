@@ -75,18 +75,27 @@ const handleGoogleCallback = async () => {
     if (response.success && response.data) {
       // Store auth data directly in auth store
       const authStore = useAuthStore()
+      
+      // Convert tokenExpireAt to number if it's a string
+      let tokenExpireAtNum: number
+      if (typeof response.data.tokenExpireAt === 'string') {
+        // If it's a duration string like "7d", convert to timestamp
+        // For now, use current time + 7 days as default
+        tokenExpireAtNum = Date.now() + (7 * 24 * 60 * 60 * 1000)
+      } else {
+        tokenExpireAtNum = response.data.tokenExpireAt || Date.now() + (7 * 24 * 60 * 60 * 1000)
+      }
+      
       await authStore.completeGoogleLogin(
         response.data.accessToken, 
-        response.data.tokenExpireAt, 
+        tokenExpireAtNum, 
         response.data.user
       )
 
       isSuccess.value = true
       
-      // Redirect after success
-      setTimeout(() => {
-        redirectToDashboard()
-      }, 2000)
+      // Redirect immediately to home (no delay needed)
+      redirectToDashboard()
       
     } else {
       throw new Error(response.error || 'Đăng nhập Google thất bại')
@@ -118,14 +127,24 @@ const goToLogin = () => {
 const getRedirectPath = (): string => {
   try {
     const state = route.query.state as string
-    if (state) {
-      const stateData = JSON.parse(atob(state))
-      return stateData.redirect || '/'
+    if (state && state.length > 0) {
+      try {
+        // Try to decode state
+        const decoded = atob(state)
+        const stateData = JSON.parse(decoded)
+        if (stateData && stateData.redirect) {
+          return stateData.redirect
+        }
+      } catch (decodeError) {
+        // State might not be base64 encoded, or invalid JSON
+        console.warn('⚠️ Invalid state parameter format:', decodeError)
+      }
     }
   } catch (error) {
-    console.warn('⚠️ Invalid state parameter:', error)
+    console.warn('⚠️ Error parsing state:', error)
   }
   
+  // Default redirect to home
   return '/'
 }
 

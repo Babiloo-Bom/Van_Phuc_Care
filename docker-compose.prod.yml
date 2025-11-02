@@ -60,7 +60,7 @@ services:
       - "3100:3000"
     environment:
       - NODE_ENV=production
-      - NUXT_PUBLIC_API_BASE=/api/u
+      - NUXT_PUBLIC_API_BASE=/u
       - NUXT_API_HOST_INTERNAL=http://api:3000
       - NUXT_PUBLIC_TINYMCE_KEY=${TINYMCE_KEY}
       - NUXT_PUBLIC_APP_NAME=Admin Portal - Van Phuc Care
@@ -88,15 +88,15 @@ services:
       - "3101:3000"
     environment:
       - NODE_ENV=production
-      - NUXT_PUBLIC_API_BASE=/api/u
+      - NUXT_PUBLIC_API_BASE=/u
       - NUXT_API_HOST_INTERNAL=http://api:3000
       - NUXT_PUBLIC_TINYMCE_KEY=${TINYMCE_KEY}
       - NUXT_PUBLIC_APP_NAME=CRM Portal - Van Phuc Care
-      - NUXT_PUBLIC_APP_URL=http://localhost:3101
+      - NUXT_PUBLIC_APP_URL=http://crm.vanphuccare.com
       # Google OAuth Configuration
       - NUXT_PUBLIC_GOOGLE_CLIENT_ID=${NUXT_PUBLIC_GOOGLE_CLIENT_ID}
       - NUXT_GOOGLE_CLIENT_SECRET=${GOOGLE_CLIENT_SECRET}
-      - NUXT_PUBLIC_BASE_URL=http://localhost:3101
+      - NUXT_PUBLIC_BASE_URL=http://crm.vanphuccare.com
     networks:
       - vpc-network
     depends_on:
@@ -116,7 +116,7 @@ services:
       - "3102:3000"
     environment:
       - NODE_ENV=production
-      - NUXT_PUBLIC_API_BASE=/api/u
+      - NUXT_PUBLIC_API_BASE=/u
       - NUXT_API_HOST_INTERNAL=http://api:3000
       - NUXT_PUBLIC_TINYMCE_KEY=${TINYMCE_KEY}
       - NUXT_PUBLIC_APP_NAME=E-Learning Portal - Van Phuc Care
