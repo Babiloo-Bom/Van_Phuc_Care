@@ -60,7 +60,7 @@ services:
       - "3100:3000"
     environment:
       - NODE_ENV=production
-      - NUXT_PUBLIC_API_BASE=/api/a
+      - NUXT_PUBLIC_API_BASE=/api/u
       - NUXT_API_HOST_INTERNAL=http://api:3000
       - NUXT_PUBLIC_TINYMCE_KEY=${TINYMCE_KEY}
       - NUXT_PUBLIC_APP_NAME=Admin Portal - Van Phuc Care
@@ -88,7 +88,7 @@ services:
       - "3101:3000"
     environment:
       - NODE_ENV=production
-      - NUXT_PUBLIC_API_BASE=/api/a
+      - NUXT_PUBLIC_API_BASE=/api/u
       - NUXT_API_HOST_INTERNAL=http://api:3000
       - NUXT_PUBLIC_TINYMCE_KEY=${TINYMCE_KEY}
       - NUXT_PUBLIC_APP_NAME=CRM Portal - Van Phuc Care
@@ -116,7 +116,7 @@ services:
       - "3102:3000"
     environment:
       - NODE_ENV=production
-      - NUXT_PUBLIC_API_BASE=/api/a
+      - NUXT_PUBLIC_API_BASE=/api/u
       - NUXT_API_HOST_INTERNAL=http://api:3000
       - NUXT_PUBLIC_TINYMCE_KEY=${TINYMCE_KEY}
       - NUXT_PUBLIC_APP_NAME=E-Learning Portal - Van Phuc Care

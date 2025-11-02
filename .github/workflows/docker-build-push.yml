@@ -258,4 +258,5 @@ jobs:
           port: 24700
           script: |
             cd /opt/vanphuccare
+            git pull origin main || true
             ./deploy.sh production
