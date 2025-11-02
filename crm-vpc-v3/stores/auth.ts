@@ -98,14 +98,17 @@ export const useAuthStore = defineStore('auth', {
         return { success: true, user: this.user, token }
       } catch (error: any) {
         // Ignore AbortError (request cancelled due to navigation/reload)
-        if (error?.name === 'AbortError' || error?.message?.includes('aborted')) {
+        const errorMessage = error?.message || ''
+        const messageString = typeof errorMessage === 'string' ? errorMessage : String(errorMessage || '')
+        
+        if (error?.name === 'AbortError' || messageString.includes('aborted')) {
           console.log('[Auth] Login cancelled (navigation/reload)')
           return { success: false, error: 'Request cancelled' }
         }
         console.error('Login error:', error)
         return { 
           success: false, 
-          error: error.data?.message || error.message || 'Tên đăng nhập hoặc mật khẩu không chính xác'
+          error: error.data?.message || messageString || 'Tên đăng nhập hoặc mật khẩu không chính xác'
         }
       } finally {
         this.isLoading = false

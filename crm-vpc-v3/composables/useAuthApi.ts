@@ -22,16 +22,19 @@ const RETRY_CONFIG = {
 
 export const useAuthApi = () => {
   const config = useRuntimeConfig()
-  let apiBase = config.public.apiBase || 'http://103.216.119.104:3000/api/a'
+  let apiBase = config.public.apiBase || 'http://localhost:3000/api/u'
   
-  // Ensure apiBase ends with /api/a (fix for server misconfiguration)
-  if (!apiBase.endsWith('/api/a') && !apiBase.endsWith('/api/a/')) {
-    // If it ends with /a, replace with /api/a
+  // Ensure apiBase ends with /api/u (CRM uses user endpoints, not admin)
+  if (!apiBase.endsWith('/api/u') && !apiBase.endsWith('/api/u/')) {
+    // If it ends with /a, replace with /api/u (convert from admin to user)
     if (apiBase.endsWith('/a') || apiBase.endsWith('/a/')) {
-      apiBase = apiBase.replace(/\/a\/?$/, '/api/a')
+      apiBase = apiBase.replace(/\/a\/?$/, '/api/u')
+    } else if (apiBase.endsWith('/api/a') || apiBase.endsWith('/api/a/')) {
+      // Convert /api/a to /api/u
+      apiBase = apiBase.replace(/\/api\/a\/?$/, '/api/u')
     } else {
-      // Otherwise append /api/a
-      apiBase = apiBase.replace(/\/$/, '') + '/api/a'
+      // Otherwise append /api/u
+      apiBase = apiBase.replace(/\/$/, '') + '/api/u'
     }
   }
   
@@ -79,25 +82,50 @@ export const useAuthApi = () => {
     }
 
     // Try to extract message from API response
+    // Backend format: { error: { code: number, message: string } }
     let customMessage = null
+    let errorCodeFromBackend = null
+    
     if (error.data?.error) {
-      customMessage = error.data.error
+      // Handle both cases: error.data.error could be string or object
+      if (typeof error.data.error === 'string') {
+        customMessage = error.data.error
+      } else if (error.data.error?.message) {
+        customMessage = error.data.error.message
+        errorCodeFromBackend = error.data.error?.code
+      } else if (typeof error.data.error === 'object') {
+        customMessage = error.data.error.message || JSON.stringify(error.data.error)
+        errorCodeFromBackend = error.data.error?.code
+      }
     } else if (error.data?.message) {
       customMessage = error.data.message
+    } else if (error.message) {
+      customMessage = error.message
     }
 
     // Get error code and create AuthError
     const errorCode = getErrorCode(error)
     const statusCode = error.statusCode || error.status || 500
+    
+    // Ensure statusCode is a valid number
+    const validStatusCode = typeof statusCode === 'number' && !isNaN(statusCode) ? statusCode : 500
+    const validErrorCode = errorCode || AuthErrorCode.UNKNOWN_ERROR
+
+    // Special handling for BadAuthentication (code 215) - always map to Vietnamese
+    if (errorCodeFromBackend === 215 || (validStatusCode === 404 && customMessage?.toLowerCase().includes('bad authentication'))) {
+      const authError = new AuthError(AuthErrorCode.INVALID_CREDENTIALS, validStatusCode, error)
+      authError.message = 'Tên đăng nhập hoặc mật khẩu không chính xác'
+      return authError
+    }
 
     // Create AuthError with custom message if available
     if (customMessage) {
-      const authError = new AuthError(errorCode as AuthErrorCode, statusCode, error)
+      const authError = new AuthError(validErrorCode, validStatusCode, error)
       authError.message = customMessage
       return authError
     }
 
-    return new AuthError(errorCode as AuthErrorCode, statusCode, error)
+    return new AuthError(validErrorCode, validStatusCode, error)
   }
 
   /**
@@ -117,6 +145,15 @@ export const useAuthApi = () => {
       if (error.name === 'AbortError') {
         throw new TimeoutError(error)
       }
+      // Log error for debugging
+      console.log('🔍 API Error Response:', {
+        status: error.status || error.statusCode,
+        data: error.data,
+        dataError: error.data?.error,
+        dataErrorMessage: error.data?.error?.message,
+        message: error.message,
+        url
+      })
       throw error
     } finally {
       clearTimeout(timeoutId)
@@ -132,11 +169,12 @@ export const useAuthApi = () => {
      */
     async login(username: string, password: string, remindAccount = false) {
       try {
+        // Backend expects 'email' field, not 'username'
         return await withRetry(() => 
           fetchWithTimeout(`${apiBase}/sessions/login`, {
             method: 'POST',
             body: {
-              username,
+              email: username, // Map username to email for backend
               password,
               remindAccount,
               origin: 'vanphuccare.gensi.vn'
