@@ -2,17 +2,23 @@
   <div class="">
     <!-- Hero Banner -->
     <div
-      class="h-auto sm:h-[500px] py-10 sm:pt-20 sm:pb-20 md:pb-60 bg-cover bg-center bg-no-repeat bg-[url('https://cdn.synck.io.vn/vanphuccare/banner/main.webp')]
-             relative z-[0] after:absolute after:content-[''] after:top-0 after:left-0 after:w-full after:h-full after:opacity-60 after:bg-prim-100"
+      class="h-auto sm:h-[500px] py-10 sm:pt-20 sm:pb-20 md:pb-60 bg-cover bg-center bg-no-repeat bg-[url('https://cdn.synck.io.vn/vanphuccare/banner/main.webp')] relative z-[0] after:absolute after:content-[''] after:top-0 after:left-0 after:w-full after:h-full after:opacity-60 after:bg-prim-100"
     >
-      <div class="container h-full">
-        <div class="relative z-[1] flex flex-col h-full gap-6">
-          <div class="text-white">
-            <div class="flex items-center gap-4 flex-wrap">
-              <h4 class="text-3xl sm:text-4xl font-bold text-white mb-1">
+      <div class="absolute inset-0 bg-[#1A75BBB2]"></div>
+      <div class="container mx-auto !px-0 sm:!px-auto">
+        <div
+          class="relative z-[1] flex flex-col h-full gap-6 p-4 sm:pt-0 items-center sm:items-start"
+        >
+          <div class="text-white text-center sm:text-left">
+            <div
+              class="flex items-center justify-center sm:justify-start gap-2 sm:gap-4 flex-wrap sm:mb-4"
+            >
+              <h4 class="text-2xl sm:text-4xl font-bold text-white mb-0">
                 Khóa học của tôi
               </h4>
-              <div class="flex items-center rounded-full py-1.5 px-5 border-[1px] border-solid border-white gap-2">
+              <div
+                class="flex items-center rounded-full py-1.5 px-5 border-[1px] border-solid border-white gap-2"
+              >
                 <span>
                   <svg
                     xmlns="http://www.w3.org/2000/svg"
@@ -38,22 +44,27 @@
                 <span>{{ coursesStore.myCourses?.length || 0 }} khóa học</span>
               </div>
             </div>
-            <div class="mt-4">
-              <p class="mb-0 md:max-w-[70%]">
-                Tập hợp các khóa học chuyên sâu, được giảng dạy bởi các chuyên gia, cố vấn giàu kinh nghiệm trong lĩnh vực chăm sóc Mẹ và Bé giúp các bậc phụ huynh trở thành những người cha, người mẹ thông thái, hiểu biết sâu rộng về mọi khía cạnh chăm sóc trẻ sơ sinh, mang lại sự an tâm và hạnh phúc cho mỗi gia đình.
+            <div class="hidden md:block max-w-4xl mx-auto">
+              <p class="mb-0 text-lg">
+                Tập hợp các khóa học chuyên sâu, được giảng dạy bởi các chuyên
+                gia, cố vấn giàu kinh nghiệm trong lĩnh vực chăm sóc Mẹ và Bé
+                giúp các bậc phụ huynh trở thành những người cha, người mẹ thông
+                thái, hiểu biết sâu rộng về mọi khía cạnh chăm sóc trẻ sơ sinh,
+                mang lại sự an tâm và hạnh phúc cho mỗi gia đình.
               </p>
             </div>
           </div>
-          <div class="mt-auto">
-            <div class="grid grid-cols-1 md:grid-cols-2 items-center gap-6">
-              <div>
+          <div class="mt-auto w-full">
+            <div class="flex flex-col items-center gap-6">
+              <!-- Search Bar -->
+              <div class="w-full text-center sm:text-left">
                 <a-input
                   v-model:value="searchKey"
                   placeholder="Tìm kiếm khóa học"
-                  class="!bg-transparent custom_input"
+                  class="!bg-transparent rounded-full h-10 w-full sm:w-[340px] md:w-[540px] lg:w-[640px] custom_input"
                   @change="handleSearch"
                 >
-                  <template #suffix>
+                  <template #prefix>
                     <svg
                       xmlns="http://www.w3.org/2000/svg"
                       width="20"
@@ -71,14 +82,23 @@
                   </template>
                 </a-input>
               </div>
-              <div>
-                <div class="flex items-center justify-center md:justify-end gap-4">
-                  <div class="w-auto cursor-pointer">
-                    <img class="w-[150px] md:w-auto object-cover h-auto" src="/images/download-google-app.png" alt="/logo" />
-                  </div>
-                  <div class="w-auto cursor-pointer">
-                    <img class="w-[150px] md:w-auto object-cover h-auto" src="/images/download-iphone-app.png" alt="/logo" />
-                  </div>
+              <!-- App Download Buttons -->
+              <div
+                class="w-full flex flex-row items-center justify-center sm:justify-start gap-4"
+              >
+                <div class="w-auto cursor-pointer">
+                  <img
+                    class="w-[120px] sm:w-[140px] md:w-[160px] h-auto object-contain"
+                    src="/images/download-google-app.png"
+                    alt="Google Play"
+                  />
+                </div>
+                <div class="w-auto cursor-pointer">
+                  <img
+                    class="w-[120px] sm:w-[140px] md:w-[160px] h-auto object-contain"
+                    src="/images/download-iphone-app.png"
+                    alt="App Store"
+                  />
                 </div>
               </div>
             </div>
@@ -89,9 +109,12 @@
 
     <!-- Courses Section -->
     <section class="pb-20 p-4 lg:pt-20 sm:pt-0 bg-[#f4f7f9]">
-      <div class="container mx-auto !px-0 md:!px-auto">
+      <div class="container mx-auto px-4 md:px-0">
         <div v-if="!loading">
-          <div v-if="filteredCourses.length" class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 xl:grid-cols-4 gap-6 sm:-mt-32">
+          <div
+            v-if="filteredCourses.length"
+            class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 xl:grid-cols-4 gap-6 -mt-12 sm:-mt-52 md:-mt-20 lg:-mt-48"
+          >
             <CourseCard
               v-for="(course, index) in filteredCourses"
               :key="index"
@@ -99,13 +122,17 @@
               :is-purchased="true"
               :progress="getProgress(course._id)"
               @view-detail="handleViewDetail"
+              class="transform transition hover:-translate-y-1 duration-150"
             />
           </div>
           <div v-else class="pt-20">
             <a-empty description="Bạn chưa có khóa học nào" />
           </div>
         </div>
-        <div v-else class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 xl:grid-cols-4 gap-6 sm:-mt-32">
+        <div
+          v-else
+          class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 xl:grid-cols-4 gap-6 sm:-mt-32"
+        >
           <div
             v-for="index in [1, 2, 3, 4]"
             :key="index"
@@ -126,107 +153,107 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, onMounted } from 'vue'
-import { useCoursesStore } from '~/stores/courses'
-import CourseCard from '~/components/courses/CourseCard.vue'
+import { ref, computed, onMounted } from "vue";
+import { useCoursesStore } from "~/stores/courses";
+import CourseCard from "~/components/courses/CourseCard.vue";
 
 // SEO
 useHead({
-  title: 'Khóa học của tôi - Van Phuc Care E-Learning',
+  title: "Khóa học của tôi - Van Phuc Care E-Learning",
   meta: [
     {
-      name: 'description',
-      content: 'Quản lý và học các khóa học đã đăng ký tại Van Phuc Care E-Learning',
+      name: "description",
+      content:
+        "Quản lý và học các khóa học đã đăng ký tại Van Phuc Care E-Learning",
     },
   ],
-})
+});
 
 // Middleware: Require authentication
 definePageMeta({
-  middleware: 'auth',
-})
+  middleware: "auth",
+});
 
-const coursesStore = useCoursesStore()
-const loading = ref(false)
-const searchKey = ref('')
+const coursesStore = useCoursesStore();
+const loading = ref(false);
+const searchKey = ref("");
 
 // Computed
 const filteredCourses = computed(() => {
-  if (!searchKey.value) return coursesStore.myCourses
-  
-  return coursesStore.myCourses.filter(course =>
+  if (!searchKey.value) return coursesStore.myCourses;
+
+  return coursesStore.myCourses.filter((course) =>
     course.title.toLowerCase().includes(searchKey.value.toLowerCase())
-  )
-})
+  );
+});
 
 // Methods
 const handleSearch = (e: Event) => {
-  const target = e.target as HTMLInputElement
-  searchKey.value = target.value || ''
-}
+  const target = e.target as HTMLInputElement;
+  searchKey.value = target.value || "";
+};
 
 const getProgress = (courseId: string) => {
   // TODO: Implement actual progress calculation
   // For now, return 0
-  return 0
-}
+  return 0;
+};
 
 const handleViewDetail = (course: any) => {
-  console.log('🔍 Viewing course detail:', course)
-  console.log('🔍 Navigating to:', `/my-learning/${course.slug}`)
+  console.log("🔍 Viewing course detail:", course);
+  console.log("🔍 Navigating to:", `/my-learning/${course.slug}`);
   // Navigate to the course learning page
-  navigateTo(`/my-learning/${course.slug}`)
-}
+  navigateTo(`/my-learning/${course.slug}`);
+};
 
 const fetchData = async () => {
   try {
-    loading.value = true
-    console.log('🔍 Fetching my courses data...')
-    
+    loading.value = true;
+    console.log("🔍 Fetching my courses data...");
+
     // Get auth store
-    const authStore = useAuthStore()
-    console.log('🔍 Auth state:', {
+    const authStore = useAuthStore();
+    console.log("🔍 Auth state:", {
       isLoggedIn: authStore.isLoggedIn,
       user: authStore.user,
-      courseRegister: authStore.user?.courseRegister
-    })
-    
+      courseRegister: authStore.user?.courseRegister,
+    });
+
     // Get all courses first
-    await coursesStore.fetchAll()
-    console.log('🔍 All courses loaded:', coursesStore.courses?.length)
-    
+    await coursesStore.fetchAll();
+    console.log("🔍 All courses loaded:", coursesStore.courses?.length);
+
     // Filter courses that user has purchased
     if (authStore.user?.courseRegister && coursesStore.courses) {
-      const purchasedCourseIds = authStore.user.courseRegister
-      console.log('🔍 Purchased course IDs:', purchasedCourseIds)
-      
-      const purchasedCourses = coursesStore.courses.filter(course => 
+      const purchasedCourseIds = authStore.user.courseRegister;
+      console.log("🔍 Purchased course IDs:", purchasedCourseIds);
+
+      const purchasedCourses = coursesStore.courses.filter((course) =>
         purchasedCourseIds.includes(course._id)
-      )
-      
-      console.log('🔍 Purchased courses found:', purchasedCourses.length)
-      console.log('🔍 Purchased courses data:', purchasedCourses)
-      coursesStore.myCourses = purchasedCourses
+      );
+
+      console.log("🔍 Purchased courses found:", purchasedCourses.length);
+      console.log("🔍 Purchased courses data:", purchasedCourses);
+      coursesStore.myCourses = purchasedCourses;
     } else {
-      console.log('⚠️ No courseRegister or courses found')
-      coursesStore.myCourses = []
+      console.log("⚠️ No courseRegister or courses found");
+      coursesStore.myCourses = [];
     }
-    
   } catch (error) {
-    console.error('❌ Error fetching my courses:', error)
+    console.error("❌ Error fetching my courses:", error);
   } finally {
-    loading.value = false
+    loading.value = false;
   }
-}
+};
 
 // Lifecycle
 onMounted(() => {
-  fetchData()
-})
+  fetchData();
+});
 </script>
 
 <style scoped>
 .custom_input :deep(.ant-input) {
-  @apply bg-transparent placeholder:text-white rounded-full hover:border-white focus:border-white outline-none text-white py-6 px-4;
+  @apply bg-transparent placeholder:text-white rounded-full hover:border-white focus:border-white outline-none text-white;
 }
 </style>

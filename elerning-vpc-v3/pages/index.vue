@@ -2,15 +2,16 @@
   <div class="">
     <!-- Hero Banner -->
     <div
-      class="h-auto sm:h-[500px] py-10 sm:pt-20 sm:pb-20 md:pb-60 bg-cover bg-center bg-no-repeat bg-[url('https://cdn.synck.io.vn/vanphuccare/banner/main.webp')]
+      class="h-[500px] py-10 sm:pt-20 sm:pb-20 md:pb-60 bg-cover bg-center bg-no-repeat bg-[url('https://cdn.synck.io.vn/vanphuccare/banner/main.webp')]
              relative z-[0] after:absolute after:content-[''] after:top-0 after:left-0 after:w-full after:h-full after:opacity-60 after:bg-prim-100"
     >
-      <div class="container h-full">
-        <div class="relative z-[1] flex flex-col h-full gap-6">
+      <div class="absolute inset-0 bg-[#1A75BBB2]"></div>
+      <div class="container mx-auto !px-0 sm:!px-auto">
+        <div class="relative z-[1] flex flex-col items-center sm:items-start h-full gap-6 p-4 sm:pt-0">
           <!-- Centered Content -->
-          <div class="text-white text-center">
-            <div class="flex items-center justify-center gap-4 flex-wrap mb-4">
-              <h4 class="text-3xl sm:text-4xl font-bold text-white">
+          <div class="text-white text-center sm:text-left">
+            <div class="flex items-center justify-center sm:justify-start gap-2 sm:gap-4 flex-wrap sm:mb-4">
+              <h4 class="text-2xl sm:text-4xl font-bold text-white mb-0">
                 Tất cả khóa học
               </h4>
               <div class="flex items-center rounded-full py-1.5 px-5 border-[1px] border-solid border-white gap-2">
@@ -39,7 +40,7 @@
                 <span>{{ coursesStore.courses?.length || 0 }} khóa học</span>
               </div>
             </div>
-            <div class="max-w-4xl mx-auto">
+            <div class="hidden md:block max-w-4xl mx-auto">
               <p class="mb-0 text-lg">
                 Vạn Phúc Care cung cấp những khóa học chất lượng, chuyên sâu nhất để hỗ trợ bậc phụ huynh trong hành trình nuôi dưỡng và chăm sóc con cái. Các khóa học không chỉ mang đến các chủ đề đa dạng, những kiến thức chuyên môn chuẩn Y khoa, mà còn chia sẻ những kinh nghiệm thực tế được giảng dạy bởi đội ngũ chuyên gia và cố vấn giàu kinh nghiệm trong lĩnh vực Mẹ và Bé.
               </p>
@@ -47,17 +48,17 @@
           </div>
           
           <!-- Bottom Section -->
-          <div class="mt-auto">
+          <div class="mt-auto w-full">
             <div class="flex flex-col items-center gap-6">
               <!-- Search Bar -->
-              <div class="w-full max-w-md">
+              <div class="w-full text-center sm:text-left">
                 <a-input
                   v-model:value="searchKey"
                   placeholder="Tìm kiếm khóa học"
-                  class="!bg-transparent custom_input"
+                  class="!bg-transparent rounded-full h-10 w-[340px] custom_input"
                   @change="handleSearch"
                 >
-                  <template #suffix>
+                  <template #prefix>
                     <svg
                       xmlns="http://www.w3.org/2000/svg"
                       width="20"
@@ -77,7 +78,7 @@
               </div>
               
               <!-- Filter Options -->
-              <div class="flex flex-wrap items-center gap-4 justify-center">
+              <div class="w-full flex flex-col sm:flex-row items-center gap-4 justify-center md:justify-start">
                 <!-- Category Filter -->
                 <a-select
                   v-model:value="selectedCategory"
@@ -124,7 +125,7 @@
               </div>
               
               <!-- App Download Buttons -->
-              <div class="flex flex-col sm:flex-row items-center gap-4">
+              <div class="w-full flex flex-col sm:flex-row items-center sm:items-start gap-4">
                 <div class="w-auto cursor-pointer">
                   <img class="w-[140px] h-auto object-contain" src="/images/download-google-app.png" alt="Google Play" />
                 </div>
@@ -142,7 +143,7 @@
     <section class="pb-20 p-4 lg:pt-20 sm:pt-0 bg-[#f4f7f9]">
       <div class="container mx-auto !px-0 md:!px-auto">
         <div v-if="!loading">
-          <div v-if="filteredCourses.length > 0" class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 xl:grid-cols-4 gap-6 sm:-mt-32">
+          <div v-if="filteredCourses.length > 0" class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 xl:grid-cols-4 gap-6 -mt-16 sm:-mt-32 md:-mt-7 lg:-mt-32">
             <CourseCard
               v-for="(course, index) in filteredCourses"
               :key="index"
@@ -154,10 +155,10 @@
             />
           </div>
           <div v-else class="pt-20">
-            <a-empty description="Chưa có khóa học nào" />
+            <a-empty class="text-center" description="Chưa có khóa học nào" />
           </div>
         </div>
-        <div v-else class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 xl:grid-cols-4 gap-6 sm:-mt-32">
+        <div v-else class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 xl:grid-cols-4 gap-6 -mt-16 sm:-mt-32 md:-mt-7 lg:-mt-32">
           <div
             v-for="index in [1, 2, 3, 4]"
             :key="index"
@@ -583,7 +584,7 @@ onMounted(async () => {
 
 <style scoped>
 .custom_input :deep(.ant-input) {
-  @apply bg-transparent placeholder:text-white rounded-full hover:border-white focus:border-white outline-none text-white py-6 px-4;
+  @apply bg-transparent placeholder:text-white rounded-full hover:border-white focus:border-white outline-none text-white;
 }
 
 .card-img-loading {

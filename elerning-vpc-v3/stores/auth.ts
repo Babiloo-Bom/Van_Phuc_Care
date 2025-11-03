@@ -589,7 +589,7 @@ export const useAuthStore = defineStore('auth', {
         
         // Handle tokenExpireAt properly
         if (typeof tokenExpireAt === 'number') {
-          this.tokenExpireAt = new Date(tokenExpireAt).toISOString()
+          this.tokenExpireAt = new Date(Date.now() + tokenExpireAt).toISOString()
         } else {
           // Default to 7 days if not provided
           this.tokenExpireAt = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString()

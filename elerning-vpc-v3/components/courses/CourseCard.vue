@@ -158,6 +158,7 @@ const viewDetail = () => {
   display: flex;
   flex-direction: column;
   cursor: pointer;
+  z-index: 1;
 }
 
 .course-card:hover {
