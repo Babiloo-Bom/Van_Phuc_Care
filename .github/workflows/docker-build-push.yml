@@ -237,11 +237,13 @@ jobs:
             NODE_ENV=production
 
   # Deploy to production
+  # Chỉ deploy khi merge vào main (push event), không deploy khi mở pull request
   deploy:
     needs: [build-api, build-admin, build-crm, build-elearning]
     runs-on: ubuntu-latest
     if: |
       always() &&
+      github.event_name == 'push' &&
       github.ref == 'refs/heads/main' &&
       (needs.build-api.result == 'success' || needs.build-api.result == 'skipped') &&
       (needs.build-admin.result == 'success' || needs.build-admin.result == 'skipped') &&
