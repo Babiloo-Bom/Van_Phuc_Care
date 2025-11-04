@@ -2,7 +2,9 @@ import { sendError, sendSuccess } from '@libs/response';
 import { Request, Response } from 'express';
 import mongoose from 'mongoose';
 import CourseModulesModel from '@mongodb/course-modules';
-
+import LessonsModel from '@mongodb/lessons';
+import QuizzesModel from '@mongodb/quizzes';
+import { coursesData } from '../../../constants/courses-data-seed';
 // Course schema for E-Learning
 const courseSchema = new mongoose.Schema({
   title: {
@@ -109,13 +111,90 @@ const Course = mongoose.models.Course || mongoose.model('Course', courseSchema);
 
 class CourseController {
   /**
-   * Get all courses
+   * Get all courses with full statistics
    */
   public static async getAllCourses(req: Request, res: Response) {
     try {
       const courses = await Course.find({ status: 'active' }).sort({ createdAt: -1 });
-      console.log(`📚 Found ${courses.length} courses`);
-      sendSuccess(res, { courses });
+
+      const LessonsModel = (await import('@mongodb/lessons')).default;
+      const QuizzesModel = (await import('@mongodb/quizzes')).default;
+
+      const coursesWithStats = await Promise.all(
+        courses.map(async (course: any) => {
+          const courseData = course.toObject();
+
+          const modules = await CourseModulesModel.model.find({
+            courseId: course._id,
+            status: 'active'
+          });
+
+          let totalVideoCount = 0;
+          let totalDocumentCount = 0;
+
+          for (const module of modules) {
+            const lessons = await LessonsModel.model.find({
+              courseModuleId: module._id,
+              status: 'active'
+            });
+
+            for (const lesson of lessons) {
+              const lessonData: any = lesson.toObject();
+
+              if (lessonData.videos && Array.isArray(lessonData.videos)) {
+                totalVideoCount += lessonData.videos.length;
+              } else if (lessonData.type === 'video' && lessonData.videoUrl) {
+                totalVideoCount += 1;
+              }
+
+              if (lessonData.documents && Array.isArray(lessonData.documents)) {
+                totalDocumentCount += lessonData.documents.length;
+              } else if (lessonData.type === 'document' && lessonData.documentUrl) {
+                totalDocumentCount += 1;
+              }
+            }
+          }
+
+          const totalQuizCount = await QuizzesModel.countDocuments({
+            courseId: course._id.toString(),
+            status: 'active'
+          });
+
+          return {
+            _id: courseData._id.toString(),
+            title: courseData.title,
+            slug: courseData.slug,
+            description: courseData.description,
+            shortDescription: courseData.shortDescription,
+            thumbnail: courseData.thumbnail,
+            price: courseData.price,
+            originalPrice: courseData.originalPrice || courseData.price,
+            discount: courseData.discount || 0,
+            instructor: courseData.instructor,
+            category: courseData.category,
+            level: courseData.level,
+            duration: courseData.duration,
+            lessons: courseData.lessons || 0,
+            students: courseData.students || 0,
+            rating: {
+              average: courseData.rating?.average || 0,
+              count: courseData.rating?.count || 0
+            },
+            tags: courseData.tags || [],
+            isPublished: courseData.isPublished,
+            isFeatured: courseData.isFeatured,
+            status: courseData.status,
+            videoCount: totalVideoCount,
+            documentCount: totalDocumentCount,
+            quizCount: totalQuizCount,
+            createdAt: courseData.createdAt,
+            updatedAt: courseData.updatedAt
+          };
+        })
+      );
+
+      console.log(`📚 Found ${coursesWithStats.length} courses with statistics`);
+      sendSuccess(res, { courses: coursesWithStats });
     } catch (error: any) {
       console.error('❌ Get courses error:', error);
       sendError(res, 500, error.message, error as Error);
@@ -123,19 +202,83 @@ class CourseController {
   }
 
   /**
-   * Get course by slug
+   * Get course by slug with modules and lessons
    */
   public static async getCourseBySlug(req: Request, res: Response) {
     try {
       const { slug } = req.params;
       const course = await Course.findOne({ slug, status: 'active' });
-      
+
       if (!course) {
         return sendError(res, 404, 'Khóa học không tồn tại');
       }
-      
-      console.log(`📖 Found course: ${course.title}`);
-      sendSuccess(res, { course });
+
+      // Get modules for this course
+      const modules = await CourseModulesModel.model.find({
+        courseId: course._id,
+        status: 'active'
+      }).sort({ index: 1 });
+
+      // Get lessons for each module
+      const LessonsModel = (await import('@mongodb/lessons')).default;
+      const courseData = course.toObject();
+
+      // Transform modules to chapters format for frontend
+      const chapters = await Promise.all(
+        modules.map(async (module: any) => {
+          const lessons = await LessonsModel.model.find({
+            courseModuleId: module._id,
+            status: 'active'
+          }).sort({ createdAt: 1 });
+
+          // Transform lessons to frontend format
+          const transformedLessons = lessons.map((lesson: any) => {
+            const lessonData = lesson.toObject();
+            // Get first video if exists
+            const firstVideo = lessonData.videos && lessonData.videos.length > 0
+              ? lessonData.videos[0]
+              : null;
+
+            // Get first document if exists
+            const firstDocument = lessonData.documents && lessonData.documents.length > 0
+              ? lessonData.documents[0]
+              : null;
+
+            return {
+              _id: lessonData._id.toString(),
+              title: lessonData.title,
+              description: lessonData.description || '',
+              descriptions: lessonData.description || '',
+              type: lessonData.type || 'video',
+              order: lessonData.index || 0,
+              videoUrl: firstVideo?.videoUrl || null,
+              documentUrl: firstDocument?.fileUrl || null,
+              thumbnail: firstVideo?.thumbnail || courseData.thumbnail || null,
+              duration: lessonData.duration || firstVideo?.duration || 0,
+              videos: lessonData.videos || [],
+              documents: lessonData.documents || [],
+              quizId: lessonData.quizId || null,
+              quiz: lessonData.quiz || null,
+              isPreview: lessonData.isPreview || false,
+              content: lessonData.content || ''
+            };
+          });
+
+          return {
+            _id: module._id.toString(),
+            title: module.title,
+            description: module.description || '',
+            order: module.index || 0,
+            lessons: transformedLessons
+          };
+        })
+      );
+
+      // Add chapters to course data
+      courseData.chapters = chapters;
+
+      console.log(`📖 Found course: ${course.title} with ${chapters.length} modules`);
+      sendSuccess(res, { course: courseData });
     } catch (error: any) {
       console.error('❌ Get course error:', error);
       sendError(res, 500, error.message, error as Error);
@@ -149,11 +292,11 @@ class CourseController {
     try {
       const { id } = req.params;
       const course = await Course.findById(id);
-      
+
       if (!course) {
         return sendError(res, 404, 'Khóa học không tồn tại');
       }
-      
+
       console.log(`📖 Found course by ID: ${course.title}`);
       sendSuccess(res, { course });
     } catch (error: any) {
@@ -168,13 +311,13 @@ class CourseController {
   public static async createCourse(req: Request, res: Response) {
     try {
       const courseData = req.body;
-      
+
       // Check if course with same slug exists
       const existingCourse = await Course.findOne({ slug: courseData.slug });
       if (existingCourse) {
         return sendError(res, 400, 'Khóa học với slug này đã tồn tại');
       }
-      
+
       const course = await Course.create(courseData);
       console.log(`✅ Created course: ${course.title}`);
       let modules = [];
@@ -207,7 +350,7 @@ class CourseController {
     try {
       const { id } = req.params;
       const updateData = req.body;
-      
+
       const course = await Course.findByIdAndUpdate(id, updateData, { new: true });
       if (!course) {
         return sendError(res, 404, 'Khóa học không tồn tại');
@@ -257,23 +400,23 @@ class CourseController {
       console.log('🔍 updateCourseChapters called');
       console.log('📝 Request params:', req.params);
       console.log('📝 Request body:', req.body);
-      
+
       const { slug } = req.params;
       const { chapters } = req.body;
-      
+
       console.log('🔍 Looking for course with slug:', slug);
-      
+
       const course = await Course.findOneAndUpdate(
         { slug },
         { chapters },
         { new: true }
       );
-      
+
       if (!course) {
         console.log('❌ Course not found with slug:', slug);
         return sendError(res, 404, 'Khóa học không tồn tại');
       }
-      
+
       console.log(`✅ Updated course chapters: ${course.title}`);
       console.log('📚 Chapters count:', course.chapters?.length || 0);
       sendSuccess(res, { course });
@@ -289,12 +432,12 @@ class CourseController {
   public static async deleteCourse(req: Request, res: Response) {
     try {
       const { id } = req.params;
-      
+
       const course = await Course.findByIdAndDelete(id);
       if (!course) {
         return sendError(res, 404, 'Khóa học không tồn tại');
       }
-      
+
       console.log(`✅ Deleted course: ${course.title}`);
       sendSuccess(res, { message: 'Khóa học đã được xóa' });
     } catch (error: any) {
@@ -308,227 +451,102 @@ class CourseController {
    */
   public static async seedCourses(req: Request, res: Response) {
     try {
-      const sampleCourses = [
-        {
-          title: "Lập Trình Web Frontend với React.js",
-          slug: "lap-trinh-web-frontend-voi-reactjs",
-          description: "Khóa học toàn diện về lập trình web frontend sử dụng React.js, từ cơ bản đến nâng cao. Bạn sẽ học được cách xây dựng các ứng dụng web hiện đại, tương tác và responsive.",
-          shortDescription: "Học React.js từ cơ bản đến nâng cao, xây dựng ứng dụng web hiện đại",
-          thumbnail: "/images/courses/react-course.jpg",
-          price: 299000,
-          originalPrice: 599000,
-          discount: 50,
-          instructor: {
-            name: "Nguyễn Văn A",
-            avatar: "/images/instructors/instructor-1.jpg",
-            bio: "Senior Frontend Developer với 5+ năm kinh nghiệm"
-          },
-          category: "Lập Trình",
-          level: "beginner",
-          duration: 1200,
-          lessons: 45,
-          students: 1250,
-          rating: {
-            average: 4.8,
-            count: 320
-          },
-          tags: ["React", "JavaScript", "Frontend", "Web Development"],
-          chapters: [
-            {
-              title: "Giới thiệu React.js",
-              description: "Tìm hiểu về React.js và cách thiết lập môi trường phát triển",
-              lessons: [
-                {
-                  title: "React.js là gì?",
-                  duration: 15,
-                  type: "video",
-                  videoUrl: "https://sample-videos.com/zip/10/mp4/SampleVideo_1280x720_1mb.mp4",
-                  thumbnail: "https://via.placeholder.com/1280x720/4F46E5/FFFFFF?text=React+Introduction",
-                  fileSize: 1048576,
-                  quality: "720"
-                },
-                {
-                  title: "Cài đặt Node.js và npm",
-                  duration: 10,
-                  type: "video",
-                  videoUrl: "https://sample-videos.com/zip/10/mp4/SampleVideo_1280x720_2mb.mp4",
-                  thumbnail: "https://via.placeholder.com/1280x720/059669/FFFFFF?text=Node.js+Setup",
-                  fileSize: 2097152,
-                  quality: "720"
-                }
-              ]
-            },
-            {
-              title: "Components và JSX",
-              description: "Học cách tạo và sử dụng React components",
-              lessons: [
-                {
-                  title: "Tạo Component đầu tiên",
-                  duration: 20,
-                  type: "video",
-                  videoUrl: "https://sample-videos.com/zip/10/mp4/SampleVideo_1280x720_1mb.mp4",
-                  thumbnail: "https://via.placeholder.com/1280x720/DC2626/FFFFFF?text=First+Component",
-                  fileSize: 1048576,
-                  quality: "720"
-                }
-              ]
-            }
-          ],
-          isPublished: true,
-          isFeatured: true,
-          status: "active"
-        },
-        {
-          title: "Thiết Kế UI/UX với Figma",
-          slug: "thiet-ke-ui-ux-voi-figma",
-          description: "Khóa học thiết kế giao diện người dùng và trải nghiệm người dùng chuyên nghiệp với Figma. Từ wireframe đến prototype hoàn chỉnh.",
-          shortDescription: "Học thiết kế UI/UX chuyên nghiệp với Figma",
-          thumbnail: "/images/courses/figma-course.jpg",
-          price: 199000,
-          originalPrice: 399000,
-          discount: 50,
-          instructor: {
-            name: "Trần Thị B",
-            avatar: "/images/instructors/instructor-2.jpg",
-            bio: "UI/UX Designer với 6+ năm kinh nghiệm tại các công ty lớn"
-          },
-          category: "Thiết Kế",
-          level: "beginner",
-          duration: 900,
-          lessons: 32,
-          students: 890,
-          rating: {
-            average: 4.7,
-            count: 156
-          },
-          tags: ["Figma", "UI Design", "UX Design", "Prototype"],
-          isPublished: true,
-          isFeatured: true,
-          status: "active"
-        },
-        {
-          title: "Phân Tích Dữ Liệu với Python",
-          slug: "phan-tich-du-lieu-voi-python",
-          description: "Khóa học phân tích dữ liệu và machine learning với Python. Sử dụng pandas, numpy, matplotlib và scikit-learn để xử lý và phân tích dữ liệu thực tế.",
-          shortDescription: "Học phân tích dữ liệu và ML với Python",
-          thumbnail: "/images/courses/python-course.jpg",
-          price: 399000,
-          originalPrice: 799000,
-          discount: 50,
-          instructor: {
-            name: "Lê Văn C",
-            avatar: "/images/instructors/instructor-3.jpg",
-            bio: "Data Scientist với 7+ năm kinh nghiệm trong lĩnh vực AI/ML"
-          },
-          category: "Khoa Học Dữ Liệu",
-          level: "intermediate",
-          duration: 1500,
-          lessons: 58,
-          students: 2100,
-          rating: {
-            average: 4.9,
-            count: 445
-          },
-          tags: ["Python", "Data Analysis", "Machine Learning", "Pandas", "NumPy"],
-          chapters: [
-            {
-              title: "Python cơ bản",
-              description: "Học các khái niệm cơ bản của Python",
-              lessons: [
-                {
-                  title: "Giới thiệu Python",
-                  duration: 20,
-                  type: "video",
-                  videoUrl: "https://sample-videos.com/zip/10/mp4/SampleVideo_1280x720_1mb.mp4",
-                  thumbnail: "https://via.placeholder.com/1280x720/4F46E5/FFFFFF?text=Python+Introduction",
-                  fileSize: 1048576,
-                  quality: "720"
-                },
-                {
-                  title: "Biến và Kiểu dữ liệu",
-                  duration: 25,
-                  type: "video",
-                  videoUrl: "https://sample-videos.com/zip/10/mp4/SampleVideo_1280x720_2mb.mp4",
-                  thumbnail: "https://via.placeholder.com/1280x720/059669/FFFFFF?text=Variables+Types",
-                  fileSize: 2097152,
-                  quality: "720"
-                },
-                {
-                  title: "Cấu trúc điều khiển",
-                  duration: 30,
-                  type: "video",
-                  videoUrl: "https://sample-videos.com/zip/10/mp4/SampleVideo_1280x720_1mb.mp4",
-                  thumbnail: "https://via.placeholder.com/1280x720/DC2626/FFFFFF?text=Control+Structures",
-                  fileSize: 1048576,
-                  quality: "720"
-                }
-              ]
-            },
-            {
-              title: "Pandas và NumPy",
-              description: "Thư viện xử lý dữ liệu quan trọng",
-              lessons: [
-                {
-                  title: "Giới thiệu Pandas",
-                  duration: 35,
-                  type: "video",
-                  videoUrl: "https://sample-videos.com/zip/10/mp4/SampleVideo_1280x720_2mb.mp4",
-                  thumbnail: "https://via.placeholder.com/1280x720/7C3AED/FFFFFF?text=Pandas+Introduction",
-                  fileSize: 2097152,
-                  quality: "720"
-                }
-              ]
-            }
-          ],
-          isPublished: true,
-          isFeatured: false,
-          status: "active"
-        },
-        {
-          title: "Marketing Digital Toàn Diện",
-          slug: "marketing-digital-toan-dien",
-          description: "Khóa học marketing digital từ A-Z, bao gồm SEO, Google Ads, Facebook Ads, Content Marketing và Email Marketing. Phù hợp cho người mới bắt đầu và muốn nâng cao kỹ năng.",
-          shortDescription: "Học marketing digital từ cơ bản đến nâng cao",
-          thumbnail: "/images/courses/marketing-course.jpg",
-          price: 249000,
-          originalPrice: 499000,
-          discount: 50,
-          instructor: {
-            name: "Phạm Thị D",
-            avatar: "/images/instructors/instructor-4.jpg",
-            bio: "Digital Marketing Manager với 8+ năm kinh nghiệm"
-          },
-          category: "Marketing",
-          level: "beginner",
-          duration: 1800,
-          lessons: 67,
-          students: 3200,
-          rating: {
-            average: 4.6,
-            count: 678
-          },
-          tags: ["Digital Marketing", "SEO", "Google Ads", "Facebook Ads", "Content Marketing"],
-          isPublished: true,
-          isFeatured: true,
-          status: "active"
-        }
-      ];
+      const coursesDataSeed: any = coursesData;
 
-      // Clear existing courses first
       await Course.deleteMany({});
-      console.log('🗑️ Cleared existing courses');
+      await CourseModulesModel.model.deleteMany({});
+      await LessonsModel.model.deleteMany({});
+      await QuizzesModel.deleteMany({});
+      console.log('🗑️ Cleared existing courses, modules, lessons and quizzes');
 
-      // Insert sample courses
-      const courses = await Course.insertMany(sampleCourses);
-      console.log(`✅ Inserted ${courses.length} sample courses`);
+      let totalCourses = 0;
+      let totalModules = 0;
+      let totalLessons = 0;
+      let totalQuizzes = 0;
 
-      sendSuccess(res, { 
-        message: `Đã thêm ${courses.length} khóa học mẫu`,
-        courses: courses.map(course => ({
-          id: course._id,
-          title: course.title,
-          price: course.price
-        }))
+      for (const courseData of coursesDataSeed) {
+        const course = new Course({
+          ...courseData,
+          slug: courseData.slug
+        });
+
+        const savedCourse = await course.save();
+        console.log(`✅ Đã tạo course: ${savedCourse.title}`);
+        totalCourses++;
+
+        if (courseData.modules && courseData.modules.length > 0) {
+          for (let moduleIndex = 0; moduleIndex < courseData.modules.length; moduleIndex++) {
+            const moduleData = courseData.modules[moduleIndex];
+
+            const courseModule = await CourseModulesModel.model.create({
+              courseId: savedCourse._id,
+              title: moduleData.title,
+              description: moduleData.description || '',
+              index: moduleIndex,
+              status: 'active'
+            });
+
+            const courseModuleData = courseModule as any;
+            console.log(`  ✅ Đã tạo module: ${courseModuleData.title}`);
+            totalModules++;
+
+            if (moduleData.lessons && moduleData.lessons.length > 0) {
+              for (let lessonIndex = 0; lessonIndex < moduleData.lessons.length; lessonIndex++) {
+                const lessonData = moduleData.lessons[lessonIndex] as any;
+
+                let quizId = null;
+
+                if (lessonData.quiz) {
+                  const quiz = await QuizzesModel.create({
+                    courseId: savedCourse._id.toString(),
+                    chapterIndex: moduleIndex,
+                    lessonIndex: lessonIndex,
+                    title: lessonData.quiz.title,
+                    description: lessonData.quiz.description || '',
+                    questions: lessonData.quiz.questions || [],
+                    passingScore: lessonData.quiz.passingScore || 80,
+                    timeLimit: lessonData.quiz.timeLimit || 0,
+                    attempts: lessonData.quiz.attempts || 3,
+                    status: 'active'
+                  });
+
+                  const quizData = quiz as any;
+                  quizId = quizData._id;
+                  console.log(`    ✅ Đã tạo quiz: ${quizData.title} với ${quizData.questions.length} câu hỏi`);
+                  totalQuizzes++;
+                }
+
+                const lesson = await LessonsModel.model.create({
+                  courseModuleId: courseModuleData._id,
+                  quizId: quizId,
+                  title: lessonData.title,
+                  description: lessonData.description || '',
+                  content: lessonData.content || '',
+                  type: lessonData.type || 'video',
+                  isPreview: lessonData.isPreview || false,
+                  videos: lessonData.videos || [],
+                  documents: lessonData.documents || [],
+                  duration: lessonData.duration || 0,
+                  status: 'active'
+                });
+
+                const lessonDataObj = lesson as any;
+                console.log(`    ✅ Đã tạo lesson: ${lessonDataObj.title}`);
+                totalLessons++;
+              }
+            }
+          }
+        }
+      }
+
+      sendSuccess(res, {
+        message: `Đã thêm ${totalCourses} khóa học với đầy đủ thông tin`,
+        summary: {
+          courses: totalCourses,
+          modules: totalModules,
+          lessons: totalLessons,
+          quizzes: totalQuizzes
+        }
       });
     } catch (error: any) {
       console.error('❌ Seed courses error:', error);
