@@ -10,7 +10,7 @@
           class="relative z-[1] flex flex-col items-center md:items-start h-full gap-6"
         >
           <div class="text-white">
-            <div class="flex items-center gap-4 flex-wrap">
+            <div class="flex items-center gap-1 sm:gap-4 flex-wrap">
               <h4 class="text-3xl sm:text-4xl font-bold text-white mb-1">
                 Tất cả khóa học
               </h4>

@@ -161,7 +161,7 @@ const searchKey = ref("");
 
 // Computed
 const filteredCourses = computed(() => {
-  if (!searchKey.value) return coursesStore.courses;
+  if (!searchKey.value) return coursesStore.myCourses;
 
   return coursesStore.myCourses.filter((course) =>
     course.title.toLowerCase().includes(searchKey.value.toLowerCase())
