@@ -185,17 +185,18 @@ const handleSubmit = async () => {
 // Handle Google login
 const handleGoogleLogin = async () => {
   try {
-    const baseFrontend = window.location.origin.replace(/\/$/, '')
-    const redirectUri = `${baseFrontend}/auth/google/callback`
-    const frontendUrl = baseFrontend
+  const baseFrontend = window.location.origin.replace(/\/$/, '')
+  // Redirect về trang chủ sau khi đăng nhập Google
+  const redirectUri = `${baseFrontend}`
+  const frontendUrl = baseFrontend
 
-// Google OAuth always uses /api/a (admin endpoint), not /api/u
-    const isAbsolutePath = baseFrontend.startsWith('http://localhost') || baseFrontend.includes('localhost')
-    const googleApiBase = isAbsolutePath ? 'http://localhost:3000/api/a' : '/api/a'
-    const backendBase = googleApiBase.startsWith('http') ? googleApiBase : `${baseFrontend}${googleApiBase}`
-    
-    const url = `${backendBase}/auth/google?redirect_uri=${encodeURIComponent(redirectUri)}&frontend_url=${encodeURIComponent(frontendUrl)}`
-    window.location.href = url
+  // Google OAuth luôn dùng /api/a (admin endpoint)
+  const isAbsolutePath = baseFrontend.startsWith('http://localhost') || baseFrontend.includes('localhost')
+  const googleApiBase = isAbsolutePath ? 'http://localhost:3000/api/a' : '/api/a'
+  const backendBase = googleApiBase.startsWith('http') ? googleApiBase : `${baseFrontend}${googleApiBase}`
+
+  const url = `${backendBase}/auth/google?redirect_uri=${encodeURIComponent(redirectUri)}&frontend_url=${encodeURIComponent(frontendUrl)}`
+  window.location.href = url
   } catch (error: any) {
     console.error('Google login error:', error)
     message.error('Đăng nhập Google thất bại')

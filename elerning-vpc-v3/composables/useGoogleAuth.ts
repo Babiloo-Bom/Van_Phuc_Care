@@ -20,7 +20,7 @@ export const useGoogleAuth = () => {
   const googleConfig: GoogleOAuthConfig = {
     clientId: config.public.googleClientId || '',
     clientSecret: '', // Client secret không được expose ra client-side
-    redirectUri: `${baseUrl}/auth/google/callback`,
+    redirectUri: `${baseUrl}`,
     scope: ['openid', 'email', 'profile']
   }
 

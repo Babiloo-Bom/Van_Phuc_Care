@@ -2,11 +2,13 @@
   <div class="">
     <!-- Banner Section -->
     <div
-      class="h-auto sm:h-[500px] py-10 sm:pt-20 sm:pb-20 md:pb-60 bg-cover bg-center bg-no-repeat bg-[url('https://cdn.synck.io.vn/vanphuccare/banner/main.webp')] relative z-[0] after:absolute after:content-[''] after:top-0 after:left-0 after:w-full after:h-full after:opacity-60 after:bg-prim-100"
+      class="h-[500px] py-10 sm:pt-20 sm:pb-20 md:pb-60 bg-cover bg-center bg-no-repeat bg-[url('https://cdn.synck.io.vn/vanphuccare/banner/main.webp')] relative z-[0] after:absolute after:content-[''] after:top-0 after:left-0 after:w-full after:h-full after:opacity-60 after:bg-prim-100"
     >
       <div class="absolute inset-0 bg-[#1A75BBB2]"></div>
       <div class="container h-full">
-        <div class="relative z-[1] flex flex-col h-full gap-6">
+        <div
+          class="relative z-[1] flex flex-col items-center md:items-start h-full gap-6"
+        >
           <div class="text-white">
             <div class="flex items-center gap-4 flex-wrap">
               <h4 class="text-3xl sm:text-4xl font-bold text-white mb-1">
@@ -43,8 +45,8 @@
                 <span v-else> {{ filteredCourses.length }} khóa học </span>
               </div>
             </div>
-            <div class="mt-4">
-              <p class="mb-0 md:max-w-[70%] text-white leading-relaxed">
+            <div class="mt-4 hidden md:block">
+              <p class="mb-0 md:max-w-[800px] text-white leading-relaxed">
                 Vạn Phúc Care cung cấp những khóa học chất lượng, chuyên sâu
                 nhất để hỗ trợ bậc phụ huynh trong hành trình nuôi dưỡng và chăm
                 sóc con cái. Các khóa học không chỉ mang đến các chủ đề đa dạng,
@@ -54,66 +56,42 @@
               </p>
             </div>
           </div>
-          <div class="mt-auto">
-            <div class="grid grid-cols-1 items-center gap-6">
-              <div class="w-full">
-                <a-input
-                  v-model="searchKey"
-                  placeholder="Tìm kiếm theo tên, mô tả, danh mục, tags..."
-                  class="!bg-transparent rounded-full h-10 w-full sm:w-[340px] md:w-[540px] lg:w-[640px] custom_input"
-                  @change="handleSearch"
+          <div class="w-full text-center md:text-left">
+            <a-input
+              v-model="searchKey"
+              placeholder="Tìm kiếm theo tên, mô tả, danh mục, tags..."
+              class="!bg-transparent rounded-full h-10 w-full max-w-[400px] sm:max-w-[440px] md:max-w-[340px] custom_input"
+              @change="handleSearch"
+            >
+              <template #prefix>
+                <svg
+                  xmlns="http://www.w3.org/2000/svg"
+                  width="20"
+                  height="20"
+                  viewBox="0 0 24 24"
+                  class="fill-none stroke-white"
                 >
-                  <template #prefix>
-                    <svg
-                      xmlns="http://www.w3.org/2000/svg"
-                      width="20"
-                      height="20"
-                      viewBox="0 0 24 24"
-                      class="fill-none stroke-white"
-                    >
-                      <path
-                        d="M11.5 21a9.5 9.5 0 1 0 0-19 9.5 9.5 0 0 0 0 19ZM22 22l-2-2"
-                        stroke-width="1.5"
-                        stroke-linecap="round"
-                        stroke-linejoin="round"
-                      />
-                    </svg>
-                  </template>
-                </a-input>
-              </div>
-              <div class="w-full">
-                <div
-                  class="flex items-center justify-center sm:justify-start gap-4"
-                >
-                  <div class="w-auto cursor-pointer">
-                    <img
-                      class="w-[140px] h-auto object-contain"
-                      src="/images/download-google-app.png"
-                      alt="Google Play"
-                    />
-                  </div>
-                  <div class="w-auto cursor-pointer">
-                    <img
-                      class="w-[140px] h-auto object-contain"
-                      src="/images/download-iphone-app.png"
-                      alt="App Store"
-                    />
-                  </div>
-                </div>
-              </div>
-            </div>
+                  <path
+                    d="M11.5 21a9.5 9.5 0 1 0 0-19 9.5 9.5 0 0 0 0 19ZM22 22l-2-2"
+                    stroke-width="1.5"
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                  />
+                </svg>
+              </template>
+            </a-input>
           </div>
         </div>
       </div>
     </div>
 
     <!-- Courses Section -->
-    <section class="pb-20 p-4 lg:pt-20 sm:pt-0 bg-[#f4f7f9]">
+    <section class="pb-20 p-4 lg:pt-20 sm:pt-10 bg-[#f4f7f9]">
       <div class="container mx-auto !px-0 md:!px-auto">
         <div v-if="!loading">
           <div
             v-if="filteredCourses.length"
-            class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 xl:grid-cols-4 gap-6 -mt-10 lg:-mt-40"
+            class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 xl:grid-cols-4 gap-6 -mt-80 sm:-mt-64 md:-mt-40 lg:-mt-60"
           >
             <CourseCard
               v-for="(course, index) in filteredCourses"
@@ -126,13 +104,13 @@
               class=""
             />
           </div>
-          <div v-else class="pt-20">
+          <div v-else class="">
             <a-empty descriptions="Chưa có khóa học nào" />
           </div>
         </div>
         <div
           v-else
-          class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 xl:grid-cols-4 gap-6 sm:-mt-32"
+          class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 xl:grid-cols-4 gap-6 -mt-80 sm:-mt-64 md:-mt-40 lg:-mt-60"
         >
           <div v-for="index in [1, 2, 3, 4]" :key="index" class="">
             <Skeleton />

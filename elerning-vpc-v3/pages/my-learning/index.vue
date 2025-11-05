@@ -2,16 +2,16 @@
   <div class="">
     <!-- Hero Banner -->
     <div
-      class="h-auto sm:h-[500px] py-10 sm:pt-20 sm:pb-20 md:pb-60 bg-cover bg-center bg-no-repeat bg-[url('https://cdn.synck.io.vn/vanphuccare/banner/main.webp')] relative z-[0] after:absolute after:content-[''] after:top-0 after:left-0 after:w-full after:h-full after:opacity-60 after:bg-prim-100"
+      class="h-[500px] py-10 sm:pt-20 sm:pb-20 md:pb-60 bg-cover bg-center bg-no-repeat bg-[url('https://cdn.synck.io.vn/vanphuccare/banner/main.webp')] relative z-[0] after:absolute after:content-[''] after:top-0 after:left-0 after:w-full after:h-full after:opacity-60 after:bg-prim-100"
     >
       <div class="absolute inset-0 bg-[#1A75BBB2]"></div>
       <div class="container mx-auto !px-0 sm:!px-auto">
         <div
-          class="relative z-[1] flex flex-col h-full gap-6 p-4 sm:pt-0 items-center sm:items-start"
+          class="relative z-[1] flex flex-col h-full gap-6 p-4 sm:pt-0 items-center md:items-start"
         >
-          <div class="text-white text-center sm:text-left">
+          <div class="text-white text-center md:text-left">
             <div
-              class="flex items-center justify-center sm:justify-start gap-2 sm:gap-4 flex-wrap sm:mb-4"
+              class="flex items-center justify-center sm:justify-start sm:gap-4 flex-wrap sm:mb-4"
             >
               <h4 class="text-2xl sm:text-4xl font-bold text-white mb-0">
                 Khóa học của tôi
@@ -57,11 +57,11 @@
           <div class="mt-auto w-full">
             <div class="flex flex-col items-center gap-6">
               <!-- Search Bar -->
-              <div class="w-full text-center sm:text-left">
+              <div class="w-full text-center md:text-left">
                 <a-input
                   v-model:value="searchKey"
                   placeholder="Tìm kiếm khóa học"
-                  class="!bg-transparent rounded-full h-10 w-full sm:w-[340px] md:w-[540px] lg:w-[640px] custom_input"
+                  class="!bg-transparent rounded-full h-10 w-full max-w-[400px] sm:max-w-[440px] md:max-w-[340px] custom_input"
                   @change="handleSearch"
                 >
                   <template #prefix>
@@ -82,25 +82,6 @@
                   </template>
                 </a-input>
               </div>
-              <!-- App Download Buttons -->
-              <div
-                class="w-full flex flex-row items-center justify-center sm:justify-start gap-4"
-              >
-                <div class="w-auto cursor-pointer">
-                  <img
-                    class="w-[120px] sm:w-[140px] md:w-[160px] h-auto object-contain"
-                    src="/images/download-google-app.png"
-                    alt="Google Play"
-                  />
-                </div>
-                <div class="w-auto cursor-pointer">
-                  <img
-                    class="w-[120px] sm:w-[140px] md:w-[160px] h-auto object-contain"
-                    src="/images/download-iphone-app.png"
-                    alt="App Store"
-                  />
-                </div>
-              </div>
             </div>
           </div>
         </div>
@@ -108,12 +89,12 @@
     </div>
 
     <!-- Courses Section -->
-    <section class="pb-20 p-4 lg:pt-20 sm:pt-0 bg-[#f4f7f9]">
+    <section class="pb-20 p-4 lg:pt-20 sm:pt-10 bg-[#f4f7f9]">
       <div class="container mx-auto px-4 md:px-0">
         <div v-if="!loading">
           <div
             v-if="filteredCourses.length"
-            class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 xl:grid-cols-4 gap-6 -mt-12 sm:-mt-52 md:-mt-20 lg:-mt-48"
+            class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 xl:grid-cols-4 gap-6 -mt-80 sm:-mt-64 md:-mt-40 lg:-mt-60"
           >
             <CourseCard
               v-for="(course, index) in filteredCourses"
@@ -125,13 +106,13 @@
               class="transform transition hover:-translate-y-1 duration-150"
             />
           </div>
-          <div v-else class="pt-20">
+          <div v-else class="">
             <a-empty description="Bạn chưa có khóa học nào" />
           </div>
         </div>
         <div
           v-else
-          class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 xl:grid-cols-4 gap-6 sm:-mt-32"
+          class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 xl:grid-cols-4 gap-6 -mt-80 sm:-mt-64 md:-mt-40 lg:-mt-60"
         >
           <div
             v-for="index in [1, 2, 3, 4]"
@@ -180,7 +161,7 @@ const searchKey = ref("");
 
 // Computed
 const filteredCourses = computed(() => {
-  if (!searchKey.value) return coursesStore.myCourses;
+  if (!searchKey.value) return coursesStore.courses;
 
   return coursesStore.myCourses.filter((course) =>
     course.title.toLowerCase().includes(searchKey.value.toLowerCase())
