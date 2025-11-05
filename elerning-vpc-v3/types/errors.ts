@@ -68,8 +68,8 @@ export const AUTH_ERROR_MESSAGES: Record<AuthErrorCode, string> = {
   [AuthErrorCode.TOO_MANY_REQUESTS]: 'Bạn đã thử quá nhiều lần. Vui lòng đợi một chút',
   
   // Unknown
-  [AuthErrorCode.UNKNOWN_ERROR]: 'Đã xảy ra lỗi không xác định'
-}
+  [AuthErrorCode.UNKNOWN_ERROR]: 'Đã xảy ra lỗi không xác định',
+};
 
 // ===== CUSTOM ERROR CLASSES =====
 
@@ -77,16 +77,16 @@ export const AUTH_ERROR_MESSAGES: Record<AuthErrorCode, string> = {
  * Base Authentication Error
  */
 export class AuthError extends Error {
-  code: AuthErrorCode
-  statusCode: number
-  originalError?: any
+  code: AuthErrorCode;
+  statusCode: number;
+  originalError?: any;
 
   constructor(code: AuthErrorCode, statusCode = 400, originalError?: any) {
-    super(AUTH_ERROR_MESSAGES[code] || AUTH_ERROR_MESSAGES[AuthErrorCode.UNKNOWN_ERROR])
-    this.name = 'AuthError'
-    this.code = code
-    this.statusCode = statusCode
-    this.originalError = originalError
+    super(AUTH_ERROR_MESSAGES[code] || AUTH_ERROR_MESSAGES[AuthErrorCode.UNKNOWN_ERROR]);
+    this.name = 'AuthError';
+    this.code = code;
+    this.statusCode = statusCode;
+    this.originalError = originalError;
   }
 
   toJSON() {
@@ -94,8 +94,8 @@ export class AuthError extends Error {
       name: this.name,
       code: this.code,
       message: this.message,
-      statusCode: this.statusCode
-    }
+      statusCode: this.statusCode,
+    };
   }
 }
 
@@ -104,8 +104,8 @@ export class AuthError extends Error {
  */
 export class NetworkError extends AuthError {
   constructor(originalError?: any) {
-    super(AuthErrorCode.NETWORK_ERROR, 0, originalError)
-    this.name = 'NetworkError'
+    super(AuthErrorCode.NETWORK_ERROR, 0, originalError);
+    this.name = 'NetworkError';
   }
 }
 
@@ -114,8 +114,8 @@ export class NetworkError extends AuthError {
  */
 export class TimeoutError extends AuthError {
   constructor(originalError?: any) {
-    super(AuthErrorCode.TIMEOUT_ERROR, 408, originalError)
-    this.name = 'TimeoutError'
+    super(AuthErrorCode.TIMEOUT_ERROR, 408, originalError);
+    this.name = 'TimeoutError';
   }
 }
 
@@ -123,15 +123,15 @@ export class TimeoutError extends AuthError {
  * Validation Error
  */
 export class ValidationError extends AuthError {
-  fields?: string[]
+  fields?: string[];
 
   constructor(message?: string, fields?: string[]) {
-    super(AuthErrorCode.VALIDATION_ERROR, 422)
-    this.name = 'ValidationError'
+    super(AuthErrorCode.VALIDATION_ERROR, 422);
+    this.name = 'ValidationError';
     if (message) {
-      this.message = message
+      this.message = message;
     }
-    this.fields = fields
+    this.fields = fields;
   }
 }
 
@@ -143,27 +143,27 @@ export class ValidationError extends AuthError {
 export function mapHttpStatusToErrorCode(status: number): AuthErrorCode {
   switch (status) {
     case 400:
-      return AuthErrorCode.VALIDATION_ERROR
+      return AuthErrorCode.VALIDATION_ERROR;
     case 401:
-      return AuthErrorCode.INVALID_CREDENTIALS
+      return AuthErrorCode.INVALID_CREDENTIALS;
     case 403:
-      return AuthErrorCode.ACCOUNT_DISABLED
+      return AuthErrorCode.ACCOUNT_DISABLED;
     case 404:
-      return AuthErrorCode.USER_NOT_FOUND
+      return AuthErrorCode.USER_NOT_FOUND;
     case 408:
-      return AuthErrorCode.TIMEOUT_ERROR
+      return AuthErrorCode.TIMEOUT_ERROR;
     case 422:
-      return AuthErrorCode.VALIDATION_ERROR
+      return AuthErrorCode.VALIDATION_ERROR;
     case 429:
-      return AuthErrorCode.TOO_MANY_REQUESTS
+      return AuthErrorCode.TOO_MANY_REQUESTS;
     case 500:
     case 502:
     case 503:
-      return AuthErrorCode.SERVER_ERROR
+      return AuthErrorCode.SERVER_ERROR;
     case 504:
-      return AuthErrorCode.TIMEOUT_ERROR
+      return AuthErrorCode.TIMEOUT_ERROR;
     default:
-      return AuthErrorCode.UNKNOWN_ERROR
+      return AuthErrorCode.UNKNOWN_ERROR;
   }
 }
 
@@ -173,79 +173,79 @@ export function mapHttpStatusToErrorCode(status: number): AuthErrorCode {
 export function detectErrorType(error: any): AuthErrorCode {
   // Check if already AuthError
   if (error instanceof AuthError) {
-    return error.code
+    return error.code;
   }
 
   // Check for network errors
   if (error.message?.includes('fetch failed') || error.message?.includes('Network')) {
-    return AuthErrorCode.NETWORK_ERROR
+    return AuthErrorCode.NETWORK_ERROR;
   }
 
   // Check for timeout
   if (error.message?.includes('timeout') || error.code === 'ETIMEDOUT') {
-    return AuthErrorCode.TIMEOUT_ERROR
+    return AuthErrorCode.TIMEOUT_ERROR;
   }
 
   // Check HTTP status
   if (error.statusCode || error.status) {
-    const status = error.statusCode || error.status
-    return mapHttpStatusToErrorCode(status)
+    const status = error.statusCode || error.status;
+    return mapHttpStatusToErrorCode(status);
   }
 
   // Check error message keywords
-  const message = error.message?.toLowerCase() || ''
+  const message = error.message?.toLowerCase() || '';
   
   if (message.includes('password') && message.includes('incorrect')) {
-    return AuthErrorCode.INVALID_CREDENTIALS
+    return AuthErrorCode.INVALID_CREDENTIALS;
   }
   if (message.includes('email') && message.includes('exists')) {
-    return AuthErrorCode.EMAIL_EXISTS
+    return AuthErrorCode.EMAIL_EXISTS;
   }
   if (message.includes('not found')) {
-    return AuthErrorCode.USER_NOT_FOUND
+    return AuthErrorCode.USER_NOT_FOUND;
   }
   if (message.includes('token') && message.includes('expired')) {
-    return AuthErrorCode.TOKEN_EXPIRED
+    return AuthErrorCode.TOKEN_EXPIRED;
   }
   if (message.includes('otp') && message.includes('invalid')) {
-    return AuthErrorCode.INVALID_OTP
+    return AuthErrorCode.INVALID_OTP;
   }
 
-  return AuthErrorCode.UNKNOWN_ERROR
+  return AuthErrorCode.UNKNOWN_ERROR;
 }
 
 /**
  * Create user-friendly error message
  */
 export function createErrorMessage(error: any): string {
-  const errorCode = detectErrorType(error)
-  return AUTH_ERROR_MESSAGES[errorCode]
+  const errorCode = detectErrorType(error);
+  return AUTH_ERROR_MESSAGES[errorCode];
 }
 
 /**
  * Check if error is retryable (network, timeout, server errors)
  */
 export function isRetryableError(error: any): boolean {
-  const code = detectErrorType(error)
+  const code = detectErrorType(error);
   return [
     AuthErrorCode.NETWORK_ERROR,
     AuthErrorCode.TIMEOUT_ERROR,
     AuthErrorCode.SERVER_ERROR,
-    AuthErrorCode.SERVICE_UNAVAILABLE
-  ].includes(code)
+    AuthErrorCode.SERVICE_UNAVAILABLE,
+  ].includes(code);
 }
 
 /**
  * Get error code from error object (alias for detectErrorType)
  */
 export function getErrorCode(error: any): AuthErrorCode {
-  return detectErrorType(error)
+  return detectErrorType(error);
 }
 
 /**
  * Get error message from error object
  */
 export function getErrorMessage(error: any): string {
-  return createErrorMessage(error)
+  return createErrorMessage(error);
 }
 

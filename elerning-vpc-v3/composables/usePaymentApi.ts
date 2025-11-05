@@ -26,9 +26,9 @@ export interface TransactionData {
 }
 
 export const usePaymentApi = () => {
-  const config = useRuntimeConfig()
+  const config = useRuntimeConfig();
   // Hardcode localhost for testing
-  const apiBase = 'http://localhost:3000'
+  const apiBase = 'http://localhost:3000';
 
   return {
     // Thanh toán qua VNPay
@@ -37,7 +37,7 @@ export const usePaymentApi = () => {
         method: 'POST',
         body: data,
         credentials: 'include',
-      })
+      });
     },
 
     // Xác thực thanh toán VNPay (callback)
@@ -46,7 +46,7 @@ export const usePaymentApi = () => {
         method: 'GET',
         params,
         credentials: 'include',
-      })
+      });
     },
 
     // Tạo giao dịch (thanh toán QR)
@@ -55,7 +55,7 @@ export const usePaymentApi = () => {
         method: 'POST',
         body: data,
         credentials: 'include',
-      })
+      });
     },
 
     // Lấy danh sách giao dịch
@@ -64,7 +64,7 @@ export const usePaymentApi = () => {
         method: 'GET',
         params,
         credentials: 'include',
-      })
+      });
     },
 
     // Lấy chi tiết giao dịch
@@ -72,7 +72,7 @@ export const usePaymentApi = () => {
       return await $fetch(`${apiBase}/api/e/transactions/${transactionId}`, {
         method: 'GET',
         credentials: 'include',
-      })
+      });
     },
 
     // Cập nhật trạng thái giao dịch
@@ -81,8 +81,8 @@ export const usePaymentApi = () => {
         method: 'PUT',
         body: data,
         credentials: 'include',
-      })
+      });
     },
-  }
-}
+  };
+};
 

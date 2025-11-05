@@ -3,7 +3,7 @@
  * Usage: const { apiHost, apiBase } = useEnvConfig()
  */
 export const useEnvConfig = () => {
-  const config = useRuntimeConfig()
+  const config = useRuntimeConfig();
   
   return {
     // API Configuration
@@ -23,14 +23,14 @@ export const useEnvConfig = () => {
     
     // Helper methods
     getApiUrl: (endpoint: string) => {
-      const base = config.public.apiBase as string
-      return `${base}${endpoint.startsWith('/') ? endpoint : `/${endpoint}`}`
+      const base = config.public.apiBase as string;
+      return `${base}${endpoint.startsWith('/') ? endpoint : `/${endpoint}`}`;
     },
     
     getFullUrl: (path: string) => {
-      const appUrl = config.public.appUrl as string
-      return `${appUrl}${path.startsWith('/') ? path : `/${path}`}`
-    }
-  }
-}
+      const appUrl = config.public.appUrl as string;
+      return `${appUrl}${path.startsWith('/') ? path : `/${path}`}`;
+    },
+  };
+};
 

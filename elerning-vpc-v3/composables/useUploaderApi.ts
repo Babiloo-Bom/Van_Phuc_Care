@@ -1,7 +1,7 @@
 export const useUploaderApi = () => {
-  const config = useRuntimeConfig()
+  const config = useRuntimeConfig();
   // Hardcode localhost for testing
-  const apiBase = 'http://localhost:3000'
+  const apiBase = 'http://localhost:3000';
 
   return {
     // Upload file
@@ -10,7 +10,7 @@ export const useUploaderApi = () => {
         method: 'POST',
         body: formData,
         credentials: 'include',
-      })
+      });
     },
 
     // Upload multiple files
@@ -19,7 +19,7 @@ export const useUploaderApi = () => {
         method: 'POST',
         body: formData,
         credentials: 'include',
-      })
+      });
     },
 
     // Delete file
@@ -27,8 +27,8 @@ export const useUploaderApi = () => {
       return await $fetch(`${apiBase}/api/e/uploader/${fileId}`, {
         method: 'DELETE',
         credentials: 'include',
-      })
+      });
     },
-  }
-}
+  };
+};
 

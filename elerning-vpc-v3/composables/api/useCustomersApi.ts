@@ -5,10 +5,10 @@
  * All customer-related API calls
  */
 
-import type { Customer, CustomerQueryParams, PaginatedResponse } from '~/types/api'
+import type { Customer, CustomerQueryParams, PaginatedResponse } from '~/types/api';
 
 export const useCustomersApi = () => {
-  const apiClient = useApiClient()
+  const apiClient = useApiClient();
 
   return {
     /**
@@ -17,15 +17,15 @@ export const useCustomersApi = () => {
     async getCustomers(params?: CustomerQueryParams) {
       return apiClient.get<PaginatedResponse<Customer>>('/api/a/customers', {
         params,
-        showError: false
-      })
+        showError: false,
+      });
     },
 
     /**
      * Get customer by ID
      */
     async getCustomer(id: string) {
-      return apiClient.get<{ customer: Customer }>(`/api/a/customers/${id}`)
+      return apiClient.get<{ customer: Customer }>(`/api/a/customers/${id}`);
     },
 
     /**
@@ -33,8 +33,8 @@ export const useCustomersApi = () => {
      */
     async createCustomer(data: Partial<Customer>) {
       return apiClient.post<{ customer: Customer }>('/api/a/customers', data, {
-        errorMessage: 'Không thể tạo khách hàng'
-      })
+        errorMessage: 'Không thể tạo khách hàng',
+      });
     },
 
     /**
@@ -42,8 +42,8 @@ export const useCustomersApi = () => {
      */
     async updateCustomer(id: string, data: Partial<Customer>) {
       return apiClient.patch<{ customer: Customer }>(`/api/a/customers/${id}`, data, {
-        errorMessage: 'Không thể cập nhật khách hàng'
-      })
+        errorMessage: 'Không thể cập nhật khách hàng',
+      });
     },
 
     /**
@@ -51,8 +51,8 @@ export const useCustomersApi = () => {
      */
     async deleteCustomer(id: string) {
       return apiClient.delete(`/api/a/customers/${id}`, {
-        errorMessage: 'Không thể xóa khách hàng'
-      })
+        errorMessage: 'Không thể xóa khách hàng',
+      });
     },
 
     /**
@@ -60,21 +60,21 @@ export const useCustomersApi = () => {
      */
     async deleteCustomers(ids: string[]) {
       return apiClient.post('/api/a/customers/deleteMany', { ids }, {
-        errorMessage: 'Không thể xóa khách hàng'
-      })
+        errorMessage: 'Không thể xóa khách hàng',
+      });
     },
 
     /**
      * Import customers from file
      */
     async importCustomers(file: File) {
-      const formData = new FormData()
-      formData.append('file', file)
+      const formData = new FormData();
+      formData.append('file', file);
       
       return apiClient.upload('/api/a/customers/import', formData, {
         errorMessage: 'Không thể import khách hàng',
-        timeout: 120000 // 2 minutes
-      })
+        timeout: 120000, // 2 minutes
+      });
     },
 
     /**
@@ -83,16 +83,16 @@ export const useCustomersApi = () => {
     async exportCustomers(params?: CustomerQueryParams) {
       return apiClient.get('/api/a/customers/export', {
         params,
-        errorMessage: 'Không thể export khách hàng'
-      })
+        errorMessage: 'Không thể export khách hàng',
+      });
     },
 
     /**
      * Get customer statistics
      */
     async getCustomerStats() {
-      return apiClient.get('/api/a/customers/statistics')
-    }
-  }
-}
+      return apiClient.get('/api/a/customers/statistics');
+    },
+  };
+};
 

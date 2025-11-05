@@ -93,7 +93,7 @@ export const useAuthApi = () => {
 
   // Final normalize: remove any remaining duplicate /api/api/
   apiBase = apiBase.replace(/\/api\/api+/g, "/api");
-// apiBase = 'http://localhost:3000/api/a'
+  // apiBase = 'http://localhost:3000/api/a'
   // Debug: Log final API base URL
   console.log("🔍 Final API Base URL:", apiBase);
 
@@ -459,13 +459,15 @@ export const useAuthApi = () => {
     async getGoogleAuthUrl() {
       try {
         // Google OAuth always uses /api/a (admin endpoint), not /api/u
-        let googleBase: string
+        let googleBase: string;
         if (_isAbsolutePath) {
           // Absolute path: replace /api/u or /u with /api/a
-          googleBase = apiBase.replace(/\/api\/u\/?$/, '/api/a').replace(/\/u\/?$/, '/api/a')
+          googleBase = apiBase
+            .replace(/\/api\/u\/?$/, "/api/a")
+            .replace(/\/u\/?$/, "/api/a");
         } else {
           // Relative path: use /api/a (Nginx will add /api/ prefix in production)
-          googleBase = '/api/a'
+          googleBase = "/api/a";
         }
         return await withRetry(() =>
           fetchWithTimeout(`${googleBase}/auth/google/url`, {

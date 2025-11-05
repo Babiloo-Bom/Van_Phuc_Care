@@ -1,4 +1,4 @@
-import { defineStore } from 'pinia'
+import { defineStore } from 'pinia';
 
 export interface UserPreferences {
   language: string
@@ -26,15 +26,15 @@ export const useUserStore = defineStore('user', {
       language: 'en',
       timezone: 'Asia/Ho_Chi_Minh',
       notifications: true,
-      emailNotifications: true
+      emailNotifications: true,
     },
-    recentActivities: []
+    recentActivities: [],
   }),
 
   getters: {
-    userLanguage: (state) => state.preferences.language,
-    isNotificationsEnabled: (state) => state.preferences.notifications,
-    recentActivitiesList: (state) => state.recentActivities.slice(0, 10)
+    userLanguage: state => state.preferences.language,
+    isNotificationsEnabled: state => state.preferences.notifications,
+    recentActivitiesList: state => state.recentActivities.slice(0, 10),
   },
 
   actions: {
@@ -42,10 +42,10 @@ export const useUserStore = defineStore('user', {
      * Update user preferences
      */
     updatePreferences(prefs: Partial<UserPreferences>) {
-      this.preferences = { ...this.preferences, ...prefs }
+      this.preferences = { ...this.preferences, ...prefs };
       
       if (process.client) {
-        localStorage.setItem('userPreferences', JSON.stringify(this.preferences))
+        localStorage.setItem('userPreferences', JSON.stringify(this.preferences));
       }
     },
 
@@ -56,12 +56,12 @@ export const useUserStore = defineStore('user', {
       this.recentActivities.unshift({
         ...activity,
         id: Date.now(),
-        timestamp: new Date()
-      })
+        timestamp: new Date(),
+      });
 
       // Keep only last 50 activities
       if (this.recentActivities.length > 50) {
-        this.recentActivities = this.recentActivities.slice(0, 50)
+        this.recentActivities = this.recentActivities.slice(0, 50);
       }
     },
 
@@ -69,7 +69,7 @@ export const useUserStore = defineStore('user', {
      * Clear activities
      */
     clearActivities() {
-      this.recentActivities = []
+      this.recentActivities = [];
     },
 
     /**
@@ -77,12 +77,12 @@ export const useUserStore = defineStore('user', {
      */
     initUser() {
       if (process.client) {
-        const prefs = localStorage.getItem('userPreferences')
+        const prefs = localStorage.getItem('userPreferences');
         if (prefs) {
-          this.preferences = JSON.parse(prefs)
+          this.preferences = JSON.parse(prefs);
         }
       }
-    }
-  }
-})
+    },
+  },
+});
 
