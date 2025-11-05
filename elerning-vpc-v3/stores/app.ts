@@ -1,4 +1,4 @@
-import { defineStore } from 'pinia'
+import { defineStore } from 'pinia';
 
 export interface AppState {
   sidebarOpen: boolean
@@ -21,14 +21,14 @@ export const useAppStore = defineStore('app', {
     sidebarOpen: true,
     loading: false,
     notifications: [],
-    darkMode: false
+    darkMode: false,
   }),
 
   getters: {
-    isSidebarOpen: (state) => state.sidebarOpen,
-    isLoading: (state) => state.loading,
-    unreadNotifications: (state) => state.notifications.filter(n => !n.read),
-    unreadCount: (state) => state.notifications.filter(n => !n.read).length
+    isSidebarOpen: state => state.sidebarOpen,
+    isLoading: state => state.loading,
+    unreadNotifications: state => state.notifications.filter(n => !n.read),
+    unreadCount: state => state.notifications.filter(n => !n.read).length,
   },
 
   actions: {
@@ -36,21 +36,21 @@ export const useAppStore = defineStore('app', {
      * Toggle sidebar
      */
     toggleSidebar() {
-      this.sidebarOpen = !this.sidebarOpen
+      this.sidebarOpen = !this.sidebarOpen;
     },
 
     /**
      * Set sidebar state
      */
     setSidebar(open: boolean) {
-      this.sidebarOpen = open
+      this.sidebarOpen = open;
     },
 
     /**
      * Set loading state
      */
     setLoading(loading: boolean) {
-      this.loading = loading
+      this.loading = loading;
     },
 
     /**
@@ -61,14 +61,14 @@ export const useAppStore = defineStore('app', {
         ...notification,
         id: Date.now(),
         timestamp: new Date(),
-        read: false
-      })
+        read: false,
+      });
 
       // Auto remove after 5 seconds for success/info
       if (notification.type === 'success' || notification.type === 'info') {
         setTimeout(() => {
-          this.removeNotification(this.notifications[0].id)
-        }, 5000)
+          this.removeNotification(this.notifications[0].id);
+        }, 5000);
       }
     },
 
@@ -76,9 +76,9 @@ export const useAppStore = defineStore('app', {
      * Remove notification
      */
     removeNotification(id: string | number) {
-      const index = this.notifications.findIndex(n => n.id === id)
+      const index = this.notifications.findIndex(n => n.id === id);
       if (index > -1) {
-        this.notifications.splice(index, 1)
+        this.notifications.splice(index, 1);
       }
     },
 
@@ -86,9 +86,9 @@ export const useAppStore = defineStore('app', {
      * Mark notification as read
      */
     markAsRead(id: string | number) {
-      const notification = this.notifications.find(n => n.id === id)
+      const notification = this.notifications.find(n => n.id === id);
       if (notification) {
-        notification.read = true
+        notification.read = true;
       }
     },
 
@@ -96,24 +96,24 @@ export const useAppStore = defineStore('app', {
      * Mark all as read
      */
     markAllAsRead() {
-      this.notifications.forEach(n => n.read = true)
+      this.notifications.forEach(n => n.read = true);
     },
 
     /**
      * Clear all notifications
      */
     clearNotifications() {
-      this.notifications = []
+      this.notifications = [];
     },
 
     /**
      * Toggle dark mode
      */
     toggleDarkMode() {
-      this.darkMode = !this.darkMode
+      this.darkMode = !this.darkMode;
       
       if (process.client) {
-        localStorage.setItem('darkMode', String(this.darkMode))
+        localStorage.setItem('darkMode', String(this.darkMode));
       }
     },
 
@@ -122,12 +122,12 @@ export const useAppStore = defineStore('app', {
      */
     initApp() {
       if (process.client) {
-        const darkMode = localStorage.getItem('darkMode')
+        const darkMode = localStorage.getItem('darkMode');
         if (darkMode) {
-          this.darkMode = darkMode === 'true'
+          this.darkMode = darkMode === 'true';
         }
       }
-    }
-  }
-})
+    },
+  },
+});
 

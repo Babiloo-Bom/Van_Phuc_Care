@@ -5,10 +5,10 @@
  * FAQs, Feedbacks, and other content-related APIs
  */
 
-import type { FAQ, Feedback, BaseQueryParams, PaginatedResponse } from '~/types/api'
+import type { FAQ, Feedback, BaseQueryParams, PaginatedResponse } from '~/types/api';
 
 export const useContentApi = () => {
-  const apiClient = useApiClient()
+  const apiClient = useApiClient();
 
   return {
     // ============================================
@@ -21,15 +21,15 @@ export const useContentApi = () => {
     async getFAQs(params?: BaseQueryParams) {
       return apiClient.get<PaginatedResponse<FAQ>>('/api/a/faqs', {
         params,
-        showError: false
-      })
+        showError: false,
+      });
     },
 
     /**
      * Get FAQ by ID
      */
     async getFAQ(id: string) {
-      return apiClient.get<{ faq: FAQ }>(`/api/a/faqs/${id}`)
+      return apiClient.get<{ faq: FAQ }>(`/api/a/faqs/${id}`);
     },
 
     /**
@@ -37,8 +37,8 @@ export const useContentApi = () => {
      */
     async createFAQ(data: Partial<FAQ>) {
       return apiClient.post<{ faq: FAQ }>('/api/a/faqs', data, {
-        errorMessage: 'Không thể tạo câu hỏi'
-      })
+        errorMessage: 'Không thể tạo câu hỏi',
+      });
     },
 
     /**
@@ -46,8 +46,8 @@ export const useContentApi = () => {
      */
     async updateFAQ(id: string, data: Partial<FAQ>) {
       return apiClient.patch<{ faq: FAQ }>(`/api/a/faqs/${id}`, data, {
-        errorMessage: 'Không thể cập nhật câu hỏi'
-      })
+        errorMessage: 'Không thể cập nhật câu hỏi',
+      });
     },
 
     /**
@@ -55,8 +55,8 @@ export const useContentApi = () => {
      */
     async deleteFAQ(id: string) {
       return apiClient.delete(`/api/a/faqs/${id}`, {
-        errorMessage: 'Không thể xóa câu hỏi'
-      })
+        errorMessage: 'Không thể xóa câu hỏi',
+      });
     },
 
     // ============================================
@@ -69,15 +69,15 @@ export const useContentApi = () => {
     async getFeedbacks(params?: BaseQueryParams & { createdBy?: 'admin' | 'customer' }) {
       return apiClient.get<PaginatedResponse<Feedback>>('/api/a/feedbacks', {
         params,
-        showError: false
-      })
+        showError: false,
+      });
     },
 
     /**
      * Get feedback by ID
      */
     async getFeedback(id: string) {
-      return apiClient.get<{ feedback: Feedback }>(`/api/a/feedbacks/${id}`)
+      return apiClient.get<{ feedback: Feedback }>(`/api/a/feedbacks/${id}`);
     },
 
     /**
@@ -85,8 +85,8 @@ export const useContentApi = () => {
      */
     async createFeedback(data: Partial<Feedback>) {
       return apiClient.post<{ feedback: Feedback }>('/api/a/feedbacks', data, {
-        errorMessage: 'Không thể tạo phản hồi'
-      })
+        errorMessage: 'Không thể tạo phản hồi',
+      });
     },
 
     /**
@@ -94,8 +94,8 @@ export const useContentApi = () => {
      */
     async updateFeedback(id: string, data: Partial<Feedback>) {
       return apiClient.patch<{ feedback: Feedback }>(`/api/a/feedbacks/${id}`, data, {
-        errorMessage: 'Không thể cập nhật phản hồi'
-      })
+        errorMessage: 'Không thể cập nhật phản hồi',
+      });
     },
 
     /**
@@ -103,8 +103,8 @@ export const useContentApi = () => {
      */
     async setFeedbackActive(id: string) {
       return apiClient.patch(`/api/a/feedbacks/${id}/active`, {}, {
-        errorMessage: 'Không thể kích hoạt phản hồi'
-      })
+        errorMessage: 'Không thể kích hoạt phản hồi',
+      });
     },
 
     /**
@@ -112,8 +112,8 @@ export const useContentApi = () => {
      */
     async setFeedbackInactive(id: string) {
       return apiClient.patch(`/api/a/feedbacks/${id}/inactive`, {}, {
-        errorMessage: 'Không thể vô hiệu hóa phản hồi'
-      })
+        errorMessage: 'Không thể vô hiệu hóa phản hồi',
+      });
     },
 
     /**
@@ -121,9 +121,9 @@ export const useContentApi = () => {
      */
     async deleteFeedback(id: string) {
       return apiClient.delete(`/api/a/feedbacks/${id}`, {
-        errorMessage: 'Không thể xóa phản hồi'
-      })
-    }
-  }
-}
+        errorMessage: 'Không thể xóa phản hồi',
+      });
+    },
+  };
+};
 
