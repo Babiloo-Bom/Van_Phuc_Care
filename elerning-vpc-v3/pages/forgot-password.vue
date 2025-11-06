@@ -1,19 +1,27 @@
 <template>
   <div class="forgot-password-container">
-    <!-- Logo (mobile absolute positioning) -->
-    <div class="logo-section">
-      <img src="/images/logo_van_phuc.png" alt="Van Phuc Care" class="logo" />
-    </div>
-
-    <!-- Title and Subtitle (mobile absolute positioning) -->
-    <div class="title-section">
-      <h1 class="main-title">Quên mật khẩu</h1>
-      <p class="subtitle">Chào mừng bạn đến với Vạn Phúc Care</p>
-    </div>
-
     <!-- Left Side - Forgot Password Form -->
     <div class="forgot-password-form-section">
       <div class="content-wrapper">
+        <!-- Logo (mobile absolute positioning) -->
+        <div class="logo-section">
+          <img
+            src="/images/logo-vanphuc-new-mobile.png"
+            alt="Van Phuc Care"
+            class="lg:hidden logo"
+          />
+          <img
+            src="/images/logo-vanphuc-new.png"
+            alt="Van Phuc Care"
+            class="hidden lg:block logo"
+          />
+        </div>
+
+        <!-- Title and Subtitle (mobile absolute positioning) -->
+        <div class="title-section">
+          <h1 class="main-title">Quên mật khẩu</h1>
+          <p class="subtitle">Chỉ mất 1 phút để lấy lại mật khẩu!</p>
+        </div>
         <!-- Forgot Password Form -->
         <form @submit.prevent="handleSubmit" class="forgot-password-form">
           <!-- Email/Phone Field -->
@@ -32,7 +40,7 @@
 
           <!-- Submit Button -->
           <button type="submit" :disabled="loading" class="submit-btn">
-            {{ loading ? 'Đang xử lý...' : 'Lấy lại mật khẩu' }}
+            {{ loading ? "Đang xử lý..." : "Lấy lại mật khẩu" }}
           </button>
 
           <!-- Login Link -->
@@ -55,14 +63,19 @@
 
       <!-- Dragon Banner -->
       <div class="dragon-banner">
-        <img src="/images/dragon_banner.png" alt="Dragon Character" class="dragon-image" />
+        <img
+          src="/images/dragon_banner.png"
+          alt="Dragon Character"
+          class="dragon-image"
+        />
       </div>
 
       <!-- Marketing Text -->
       <div class="marketing-text">
         <h2 class="marketing-title">Hành trình cùng mẹ, trải đầy yêu thương</h2>
         <p class="marketing-description">
-          Vạn Phúc Care là người bạn đồng hành đáng tin cậy của cha mẹ trong hành trình chăm sóc sức khoẻ Mẹ và Bé
+          Vạn Phúc Care là người bạn đồng hành đáng tin cậy của cha mẹ trong
+          hành trình chăm sóc sức khoẻ Mẹ và Bé
         </p>
       </div>
     </div>
@@ -80,64 +93,64 @@
 </template>
 
 <script setup lang="ts">
-import { ref, reactive } from 'vue'
-import { useAuthStore } from '~/stores/auth'
-import { message } from 'ant-design-vue'
-import SuccessModal from '~/components/shared/SuccessModal.vue'
+import { ref, reactive } from "vue";
+import { useAuthStore } from "~/stores/auth";
+import { message } from "ant-design-vue";
+import SuccessModal from "~/components/shared/SuccessModal.vue";
 
 // Use auth layout
 definePageMeta({
-  layout: 'auth'
-})
+  layout: "auth",
+});
 
 // SEO
 useHead({
-  title: 'Quên mật khẩu - Van Phuc Care E-Learning',
+  title: "Quên mật khẩu - Van Phuc Care E-Learning",
   meta: [
     {
-      name: 'description',
-      content: 'Lấy lại mật khẩu tại Van Phuc Care E-Learning',
+      name: "description",
+      content: "Lấy lại mật khẩu tại Van Phuc Care E-Learning",
     },
   ],
-})
+});
 
-const authStore = useAuthStore()
-const loading = ref(false)
-const showSuccessModal = ref(false)
+const authStore = useAuthStore();
+const loading = ref(false);
+const showSuccessModal = ref(false);
 
 const form = reactive({
-  emailOrPhone: '',
-})
+  emailOrPhone: "",
+});
 
 const handleSubmit = async () => {
   try {
-    loading.value = true
-    
+    loading.value = true;
+
     // Call forgot password API
-    const result = await authStore.forgotPassword(form.emailOrPhone)
-    
+    const result = await authStore.forgotPassword(form.emailOrPhone);
+
     if (result.success) {
       // Show success modal instead of message
-      showSuccessModal.value = true
+      showSuccessModal.value = true;
     } else {
-      message.error(result.error || 'Không thể lấy lại mật khẩu')
+      message.error(result.error || "Không thể lấy lại mật khẩu");
     }
   } catch (error: any) {
-    console.error('Forgot password error:', error)
-    message.error('Không thể lấy lại mật khẩu')
+    console.error("Forgot password error:", error);
+    message.error("Không thể lấy lại mật khẩu");
   } finally {
-    loading.value = false
+    loading.value = false;
   }
-}
+};
 
 const handleSuccessConfirm = () => {
-  showSuccessModal.value = false
-  navigateTo('/login')
-}
+  showSuccessModal.value = false;
+  navigateTo("/login");
+};
 
 const handleSuccessClose = () => {
-  showSuccessModal.value = false
-}
+  showSuccessModal.value = false;
+};
 </script>
 
 <style scoped>
@@ -146,8 +159,8 @@ const handleSuccessClose = () => {
   width: 100vw;
   height: 100vh;
   display: flex;
-  background: #FFFFFF;
-  font-family: 'SVN-Gilroy', sans-serif;
+  background: #ffffff;
+  font-family: "SVN-Gilroy", sans-serif;
   overflow: hidden;
 }
 
@@ -156,7 +169,7 @@ const handleSuccessClose = () => {
   position: relative;
   width: 50%;
   height: 100vh;
-  background: #FFFFFF;
+  background: #ffffff;
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -194,7 +207,7 @@ const handleSuccessClose = () => {
 }
 
 .main-title {
-  font-family: 'SVN-Gilroy';
+  font-family: "SVN-Gilroy";
   font-style: normal;
   font-weight: 700;
   font-size: 32px;
@@ -206,13 +219,13 @@ const handleSuccessClose = () => {
 }
 
 .subtitle {
-  font-family: 'SVN-Gilroy';
+  font-family: "SVN-Gilroy";
   font-style: normal;
   font-weight: 500;
   font-size: 16px;
   line-height: 24px;
   letter-spacing: 0.3px;
-  color: #4A4A4A;
+  color: #4a4a4a;
   margin: 0;
 }
 
@@ -233,13 +246,13 @@ const handleSuccessClose = () => {
 }
 
 .form-label {
-  font-family: 'SVN-Gilroy';
+  font-family: "SVN-Gilroy";
   font-style: normal;
   font-weight: 700;
   font-size: 20px;
   line-height: 24px;
   letter-spacing: 0.3px;
-  color: #4A4A4A;
+  color: #4a4a4a;
 }
 
 .input-container {
@@ -251,8 +264,8 @@ const handleSuccessClose = () => {
   gap: 10px;
   width: 100%;
   height: 54px;
-  background: #FAFBFF;
-  border: 1px solid #D9D9D9;
+  background: #fafbff;
+  border: 1px solid #d9d9d9;
   border-radius: 12px;
   box-sizing: border-box;
 }
@@ -261,18 +274,18 @@ const handleSuccessClose = () => {
   flex: 1;
   border: none;
   background: transparent;
-  font-family: 'SVN-Gilroy';
+  font-family: "SVN-Gilroy";
   font-style: normal;
   font-weight: 500;
   font-size: 16px;
   line-height: 24px;
   letter-spacing: 0.3px;
-  color: #4A4A4A;
+  color: #4a4a4a;
   outline: none;
 }
 
 .form-input::placeholder {
-  color: #8C8C8C;
+  color: #8c8c8c;
   text-align: left;
 }
 
@@ -285,7 +298,7 @@ const handleSuccessClose = () => {
   gap: 10px;
   width: 100%;
   height: 60px;
-  background: #317BC4;
+  background: #317bc4;
   border-radius: 12px;
   border: none;
   cursor: pointer;
@@ -303,14 +316,14 @@ const handleSuccessClose = () => {
 }
 
 .submit-btn span {
-  font-family: 'SVN-Gilroy';
+  font-family: "SVN-Gilroy";
   font-style: normal;
   font-weight: 700;
   font-size: 20px;
   line-height: 30px;
   text-align: center;
   letter-spacing: 0.3px;
-  color: #FFFFFF;
+  color: #ffffff;
 }
 
 .login-link {
@@ -324,25 +337,25 @@ const handleSuccessClose = () => {
 }
 
 .login-link span {
-  font-family: 'SVN-Gilroy';
+  font-family: "SVN-Gilroy";
   font-style: italic;
   font-weight: 600;
   font-size: 13px;
   line-height: 24px;
   text-align: center;
   letter-spacing: 0.3px;
-  color: #4A4A4A;
+  color: #4a4a4a;
 }
 
 .login-text {
-  font-family: 'SVN-Gilroy';
+  font-family: "SVN-Gilroy";
   font-style: italic;
   font-weight: 600;
   font-size: 13px;
   line-height: 24px;
   text-align: center;
   letter-spacing: 0.3px;
-  color: #317BC4;
+  color: #317bc4;
   text-decoration: none;
 }
 
@@ -355,7 +368,7 @@ const handleSuccessClose = () => {
   position: relative;
   width: 50%;
   height: 100vh;
-  background: #317BC4;
+  background: #317bc4;
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -375,7 +388,11 @@ const handleSuccessClose = () => {
 .circle {
   position: absolute;
   border-radius: 50%;
-  background: linear-gradient(180deg, rgba(59, 140, 220, 0.9) 0%, rgba(73, 145, 216, 0.351) 100%);
+  background: linear-gradient(
+    180deg,
+    rgba(59, 140, 220, 0.9) 0%,
+    rgba(73, 145, 216, 0.351) 100%
+  );
 }
 
 .circle-1 {
@@ -419,7 +436,8 @@ const handleSuccessClose = () => {
 
 .marketing-text {
   position: absolute;
-  width: 526.45px;
+  width: 90%;
+  max-width: 526.45px;
   left: 50%;
   top: 75%;
   transform: translateX(-50%);
@@ -428,85 +446,97 @@ const handleSuccessClose = () => {
 }
 
 .marketing-title {
-  font-family: 'SVN-Gilroy';
+  font-family: "SVN-Gilroy";
   font-style: normal;
   font-weight: 700;
   font-size: 24px;
   line-height: 36px;
   letter-spacing: 0.3px;
-  color: #FFFFFF;
+  color: #ffffff;
   margin: 0 0 12px 0;
 }
 
 .marketing-description {
-  font-family: 'SVN-Gilroy';
+  font-family: "SVN-Gilroy";
   font-style: italic;
   font-weight: 500;
   font-size: 16px;
   line-height: 24px;
   text-align: center;
   letter-spacing: 0.3px;
-  color: #FFFFFF;
+  color: #ffffff;
   margin: 0;
 }
 
 /* Responsive Design */
-@media (max-width: 768px) {
+@media (max-width: 1023.5px) {
   .forgot-password-container {
     position: relative;
     width: 375px;
-    height: 812px;
     margin: 0 auto;
     flex-direction: column;
   }
 
-  .marketing-section { display: none; }
+  .marketing-section {
+    display: none;
+  }
 
   .forgot-password-form-section {
     position: absolute;
     width: 343px;
     height: 361.04px;
     left: 16px;
-    top: calc(50% - 361.04px/2);
+    top: calc(50% - 361.04px / 2);
     background: transparent;
     padding: 0;
     display: block;
   }
 
-  .content-wrapper { width: 100%; gap: 0; padding: 0; }
+  .content-wrapper {
+    width: 100%;
+    gap: 0;
+    padding: 0;
+  }
 
   /* Logo */
   .logo-section {
-    position: absolute;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+  }
+  .logo {
     width: 80.1px;
     height: 62.09px;
-    left: calc(50% - 80.1px/2 - 1.14px);
-    top: 225.48px;
-    text-align: center;
   }
-  .logo { width: 80.1px; height: 62.09px; }
 
   /* Title group */
   .title-section {
-    position: absolute;
-    width: 265px;
     height: 56px;
-    left: 55px;
-    top: 301.56px;
     display: flex;
     flex-direction: column;
     align-items: center;
     padding: 0;
   }
-  .main-title { font-size: 24px; line-height: 32px; letter-spacing: 0.3px; margin: 0; text-align: center; }
-  .subtitle { font-size: 14px; line-height: 24px; margin: 0; text-align: center; }
+  .main-title {
+    font-size: 24px;
+    line-height: 32px;
+    letter-spacing: 0.3px;
+    margin: 0;
+    text-align: center;
+  }
+  .subtitle {
+    font-size: 14px;
+    line-height: 24px;
+    margin: 0;
+    text-align: center;
+  }
 
   /* Form */
   .forgot-password-form {
     position: absolute;
     width: 343px;
     height: 204px;
-    left: calc(50% - 343px/2);
+    left: calc(50% - 343px / 2);
     top: 150px;
     display: flex;
     flex-direction: column;
@@ -514,14 +544,33 @@ const handleSuccessClose = () => {
     gap: 20px;
   }
 
-  .form-group { width: 343px; height: 60px; gap: 8px; }
-  .form-label { width: 343px; font-size: 16px; }
+  .form-group {
+    width: 343px;
+    height: 60px;
+    gap: 8px;
+  }
+  .form-label {
+    width: 343px;
+    font-size: 16px;
+  }
 
-  .input-container { width: 343px; height: 48px; padding: 15px 20px; }
-  .form-input { font-size: 14px; }
+  .input-container {
+    width: 343px;
+    height: 48px;
+    padding: 15px 20px;
+  }
+  .form-input {
+    font-size: 14px;
+  }
 
-  .submit-btn { width: 343px; height: 52px; }
+  .submit-btn {
+    width: 343px;
+    height: 52px;
+  }
 
-  .login-link { width: 242px; height: 24px; }
+  .login-link {
+    width: 242px;
+    height: 24px;
+  }
 }
 </style>

@@ -1,30 +1,30 @@
-import { defineStore } from 'pinia';
+import { defineStore } from "pinia";
 
 export interface User {
-  id: string | number
-  email: string
-  fullname?: string
-  name?: string
-  username?: string
-  phone?: string
-  role?: string
-  avatar?: string
-  verified?: boolean
-  status?: string
-  courseRegister?: string[] // Danh sách khóa học đã mua
-  courseCompleted?: string[] // Danh sách khóa học đã hoàn thành
+  id: string | number;
+  email: string;
+  fullname?: string;
+  name?: string;
+  username?: string;
+  phone?: string;
+  role?: string;
+  avatar?: string;
+  verified?: boolean;
+  status?: string;
+  courseRegister?: string[]; // Danh sách khóa học đã mua
+  courseCompleted?: string[]; // Danh sách khóa học đã hoàn thành
 }
 
 export interface AuthState {
-  user: User | null
-  token: string | null
-  tokenExpireAt: string | null
-  isAuthenticated: boolean
-  isLoading: boolean
-  rememberAccount: boolean
+  user: User | null;
+  token: string | null;
+  tokenExpireAt: string | null;
+  isAuthenticated: boolean;
+  isLoading: boolean;
+  rememberAccount: boolean;
 }
 
-export const useAuthStore = defineStore('auth', {
+export const useAuthStore = defineStore("auth", {
   state: (): AuthState => ({
     user: null,
     token: null,
@@ -35,11 +35,11 @@ export const useAuthStore = defineStore('auth', {
   }),
 
   getters: {
-    currentUser: state => state.user,
-    isLoggedIn: state => state.isAuthenticated,
-    userRole: state => state.user?.role || 'guest',
-    userName: state => state.user?.fullname || state.user?.name || 'Unknown',
-    userEmail: state => state.user?.email || '',
+    currentUser: (state) => state.user,
+    isLoggedIn: (state) => state.isAuthenticated,
+    userRole: (state) => state.user?.role || "guest",
+    userName: (state) => state.user?.fullname || state.user?.name || "Unknown",
+    userEmail: (state) => state.user?.email || "",
   },
 
   actions: {
@@ -49,31 +49,44 @@ export const useAuthStore = defineStore('auth', {
      */
     async login(username: string, password: string, remindAccount = false) {
       this.isLoading = true;
-      
+
       try {
         const authApi = useAuthApi();
-        
+
         // Call API login
-        const response: any = await authApi.login(username, password, remindAccount);
+        const response: any = await authApi.login(
+          username,
+          password,
+          remindAccount
+        );
 
         // Backend returns: { data: { accessToken, tokenExpireAt } }
-        const token = response.data?.accessToken || response.accessToken || response.token;
-        const tokenExpireAt = response.data?.tokenExpireAt || response.tokenExpireAt;
+        const token =
+          response.data?.accessToken || response.accessToken || response.token;
+        const tokenExpireAt =
+          response.data?.tokenExpireAt || response.tokenExpireAt;
 
         if (!token) {
-          throw new Error('No token received from server');
+          throw new Error("No token received from server");
         }
 
         // Calculate token expiry time (default 7 days if not provided)
         this.token = token;
-        console.log('🔍 tokenExpireAt from API:', tokenExpireAt, 'type:', typeof tokenExpireAt);
-        this.tokenExpireAt = tokenExpireAt ? this.calculateExpireTime(tokenExpireAt) : this.calculateExpireTime('7d');
+        console.log(
+          "🔍 tokenExpireAt from API:",
+          tokenExpireAt,
+          "type:",
+          typeof tokenExpireAt
+        );
+        this.tokenExpireAt = tokenExpireAt
+          ? this.calculateExpireTime(tokenExpireAt)
+          : this.calculateExpireTime("7d");
         this.isAuthenticated = true;
         this.rememberAccount = remindAccount;
-        
+
         // Create basic user object (will be enhanced later if needed)
-        this.user = { 
-          id: response.id || 'temp-id',
+        this.user = {
+          id: response.id || "temp-id",
           email: username,
           username: username,
           fullname: response.fullname || username,
@@ -81,30 +94,39 @@ export const useAuthStore = defineStore('auth', {
 
         // Save to localStorage
         if (process.client) {
-          localStorage.setItem('auth_token', token);
-          localStorage.setItem('token_expire_at', this.tokenExpireAt || '');
-          localStorage.setItem('user', JSON.stringify(this.user));
-          
+          localStorage.setItem("auth_token", token);
+          localStorage.setItem("token_expire_at", this.tokenExpireAt || "");
+          localStorage.setItem("user", JSON.stringify(this.user));
+
           if (remindAccount) {
-            localStorage.setItem('auth_data', JSON.stringify({
-              username,
-              remindAccount,
-              origin: 'vanphuccare.gensi.vn',
-            }));
+            localStorage.setItem(
+              "auth_data",
+              JSON.stringify({
+                username,
+                remindAccount,
+                origin: "vanphuccare.gensi.vn",
+              })
+            );
           }
         }
 
         return { success: true, user: this.user, token };
       } catch (error: any) {
         // Ignore AbortError (request cancelled due to navigation/reload)
-        if (error?.name === 'AbortError' || error?.message?.includes('aborted')) {
-          console.log('[Auth] Login cancelled (navigation/reload)');
-          return { success: false, error: 'Request cancelled' };
+        if (
+          error?.name === "AbortError" ||
+          error?.message?.includes("aborted")
+        ) {
+          console.log("[Auth] Login cancelled (navigation/reload)");
+          return { success: false, error: "Request cancelled" };
         }
-        console.error('Login error:', error);
-        return { 
-          success: false, 
-          error: error.data?.message || error.message || 'Tên đăng nhập hoặc mật khẩu không chính xác',
+        console.error("Login error:", error);
+        return {
+          success: false,
+          error:
+            error.data?.message ||
+            error.message ||
+            "Tên đăng nhập hoặc mật khẩu không chính xác",
         };
       } finally {
         this.isLoading = false;
@@ -114,28 +136,45 @@ export const useAuthStore = defineStore('auth', {
     /**
      * Update course register via API
      */
-    async updateCourseRegister(courseIds: string[], action: 'add' | 'remove' = 'add') {
+    async updateCourseRegister(
+      courseIds: string[],
+      action: "add" | "remove" = "add"
+    ) {
       if (!this.user || !this.token) {
-        console.log('⚠️ No user or token to update course register');
+        console.log("⚠️ No user or token to update course register");
         return false;
       }
 
       try {
-        console.log('🔄 Updating course register via API...', { courseIds, action });
-        console.log('📚 Current courseRegister before API call:', this.user?.courseRegister);
-        console.log('📚 Current courseRegister length before API call:', this.user?.courseRegister?.length);
-        console.log('📚 Current courseRegister values before API call:', [...(this.user?.courseRegister || [])]);
-        
+        console.log("🔄 Updating course register via API...", {
+          courseIds,
+          action,
+        });
+        console.log(
+          "📚 Current courseRegister before API call:",
+          this.user?.courseRegister
+        );
+        console.log(
+          "📚 Current courseRegister length before API call:",
+          this.user?.courseRegister?.length
+        );
+        console.log("📚 Current courseRegister values before API call:", [
+          ...(this.user?.courseRegister || []),
+        ]);
+
         const authApi = useAuthApi();
-        const response = await authApi.updateCourseRegister(courseIds, action) as any;
-        
-        console.log('📡 API response:', response);
-        
+        const response = (await authApi.updateCourseRegister(
+          courseIds,
+          action
+        )) as any;
+
+        console.log("📡 API response:", response);
+
         if (response.data?.user) {
           // Update local user data
           this.user.courseRegister = response.data.user.courseRegister;
           this.saveAuth();
-          console.log('✅ Course register updated:', {
+          console.log("✅ Course register updated:", {
             courseRegister: this.user.courseRegister,
             courseRegisterLength: this.user.courseRegister?.length,
             courseRegisterArray: Array.from(this.user.courseRegister || []),
@@ -146,7 +185,7 @@ export const useAuthStore = defineStore('auth', {
         }
         return false;
       } catch (error) {
-        console.error('❌ Error updating course register:', error);
+        console.error("❌ Error updating course register:", error);
         return false;
       }
     },
@@ -156,33 +195,36 @@ export const useAuthStore = defineStore('auth', {
      */
     async refreshUserData() {
       if (!this.user || !this.token) {
-        console.log('⚠️ No user or token to refresh');
+        console.log("⚠️ No user or token to refresh");
         return;
       }
 
       try {
-        console.log('🔄 Refreshing user data from backend...');
-        
+        console.log("🔄 Refreshing user data from backend...");
+
         const authApi = useAuthApi();
-        const response = await authApi.getUserProfile() as any;
-        
+        const response = (await authApi.getUserProfile()) as any;
+
         if (response.data?.user) {
           // Update user data with fresh data from backend
           this.user = response.data.user;
           this.saveAuth();
-          console.log('✅ User data refreshed:', {
+          console.log("✅ User data refreshed:", {
             courseRegister: this.user?.courseRegister,
             courseCompleted: this.user?.courseCompleted,
             courseRegisterLength: this.user?.courseRegister?.length,
             courseRegisterContent: JSON.stringify(this.user?.courseRegister),
             responseData: response.data?.user,
             responseDataCourseRegister: response.data?.user?.courseRegister,
-            responseDataCourseRegisterLength: response.data?.user?.courseRegister?.length,
-            responseDataCourseRegisterContent: JSON.stringify(response.data?.user?.courseRegister),
+            responseDataCourseRegisterLength:
+              response.data?.user?.courseRegister?.length,
+            responseDataCourseRegisterContent: JSON.stringify(
+              response.data?.user?.courseRegister
+            ),
           });
         }
       } catch (error) {
-        console.error('❌ Error refreshing user data:', error);
+        console.error("❌ Error refreshing user data:", error);
       }
     },
 
@@ -190,25 +232,40 @@ export const useAuthStore = defineStore('auth', {
      * Register new account (CRM/E-Learning)
      * Migrated from crm-vpc/components/auth/forms/SignUp.vue
      */
-    async register(email: string, password: string, repeatPassword: string, fullname?: string, phone?: string) {
+    async register(
+      email: string,
+      password: string,
+      repeatPassword: string,
+      fullname?: string,
+      phone?: string
+    ) {
       this.isLoading = true;
-      
+
       try {
         if (password !== repeatPassword) {
-          throw new Error('Mật khẩu không khớp');
+          throw new Error("Mật khẩu không khớp");
         }
 
         const authApi = useAuthApi();
-        
+
         // Call API register
-        const response: any = await authApi.register(email, password, repeatPassword, fullname, phone);
+        const response: any = await authApi.register(
+          email,
+          password,
+          repeatPassword,
+          fullname,
+          phone
+        );
 
         return { success: true, data: response };
       } catch (error: any) {
-        console.error('Register error:', error);
-        return { 
-          success: false, 
-          error: error.data?.message || error.message || 'Email đã được sử dụng, vui lòng nhập email khác!',
+        console.error("Register error:", error);
+        return {
+          success: false,
+          error:
+            error.data?.message ||
+            error.message ||
+            "Email đã được sử dụng, vui lòng nhập email khác!",
         };
       } finally {
         this.isLoading = false;
@@ -221,19 +278,22 @@ export const useAuthStore = defineStore('auth', {
      */
     async verifyEmail(email: string, otp: string) {
       this.isLoading = true;
-      
+
       try {
         const authApi = useAuthApi();
-        
+
         // Verify OTP
         await authApi.verifyEmail(email, otp);
 
         return { success: true };
       } catch (error: any) {
-        console.error('Verify email error:', error);
-        return { 
-          success: false, 
-          error: error.data?.message || error.message || 'Mã xác thực không chính xác!',
+        console.error("Verify email error:", error);
+        return {
+          success: false,
+          error:
+            error.data?.message ||
+            error.message ||
+            "Mã xác thực không chính xác!",
         };
       } finally {
         this.isLoading = false;
@@ -254,24 +314,23 @@ export const useAuthStore = defineStore('auth', {
      */
     async forgotPassword(email: string) {
       this.isLoading = true;
-      
+
       try {
         const authApi = useAuthApi();
-        
+
         await authApi.forgotPassword(email);
 
         return { success: true };
       } catch (error: any) {
-        console.error('Forgot password error:', error);
-        return { 
-          success: false, 
-          error: error.data?.message || error.message || 'Gửi OTP thất bại',
+        console.error("Forgot password error:", error);
+        return {
+          success: false,
+          error: error.data?.message || error.message || "Gửi OTP thất bại",
         };
       } finally {
         this.isLoading = false;
       }
     },
-
 
     /**
      * Reset password with token
@@ -279,24 +338,24 @@ export const useAuthStore = defineStore('auth', {
      */
     async resetPassword(token: string, newPassword: string) {
       this.isLoading = true;
-      
+
       try {
         const authApi = useAuthApi();
-        
+
         await authApi.resetPassword(token, newPassword);
 
         return { success: true };
       } catch (error: any) {
-        console.error('Reset password error:', error);
-        return { 
-          success: false, 
-          error: error.data?.message || error.message || 'Đổi mật khẩu thất bại',
+        console.error("Reset password error:", error);
+        return {
+          success: false,
+          error:
+            error.data?.message || error.message || "Đổi mật khẩu thất bại",
         };
       } finally {
         this.isLoading = false;
       }
     },
-
 
     /**
      * Change password (logged in user)
@@ -304,10 +363,10 @@ export const useAuthStore = defineStore('auth', {
      */
     async changePassword(oldPassword: string, newPassword: string) {
       this.isLoading = true;
-      
+
       try {
         const authApi = useAuthApi();
-        
+
         await authApi.changePassword(oldPassword, newPassword);
 
         // Logout after password change
@@ -315,19 +374,20 @@ export const useAuthStore = defineStore('auth', {
 
         return { success: true };
       } catch (error: any) {
-        console.error('Change password error:', error);
-        
+        console.error("Change password error:", error);
+
         // Check for specific error code
         if (error.status === 425 || error.data?.error?.code === 425) {
           return {
             success: false,
-            error: 'Mật khẩu cũ không chính xác',
+            error: "Mật khẩu cũ không chính xác",
           };
         }
-        
-        return { 
-          success: false, 
-          error: error.data?.message || error.message || 'Đổi mật khẩu thất bại',
+
+        return {
+          success: false,
+          error:
+            error.data?.message || error.message || "Đổi mật khẩu thất bại",
         };
       } finally {
         this.isLoading = false;
@@ -356,19 +416,19 @@ export const useAuthStore = defineStore('auth', {
 
         // Clear localStorage
         if (process.client) {
-          localStorage.removeItem('auth_token');
-          localStorage.removeItem('user');
-          
+          localStorage.removeItem("auth_token");
+          localStorage.removeItem("user");
+
           // Keep auth_data if rememberAccount was true
           if (!this.rememberAccount) {
-            localStorage.removeItem('auth_data');
+            localStorage.removeItem("auth_data");
           }
         }
 
         // Redirect to login
-        navigateTo('/login');
+        navigateTo("/login");
       } catch (error) {
-        console.error('Logout error:', error);
+        console.error("Logout error:", error);
       } finally {
         this.isLoading = false;
       }
@@ -386,10 +446,10 @@ export const useAuthStore = defineStore('auth', {
             tokenExpireAt: this.tokenExpireAt,
             rememberAccount: this.rememberAccount,
           };
-          localStorage.setItem('authData', JSON.stringify(authData));
-          console.log('✅ Auth data saved to localStorage');
+          localStorage.setItem("authData", JSON.stringify(authData));
+          console.log("✅ Auth data saved to localStorage");
         } catch (error) {
-          console.error('❌ Error saving auth data:', error);
+          console.error("❌ Error saving auth data:", error);
         }
       }
     },
@@ -400,31 +460,31 @@ export const useAuthStore = defineStore('auth', {
      */
     async initAuth() {
       if (process.client) {
-        const token = localStorage.getItem('auth_token');
-        const tokenExpireAt = localStorage.getItem('token_expire_at');
-        const userStr = localStorage.getItem('user');
-        const authDataStr = localStorage.getItem('auth_data');
+        const token = localStorage.getItem("auth_token");
+        const tokenExpireAt = localStorage.getItem("token_expire_at");
+        const userStr = localStorage.getItem("user");
+        const authDataStr = localStorage.getItem("auth_data");
 
-        console.log('🔍 initAuth - localStorage data:', {
-          token: token ? 'exists' : 'null',
+        console.log("🔍 initAuth - localStorage data:", {
+          token: token ? "exists" : "null",
           tokenExpireAt,
-          userStr: userStr ? 'exists' : 'null',
-          authDataStr: authDataStr ? 'exists' : 'null',
+          userStr: userStr ? "exists" : "null",
+          authDataStr: authDataStr ? "exists" : "null",
         });
-        
+
         // Debug: Show actual values
-        if (token) console.log('🔍 Token:', token.substring(0, 20) + '...');
-        if (userStr) console.log('🔍 User:', JSON.parse(userStr));
-        if (tokenExpireAt) console.log('🔍 Token Expire At:', tokenExpireAt);
+        if (token) console.log("🔍 Token:", token.substring(0, 20) + "...");
+        if (userStr) console.log("🔍 User:", JSON.parse(userStr));
+        if (tokenExpireAt) console.log("🔍 Token Expire At:", tokenExpireAt);
 
         // Try to restore from authData first (new format), then fallback to old format
         let authData = null;
         if (authDataStr) {
           try {
             authData = JSON.parse(authDataStr);
-            console.log('🔍 Found authData in localStorage:', authData);
+            console.log("🔍 Found authData in localStorage:", authData);
           } catch (e) {
-            console.log('⚠️ Failed to parse authData:', e);
+            console.log("⚠️ Failed to parse authData:", e);
           }
         }
 
@@ -435,15 +495,15 @@ export const useAuthStore = defineStore('auth', {
             if (authData.tokenExpireAt) {
               const expireTime = new Date(authData.tokenExpireAt).getTime();
               const now = Date.now();
-              
-              console.log('🔍 Token expiry check:', {
+
+              console.log("🔍 Token expiry check:", {
                 expireTime: new Date(expireTime).toISOString(),
                 now: new Date(now).toISOString(),
                 isExpired: now >= expireTime,
               });
-              
+
               if (now >= expireTime) {
-                console.log('⚠️ Token expired, clearing data');
+                console.log("⚠️ Token expired, clearing data");
                 // Token expired, clear data
                 this.logout();
                 return;
@@ -455,13 +515,13 @@ export const useAuthStore = defineStore('auth', {
             this.user = authData.user;
             this.isAuthenticated = true;
 
-            console.log('✅ Auth restored from authData:', {
+            console.log("✅ Auth restored from authData:", {
               isAuthenticated: this.isAuthenticated,
               user: this.user,
-              token: this.token ? 'exists' : 'null',
+              token: this.token ? "exists" : "null",
             });
           } catch (e) {
-            console.error('❌ Error restoring from authData:', e);
+            console.error("❌ Error restoring from authData:", e);
             this.logout();
             return;
           }
@@ -472,15 +532,15 @@ export const useAuthStore = defineStore('auth', {
             if (tokenExpireAt) {
               const expireTime = new Date(tokenExpireAt).getTime();
               const now = Date.now();
-              
-              console.log('🔍 Token expiry check:', {
+
+              console.log("🔍 Token expiry check:", {
                 expireTime: new Date(expireTime).toISOString(),
                 now: new Date(now).toISOString(),
                 isExpired: now >= expireTime,
               });
-              
+
               if (now >= expireTime) {
-                console.log('⚠️ Token expired, clearing data');
+                console.log("⚠️ Token expired, clearing data");
                 // Token expired, clear data
                 this.logout();
                 return;
@@ -492,10 +552,10 @@ export const useAuthStore = defineStore('auth', {
             this.user = JSON.parse(userStr);
             this.isAuthenticated = true;
 
-            console.log('✅ Auth restored from localStorage:', {
+            console.log("✅ Auth restored from localStorage:", {
               isAuthenticated: this.isAuthenticated,
               user: this.user,
-              token: this.token ? 'exists' : 'null',
+              token: this.token ? "exists" : "null",
               courseRegister: this.user?.courseRegister,
             });
 
@@ -504,16 +564,16 @@ export const useAuthStore = defineStore('auth', {
               const authData = JSON.parse(authDataStr);
               this.rememberAccount = authData.remindAccount || false;
             }
-            
+
             // Refresh user data from backend to get latest courseRegister
             await this.refreshUserData();
           } catch (error) {
-            console.error('❌ Init auth error:', error);
+            console.error("❌ Init auth error:", error);
             // Clear corrupted data
             this.logout();
           }
         } else {
-          console.log('ℹ️ No auth data found in localStorage');
+          console.log("ℹ️ No auth data found in localStorage");
         }
       }
     },
@@ -522,54 +582,59 @@ export const useAuthStore = defineStore('auth', {
      * Calculate token expiry time from TTL string (e.g., '7d', '24h', '1y')
      */
     calculateExpireTime(ttl: string | Date | number): string {
-      console.log('🔍 calculateExpireTime called with:', ttl, 'type:', typeof ttl);
+      console.log(
+        "🔍 calculateExpireTime called with:",
+        ttl,
+        "type:",
+        typeof ttl
+      );
       const now = new Date();
-      
+
       // If ttl is already a Date object, return it
       if (ttl instanceof Date) {
-        console.log('🔍 ttl is Date object');
+        console.log("🔍 ttl is Date object");
         return ttl.toISOString();
       }
-      
+
       // If ttl is a number (timestamp), convert to Date
-      if (typeof ttl === 'number') {
-        console.log('🔍 ttl is number');
+      if (typeof ttl === "number") {
+        console.log("🔍 ttl is number");
         return new Date(ttl).toISOString();
       }
-      
+
       // If ttl is a string, parse it
-      if (typeof ttl !== 'string') {
-        console.log('🔍 ttl is not string, using default');
+      if (typeof ttl !== "string") {
+        console.log("🔍 ttl is not string, using default");
         // Default to 7 days if format is invalid
         return new Date(now.getTime() + 7 * 24 * 60 * 60 * 1000).toISOString();
       }
-      
+
       // Parse TTL string (e.g., '7d' = 7 days, '24h' = 24 hours)
       const match = ttl.match(/^(\d+)([smhdy])$/);
-      
+
       if (!match) {
         // Default to 7 days if format is invalid
         return new Date(now.getTime() + 7 * 24 * 60 * 60 * 1000).toISOString();
       }
 
       const [, value, unit] = match;
-      const amount = parseInt(value || '0');
-      
+      const amount = parseInt(value || "0");
+
       let milliseconds = 0;
       switch (unit) {
-        case 's': // seconds
+        case "s": // seconds
           milliseconds = amount * 1000;
           break;
-        case 'm': // minutes
+        case "m": // minutes
           milliseconds = amount * 60 * 1000;
           break;
-        case 'h': // hours
+        case "h": // hours
           milliseconds = amount * 60 * 60 * 1000;
           break;
-        case 'd': // days
+        case "d": // days
           milliseconds = amount * 24 * 60 * 60 * 1000;
           break;
-        case 'y': // years
+        case "y": // years
           milliseconds = amount * 365 * 24 * 60 * 60 * 1000;
           break;
         default:
@@ -583,23 +648,31 @@ export const useAuthStore = defineStore('auth', {
      * Complete Google Login
      * Store token and user data from Google OAuth
      */
-    async completeGoogleLogin(accessToken: string, tokenExpireAt: number, userData: User) {
+    async completeGoogleLogin(
+      accessToken: string,
+      tokenExpireAt: number,
+      userData: User
+    ) {
       try {
         this.token = accessToken;
-        
+
         // Handle tokenExpireAt properly
-        if (typeof tokenExpireAt === 'number') {
-          this.tokenExpireAt = new Date(tokenExpireAt).toISOString();
+        if (typeof tokenExpireAt === "number") {
+          this.tokenExpireAt = new Date(
+            Date.now() + tokenExpireAt
+          ).toISOString();
         } else {
           // Default to 7 days if not provided
-          this.tokenExpireAt = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString();
+          this.tokenExpireAt = new Date(
+            Date.now() + 7 * 24 * 60 * 60 * 1000
+          ).toISOString();
         }
-        
+
         this.user = userData;
         this.isAuthenticated = true;
 
-        console.log('🔐 Google login completed:', {
-          token: accessToken ? 'exists' : 'null',
+        console.log("🔐 Google login completed:", {
+          token: accessToken ? "exists" : "null",
           user: userData,
           expireAt: this.tokenExpireAt,
           isAuthenticated: this.isAuthenticated,
@@ -607,12 +680,12 @@ export const useAuthStore = defineStore('auth', {
 
         // Save to localStorage
         if (process.client) {
-          localStorage.setItem('auth_token', accessToken);
-          localStorage.setItem('token_expire_at', this.tokenExpireAt);
-          localStorage.setItem('user', JSON.stringify(userData));
-          
-          console.log('💾 Auth data saved to localStorage:', {
-            token: accessToken ? 'exists' : 'null',
+          localStorage.setItem("auth_token", accessToken);
+          localStorage.setItem("token_expire_at", this.tokenExpireAt);
+          localStorage.setItem("user", JSON.stringify(userData));
+
+          console.log("💾 Auth data saved to localStorage:", {
+            token: accessToken ? "exists" : "null",
             user: userData,
             expireAt: this.tokenExpireAt,
           });
@@ -620,7 +693,7 @@ export const useAuthStore = defineStore('auth', {
 
         return { success: true };
       } catch (error: any) {
-        console.error('Complete Google login error:', error);
+        console.error("Complete Google login error:", error);
         return { success: false, error: error.message };
       }
     },
@@ -631,27 +704,30 @@ export const useAuthStore = defineStore('auth', {
      */
     async updateProfile(userData: Partial<User>) {
       this.isLoading = true;
-      
+
       try {
         const authApi = useAuthApi();
-        
+
         const response: any = await authApi.updateProfile(userData);
 
         // Update local user data
         if (this.user) {
           this.user = { ...this.user, ...response.user };
-          
+
           if (process.client) {
-            localStorage.setItem('user', JSON.stringify(this.user));
+            localStorage.setItem("user", JSON.stringify(this.user));
           }
         }
 
         return { success: true, user: response.user };
       } catch (error: any) {
-        console.error('Update profile error:', error);
-        return { 
-          success: false, 
-          error: error.data?.message || error.message || 'Cập nhật thông tin thất bại',
+        console.error("Update profile error:", error);
+        return {
+          success: false,
+          error:
+            error.data?.message ||
+            error.message ||
+            "Cập nhật thông tin thất bại",
         };
       } finally {
         this.isLoading = false;
@@ -664,4 +740,3 @@ export const useAuthStore = defineStore('auth', {
 if (process.client) {
   (window as any).authStore = useAuthStore;
 }
-
