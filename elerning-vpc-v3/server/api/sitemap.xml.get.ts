@@ -35,7 +35,6 @@ export default defineEventHandler(async (event) => {
     const response = await $fetch(`${baseUrl}/api/a/courses`)
     courses = response.data?.courses || []
   } catch (error) {
-    console.error('Error fetching courses for sitemap:', error)
   }
 
   // Dynamic course pages

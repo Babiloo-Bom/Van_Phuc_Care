@@ -6,12 +6,12 @@ const quizSchema = new Schema({
     required: true,
     index: true
   },
-  chapterIndex: {
-    type: Number,
+  chapterId: {
+    type: String,
     required: true
   },
-  lessonIndex: {
-    type: Number,
+  lessonId: {
+    type: String,
     required: true
   },
   title: {

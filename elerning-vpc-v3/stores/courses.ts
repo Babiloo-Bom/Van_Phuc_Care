@@ -40,6 +40,12 @@ export interface Course {
   documentCount?: number
   examCount?: number
   chapters?: Chapter[]
+  progress?: {
+    totalLessons: number
+    completedLessons: number
+    progressPercentage: number
+    isCompleted: boolean
+  }
 }
 
 export interface Chapter {
@@ -52,12 +58,58 @@ export interface Chapter {
 export interface Lesson {
   _id: string
   title: string
-  type: 'video' | 'document' | 'exam'
+  type: 'video' | 'document' | 'exam' | 'quiz' | 'project'
   order: number
   videoUrl?: string
   documentUrl?: string
   duration?: number
   isCompleted?: boolean
+  description?: string
+  descriptions?: string
+  content?: string
+  thumbnail?: string
+  videos?: Array<{
+    title: string
+    videoUrl: string
+    thumbnail?: string
+    duration?: number
+    fileSize?: number
+    quality?: string
+    index?: number
+  }>
+  documents?: Array<{
+    title: string
+    fileUrl: string
+    fileName: string
+    fileSize?: number
+    fileType: string
+    index?: number
+  }>
+  quiz: Quiz | null
+  quizId?: string
+  isPreview?: boolean
+  hasQuiz?: boolean
+  isLocked?: boolean
+}
+
+export interface Quiz {
+  _id: string
+  title: string
+  description: string
+  questions: Array<{
+    question: string
+    options: Array<{
+      id: string
+      text: string
+      isCorrect: boolean
+    }>
+    correctAnswer: string
+    explanation: string
+    points: number
+  }>
+  passingScore: number
+  timeLimit: number
+  attempts: number
 }
 
 export interface Instructor {
@@ -216,117 +268,17 @@ export const useCoursesStore = defineStore('courses', {
       }
     },
 
-    // Lấy danh sách khóa học của tôi
-    async fetchMyCourses(params?: any) {
-      this.loading = true
-      try {
-        const courseApi = useCourseApi()
-        const response: any = await courseApi.getMyCourses(params)
-        this.myCourses = response.data || response.courses || response
-        if (response.pagination) {
-          this.pagination = response.pagination
-        }
-      } catch (error) {
-        console.error('Error fetching my courses:', error)
-        throw error
-      } finally {
-        this.loading = false
-      }
-    },
-
     // Lấy chi tiết khóa học
     async fetchDetail(courseId: string) {
       this.loadingDetail = true
       try {
         const courseApi = useCourseApi()
         const response: any = await courseApi.getDetail(courseId)
-        console.log('🔍 Store fetchDetail response:', response)
         this.course = response.data?.course || response.data || response.course || response
-        console.log('🔍 Store course after set:', this.course)
-        
-        // Tính toán counts sau khi load course
-        await this.calculateCourseCounts()
       } catch (error) {
-        console.error('Error fetching course detail:', error)
         throw error
       } finally {
         this.loadingDetail = false
-      }
-    },
-
-    // Tính toán số lượng documents và quizzes
-    async calculateCourseCounts() {
-      if (!this.course?._id || !this.course.chapters) {
-        this.courseCounts = { videoCount: 0, documentCount: 0, examCount: 0 }
-        return
-      }
-
-      let documentCount = 0
-      let examCount = 0
-
-      try {
-        // Đếm documents và quizzes từ tất cả chapters và lessons
-        for (let chapterIndex = 0; chapterIndex < this.course.chapters.length; chapterIndex++) {
-          const chapter = this.course.chapters[chapterIndex]
-          for (let lessonIndex = 0; lessonIndex < (chapter.lessons || []).length; lessonIndex++) {
-            const lesson = chapter.lessons[lessonIndex]
-            try {
-              // Đếm documents - gọi trực tiếp backend API
-              const docResponse: any = await $fetch(`http://localhost:3000/api/a/documents/course/${this.course._id}/chapter/${chapterIndex}/lesson/${lessonIndex}`)
-              if (docResponse?.data?.documents) {
-                documentCount += docResponse.data.documents.length
-              }
-            } catch (error) {
-              console.log('No documents for lesson:', chapterIndex, lessonIndex)
-            }
-
-            try {
-              // Đếm quizzes - gọi trực tiếp backend API
-              const quizResponse: any = await $fetch(`http://localhost:3000/api/a/quizzes/course/${this.course._id}/chapter/${chapterIndex}/lesson/${lessonIndex}`)
-              if (quizResponse?.data?.quiz) {
-                examCount += 1
-              }
-            } catch (error) {
-              console.log('No quiz for lesson:', chapterIndex, lessonIndex)
-            }
-          }
-        }
-
-        // Cập nhật state
-        this.courseCounts = {
-          videoCount: this.videoCount, // Sử dụng getter
-          documentCount,
-          examCount
-        }
-
-        console.log('🔍 Calculated course counts:', this.courseCounts)
-      } catch (error) {
-        console.error('Error calculating course counts:', error)
-        this.courseCounts = { videoCount: 0, documentCount: 0, examCount: 0 }
-      }
-    },
-
-    // Lấy tiến trình học
-    async fetchProcessing(courseId: string) {
-      try {
-        const courseApi = useCourseApi()
-        const response: any = await courseApi.getProcessing(courseId)
-        this.processing = response.data || response.processing || response
-      } catch (error) {
-        console.error('Error fetching processing:', error)
-        throw error
-      }
-    },
-
-    // Lấy chi tiết chapter
-    async fetchChapter(params: { origin: string; courseId: string; chapter: string | number }) {
-      try {
-        const courseApi = useCourseApi()
-        const response: any = await courseApi.getChapter(params.chapter.toString())
-        this.chapter = response.data || response.chapter || response
-      } catch (error) {
-        console.error('Error fetching chapter:', error)
-        throw error
       }
     },
 
@@ -334,52 +286,11 @@ export const useCoursesStore = defineStore('courses', {
     async fetchReviews(courseId: string, params?: any) {
       try {
         console.log('🔍 Fetching reviews for course:', courseId)
-        const response = await $fetch(`http://localhost:3000/api/a/reviews/course/${courseId}`)
+        const response: any = await $fetch(`http://localhost:3000/api/a/reviews/course/${courseId}`)
         console.log('✅ Reviews fetched:', response)
         this.reviews = response.data?.reviews || response.reviews || []
       } catch (error) {
         console.error('Error fetching reviews:', error)
-        throw error
-      }
-    },
-
-    // Đánh dấu bài học hoàn thành
-    async markLessonComplete(lessonId: string) {
-      if (!this.processing) return
-      
-      if (!this.processing.complete.includes(lessonId)) {
-        this.processing.complete.push(lessonId)
-        
-        try {
-          const courseApi = useCourseApi()
-          await courseApi.updateProcessing(this.processing._id, {
-            complete: this.processing.complete
-          })
-        } catch (error) {
-          console.error('Error updating processing:', error)
-          // Rollback on error
-          this.processing.complete = this.processing.complete.filter(id => id !== lessonId)
-          throw error
-        }
-      }
-    },
-
-    // Đánh dấu bài học chưa hoàn thành
-    async markLessonIncomplete(lessonId: string) {
-      if (!this.processing) return
-      
-      const originalComplete = [...this.processing.complete]
-      this.processing.complete = this.processing.complete.filter(id => id !== lessonId)
-      
-      try {
-        const courseApi = useCourseApi()
-        await courseApi.updateProcessing(this.processing._id, {
-          complete: this.processing.complete
-        })
-      } catch (error) {
-        console.error('Error updating processing:', error)
-        // Rollback on error
-        this.processing.complete = originalComplete
         throw error
       }
     },

@@ -17,7 +17,6 @@ export default defineNuxtRouteMiddleware((to, from) => {
 
   // Check if authenticated
   if (!authStore.isAuthenticated) {
-    console.warn('[Admin Middleware] User not authenticated')
     
     if (process.client) {
       localStorage.setItem('redirect_after_login', to.fullPath)
@@ -30,7 +29,6 @@ export default defineNuxtRouteMiddleware((to, from) => {
   const userRole = authStore.user?.role
 
   if (userRole !== 'admin' && userRole !== 'super_admin') {
-    console.warn('[Admin Middleware] User is not an admin. Role:', userRole)
     
     // Redirect to dashboard or unauthorized
     return navigateTo('/unauthorized')

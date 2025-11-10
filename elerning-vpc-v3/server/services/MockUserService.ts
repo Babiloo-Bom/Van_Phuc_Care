@@ -36,7 +36,6 @@ class MockUserServiceClass {
         existingUser.updatedAt = new Date()
         
         this.users.set(existingUser.id, existingUser)
-        console.log('✅ MockUserService: Updated existing user:', existingUser.email)
         return existingUser
       }
 
@@ -50,7 +49,6 @@ class MockUserServiceClass {
         emailUser.updatedAt = new Date()
         
         this.users.set(emailUser.id, emailUser)
-        console.log('✅ MockUserService: Linked Google account to existing user:', emailUser.email)
         return emailUser
       }
 
@@ -70,11 +68,9 @@ class MockUserServiceClass {
       }
 
       this.users.set(newUser.id, newUser)
-      console.log('✅ MockUserService: Created new user:', newUser.email)
       return newUser
 
     } catch (error: any) {
-      console.error('❌ MockUserService: Failed to manage Google user:', error)
       throw new Error(`Failed to manage Google user: ${error.message}`)
     }
   }
@@ -124,7 +120,6 @@ class MockUserServiceClass {
   async clearAllUsers(): Promise<void> {
     this.users.clear()
     this.idCounter = 1
-    console.log('✅ MockUserService: All users cleared')
   }
 }
 

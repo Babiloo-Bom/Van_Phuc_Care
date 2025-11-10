@@ -196,13 +196,7 @@ const toggleConfirmPassword = () => {
 const handleSubmit = async () => {
   try {
     // Debug password values
-    console.log('🔍 Password validation:', {
-      password: form.password,
-      confirmPassword: form.confirmPassword,
-      passwordLength: form.password.length,
-      confirmPasswordLength: form.confirmPassword.length,
-      areEqual: form.password === form.confirmPassword
-    })
+     
     
     // Validate passwords match
     if (form.password !== form.confirmPassword) {
@@ -227,7 +221,6 @@ const handleSubmit = async () => {
       message.error(result.error || 'Đăng ký thất bại')
     }
   } catch (error: any) {
-    console.error('Register error:', error)
     message.error('Đăng ký thất bại')
   } finally {
     loading.value = false

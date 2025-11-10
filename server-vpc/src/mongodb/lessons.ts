@@ -11,9 +11,9 @@ class Lessons {
 
   public generateSchema() {
     this.schema = new Schema({
-      courseModuleId: {
+      chapterId: {
         type: Schema.Types.ObjectId,
-        ref: 'course-modules',
+        ref: 'chapters',
         required: true,
         index: true,
       },
@@ -118,9 +118,9 @@ class Lessons {
       toObject: { virtuals: true },
     });
 
-    this.schema.virtual('courseModule', {
-      ref: 'course-modules',
-      localField: 'courseModuleId',
+    this.schema.virtual('chapter', {
+      ref: 'chapters',
+      localField: 'chapterId',
       foreignField: '_id',
       justOne: true,
     });

@@ -140,7 +140,7 @@ const applyCoupon = async () => {
   isLoading.value = true
   
   try {
-    const response = await $fetch('http://localhost:3000/api/a/coupons/apply', {
+    const response: any = await $fetch('http://localhost:3000/api/a/coupons/apply', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json'
@@ -151,13 +151,9 @@ const applyCoupon = async () => {
       }
     })
     
-    console.log('🎫 Coupon response:', response)
-    console.log('🎫 Response data:', response.data)
-    console.log('🎫 Response message:', response.message)
     
     // Check if response is successful (status 200 and has data)
     if (response && response.data && response.data.message === 'Coupon applied successfully') {
-      console.log('✅ Coupon applied successfully')
       
       // Clear any existing error message immediately
       errorMessage.value = ''
@@ -176,11 +172,9 @@ const applyCoupon = async () => {
         successMessage.value = ''
       }, 3000)
     } else {
-      console.log('❌ Coupon application failed')
       errorMessage.value = response.message || response.data?.message || 'Có lỗi xảy ra khi áp dụng mã giảm giá'
     }
   } catch (error: any) {
-    console.error('❌ Apply coupon error:', error)
     errorMessage.value = error.data?.message || 'Có lỗi xảy ra khi áp dụng mã giảm giá'
   } finally {
     isLoading.value = false
@@ -197,11 +191,11 @@ const removeCoupon = async () => {
   successMessage.value = ''
   
   try {
-    const response = await $fetch(`http://localhost:3000/api/a/coupons/cart/${authStore.user.id}`, {
+    const response: any = await $fetch(`http://localhost:3000/api/a/coupons/cart/${authStore.user.id}`, {
       method: 'DELETE'
     })
     
-    if (response.data && response.data.message) {
+    if (response && response.data && response.data.message) {
       // Clear any existing error message
       errorMessage.value = ''
       
@@ -218,7 +212,6 @@ const removeCoupon = async () => {
       errorMessage.value = response.message || 'Có lỗi xảy ra khi xóa mã giảm giá'
     }
   } catch (error: any) {
-    console.error('❌ Remove coupon error:', error)
     errorMessage.value = error.data?.message || 'Có lỗi xảy ra khi xóa mã giảm giá'
   } finally {
     isLoading.value = false

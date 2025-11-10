@@ -2,8 +2,8 @@
   <div>
     <!-- Hero Section -->
     <div
-      class="sm:h-[450px] py-10 sm:pt-20 sm:pb-20 md:pb-40 bg-cover bg-center bg-no-repeat relative z-[0] after:absolute after:content-[''] after:top-0 after:left-0 after:w-full after:h-full after:opacity-60 after:bg-prim-100"
-      :style="`background: url(${course?.thumbnail || '/images/courses/python-course.jpg'}) center center/cover no-repeat`"
+      class="sm:h-[450px] py-10 sm:pt-20 sm:pb-20 md:pb-40 bg-cover bg-[#0e1d29db] bg-center bg-no-repeat relative z-[0] after:absolute after:content-[''] after:top-0 after:left-0 after:w-full after:h-full after:opacity-60 after:bg-prim-100"
+      :style="`background: url(${course?.thumbnail}) center center/cover no-repeat`"
     >
       <div class="container h-full">
         <div class="grid grid-cols-12 gap-8">

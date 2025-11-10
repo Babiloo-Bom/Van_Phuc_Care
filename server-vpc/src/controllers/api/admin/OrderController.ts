@@ -136,7 +136,12 @@ class OrderController {
         customerInfo,
         items,
         subtotal,
-        discount,
+        discount: {
+          type: discount?.type || 'percentage',
+          value: discount?.value || 0,
+          amount: discount?.amount || 0,
+          couponCode: discount?.couponCode || null
+        },
         totalAmount,
         paymentMethod,
         notes

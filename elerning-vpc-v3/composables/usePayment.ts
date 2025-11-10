@@ -100,7 +100,6 @@ export const usePayment = () => {
   // VNPay Payment
   const processVNPayPayment = async (paymentData: any) => {
     // TODO: Implement VNPay integration
-    console.log('Processing VNPay payment:', paymentData)
     
     // Simulate API call
     await new Promise(resolve => setTimeout(resolve, 1000))
@@ -116,7 +115,6 @@ export const usePayment = () => {
   // MoMo Payment
   const processMoMoPayment = async (paymentData: any) => {
     // TODO: Implement MoMo integration
-    console.log('Processing MoMo payment:', paymentData)
     
     // Simulate API call
     await new Promise(resolve => setTimeout(resolve, 1000))
@@ -132,7 +130,6 @@ export const usePayment = () => {
   // QR Code Payment
   const processQRPayment = async (paymentData: any) => {
     // TODO: Implement QR payment
-    console.log('Processing QR payment:', paymentData)
     
     // Simulate API call
     await new Promise(resolve => setTimeout(resolve, 1000))
@@ -148,7 +145,6 @@ export const usePayment = () => {
   // Bank Transfer
   const processBankTransfer = async (paymentData: any) => {
     // TODO: Implement bank transfer
-    console.log('Processing bank transfer:', paymentData)
     
     // Simulate API call
     await new Promise(resolve => setTimeout(resolve, 1000))
@@ -163,7 +159,6 @@ export const usePayment = () => {
 
   // Bypass Payment (Demo)
   const processBypassPayment = async (paymentData: any) => {
-    console.log('Processing bypass payment (demo):', paymentData)
     
     // Simulate API call
     await new Promise(resolve => setTimeout(resolve, 1000))

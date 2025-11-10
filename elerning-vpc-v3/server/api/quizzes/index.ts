@@ -10,19 +10,17 @@ export default defineEventHandler(async (event) => {
       if (!pathMatch) {
         throw createError({
           statusCode: 400,
-          statusMessage: 'Invalid URL format. Expected: /api/quizzes/course/{courseId}/chapter/{chapterIndex}/lesson/{lessonIndex}'
+          statusMessage: 'Invalid URL format. Expected: /api/quizzes/course/{courseId}/chapter/{chapterId}/lesson/{lessonId}'
         })
       }
       
-      const [, courseId, chapterIndex, lessonIndex] = pathMatch
+      const [, courseId, chapterId, lessonId] = pathMatch
       
-      console.log('🔍 Quizzes API Proxy:', { courseId, chapterIndex, lessonIndex })
       
-      const response = await $fetch(`${process.env.API_BASE_URL}/api/a/quizzes/course/${courseId}/chapter/${chapterIndex}/lesson/${lessonIndex}`, {
+      const response = await $fetch(`${process.env.API_BASE_URL}/api/a/quizzes/course/${courseId}/chapter/${chapterId}/lesson/${lessonId}`, {
         method: 'GET'
       })
       
-      console.log('✅ Quizzes API Response:', response)
       return response
     } else if (method === 'POST') {
       // Submit quiz attempt
@@ -45,7 +43,6 @@ export default defineEventHandler(async (event) => {
       statusMessage: 'Method not allowed'
     })
   } catch (error: any) {
-    console.error('❌ Quizzes API Error:', error)
     throw createError({
       statusCode: error.statusCode || 500,
       statusMessage: error.statusMessage || 'Internal server error'

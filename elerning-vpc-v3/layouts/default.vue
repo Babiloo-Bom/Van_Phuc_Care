@@ -1,7 +1,7 @@
 <template>
   <div class="min-h-screen bg-gray-50">
     <!-- Header -->
-    <TheHeader />
+    <TheHeader v-if="!checkPath" />
 
     <!-- Main Content -->
     <main>
@@ -19,28 +19,21 @@ import { useCartStore } from '~/stores/cart'
 import { useAuthStore } from '~/stores/auth'
 import TheHeader from '~/components/layout/TheHeader.vue'
 import Footer from '~/components/shared/Footer.vue'
-
+const route = useRoute()
 const cartStore = useCartStore()
 const authStore = useAuthStore()
-
+const checkPath = computed(() => route.name === 'my-learning-slug')
 // Initialize auth and load cart from localStorage on mount
 onMounted(() => {
-  console.log('🚀 Layout mounted - Initializing app...')
-  
+  console.log('route namesssssssss');
   // Initialize authentication first
   authStore.initAuth()
-  console.log('✅ Layout - Auth initialized:', {
-    isLoggedIn: authStore.isLoggedIn,
-    user: authStore.user,
-    token: authStore.token ? 'exists' : 'null'
-  })
+  
   
   // Then load cart if user is logged in
   if (authStore.isLoggedIn) {
     cartStore.fetchCart()
-    console.log('✅ Layout - Cart loaded, items:', cartStore.cartCount)
   } else {
-    console.log('ℹ️ Layout - User not logged in, skipping cart load')
   }
 })
 </script>

@@ -58,7 +58,50 @@ const userStrategy = new Strategy(userOptions, async (req: Request, payload: {id
 });
 adminPassport.use(adminStrategy);
 userPassport.use(userStrategy);
+
+/**
+ * Optional authentication middleware
+ * Checks for JWT token if present, but doesn't fail if token is missing
+ * Useful for routes that work both with and without authentication
+ */
+const optionalAuth = (req: Request, res: any, next: any) => {
+  try {
+    // Check if Authorization header or accessToken query param exists
+    const authHeader = req.headers.authorization;
+    const accessToken = req.query.accessToken;
+    
+    // If no token present, skip authentication and continue
+    if (!authHeader && !accessToken) {
+      return next();
+    }
+    
+    // Try to authenticate, but don't fail if token is invalid
+    adminPassport.authenticate('jwt', { session: false }, (err: any, user: any, info: any) => {
+      // If error occurred (e.g., invalid token), just continue without auth
+      if (err) {
+        console.log('ℹ️ Optional auth: Error during authentication, continuing without auth:', err.message);
+        return next();
+      }
+      
+      // If user found, attach to request
+      if (user) {
+        req.currentAdmin = user;
+        req.currentUser = user; // Also set as currentUser for consistency
+      } else {
+        console.log('ℹ️ Optional auth: No valid token or user not found, continuing without auth');
+      }
+      // Continue regardless of auth result
+      next();
+    })(req, res, next);
+  } catch (error: any) {
+    // If any error occurs, just continue without auth
+    console.log('ℹ️ Optional auth: Exception during authentication, continuing without auth:', error.message);
+    next();
+  }
+};
+
 export {
   adminPassport,
   userPassport,
+  optionalAuth,
 };

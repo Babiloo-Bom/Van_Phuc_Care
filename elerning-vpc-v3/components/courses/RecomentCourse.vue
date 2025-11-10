@@ -48,7 +48,6 @@ const courses = computed(() => coursesStore.courses)
 const displayedCourses = computed(() => {
   // Hiển thị tối đa 4 khóa học
   if (!courses.value || !Array.isArray(courses.value)) {
-    console.log('🔍 courses.value is not an array:', courses.value)
     return []
   }
   return courses.value.slice(0, 4)

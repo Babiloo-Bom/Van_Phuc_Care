@@ -13,7 +13,6 @@ export default defineNuxtRouteMiddleware((to, from) => {
 
   // If user is already authenticated, redirect to dashboard
   if (authStore.isAuthenticated) {
-    console.log('[Guest Middleware] User already authenticated, redirecting to dashboard')
     
     // Check if there's a saved redirect path
     if (process.client) {
