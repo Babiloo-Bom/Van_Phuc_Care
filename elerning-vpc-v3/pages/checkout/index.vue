@@ -350,7 +350,6 @@ watch(() => cartStore.totalPrice, (newPrice) => {
 
 // Methods
 const onPaymentMethodSelected = (method: any) => {
-  console.log('Payment method selected:', method)
   checkoutForm.value.paymentMethod = method.id
   
   if (method.id === 'qr' && !qrCodeGenerated.value) {
@@ -413,20 +412,17 @@ const handleSubmit = async (e?: Event) => {
   }
   
   if (cartItems.value.length === 0) {
-    console.log('❌ Cart is empty')
     return
   }
   
   // Prevent multiple submissions
   if (isSubmitting.value) {
-    console.log('⚠️ Already submitting, please wait...')
     return
   }
   
   try {
     isSubmitting.value = true
     loading.value = true
-    console.log('💳 Processing checkout:', checkoutForm.value)
     
     // Create order first
     const orderData = {
@@ -453,10 +449,8 @@ const handleSubmit = async (e?: Event) => {
       notes: checkoutForm.value.notes || ''
     }
 
-    console.log('📦 Creating order:', orderData)
-
     // Create order
-    const orderResponse = await $fetch('http://localhost:3000/api/a/orders', {
+    const orderResponse: any = await $fetch('http://localhost:3000/api/a/orders', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json'
@@ -469,16 +463,13 @@ const handleSubmit = async (e?: Event) => {
     }
 
     const order = orderResponse.data.order
-    console.log('✅ Order created:', order.orderId)
 
     // Handle bypass payment for demo - skip validation
     if (checkoutForm.value.paymentMethod === 'bypass') {
-      console.log('🚀 Processing bypass payment...')
       
       // Simulate payment processing
       await new Promise(resolve => setTimeout(resolve, 1000))
       
-      console.log('✅ Bypass payment completed')
       
       // Update order status
       await $fetch(`http://localhost:3000/api/a/orders/payment`, {
@@ -494,22 +485,18 @@ const handleSubmit = async (e?: Event) => {
       })
       
       // Clear cart after successful payment
-      console.log('🛒 Clearing cart after bypass payment...')
       await cartStore.clearCart()
       
       // Redirect to success page
-      console.log('🔄 Redirecting to success page...')
       loading.value = false
       
       await nextTick()
       
-      console.log('🔍 About to redirect to /checkout/success...')
       await navigateTo(`/checkout/success?orderId=${order.orderId}`)
       return
     }
     
     // Use new payment system for other methods
-    console.log('💳 Processing payment with new system...')
     
     const paymentResult = await processPayment({
       orderId: order.orderId,
@@ -518,7 +505,6 @@ const handleSubmit = async (e?: Event) => {
     })
     
     if (paymentResult.success) {
-      console.log('✅ Payment processed successfully:', paymentResult)
 
       // Update order status
       await $fetch(`http://localhost:3000/api/a/orders/payment`, {
@@ -539,7 +525,6 @@ const handleSubmit = async (e?: Event) => {
       // Redirect to success page
       await navigateTo(`/checkout/success?orderId=${order.orderId}`)
     } else {
-      console.error('❌ Payment failed:', paymentResult.error)
       // Handle payment error (show error message, etc.)
     }
     
@@ -558,7 +543,6 @@ definePageMeta({
 
 // Lifecycle
 onMounted(async () => {
-  console.log('💳 Checkout page mounted')
   
   // Redirect if cart is empty
   if (cartItems.value.length === 0) {

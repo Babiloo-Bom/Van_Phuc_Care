@@ -75,12 +75,7 @@ const handleGoogleCallback = async () => {
     // Complete Google login flow
     const response = await completeGoogleLogin(code, state)
 
-    console.log('🔍 Google login response:', response)
-
     if (response && response.success && response.data) {
-      console.log('🔐 Google callback success, storing auth data...', response.data)
-      console.log('🔍 Google user data:', response.data.user)
-      console.log('🔍 Google user ID:', response.data.user?.id)
       
       // Calculate proper token expiry time (7 days from now)
       const tokenExpireAt = Date.now() + (7 * 24 * 60 * 60 * 1000) // 7 days
@@ -97,8 +92,6 @@ const handleGoogleCallback = async () => {
         ...response.data.user
       }
       
-      console.log('🔍 Created user data:', userData)
-      
       // Store auth data directly in auth store
       const result = await authStore.completeGoogleLogin(
         response.data.accessToken, 
@@ -106,17 +99,9 @@ const handleGoogleCallback = async () => {
         userData
       )
       
-      console.log('✅ Auth store updated:', result)
-      console.log('🔍 Auth state after Google login:', {
-        isAuthenticated: authStore.isAuthenticated,
-        user: authStore.user,
-        token: authStore.token
-      })
-
       isSuccess.value = true
       
       // Redirect immediately after success
-      console.log('🚀 Redirecting to home immediately...')
       await nextTick() // Wait for DOM update
       redirectToHome()
       
@@ -135,7 +120,6 @@ const handleGoogleCallback = async () => {
 // ===== REDIRECT HANDLERS =====
 const redirectToHome = () => {
   const redirectPath = getRedirectPath()
-  console.log('🔄 Redirecting to:', redirectPath)
   
   // Force refresh to ensure auth state is properly loaded
   window.location.href = redirectPath

@@ -157,11 +157,6 @@ const getCourseStatus = (courseId: string) => {
 // Check if course is purchased
 const isPurchased = (courseId: string) => {
   const purchased = authStore.user?.courseRegister?.includes(courseId) || false
-  console.log(`🔍 isPurchased check for ${courseId}:`, {
-    user: authStore.user?.email,
-    courseRegister: authStore.user?.courseRegister,
-    purchased
-  })
   return purchased
 }
 
@@ -191,8 +186,6 @@ const filteredCourses = computed(() => {
   const searchTerm = searchKey.value.toLowerCase().trim()
   if (!searchTerm) return sortedCourses.value
   
-  console.log('🔍 Searching for:', searchTerm)
-  console.log('🔍 Total courses:', sortedCourses.value.length)
   
   const results = sortedCourses.value.filter(course => {
     // Tìm kiếm theo title
@@ -215,20 +208,11 @@ const filteredCourses = computed(() => {
     const isMatch = titleMatch || shortDescMatch || descMatch || categoryMatch || tagsMatch
     
     if (isMatch) {
-      console.log('✅ Found match:', {
-        title: course.title,
-        titleMatch,
-        shortDescMatch,
-        descMatch,
-        categoryMatch,
-        tagsMatch
-      })
     }
     
     return isMatch
   })
   
-  console.log('🔍 Search results:', results.length)
   return results
 })
 
@@ -248,13 +232,7 @@ const fetchCourses = async () => {
   }
 }
 
-// Cart handlers
 const handleAddToCart = async (course: any) => {
-  console.log('🛒 Adding to cart:', course.title)
-  console.log('🔍 Course object:', course)
-  console.log('🔍 Course ID:', course._id)
-  console.log('🔍 Course ID type:', typeof course._id)
-  
   if (!course._id) {
     console.error('❌ Course ID is missing!')
     return
@@ -262,18 +240,14 @@ const handleAddToCart = async (course: any) => {
   
   try {
     await cartStore.addToCart({ courseId: course._id, quantity: 1 })
-    console.log('✅ Added to cart successfully')
   } catch (error) {
     console.error('❌ Error adding to cart:', error)
   }
 }
 
 const handleBuyNow = async (course: any) => {
-  console.log('💳 Buy now:', course.title)
   try {
-    // Add to cart first
     await cartStore.addToCart({ courseId: course._id, quantity: 1 })
-    // Navigate to checkout
     navigateTo('/checkout')
   } catch (error) {
     console.error('❌ Error buying now:', error)
@@ -281,9 +255,7 @@ const handleBuyNow = async (course: any) => {
 }
 
 const handleViewDetail = (course: any) => {
-  console.log('👁️ View detail:', course.title)
   try {
-    // Navigate to course detail page
     navigateTo(`/courses/${course.slug}`)
   } catch (error) {
     console.error('❌ Error viewing detail:', error)
@@ -292,10 +264,7 @@ const handleViewDetail = (course: any) => {
 
 // Lifecycle
 onMounted(async () => {
-  // Initialize auth first to ensure user data is loaded
   authStore.initAuth()
-  
-  // Fetch courses
   await fetchCourses()
 })
 
@@ -305,7 +274,6 @@ definePageMeta({
 })
 
 // SEO Configuration for SPA mode
-console.log('🔍 Setting up SEO for courses page...')
 
 // Use direct DOM manipulation for SPA mode
 if (process.client) {
@@ -363,7 +331,6 @@ if (process.client) {
   }
   canonical.setAttribute('href', 'https://vanphuccare.com/courses')
   
-  console.log('✅ SEO meta tags updated for courses page')
 }
 
 // Also use useHead as fallback
@@ -422,8 +389,6 @@ useHead({
     }
   ]
 })
-
-console.log('✅ SEO configuration applied for courses page')
 
 // Schema.org markup for Course List (temporarily disabled for testing)
 // useSchemaOrg([

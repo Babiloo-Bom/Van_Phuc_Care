@@ -605,8 +605,6 @@ const loadingReview = ref(false)
 const socialMediaArray = ref<Array<{ icon: string; link: string }>>([])
 
 const course = computed(() => {
-  console.log('🔍 Course computed:', coursesStore.course)
-  console.log('🔍 Course chapters:', coursesStore.course?.chapters)
   
   if (!coursesStore.course) return null
   
@@ -614,8 +612,6 @@ const course = computed(() => {
   const videoCount = coursesStore.videoCount
   const documentCount = coursesStore.documentCount  
   const examCount = coursesStore.examCount
-  
-  console.log('🔍 Calculated counts:', { videoCount, documentCount, examCount })
   
   return {
     ...coursesStore.course,
@@ -880,7 +876,6 @@ const redirectCheckout = () => {
 
 const accessCourse = () => {
   // Redirect to course learning page or show course content
-  console.log('🎓 Accessing course:', course.value?.title)
   // For now, just show a message - you can implement actual course access later
   // router.push(`/learning/${course.value?.slug}`)
   alert('Tính năng truy cập khóa học đang được phát triển!')
@@ -902,9 +897,7 @@ const handleTabChange = async (key: string) => {
 const fetchData = async () => {
   try {
     const slug = route.params.slug as string
-    console.log('🔍 Fetching course detail for slug:', slug)
     await coursesStore.fetchDetail(slug)
-    console.log('✅ Course detail fetched:', coursesStore.course)
     convertToObjectArray()
   } catch (error) {
     console.error('❌ Error fetching course detail:', error)

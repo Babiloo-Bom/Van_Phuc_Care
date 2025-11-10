@@ -105,7 +105,6 @@ export const useCartStore = defineStore('cart', {
       
       if (cachedCart) {
         this.updateCart(cachedCart)
-        console.log('💾 Cart loaded from cache')
       }
     },
 
@@ -129,7 +128,6 @@ export const useCartStore = defineStore('cart', {
         const authStore = useAuthStore()
         
         if (!authStore.isLoggedIn || !authStore.user?._id) {
-          console.log('❌ User not logged in, cannot fetch cart')
           this.updateCart(null)
           return
         }
@@ -139,16 +137,13 @@ export const useCartStore = defineStore('cart', {
         // Try cache first
         this.loadCartFromCache()
         
-        console.log('🛒 Fetching cart for user:', userId)
         const cartApi = useCartApi()
         const cart = await cartApi.fetchCart()
         
         this.updateCart(cart)
         this.saveCartToCache()
         
-        console.log('✅ Cart fetched from backend:', this.items.length, 'items')
       } catch (error) {
-        console.error('❌ Error fetching cart from backend:', error)
         this.setError('Không thể tải giỏ hàng')
         
         // Fallback to cache
@@ -167,12 +162,9 @@ export const useCartStore = defineStore('cart', {
         const authStore = useAuthStore()
         
         if (!authStore.isLoggedIn || !authStore.user?._id) {
-          console.log('❌ User not logged in, redirecting to login')
           await navigateTo('/login')
           return
         }
-        
-        console.log('🛒 Adding to cart:', data)
         
         // Validate courseId
         if (!data.courseId) {
@@ -183,16 +175,11 @@ export const useCartStore = defineStore('cart', {
         const courseApi = useCourseApi()
         const course = await (courseApi as any).getById(data.courseId)
         
-        console.log('🔍 Course data from API:', course)
-        console.log('🔍 Course ID:', data.courseId)
-        
         // Prepare data for backend
         const cartData = {
           courseId: data.courseId,
           course: course
         }
-        
-        console.log('🔍 Cart data to send:', cartData)
         
         const cartApi = useCartApi()
         const cart = await cartApi.addToCart(cartData)
@@ -207,9 +194,7 @@ export const useCartStore = defineStore('cart', {
           course: null, // We don't have course info in the new API
         })
         
-        console.log('✅ Item added to cart successfully')
       } catch (error) {
-        console.error('❌ Error adding to cart:', error)
         this.setError('Không thể thêm vào giỏ hàng')
         throw error
       } finally {
@@ -219,7 +204,6 @@ export const useCartStore = defineStore('cart', {
 
     // Legacy addToCart method (for backward compatibility)
     async addToCartLegacy(course: any) {
-      console.warn('⚠️ addToCartLegacy() is deprecated, use addToCart({ courseId, quantity }) instead')
       return this.addToCart({
         courseId: course._id,
         quantity: 1
@@ -234,11 +218,9 @@ export const useCartStore = defineStore('cart', {
 
         const authStore = useAuthStore()
         if (!authStore.isLoggedIn || !authStore.user?._id) {
-          console.log('❌ User not logged in, cannot remove from cart')
           return
         }
         
-        console.log('🛒 Removing from cart:', courseId)
         const cartApi = useCartApi()
         const cart = await cartApi.removeFromCart(courseId)
         
@@ -252,9 +234,7 @@ export const useCartStore = defineStore('cart', {
           course: null, // We don't have course info in the new API
         })
         
-        console.log('✅ Item removed from cart successfully')
       } catch (error) {
-        console.error('❌ Error removing from cart:', error)
         this.setError('Không thể xóa khỏi giỏ hàng')
         throw error
       } finally {
@@ -270,20 +250,16 @@ export const useCartStore = defineStore('cart', {
 
         const authStore = useAuthStore()
         if (!authStore.isLoggedIn || !authStore.user?._id) {
-          console.log('❌ User not logged in, cannot update cart')
           return
         }
         
-        console.log('🛒 Updating quantity:', data)
         const cartApi = useCartApi()
         const cart = await cartApi.updateCartItem(data)
         
         this.updateCart(cart)
         this.saveCartToCache()
         
-        console.log('✅ Quantity updated successfully')
       } catch (error) {
-        console.error('❌ Error updating quantity:', error)
         this.setError('Không thể cập nhật số lượng')
         throw error
       } finally {
@@ -299,20 +275,16 @@ export const useCartStore = defineStore('cart', {
 
         const authStore = useAuthStore()
         if (!authStore.isLoggedIn || !authStore.user?._id) {
-          console.log('❌ User not logged in, cannot clear cart')
           return
         }
         
-        console.log('🛒 Clearing cart...')
         const cartApi = useCartApi()
         await cartApi.clearCart()
         
         this.updateCart(null)
         this.clearCartCache()
         
-        console.log('✅ Cart cleared successfully')
       } catch (error) {
-        console.error('❌ Error clearing cart:', error)
         this.setError('Không thể xóa giỏ hàng')
         throw error
       } finally {
@@ -322,12 +294,10 @@ export const useCartStore = defineStore('cart', {
 
     // Force clear cart (local only, no API call)
     forceClearCart() {
-      console.log('🛒 Force clearing cart locally...')
       this.cart = null
       this.items = []
       this.lastUpdated = new Date().toISOString()
       this.saveCartToCache()
-      console.log('✅ Cart force cleared locally')
     },
 
     // Apply coupon
@@ -338,20 +308,16 @@ export const useCartStore = defineStore('cart', {
 
         const authStore = useAuthStore()
         if (!authStore.isLoggedIn || !authStore.user?._id) {
-          console.log('❌ User not logged in, cannot apply coupon')
           return
         }
         
-        console.log('🛒 Applying coupon:', data)
         const cartApi = useCartApi()
         const cart = await cartApi.applyCoupon(data)
         
         this.updateCart(cart)
         this.saveCartToCache()
         
-        console.log('✅ Coupon applied successfully')
       } catch (error) {
-        console.error('❌ Error applying coupon:', error)
         this.setError('Không thể áp dụng mã giảm giá')
         throw error
       } finally {
@@ -367,20 +333,16 @@ export const useCartStore = defineStore('cart', {
 
         const authStore = useAuthStore()
         if (!authStore.isLoggedIn || !authStore.user?._id) {
-          console.log('❌ User not logged in, cannot remove coupon')
           return
         }
         
-        console.log('🛒 Removing coupon...')
         const cartApi = useCartApi()
         const cart = await cartApi.removeCoupon()
         
         this.updateCart(cart)
         this.saveCartToCache()
         
-        console.log('✅ Coupon removed successfully')
       } catch (error) {
-        console.error('❌ Error removing coupon:', error)
         this.setError('Không thể xóa mã giảm giá')
         throw error
       } finally {

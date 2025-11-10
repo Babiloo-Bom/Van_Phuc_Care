@@ -80,7 +80,6 @@ class CartController {
         });
       }
       
-      console.log(`📦 Found cart for user ${actualUserId}: ${cart.items.length} items`);
       sendSuccess(res, { cart });
     } catch (error: any) {
       console.error('❌ Get cart error:', error);
@@ -96,18 +95,12 @@ class CartController {
       const { userId } = req.params;
       const { courseId, course } = req.body;
       
-      console.log('🔍 Add to cart request:', { userId, courseId, course: course ? 'exists' : 'null' });
-      console.log('🔍 CourseId type:', typeof courseId);
-      console.log('🔍 CourseId value:', courseId);
-      
       if (!courseId || !course) {
-        console.log('❌ Missing required fields:', { courseId: !!courseId, course: !!course });
         return sendError(res, 400, 'Course ID and course data are required');
       }
       
       // Validate courseId format
       if (!mongoose.Types.ObjectId.isValid(courseId)) {
-        console.log('❌ Invalid courseId format:', courseId);
         return sendError(res, 400, 'Invalid course ID format');
       }
       
@@ -146,13 +139,11 @@ class CartController {
       
       await cart.save();
       
-      console.log(`✅ Added course ${courseId} to cart for user ${actualUserId}`);
       sendSuccess(res, { 
         message: 'Course added to cart successfully',
         cart 
       });
     } catch (error: any) {
-      console.error('❌ Add to cart error:', error);
       sendError(res, 500, error.message, error as Error);
     }
   }
@@ -164,31 +155,23 @@ class CartController {
     try {
       const { userId, courseId } = req.params;
       
-      console.log('🔍 Remove from cart - userId:', userId, 'courseId:', courseId);
-      
       // Handle guest user - use consistent ID
       const actualUserId = userId === 'guest' ? 'guest_user' : userId;
       
       const cart = await Cart.findOne({ userId: actualUserId });
       
       if (!cart) {
-        console.log('❌ Cart not found for user:', actualUserId);
         return sendError(res, 404, 'Cart not found');
       }
-      
-      console.log('🔍 Cart before removal - items count:', cart.items.length);
-      console.log('🔍 Cart items:', cart.items.map((item: any) => ({ courseId: item.courseId, title: item.course?.title })));
       
       // Remove item
       const originalLength = cart.items.length;
       cart.items = cart.items.filter((item: any) => {
         const itemCourseId = item.courseId.toString();
         const targetCourseId = courseId.toString();
-        console.log('🔍 Comparing:', itemCourseId, '!==', targetCourseId, '=', itemCourseId !== targetCourseId);
         return itemCourseId !== targetCourseId;
       });
       
-      console.log('🔍 Cart after removal - items count:', cart.items.length, 'removed:', originalLength - cart.items.length);
       
       // Update totals
       cart.totalItems = cart.items.length;
@@ -196,7 +179,6 @@ class CartController {
       
       await cart.save();
       
-      console.log(`✅ Removed course ${courseId} from cart for user ${userId}`);
       sendSuccess(res, { 
         message: 'Course removed from cart successfully',
         cart 
@@ -230,13 +212,11 @@ class CartController {
       
       await cart.save();
       
-      console.log(`✅ Cleared cart for user ${userId}`);
       sendSuccess(res, { 
         message: 'Cart cleared successfully',
         cart 
       });
     } catch (error: any) {
-      console.error('❌ Clear cart error:', error);
       sendError(res, 500, error.message, error as Error);
     }
   }
@@ -254,7 +234,6 @@ class CartController {
       // Delete cart completely
       await Cart.deleteMany({ userId: actualUserId });
       
-      console.log(`✅ Force cleared all carts for user ${userId}`);
       sendSuccess(res, { 
         message: 'All carts force cleared successfully'
       });

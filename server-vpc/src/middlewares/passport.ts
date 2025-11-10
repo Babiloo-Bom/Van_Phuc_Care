@@ -41,15 +41,12 @@ const adminStrategy = new Strategy(adminOptions, async (req: Request, payload: {
 });
 const userStrategy = new Strategy(userOptions, async (req: Request, payload: {id: string}, next: any) => {
   try {
-    console.log('🔍 userStrategy called with payload:', payload);
     // Find user in admins collection since Google login creates users there
     const user = await MongoDbAdmins.model.findOne({ _id: payload.id, status: MongoDbAdmins.STATUS_ENUM.ACTIVE });
-    console.log('🔍 user found:', user ? 'exists' : 'null');
     if (user) {
       req.currentUser = user;
       next(null, user);
     } else {
-      console.log('❌ User not found or inactive');
       next(null, false);
     }
   } catch (error: any) {
@@ -79,7 +76,6 @@ const optionalAuth = (req: Request, res: any, next: any) => {
     adminPassport.authenticate('jwt', { session: false }, (err: any, user: any, info: any) => {
       // If error occurred (e.g., invalid token), just continue without auth
       if (err) {
-        console.log('ℹ️ Optional auth: Error during authentication, continuing without auth:', err.message);
         return next();
       }
       
@@ -88,14 +84,12 @@ const optionalAuth = (req: Request, res: any, next: any) => {
         req.currentAdmin = user;
         req.currentUser = user; // Also set as currentUser for consistency
       } else {
-        console.log('ℹ️ Optional auth: No valid token or user not found, continuing without auth');
       }
       // Continue regardless of auth result
       next();
     })(req, res, next);
   } catch (error: any) {
     // If any error occurs, just continue without auth
-    console.log('ℹ️ Optional auth: Exception during authentication, continuing without auth:', error.message);
     next();
   }
 };

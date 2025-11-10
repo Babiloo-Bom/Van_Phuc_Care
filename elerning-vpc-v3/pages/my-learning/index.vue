@@ -172,8 +172,6 @@ const getProgress = (courseId: string) => {
 }
 
 const handleViewDetail = (course: any) => {
-  console.log('🔍 Viewing course detail:', course)
-  console.log('🔍 Navigating to:', `/my-learning/${course.slug}`)
   // Navigate to the course learning page
   navigateTo(`/my-learning/${course.slug}`)
 }
@@ -181,39 +179,27 @@ const handleViewDetail = (course: any) => {
 const fetchData = async () => {
   try {
     loading.value = true
-    console.log('🔍 Fetching my courses data...')
     
     // Get auth store
     const authStore = useAuthStore()
-    console.log('🔍 Auth state:', {
-      isLoggedIn: authStore.isLoggedIn,
-      user: authStore.user,
-      courseRegister: authStore.user?.courseRegister
-    })
     
     // Get all courses first
     await coursesStore.fetchAll()
-    console.log('🔍 All courses loaded:', coursesStore.courses?.length)
     
     // Filter courses that user has purchased
     if (authStore.user?.courseRegister && coursesStore.courses) {
       const purchasedCourseIds = authStore.user.courseRegister
-      console.log('🔍 Purchased course IDs:', purchasedCourseIds)
       
       const purchasedCourses = coursesStore.courses.filter(course => 
         purchasedCourseIds.includes(course._id)
       )
       
-      console.log('🔍 Purchased courses found:', purchasedCourses.length)
-      console.log('🔍 Purchased courses data:', purchasedCourses)
       coursesStore.myCourses = purchasedCourses
     } else {
-      console.log('⚠️ No courseRegister or courses found')
       coursesStore.myCourses = []
     }
     
   } catch (error) {
-    console.error('❌ Error fetching my courses:', error)
   } finally {
     loading.value = false
   }

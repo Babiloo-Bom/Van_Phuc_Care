@@ -25,7 +25,6 @@ const authStore = useAuthStore()
 const checkPath = computed(() => route.name === 'my-learning-slug')
 // Initialize auth and load cart from localStorage on mount
 onMounted(() => {
-  console.log('route namesssssssss');
   // Initialize authentication first
   authStore.initAuth()
   

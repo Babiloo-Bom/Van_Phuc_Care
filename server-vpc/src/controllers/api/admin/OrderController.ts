@@ -147,7 +147,6 @@ class OrderController {
         notes
       });
 
-      console.log(`✅ Created order: ${orderId} for user: ${userId}`);
       sendSuccess(res, {
         message: 'Order created successfully',
         order
@@ -261,7 +260,6 @@ class OrderController {
         return sendError(res, 404, 'Order not found');
       }
 
-      console.log(`✅ Updated order ${order.orderId} status to ${status}`);
       sendSuccess(res, {
         message: 'Order status updated successfully',
         order

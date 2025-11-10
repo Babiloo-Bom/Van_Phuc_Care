@@ -169,13 +169,11 @@ class CouponController {
         code: couponData.code.toUpperCase()
       });
       
-      console.log(`✅ Created coupon: ${coupon.code}`);
       sendSuccess(res, { 
         message: 'Coupon created successfully',
         coupon 
       });
     } catch (error: any) {
-      console.error('❌ Create coupon error:', error);
       sendError(res, 500, error.message, error as Error);
     }
   }
@@ -198,13 +196,11 @@ class CouponController {
         return sendError(res, 404, 'Coupon not found');
       }
       
-      console.log(`✅ Updated coupon: ${coupon.code}`);
       sendSuccess(res, { 
         message: 'Coupon updated successfully',
         coupon 
       });
     } catch (error: any) {
-      console.error('❌ Update coupon error:', error);
       sendError(res, 500, error.message, error as Error);
     }
   }
@@ -222,12 +218,10 @@ class CouponController {
         return sendError(res, 404, 'Coupon not found');
       }
       
-      console.log(`✅ Deleted coupon: ${coupon.code}`);
       sendSuccess(res, { 
         message: 'Coupon deleted successfully' 
       });
     } catch (error: any) {
-      console.error('❌ Delete coupon error:', error);
       sendError(res, 500, error.message, error as Error);
     }
   }
@@ -301,7 +295,6 @@ class CouponController {
         }
       });
     } catch (error: any) {
-      console.error('❌ Validate coupon error:', error);
       sendError(res, 500, error.message, error as Error);
     }
   }
@@ -383,7 +376,6 @@ class CouponController {
       
       await cart.save();
       
-      console.log(`✅ Applied coupon ${coupon.code} to cart for user ${userId}`);
       sendSuccess(res, {
         message: 'Coupon applied successfully',
         cart,
@@ -391,7 +383,6 @@ class CouponController {
         finalAmount: Math.round(cartTotal - discountAmount)
       });
     } catch (error: any) {
-      console.error('❌ Apply coupon error:', error);
       sendError(res, 500, error.message, error as Error);
     }
   }
@@ -421,13 +412,11 @@ class CouponController {
       
       await cart.save();
       
-      console.log(`✅ Removed coupon from cart for user ${userId}`);
       sendSuccess(res, {
         message: 'Coupon removed successfully',
         cart
       });
     } catch (error: any) {
-      console.error('❌ Remove coupon error:', error);
       sendError(res, 500, error.message, error as Error);
     }
   }
@@ -483,11 +472,9 @@ class CouponController {
 
       // Clear existing coupons
       await Coupon.deleteMany({});
-      console.log('🗑️ Cleared existing coupons');
 
       // Insert sample coupons
       const coupons = await Coupon.insertMany(sampleCoupons);
-      console.log(`✅ Inserted ${coupons.length} sample coupons`);
 
       sendSuccess(res, { 
         message: `Đã thêm ${coupons.length} mã giảm giá mẫu`,

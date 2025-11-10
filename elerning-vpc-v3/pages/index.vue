@@ -189,7 +189,6 @@ import CourseCard from '~/components/courses/CourseCard.vue'
 import CartToast from '~/components/cart/Toast.vue'
 
 // SEO Configuration for SPA mode
-console.log('🔍 Setting up SEO for home page...')
 
 // Function to update SEO meta tags
 const updateSEOMetaTags = () => {
@@ -249,7 +248,6 @@ const updateSEOMetaTags = () => {
   }
   canonical.setAttribute('href', 'https://vanphuccare.com')
   
-  console.log('✅ SEO meta tags updated for home page')
 }
 
 // Also use useHead as fallback
@@ -317,7 +315,6 @@ useHead({
   ]
 })
 
-console.log('✅ SEO configuration applied for home page')
 
 // Schema.org markup for Homepage (temporarily disabled for testing)
 // useSchemaOrg([
@@ -416,9 +413,6 @@ const categories = computed(() => {
 })
 
 const filteredCourses = computed(() => {
-  console.log('🔍 filteredCourses computed - local courses:', courses.value.length)
-  console.log('🔍 filteredCourses computed - store courses:', coursesStore.courses.length)
-  console.log('🔍 filteredCourses computed - searchKey:', searchKey.value)
   
   // Use local state as primary source
   let sourceCourses = courses.value.length > 0 ? courses.value : coursesStore.courses
@@ -472,7 +466,6 @@ const filteredCourses = computed(() => {
       break
   }
   
-  console.log('🔍 Filtered courses:', sourceCourses.length)
   return sourceCourses
 })
 
@@ -497,29 +490,19 @@ const handleSortChange = (value: string) => {
 
 const isPurchased = (courseId: string) => {
   const purchased = authStore.user?.courseRegister?.includes(courseId) || false
-  console.log(`🔍 isPurchased check for ${courseId}:`, {
-    user: authStore.user?.email,
-    courseRegister: authStore.user?.courseRegister,
-    courseRegisterLength: authStore.user?.courseRegister?.length,
-    courseRegisterContent: JSON.stringify(authStore.user?.courseRegister),
-    purchased
-  })
   return purchased
 }
 
 // Cart handlers
 const handleAddToCart = async (course: any) => {
-  console.log('🛒 Adding to cart:', course.title)
   try {
     await cartStore.addToCart({ courseId: course._id, quantity: 1 })
-    console.log('✅ Added to cart successfully')
   } catch (error) {
     console.error('❌ Error adding to cart:', error)
   }
 }
 
 const handleBuyNow = async (course: any) => {
-  console.log('💳 Buy now:', course.title)
   try {
     // Add to cart first
     await cartStore.addToCart({ courseId: course._id, quantity: 1 })
@@ -531,7 +514,6 @@ const handleBuyNow = async (course: any) => {
 }
 
 const handleViewDetail = (course: any) => {
-  console.log('👁️ View detail:', course.title)
   try {
     // Navigate to course detail page
     navigateTo(`/courses/${course.slug}`)
@@ -556,20 +538,7 @@ onMounted(async () => {
   // Update SEO meta tags first
   updateSEOMetaTags()
   
-  // Initialize auth first to ensure user data is loaded
-  console.log('🏠 Home page mounted - Auth state before init:', {
-    isLoggedIn: authStore.isLoggedIn,
-    user: authStore.user,
-    courseRegister: authStore.user?.courseRegister
-  })
-  
   await authStore.initAuth()
-  
-  console.log('🏠 Home page mounted - Auth state after init:', {
-    isLoggedIn: authStore.isLoggedIn,
-    user: authStore.user,
-    courseRegister: authStore.user?.courseRegister
-  })
   
   // Fetch courses
   await fetchData()

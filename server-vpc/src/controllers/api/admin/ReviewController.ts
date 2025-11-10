@@ -53,7 +53,6 @@ class ReviewController {
         .sort({ createdAt: -1 })
         .limit(20);
       
-      console.log(`📝 Found ${reviews.length} reviews for course: ${courseId}`);
       sendSuccess(res, { reviews });
     } catch (error: any) {
       console.error('❌ Get reviews error:', error);
@@ -80,7 +79,6 @@ class ReviewController {
       
       await review.save();
       
-      console.log(`✅ Created review for course: ${courseId}`);
       sendSuccess(res, { review });
     } catch (error: any) {
       console.error('❌ Create review error:', error);
@@ -148,7 +146,6 @@ class ReviewController {
       // Insert sample reviews
       const reviews = await Review.insertMany(sampleReviews);
       
-      console.log(`✅ Seeded ${reviews.length} reviews`);
       sendSuccess(res, { reviews });
     } catch (error: any) {
       console.error('❌ Seed reviews error:', error);

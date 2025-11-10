@@ -114,12 +114,10 @@ export const useProgressTracking = () => {
         // Update course progress
         await updateCourseProgress(courseId)
 
-        console.log('✅ Lesson marked as completed:', courseId, chapterId, lessonId)
       }
 
     } catch (err: any) {
       error.value = err.message || 'Failed to mark lesson as completed'
-      console.error('Error marking lesson completed:', err)
     } finally {
       loading.value = false
     }
@@ -182,7 +180,6 @@ export const useProgressTracking = () => {
         const authApi = useAuthApi()
         await authApi.updateCourseRegister([courseId], 'add') // This will also update courseCompleted
         
-        console.log('✅ Course marked as completed:', courseId)
       }
     } catch (err: any) {
       console.error('Error marking course as completed:', err)
@@ -198,11 +195,7 @@ export const useProgressTracking = () => {
           lessonProgress: lessonProgress.value,
           courseProgress: courseProgress.value
         }
-      })
-
-      if (response.success) {
-        console.log('✅ Progress saved to backend')
-      }
+      })  
     } catch (err: any) {
       console.error('Error saving progress to backend:', err)
     }
@@ -220,7 +213,6 @@ export const useProgressTracking = () => {
       if (response.success) {
         lessonProgress.value = response.data.lessonProgress || []
         courseProgress.value = response.data.courseProgress || []
-        console.log('✅ Progress loaded from backend')
       }
     } catch (err: any) {
       console.error('Error loading progress from backend:', err)
@@ -247,7 +239,6 @@ export const useProgressTracking = () => {
           progress => progress.courseId !== courseId
         )
 
-        console.log('✅ Progress reset for course:', courseId)
       }
     } catch (err: any) {
       console.error('Error resetting progress:', err)

@@ -413,7 +413,7 @@ class CourseController {
 
               // Convert video URLs
               const convertedVideoUrl = await CourseController.convertMinioPathToUrl(
-                firstVideo?.videoUrl || null
+                'http://localhost:9001/browser/van-phuc-care/sticktune_TikTok_NoWatermark.mp4'
               );
 
               // Convert thumbnail

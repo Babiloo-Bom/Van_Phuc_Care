@@ -243,9 +243,7 @@ export const useCoursesStore = defineStore('courses', {
   actions: {
     // Set courses directly (for API responses)
     setCourses(courses: Course[]) {
-      console.log('🔍 setCourses called with:', courses.length, 'courses')
       this.courses = courses
-      console.log('🔍 courses after set:', this.courses.length)
     },
 
     // Lấy danh sách tất cả khóa học
@@ -254,14 +252,11 @@ export const useCoursesStore = defineStore('courses', {
       try {
         const courseApi = useCourseApi()
         const response: any = await courseApi.getAllCourses(params)
-        console.log('🔍 Store fetchAll response:', response)
         this.courses = response.data?.courses || response.data || response.courses || response
-        console.log('🔍 Store courses after set:', this.courses.length)
         if (response.pagination) {
           this.pagination = response.pagination
         }
       } catch (error) {
-        console.error('Error fetching courses:', error)
         throw error
       } finally {
         this.loading = false
@@ -285,12 +280,9 @@ export const useCoursesStore = defineStore('courses', {
     // Lấy đánh giá
     async fetchReviews(courseId: string, params?: any) {
       try {
-        console.log('🔍 Fetching reviews for course:', courseId)
         const response: any = await $fetch(`http://localhost:3000/api/a/reviews/course/${courseId}`)
-        console.log('✅ Reviews fetched:', response)
         this.reviews = response.data?.reviews || response.reviews || []
       } catch (error) {
-        console.error('Error fetching reviews:', error)
         throw error
       }
     },
