@@ -1,5 +1,6 @@
 import mongoose from 'mongoose';
 import { MongoDbTickets } from '../mongodb/tickets';
+import type { ITicket } from '../mongodb/tickets';
 import MongoDbCustomers from '../mongodb/customers';
 import MongoDbAdmins from '../mongodb/admins';
 
@@ -268,6 +269,8 @@ const TICKET_TEMPLATES = {
   ]
 };
 
+type TicketAttachmentArray = NonNullable<ITicket['attachments']>;
+
 const STATUSES = ['open', 'pending', 'in_progress', 'resolved', 'closed'];
 const STATUS_WEIGHTS = {
   open: 0.25,
@@ -385,7 +388,7 @@ async function seedTickets() {
           priority: template.priority,
           status,
           category: template.category,
-          attachments: [],
+          attachments: [] as TicketAttachmentArray,
           notes: status === 'resolved' ? 'Issue has been resolved successfully.' : '',
           resolvedAt: resolvedDate,
           resolvedBy,
@@ -434,7 +437,7 @@ async function seedTickets() {
           priority: template.priority,
           status,
           category: template.category,
-          attachments: [],
+          attachments: [] as TicketAttachmentArray,
           notes: status === 'resolved' ? 'Issue resolved.' : status === 'in_progress' ? 'Working on this issue.' : '',
           resolvedAt: resolvedDate,
           resolvedBy,
