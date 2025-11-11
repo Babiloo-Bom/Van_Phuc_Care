@@ -5,7 +5,6 @@
 
 export const useCourseApi = () => {
   const apiBase = 'http://localhost:3000/api/a'
-  
 
   /**
    * Get all courses
@@ -19,7 +18,7 @@ export const useCourseApi = () => {
     } catch (error: any) {
       throw error
     }
-  }
+  };
 
   /**
    * Get course detail by slug
@@ -31,7 +30,7 @@ export const useCourseApi = () => {
     } catch (error: any) {
       throw error
     }
-  }
+  };
 
   /**
    * Get course by slug
@@ -43,7 +42,7 @@ export const useCourseApi = () => {
     } catch (error: any) {
       throw error
     }
-  }
+  };
 
   /**
    * Get course by ID
@@ -55,12 +54,12 @@ export const useCourseApi = () => {
     } catch (error: any) {
       throw error
     }
-  }
+  };
 
   return {
     getAllCourses,
     getDetail,
     getCourseBySlug,
-    getById
-  }
-}
+    getById,
+  };
+};

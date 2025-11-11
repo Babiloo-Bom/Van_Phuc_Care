@@ -3,7 +3,7 @@
  * In-memory user management for testing (fallback when database is unavailable)
  */
 
-import type { GoogleUserData } from '~/types/user'
+import type { GoogleUserData } from '~/types/user';
 
 interface MockUser {
   id: string
@@ -20,33 +20,33 @@ interface MockUser {
 }
 
 class MockUserServiceClass {
-  private users: Map<string, MockUser> = new Map()
-  private idCounter = 1
+  private users: Map<string, MockUser> = new Map();
+  private idCounter = 1;
 
   // ===== CREATE OR UPDATE GOOGLE USER =====
   async createOrUpdateGoogleUser(googleData: GoogleUserData): Promise<MockUser> {
     try {
       // Find existing user by Google ID
-      const existingUser = await this.findByGoogleId(googleData.id)
+      const existingUser = await this.findByGoogleId(googleData.id);
       
       if (existingUser) {
         // Update existing user
-        existingUser.name = googleData.name
-        existingUser.avatar = googleData.picture
-        existingUser.updatedAt = new Date()
+        existingUser.name = googleData.name;
+        existingUser.avatar = googleData.picture;
+        existingUser.updatedAt = new Date();
         
         this.users.set(existingUser.id, existingUser)
         return existingUser
       }
 
       // Find by email
-      const emailUser = await this.findByEmail(googleData.email)
+      const emailUser = await this.findByEmail(googleData.email);
       if (emailUser) {
         // Link Google account
-        emailUser.googleId = googleData.id
-        emailUser.avatar = googleData.picture
-        emailUser.provider = 'google'
-        emailUser.updatedAt = new Date()
+        emailUser.googleId = googleData.id;
+        emailUser.avatar = googleData.picture;
+        emailUser.provider = 'google';
+        emailUser.updatedAt = new Date();
         
         this.users.set(emailUser.id, emailUser)
         return emailUser
@@ -64,8 +64,8 @@ class MockUserServiceClass {
         role: 'user',
         permissions: [],
         createdAt: new Date(),
-        updatedAt: new Date()
-      }
+        updatedAt: new Date(),
+      };
 
       this.users.set(newUser.id, newUser)
       return newUser
@@ -79,32 +79,32 @@ class MockUserServiceClass {
   async findByEmail(email: string): Promise<MockUser | null> {
     for (const user of this.users.values()) {
       if (user.email === email) {
-        return user
+        return user;
       }
     }
-    return null
+    return null;
   }
 
   // ===== FIND BY GOOGLE ID =====
   async findByGoogleId(googleId: string): Promise<MockUser | null> {
     for (const user of this.users.values()) {
       if (user.googleId === googleId) {
-        return user
+        return user;
       }
     }
-    return null
+    return null;
   }
 
   // ===== GET ALL USERS =====
   async getAllUsers(): Promise<MockUser[]> {
-    return Array.from(this.users.values())
+    return Array.from(this.users.values());
   }
 
   // ===== GET USER STATS =====
   async getUserStats() {
-    const users = Array.from(this.users.values())
-    const now = new Date()
-    const last30Days = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000)
+    const users = Array.from(this.users.values());
+    const now = new Date();
+    const last30Days = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000);
 
     return {
       total: users.length,
@@ -112,8 +112,8 @@ class MockUserServiceClass {
       inactive: users.filter(u => !u.isActive).length,
       google: users.filter(u => u.provider === 'google').length,
       local: users.filter(u => u.provider === 'local').length,
-      newLast30Days: users.filter(u => u.createdAt >= last30Days).length
-    }
+      newLast30Days: users.filter(u => u.createdAt >= last30Days).length,
+    };
   }
 
   // ===== CLEAR ALL USERS (for testing) =====
@@ -123,5 +123,5 @@ class MockUserServiceClass {
   }
 }
 
-export const MockUserService = new MockUserServiceClass()
+export const MockUserService = new MockUserServiceClass();
 

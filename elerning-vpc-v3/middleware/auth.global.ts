@@ -8,9 +8,9 @@
 
 export default defineNuxtRouteMiddleware(async (to, from) => {
   // Skip middleware on server-side
-  if (process.server) return
+  if (process.server) return;
 
-  const authStore = useAuthStore()
+  const authStore = useAuthStore();
 
 
 
@@ -19,24 +19,24 @@ export default defineNuxtRouteMiddleware(async (to, from) => {
     authStore.initAuth()
     
     // Wait a bit for auth to initialize
-    await new Promise(resolve => setTimeout(resolve, 100))
+    await new Promise(resolve => setTimeout(resolve, 100));
     
     
   }
 
   // Check if token is expired
   if (authStore.isAuthenticated && authStore.tokenExpireAt) {
-    const now = Date.now()
-    const expireTime = new Date(authStore.tokenExpireAt).getTime()
+    const now = Date.now();
+    const expireTime = new Date(authStore.tokenExpireAt).getTime();
     
     if (now >= expireTime) {
       authStore.logout()
       
       // Redirect to login if trying to access protected route
       if (to.meta.requiresAuth) {
-        return navigateTo('/login')
+        return navigateTo('/login');
       }
     }
   }
-})
+});
 

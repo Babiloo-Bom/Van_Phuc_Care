@@ -1,6 +1,6 @@
-import { ref, computed } from 'vue'
-import { useAuthStore } from '~/stores/auth'
-import { useCourseApi } from './useCourseApi'
+import { ref, computed } from 'vue';
+import { useAuthStore } from '~/stores/auth';
+import { useCourseApi } from './useCourseApi';
 
 export interface LessonProgress {
   courseId: string
@@ -21,13 +21,13 @@ export interface CourseProgress {
 }
 
 export const useProgressTracking = () => {
-  const authStore = useAuthStore()
-  const courseApi = useCourseApi()
+  const authStore = useAuthStore();
+  const courseApi = useCourseApi();
   
-  const lessonProgress = ref<LessonProgress[]>([])
-  const courseProgress = ref<CourseProgress[]>([])
-  const loading = ref(false)
-  const error = ref<string | null>(null)
+  const lessonProgress = ref<LessonProgress[]>([]);
+  const courseProgress = ref<CourseProgress[]>([]);
+  const loading = ref(false);
+  const error = ref<string | null>(null);
 
   // Computed
   const isLessonCompleted = (courseId: string, chapterId: string, lessonId: string) => {
@@ -41,18 +41,18 @@ export const useProgressTracking = () => {
   }
 
   const getCourseProgress = (courseId: string) => {
-    return courseProgress.value.find(progress => progress.courseId === courseId)
-  }
+    return courseProgress.value.find(progress => progress.courseId === courseId);
+  };
 
   const getCourseProgressPercentage = (courseId: string) => {
-    const progress = getCourseProgress(courseId)
-    return progress?.progressPercentage || 0
-  }
+    const progress = getCourseProgress(courseId);
+    return progress?.progressPercentage || 0;
+  };
 
   const isCourseCompleted = (courseId: string) => {
-    const progress = getCourseProgress(courseId)
-    return progress?.progressPercentage === 100
-  }
+    const progress = getCourseProgress(courseId);
+    return progress?.progressPercentage === 100;
+  };
 
   // Methods
   const markLessonCompleted = async (courseId: string, chapterId: string, lessonId: string, timeSpent?: number) => {
@@ -70,7 +70,7 @@ export const useProgressTracking = () => {
       )
 
       if (existingProgress?.completed) {
-        return // Already completed
+        return; // Already completed
       }
 
       // Call backend API to mark lesson as completed
@@ -102,26 +102,26 @@ export const useProgressTracking = () => {
           lessonId,
           completed: true,
           completedAt: new Date(),
-          timeSpent: timeSpent || 0
-        }
+          timeSpent: timeSpent || 0,
+        };
 
         if (progressIndex >= 0) {
-          lessonProgress.value[progressIndex] = newProgress
+          lessonProgress.value[progressIndex] = newProgress;
         } else {
-          lessonProgress.value.push(newProgress)
+          lessonProgress.value.push(newProgress);
         }
 
         // Update course progress
-        await updateCourseProgress(courseId)
+        await updateCourseProgress(courseId);
 
       }
 
     } catch (err: any) {
       error.value = err.message || 'Failed to mark lesson as completed'
     } finally {
-      loading.value = false
+      loading.value = false;
     }
-  }
+  };
 
   const updateCourseProgress = async (courseId: string) => {
     try {
@@ -133,15 +133,15 @@ export const useProgressTracking = () => {
         total + (chapter.lessons?.length || 0), 0) || 0
 
       const completedLessons = lessonProgress.value.filter(
-        progress => progress.courseId === courseId && progress.completed
-      ).length
+        progress => progress.courseId === courseId && progress.completed,
+      ).length;
 
-      const progressPercentage = totalLessons > 0 ? Math.round((completedLessons / totalLessons) * 100) : 0
+      const progressPercentage = totalLessons > 0 ? Math.round((completedLessons / totalLessons) * 100) : 0;
 
       // Update course progress
       const courseProgressIndex = courseProgress.value.findIndex(
-        progress => progress.courseId === courseId
-      )
+        progress => progress.courseId === courseId,
+      );
 
       const newCourseProgress: CourseProgress = {
         courseId,
@@ -149,42 +149,42 @@ export const useProgressTracking = () => {
         completedLessons,
         progressPercentage,
         lastAccessedAt: new Date(),
-        completedAt: progressPercentage === 100 ? new Date() : undefined
-      }
+        completedAt: progressPercentage === 100 ? new Date() : undefined,
+      };
 
       if (courseProgressIndex >= 0) {
-        courseProgress.value[courseProgressIndex] = newCourseProgress
+        courseProgress.value[courseProgressIndex] = newCourseProgress;
       } else {
-        courseProgress.value.push(newCourseProgress)
+        courseProgress.value.push(newCourseProgress);
       }
 
       // Update user's courseCompleted array
       if (progressPercentage === 100) {
-        await markCourseCompleted(courseId)
+        await markCourseCompleted(courseId);
       }
 
     } catch (err: any) {
-      console.error('Error updating course progress:', err)
+      console.error('Error updating course progress:', err);
     }
-  }
+  };
 
   const markCourseCompleted = async (courseId: string) => {
     try {
-      if (!authStore.user) return
+      if (!authStore.user) return;
 
-      const courseCompleted = authStore.user.courseCompleted || []
+      const courseCompleted = authStore.user.courseCompleted || [];
       if (!courseCompleted.includes(courseId)) {
-        courseCompleted.push(courseId)
+        courseCompleted.push(courseId);
         
         // Update user data via API
-        const authApi = useAuthApi()
-        await authApi.updateCourseRegister([courseId], 'add') // This will also update courseCompleted
+        const authApi = useAuthApi();
+        await authApi.updateCourseRegister([courseId], 'add'); // This will also update courseCompleted
         
       }
     } catch (err: any) {
-      console.error('Error marking course as completed:', err)
+      console.error('Error marking course as completed:', err);
     }
-  }
+  };
 
   const saveProgressToBackend = async () => {
     try {
@@ -197,14 +197,14 @@ export const useProgressTracking = () => {
         }
       })  
     } catch (err: any) {
-      console.error('Error saving progress to backend:', err)
+      console.error('Error saving progress to backend:', err);
     }
-  }
+  };
 
   const loadProgressFromBackend = async () => {
     try {
-      loading.value = true
-      error.value = null
+      loading.value = true;
+      error.value = null;
 
       const response: any = await $fetch('/api/progress', {
         method: 'GET'
@@ -215,11 +215,11 @@ export const useProgressTracking = () => {
         courseProgress.value = response.data.courseProgress || []
       }
     } catch (err: any) {
-      console.error('Error loading progress from backend:', err)
+      console.error('Error loading progress from backend:', err);
     } finally {
-      loading.value = false
+      loading.value = false;
     }
-  }
+  };
 
   const resetProgress = async (courseId: string) => {
     try {
@@ -231,19 +231,19 @@ export const useProgressTracking = () => {
       if (response.success) {
         // Remove lesson progress for this course
         lessonProgress.value = lessonProgress.value.filter(
-          progress => progress.courseId !== courseId
-        )
+          progress => progress.courseId !== courseId,
+        );
 
         // Remove course progress
         courseProgress.value = courseProgress.value.filter(
-          progress => progress.courseId !== courseId
-        )
+          progress => progress.courseId !== courseId,
+        );
 
       }
     } catch (err: any) {
-      console.error('Error resetting progress:', err)
+      console.error('Error resetting progress:', err);
     }
-  }
+  };
 
   return {
     // State
@@ -264,6 +264,6 @@ export const useProgressTracking = () => {
     markCourseCompleted,
     saveProgressToBackend,
     loadProgressFromBackend,
-    resetProgress
-  }
-}
+    resetProgress,
+  };
+};

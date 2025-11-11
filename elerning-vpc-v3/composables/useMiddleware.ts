@@ -5,51 +5,51 @@
  * Helper functions for working with middleware
  */
 
-import { message } from 'ant-design-vue'
+import { message } from 'ant-design-vue';
 
 export const useMiddleware = () => {
-  const authStore = useAuthStore()
-  const router = useRouter()
+  const authStore = useAuthStore();
+  const router = useRouter();
 
   /**
    * Check if user can access route
    */
   const canAccessRoute = (routeName: string): boolean => {
-    const route = router.getRoutes().find(r => r.name === routeName)
+    const route = router.getRoutes().find(r => r.name === routeName);
     
-    if (!route) return false
+    if (!route) return false;
 
     // Check authentication
     if (route.meta.requiresAuth && !authStore.isAuthenticated) {
-      return false
+      return false;
     }
 
     // Check role
     if (route.meta.requiredRole) {
-      const requiredRole = route.meta.requiredRole as string
-      const userRole = authStore.user?.role
+      const requiredRole = route.meta.requiredRole as string;
+      const userRole = authStore.user?.role;
       
       if (userRole !== requiredRole) {
-        return false
+        return false;
       }
     }
 
     // Check permissions
     if (route.meta.requiredPermissions) {
-      const requiredPermissions = route.meta.requiredPermissions as string[]
-      const userPermissions = authStore.user?.permissions || []
+      const requiredPermissions = route.meta.requiredPermissions as string[];
+      const userPermissions = authStore.user?.permissions || [];
       
       const hasAllPermissions = requiredPermissions.every(permission =>
-        userPermissions.includes(permission)
-      )
+        userPermissions.includes(permission),
+      );
       
       if (!hasAllPermissions) {
-        return false
+        return false;
       }
     }
 
-    return true
-  }
+    return true;
+  };
 
   /**
    * Navigate with auth check
@@ -61,84 +61,84 @@ export const useMiddleware = () => {
       requiredRole?: string
       requiredPermissions?: string[]
       onUnauthorized?: () => void
-    }
+    },
   ) => {
     // Check authentication
     if (options?.requireAuth && !authStore.isAuthenticated) {
-      message.warning('Vui lòng đăng nhập để tiếp tục')
+      message.warning('Vui lòng đăng nhập để tiếp tục');
       
       if (process.client) {
-        localStorage.setItem('redirect_after_login', to)
+        localStorage.setItem('redirect_after_login', to);
       }
       
-      return navigateTo('/login')
+      return navigateTo('/login');
     }
 
     // Check role
     if (options?.requiredRole) {
-      const userRole = authStore.user?.role
+      const userRole = authStore.user?.role;
       
       if (userRole !== options.requiredRole) {
-        message.error('Bạn không có quyền truy cập trang này')
+        message.error('Bạn không có quyền truy cập trang này');
         
         if (options.onUnauthorized) {
-          options.onUnauthorized()
+          options.onUnauthorized();
         } else {
-          return navigateTo('/unauthorized')
+          return navigateTo('/unauthorized');
         }
         
-        return
+        return;
       }
     }
 
     // Check permissions
     if (options?.requiredPermissions) {
-      const userPermissions = authStore.user?.permissions || []
+      const userPermissions = authStore.user?.permissions || [];
       
       const hasAllPermissions = options.requiredPermissions.every(permission =>
-        userPermissions.includes(permission)
-      )
+        userPermissions.includes(permission),
+      );
       
       if (!hasAllPermissions) {
-        message.error('Bạn không có quyền thực hiện hành động này')
+        message.error('Bạn không có quyền thực hiện hành động này');
         
         if (options.onUnauthorized) {
-          options.onUnauthorized()
+          options.onUnauthorized();
         } else {
-          return navigateTo('/unauthorized')
+          return navigateTo('/unauthorized');
         }
         
-        return
+        return;
       }
     }
 
     // Navigate
-    return navigateTo(to)
-  }
+    return navigateTo(to);
+  };
 
   /**
    * Check if current route requires auth
    */
   const currentRouteRequiresAuth = computed(() => {
-    const route = useRoute()
-    return route.meta.requiresAuth === true
-  })
+    const route = useRoute();
+    return route.meta.requiresAuth === true;
+  });
 
   /**
    * Get required role for current route
    */
   const currentRouteRequiredRole = computed(() => {
-    const route = useRoute()
-    return route.meta.requiredRole as string | undefined
-  })
+    const route = useRoute();
+    return route.meta.requiredRole as string | undefined;
+  });
 
   /**
    * Get required permissions for current route
    */
   const currentRouteRequiredPermissions = computed(() => {
-    const route = useRoute()
-    return route.meta.requiredPermissions as string[] | undefined
-  })
+    const route = useRoute();
+    return route.meta.requiredPermissions as string[] | undefined;
+  });
 
   /**
    * Guard a function with auth check
@@ -150,52 +150,52 @@ export const useMiddleware = () => {
       requiredRole?: string
       requiredPermissions?: string[]
       onUnauthorized?: () => void
-    }
+    },
   ): T => {
     return ((...args: any[]) => {
       // Check authentication
       if (options?.requireAuth && !authStore.isAuthenticated) {
-        message.warning('Vui lòng đăng nhập để thực hiện hành động này')
+        message.warning('Vui lòng đăng nhập để thực hiện hành động này');
         if (options.onUnauthorized) {
-          options.onUnauthorized()
+          options.onUnauthorized();
         }
-        return
+        return;
       }
 
       // Check role
       if (options?.requiredRole) {
-        const userRole = authStore.user?.role
+        const userRole = authStore.user?.role;
         
         if (userRole !== options.requiredRole) {
-          message.error('Bạn không có quyền thực hiện hành động này')
+          message.error('Bạn không có quyền thực hiện hành động này');
           if (options.onUnauthorized) {
-            options.onUnauthorized()
+            options.onUnauthorized();
           }
-          return
+          return;
         }
       }
 
       // Check permissions
       if (options?.requiredPermissions) {
-        const userPermissions = authStore.user?.permissions || []
+        const userPermissions = authStore.user?.permissions || [];
         
         const hasAllPermissions = options.requiredPermissions.every(permission =>
-          userPermissions.includes(permission)
-        )
+          userPermissions.includes(permission),
+        );
         
         if (!hasAllPermissions) {
-          message.error('Bạn không có quyền thực hiện hành động này')
+          message.error('Bạn không có quyền thực hiện hành động này');
           if (options.onUnauthorized) {
-            options.onUnauthorized()
+            options.onUnauthorized();
           }
-          return
+          return;
         }
       }
 
       // Execute function
-      return fn(...args)
-    }) as T
-  }
+      return fn(...args);
+    }) as T;
+  };
 
   return {
     canAccessRoute,
@@ -203,7 +203,7 @@ export const useMiddleware = () => {
     currentRouteRequiresAuth,
     currentRouteRequiredRole,
     currentRouteRequiredPermissions,
-    withAuthGuard
-  }
-}
+    withAuthGuard,
+  };
+};
 

@@ -10,7 +10,7 @@
  */
 
 export default defineNuxtRouteMiddleware((to, from) => {
-  const authStore = useAuthStore()
+  const authStore = useAuthStore();
 
   // First check if authenticated
   if (!authStore.isAuthenticated) {
@@ -18,20 +18,20 @@ export default defineNuxtRouteMiddleware((to, from) => {
   }
 
   // Get required role from route meta
-  const requiredRole = to.meta.requiredRole as string | undefined
+  const requiredRole = to.meta.requiredRole as string | undefined;
 
   if (!requiredRole) {
     // No role requirement, allow access
-    return
+    return;
   }
 
   // Check if user has the required role
-  const userRole = authStore.user?.role
+  const userRole = authStore.user?.role;
 
   if (!userRole || userRole !== requiredRole) {
     
     // Redirect to unauthorized page or dashboard
-    return navigateTo('/unauthorized')
+    return navigateTo('/unauthorized');
   }
-})
+});
 

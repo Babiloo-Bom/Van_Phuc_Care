@@ -1,4 +1,4 @@
-import { defineStore } from 'pinia'
+import { defineStore } from 'pinia';
 
 export interface Course {
   _id: string
@@ -172,72 +172,72 @@ export const useCoursesStore = defineStore('courses', {
     courseCounts: {
       videoCount: 0,
       documentCount: 0,
-      examCount: 0
-    }
+      examCount: 0,
+    },
   }),
 
   getters: {
     // Lấy danh sách khóa học
-    allCourses: (state) => state.courses,
+    allCourses: state => state.courses,
     
     // Lấy khóa học hiện tại
-    currentCourse: (state) => state.course,
+    currentCourse: state => state.course,
     
     // Lấy tiến trình học
-    currentProcessing: (state) => state.processing,
+    currentProcessing: state => state.processing,
     
     // Tính % hoàn thành
-    completionPercentage: (state) => {
-      if (!state.processing || !state.course) return 0
+    completionPercentage: state => {
+      if (!state.processing || !state.course) return 0;
       
       const totalLessons = state.course.chapters?.reduce((sum, chapter) => {
-        return sum + (chapter.lessons?.length || 0)
-      }, 0) || 0
+        return sum + (chapter.lessons?.length || 0);
+      }, 0) || 0;
       
-      if (totalLessons === 0) return 0
+      if (totalLessons === 0) return 0;
       
-      const completedLessons = state.processing.complete?.length || 0
-      return Math.round((completedLessons / totalLessons) * 100)
+      const completedLessons = state.processing.complete?.length || 0;
+      return Math.round((completedLessons / totalLessons) * 100);
     },
     
     // Tổng số bài học
-    totalLessons: (state) => {
-      if (!state.course) return 0
+    totalLessons: state => {
+      if (!state.course) return 0;
       return state.course.chapters?.reduce((sum, chapter) => {
-        return sum + (chapter.lessons?.length || 0)
-      }, 0) || 0
+        return sum + (chapter.lessons?.length || 0);
+      }, 0) || 0;
     },
     
     // Số bài học đã hoàn thành
-    completedLessons: (state) => {
-      return state.processing?.complete?.length || 0
+    completedLessons: state => {
+      return state.processing?.complete?.length || 0;
     },
     
     // Kiểm tra bài học đã hoàn thành chưa
-    isLessonCompleted: (state) => (lessonId: string) => {
-      return state.processing?.complete?.includes(lessonId) || false
+    isLessonCompleted: state => (lessonId: string) => {
+      return state.processing?.complete?.includes(lessonId) || false;
     },
 
     // Tính số lượng video từ chapters
-    videoCount: (state) => {
-      if (!state.course?.chapters) return state.courseCounts.videoCount
+    videoCount: state => {
+      if (!state.course?.chapters) return state.courseCounts.videoCount;
       
-      let count = 0
+      let count = 0;
       state.course.chapters.forEach(chapter => {
         chapter.lessons?.forEach(lesson => {
           if (lesson.type === 'video' || lesson.videoUrl) {
-            count++
+            count++;
           }
-        })
-      })
-      return count
+        });
+      });
+      return count;
     },
 
     // Lấy document count từ state
-    documentCount: (state) => state.courseCounts.documentCount,
+    documentCount: state => state.courseCounts.documentCount,
 
     // Lấy exam count từ state  
-    examCount: (state) => state.courseCounts.examCount,
+    examCount: state => state.courseCounts.examCount,
   },
 
   actions: {
@@ -248,24 +248,24 @@ export const useCoursesStore = defineStore('courses', {
 
     // Lấy danh sách tất cả khóa học
     async fetchAll(params?: any) {
-      this.loading = true
+      this.loading = true;
       try {
         const courseApi = useCourseApi()
         const response: any = await courseApi.getAllCourses(params)
         this.courses = response.data?.courses || response.data || response.courses || response
         if (response.pagination) {
-          this.pagination = response.pagination
+          this.pagination = response.pagination;
         }
       } catch (error) {
         throw error
       } finally {
-        this.loading = false
+        this.loading = false;
       }
     },
 
     // Lấy chi tiết khóa học
     async fetchDetail(courseId: string) {
-      this.loadingDetail = true
+      this.loadingDetail = true;
       try {
         const courseApi = useCourseApi()
         const response: any = await courseApi.getDetail(courseId)
@@ -273,7 +273,7 @@ export const useCoursesStore = defineStore('courses', {
       } catch (error) {
         throw error
       } finally {
-        this.loadingDetail = false
+        this.loadingDetail = false;
       }
     },
 
@@ -289,34 +289,34 @@ export const useCoursesStore = defineStore('courses', {
 
     // Set course hiện tại
     setCurrentCourse(course: Course) {
-      this.course = course
+      this.course = course;
     },
 
     // Set processing hiện tại
     setProcessing(processing: CourseProcessing) {
-      this.processing = processing
+      this.processing = processing;
     },
 
     // Reset state
     resetState() {
-      this.courses = []
-      this.myCourses = []
-      this.course = null
-      this.processing = null
-      this.chapter = null
-      this.reviews = []
+      this.courses = [];
+      this.myCourses = [];
+      this.course = null;
+      this.processing = null;
+      this.chapter = null;
+      this.reviews = [];
       this.pagination = {
         page: 1,
         limit: 12,
         total: 0,
         totalPages: 0,
-      }
+      };
       this.courseCounts = {
         videoCount: 0,
         documentCount: 0,
-        examCount: 0
-      }
+        examCount: 0,
+      };
     },
   },
-})
+});
 

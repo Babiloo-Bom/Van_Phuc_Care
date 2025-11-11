@@ -31,21 +31,21 @@ interface RegisterResponse {
 const VALIDATION_RULES = {
   email: {
     pattern: /^[^\s@]+@[^\s@]+\.[^\s@]+$/,
-    message: 'Email không hợp lệ'
+    message: 'Email không hợp lệ',
   },
   password: {
     minLength: 6,
-    message: 'Mật khẩu phải có ít nhất 6 ký tự'
+    message: 'Mật khẩu phải có ít nhất 6 ký tự',
   },
   phone: {
     pattern: /^(0|\+84)[0-9]{9,10}$/,
-    message: 'Số điện thoại không hợp lệ'
+    message: 'Số điện thoại không hợp lệ',
   },
   fullname: {
     minLength: 2,
-    message: 'Họ tên phải có ít nhất 2 ký tự'
-  }
-}
+    message: 'Họ tên phải có ít nhất 2 ký tự',
+  },
+};
 
 // ===== ERROR MESSAGES =====
 const ERROR_MESSAGES = {
@@ -59,127 +59,127 @@ const ERROR_MESSAGES = {
   OTP_EXPIRED: 'Mã xác thực đã hết hạn. Vui lòng đăng ký lại',
   NETWORK_ERROR: 'Lỗi kết nối mạng. Vui lòng kiểm tra internet và thử lại',
   SERVER_ERROR: 'Lỗi máy chủ. Vui lòng thử lại sau',
-  UNKNOWN_ERROR: 'Đã xảy ra lỗi không xác định. Vui lòng thử lại'
-}
+  UNKNOWN_ERROR: 'Đã xảy ra lỗi không xác định. Vui lòng thử lại',
+};
 
 export const useRegister = () => {
-  const authStore = useAuthStore()
-  const router = useRouter()
+  const authStore = useAuthStore();
+  const router = useRouter();
 
   // State
-  const isRegistering = ref(false)
-  const isVerifying = ref(false)
-  const registrationStep = ref<'register' | 'verify' | 'complete'>('register')
-  const registeredEmail = ref('')
-  const registeredPassword = ref('')
+  const isRegistering = ref(false);
+  const isVerifying = ref(false);
+  const registrationStep = ref<'register' | 'verify' | 'complete'>('register');
+  const registeredEmail = ref('');
+  const registeredPassword = ref('');
 
   /**
    * Validate email format
    */
   const validateEmail = (email: string): { valid: boolean; error?: string } => {
     if (!email) {
-      return { valid: false, error: 'Email là bắt buộc' }
+      return { valid: false, error: 'Email là bắt buộc' };
     }
     if (!VALIDATION_RULES.email.pattern.test(email)) {
-      return { valid: false, error: VALIDATION_RULES.email.message }
+      return { valid: false, error: VALIDATION_RULES.email.message };
     }
-    return { valid: true }
-  }
+    return { valid: true };
+  };
 
   /**
    * Validate password strength
    */
   const validatePassword = (password: string): { valid: boolean; error?: string } => {
     if (!password) {
-      return { valid: false, error: 'Mật khẩu là bắt buộc' }
+      return { valid: false, error: 'Mật khẩu là bắt buộc' };
     }
     if (password.length < VALIDATION_RULES.password.minLength) {
-      return { valid: false, error: VALIDATION_RULES.password.message }
+      return { valid: false, error: VALIDATION_RULES.password.message };
     }
-    return { valid: true }
-  }
+    return { valid: true };
+  };
 
   /**
    * Validate phone number
    */
   const validatePhone = (phone: string): { valid: boolean; error?: string } => {
     if (!phone) {
-      return { valid: true } // Phone is optional
+      return { valid: true }; // Phone is optional
     }
     if (!VALIDATION_RULES.phone.pattern.test(phone)) {
-      return { valid: false, error: VALIDATION_RULES.phone.message }
+      return { valid: false, error: VALIDATION_RULES.phone.message };
     }
-    return { valid: true }
-  }
+    return { valid: true };
+  };
 
   /**
    * Validate fullname
    */
   const validateFullname = (fullname: string): { valid: boolean; error?: string } => {
     if (!fullname) {
-      return { valid: false, error: 'Họ tên là bắt buộc' }
+      return { valid: false, error: 'Họ tên là bắt buộc' };
     }
     if (fullname.length < VALIDATION_RULES.fullname.minLength) {
-      return { valid: false, error: VALIDATION_RULES.fullname.message }
+      return { valid: false, error: VALIDATION_RULES.fullname.message };
     }
-    return { valid: true }
-  }
+    return { valid: true };
+  };
 
   /**
    * Validate password match
    */
   const validatePasswordMatch = (password: string, repeatPassword: string): { valid: boolean; error?: string } => {
     if (password !== repeatPassword) {
-      return { valid: false, error: ERROR_MESSAGES.PASSWORD_MISMATCH }
+      return { valid: false, error: ERROR_MESSAGES.PASSWORD_MISMATCH };
     }
-    return { valid: true }
-  }
+    return { valid: true };
+  };
 
   /**
    * Validate all registration data
    */
   const validateRegistrationData = (data: RegisterRequest): { valid: boolean; errors: Record<string, string> } => {
-    const errors: Record<string, string> = {}
+    const errors: Record<string, string> = {};
 
     // Validate email
-    const emailValidation = validateEmail(data.email)
+    const emailValidation = validateEmail(data.email);
     if (!emailValidation.valid) {
-      errors.email = emailValidation.error!
+      errors.email = emailValidation.error!;
     }
 
     // Validate password
-    const passwordValidation = validatePassword(data.password)
+    const passwordValidation = validatePassword(data.password);
     if (!passwordValidation.valid) {
-      errors.password = passwordValidation.error!
+      errors.password = passwordValidation.error!;
     }
 
     // Validate password match
-    const passwordMatchValidation = validatePasswordMatch(data.password, data.repeat_password)
+    const passwordMatchValidation = validatePasswordMatch(data.password, data.repeat_password);
     if (!passwordMatchValidation.valid) {
-      errors.repeat_password = passwordMatchValidation.error!
+      errors.repeat_password = passwordMatchValidation.error!;
     }
 
     // Validate fullname (if provided)
     if (data.fullname) {
-      const fullnameValidation = validateFullname(data.fullname)
+      const fullnameValidation = validateFullname(data.fullname);
       if (!fullnameValidation.valid) {
-        errors.fullname = fullnameValidation.error!
+        errors.fullname = fullnameValidation.error!;
       }
     }
 
     // Validate phone (if provided)
     if (data.phone) {
-      const phoneValidation = validatePhone(data.phone)
+      const phoneValidation = validatePhone(data.phone);
       if (!phoneValidation.valid) {
-        errors.phone = phoneValidation.error!
+        errors.phone = phoneValidation.error!;
       }
     }
 
     return {
       valid: Object.keys(errors).length === 0,
-      errors
-    }
-  }
+      errors,
+    };
+  };
 
   /**
    * Register new user
@@ -190,71 +190,71 @@ export const useRegister = () => {
     errors?: Record<string, string>
   }> => {
     // Validate data
-    const validation = validateRegistrationData(data)
+    const validation = validateRegistrationData(data);
     if (!validation.valid) {
       return {
         success: false,
         error: 'Vui lòng kiểm tra lại thông tin đăng ký',
-        errors: validation.errors
-      }
+        errors: validation.errors,
+      };
     }
 
-    isRegistering.value = true
+    isRegistering.value = true;
 
     try {
       // Debug log
       
       // Call register API through auth store
-      const result = await authStore.register(data.email, data.password, data.repeat_password, data.fullname)
+      const result = await authStore.register(data.email, data.password, data.repeat_password, data.fullname);
 
       if (result.success) {
         // Save email and password for later use
-        registeredEmail.value = data.email
-        registeredPassword.value = data.password
-        registrationStep.value = 'verify'
+        registeredEmail.value = data.email;
+        registeredPassword.value = data.password;
+        registrationStep.value = 'verify';
 
-        return { success: true }
+        return { success: true };
       } else {
         // Map error message
-        let errorMessage = result.error || ERROR_MESSAGES.UNKNOWN_ERROR
+        let errorMessage = result.error || ERROR_MESSAGES.UNKNOWN_ERROR;
 
         // Check for specific error codes
         if (errorMessage.includes('đã được sử dụng') || errorMessage.includes('already exists')) {
-          errorMessage = ERROR_MESSAGES.EMAIL_EXISTS
+          errorMessage = ERROR_MESSAGES.EMAIL_EXISTS;
         } else if (errorMessage.includes('password') && errorMessage.includes('weak')) {
-          errorMessage = ERROR_MESSAGES.WEAK_PASSWORD
+          errorMessage = ERROR_MESSAGES.WEAK_PASSWORD;
         }
 
         return {
           success: false,
-          error: errorMessage
-        }
+          error: errorMessage,
+        };
       }
     } catch (error: any) {
       // Handle AbortError
       if (error?.name === 'AbortError' || error?.message?.includes('aborted')) {
         return {
           success: false,
-          error: 'Yêu cầu đã bị hủy'
-        }
+          error: 'Yêu cầu đã bị hủy',
+        };
       }
 
       // Handle network errors
       if (error?.message?.includes('fetch failed') || error?.message?.includes('Network')) {
         return {
           success: false,
-          error: ERROR_MESSAGES.NETWORK_ERROR
-        }
+          error: ERROR_MESSAGES.NETWORK_ERROR,
+        };
       }
 
       return {
         success: false,
-        error: ERROR_MESSAGES.SERVER_ERROR
-      }
+        error: ERROR_MESSAGES.SERVER_ERROR,
+      };
     } finally {
-      isRegistering.value = false
+      isRegistering.value = false;
     }
-  }
+  };
 
   /**
    * Verify email with OTP
@@ -266,63 +266,63 @@ export const useRegister = () => {
     if (!registeredEmail.value) {
       return {
         success: false,
-        error: 'Email chưa được đăng ký'
-      }
+        error: 'Email chưa được đăng ký',
+      };
     }
 
     if (!otp || otp.length !== 6) {
       return {
         success: false,
-        error: 'Mã OTP phải có 6 chữ số'
-      }
+        error: 'Mã OTP phải có 6 chữ số',
+      };
     }
 
-    isVerifying.value = true
+    isVerifying.value = true;
 
     try {
       const result = await authStore.verifyEmail(registeredEmail.value, otp)
 
       if (result.success) {
-        registrationStep.value = 'complete'
+        registrationStep.value = 'complete';
         
         // Auto login after verification
         if (registeredPassword.value) {
-          await completeRegistration()
+          await completeRegistration();
         }
         
-        return { success: true }
+        return { success: true };
       } else {
-        let errorMessage = result.error || ERROR_MESSAGES.INVALID_OTP
+        let errorMessage = result.error || ERROR_MESSAGES.INVALID_OTP;
 
         // Map specific error messages
         if (errorMessage.includes('expired') || errorMessage.includes('hết hạn')) {
-          errorMessage = ERROR_MESSAGES.OTP_EXPIRED
+          errorMessage = ERROR_MESSAGES.OTP_EXPIRED;
         } else if (errorMessage.includes('incorrect') || errorMessage.includes('không chính xác')) {
-          errorMessage = ERROR_MESSAGES.INVALID_OTP
+          errorMessage = ERROR_MESSAGES.INVALID_OTP;
         }
 
         return {
           success: false,
-          error: errorMessage
-        }
+          error: errorMessage,
+        };
       }
     } catch (error: any) {
       // Handle AbortError
       if (error?.name === 'AbortError' || error?.message?.includes('aborted')) {
         return {
           success: false,
-          error: 'Yêu cầu đã bị hủy'
-        }
+          error: 'Yêu cầu đã bị hủy',
+        };
       }
 
       return {
         success: false,
-        error: ERROR_MESSAGES.SERVER_ERROR
-      }
+        error: ERROR_MESSAGES.SERVER_ERROR,
+      };
     } finally {
-      isVerifying.value = false
+      isVerifying.value = false;
     }
-  }
+  };
 
   /**
    * Complete registration and auto-login
@@ -334,8 +334,8 @@ export const useRegister = () => {
     if (!registeredEmail.value || !registeredPassword.value) {
       return {
         success: false,
-        error: 'Email hoặc mật khẩu chưa được xác thực'
-      }
+        error: 'Email hoặc mật khẩu chưa được xác thực',
+      };
     }
 
     try {
@@ -345,33 +345,33 @@ export const useRegister = () => {
       if (result.success) {
         // Redirect to dashboard
         setTimeout(() => {
-          router.push('/')
-        }, 1500)
-        return { success: true }
+          router.push('/');
+        }, 1500);
+        return { success: true };
       } else {
         return {
           success: false,
-          error: result.error || 'Đăng nhập thất bại sau khi đăng ký'
-        }
+          error: result.error || 'Đăng nhập thất bại sau khi đăng ký',
+        };
       }
     } catch (error: any) {
       return {
         success: false,
-        error: 'Đăng nhập thất bại sau khi đăng ký'
-      }
+        error: 'Đăng nhập thất bại sau khi đăng ký',
+      };
     }
-  }
+  };
 
   /**
    * Reset registration flow
    */
   const resetRegistration = () => {
-    registrationStep.value = 'register'
-    registeredEmail.value = ''
-    registeredPassword.value = ''
-    isRegistering.value = false
-    isVerifying.value = false
-  }
+    registrationStep.value = 'register';
+    registeredEmail.value = '';
+    registeredPassword.value = '';
+    isRegistering.value = false;
+    isVerifying.value = false;
+  };
 
   return {
     // State
@@ -392,6 +392,6 @@ export const useRegister = () => {
     register,
     verifyEmail,
     completeRegistration,
-    resetRegistration
-  }
-}
+    resetRegistration,
+  };
+};

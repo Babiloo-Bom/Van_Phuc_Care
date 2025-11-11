@@ -1,4 +1,4 @@
-export default defineEventHandler(async (event) => {
+export default defineEventHandler(async event => {
   try {
     
     // Test quiz seeding
@@ -28,13 +28,13 @@ export default defineEventHandler(async (event) => {
         quizSeeding: quizResponse.message,
         documentSeeding: documentResponse.message,
         quizFound: getQuizResponse.success,
-        documentsFound: getDocsResponse.data.documents.length
-      }
-    }
+        documentsFound: getDocsResponse.data.documents.length,
+      },
+    };
   } catch (error: any) {
     throw createError({
       statusCode: 500,
-      statusMessage: error.message || 'API test failed'
-    })
+      statusMessage: error.message || 'API test failed',
+    });
   }
-})
+});

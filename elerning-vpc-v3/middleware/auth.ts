@@ -25,7 +25,7 @@ export default defineNuxtRouteMiddleware(async (to, from) => {
 
   if (!authStore.isAuthenticated) {
     if (process.client) {
-      localStorage.setItem('redirect_after_login', to.fullPath)
+      localStorage.setItem('redirect_after_login', to.fullPath);
     }
 
     navigateTo('/login')
@@ -35,4 +35,4 @@ export default defineNuxtRouteMiddleware(async (to, from) => {
     authStore.logout()
     return navigateTo('/login')
   }
-})
+});

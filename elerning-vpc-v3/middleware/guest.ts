@@ -9,21 +9,21 @@
  */
 
 export default defineNuxtRouteMiddleware((to, from) => {
-  const authStore = useAuthStore()
+  const authStore = useAuthStore();
 
   // If user is already authenticated, redirect to dashboard
   if (authStore.isAuthenticated) {
     
     // Check if there's a saved redirect path
     if (process.client) {
-      const redirectPath = localStorage.getItem('redirect_after_login')
+      const redirectPath = localStorage.getItem('redirect_after_login');
       if (redirectPath && redirectPath !== '/login') {
-        localStorage.removeItem('redirect_after_login')
-        return navigateTo(redirectPath)
+        localStorage.removeItem('redirect_after_login');
+        return navigateTo(redirectPath);
       }
     }
 
     // Default redirect to dashboard
-    return navigateTo('/dashboard')
+    return navigateTo('/dashboard');
   }
-})
+});

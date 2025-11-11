@@ -13,13 +13,47 @@ class SessionController {
   public async create (req: Request, res: Response) {
     try {
       const { email, password } = req.body;
-      const user = await MongoDbUsers.model.findOne({ email: email, status: MongoDbUsers.STATUS_ENUM.ACTIVE });
-      if (!user || !await bcrypt.compare(password, user.get('password'))) {
+      console.log('🔍 User login attempt:', { email, hasPassword: !!password });
+      
+      // First check if user exists (regardless of status)
+      const userAnyStatus = await MongoDbUsers.model.findOne({ email: email });
+      if (!userAnyStatus) {
+        console.log('❌ User not found:', email);
         return sendError(res, 404, BadAuthentication);
       }
-      const accessToken = jwt.sign({ id: user.get('_id') }, settings.jwt.userSecret, { expiresIn: settings.jwt.ttl });
+      
+      console.log('🔍 User found:', { 
+        email: userAnyStatus.get('email'), 
+        status: userAnyStatus.get('status'),
+        hasPassword: !!userAnyStatus.get('password')
+      });
+      
+      // Check if user is active
+      if (userAnyStatus.get('status') !== MongoDbUsers.STATUS_ENUM.ACTIVE) {
+        console.log('❌ User not active:', { email, status: userAnyStatus.get('status') });
+        return sendError(res, 404, BadAuthentication);
+      }
+      
+      // Check password
+      const storedPassword = userAnyStatus.get('password');
+      if (!storedPassword) {
+        console.log('❌ User has no password hash');
+        return sendError(res, 404, BadAuthentication);
+      }
+      
+      const isPasswordValid = await bcrypt.compare(password, storedPassword);
+      console.log('🔍 Password check:', { isValid: isPasswordValid, hasStoredPassword: !!storedPassword });
+      
+      if (!isPasswordValid) {
+        console.log('❌ Password mismatch');
+        return sendError(res, 404, BadAuthentication);
+      }
+      
+      const accessToken = jwt.sign({ id: userAnyStatus.get('_id') }, settings.jwt.userSecret, { expiresIn: settings.jwt.ttl });
+      console.log('✅ Login successful:', email);
       sendSuccess(res, { accessToken, tokenExpireAt: settings.jwt.ttl });
     } catch (error: any) {
+      console.error('❌ Login error:', error);
       sendError(res, 500, error.message, error as Error);
     }
   }
@@ -45,12 +79,13 @@ class SessionController {
         const user = await MongoDbUsers.model.create({
           ...params,
           password: passwordEncode,
-          status: MongoDbUsers.STATUS_ENUM.INACTIVE,
+          status: MongoDbUsers.STATUS_ENUM.ACTIVE, // Tự động active sau khi đăng ký
         });
-        const otp = (Math.random() * (999999 - 100000) + 100000).toString().slice(0, 6);
-        await user.update({ verifyOtp: otp });
-        MailerService.verifyAccountOTP(user.get('email'), otp);
-        user.set('verifyOtp', null);
+        // Không cần gửi OTP và verify nữa vì đã auto active
+        // const otp = (Math.random() * (999999 - 100000) + 100000).toString().slice(0, 6);
+        // await user.update({ verifyOtp: otp });
+        // MailerService.verifyAccountOTP(user.get('email'), otp);
+        // user.set('verifyOtp', null);
         sendSuccess(res, { user });
       }
     } catch (error: any) {

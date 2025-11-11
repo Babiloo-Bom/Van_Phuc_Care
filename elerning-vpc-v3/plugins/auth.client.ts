@@ -4,33 +4,33 @@
  * Migrated from @nuxtjs/auth-next
  */
 
-export default defineNuxtPlugin((nuxtApp) => {
-  const authStore = useAuthStore()
+export default defineNuxtPlugin(nuxtApp => {
+  const authStore = useAuthStore();
 
   // Initialize auth state from localStorage
-  authStore.initAuth()
+  authStore.initAuth();
 
   // Handle navigation after login
   nuxtApp.hook('app:mounted', () => {
     if (authStore.isAuthenticated) {
-      const redirectPath = localStorage.getItem('redirect_after_login')
+      const redirectPath = localStorage.getItem('redirect_after_login');
       if (redirectPath && redirectPath !== '/login') {
-        localStorage.removeItem('redirect_after_login')
-        navigateTo(redirectPath)
+        localStorage.removeItem('redirect_after_login');
+        navigateTo(redirectPath);
       }
     }
-  })
+  });
 
   // Add global $fetch interceptor for API calls
   globalThis.$fetch = $fetch.create({
     onRequest({ request, options }) {
       // Add auth token to all API requests
       if (authStore.token) {
-        options.headers = options.headers || {}
+        options.headers = options.headers || {};
         options.headers = {
           ...options.headers,
-          'Authorization': `Bearer ${authStore.token}`
-        }
+          'Authorization': `Bearer ${authStore.token}`,
+        };
       }
     },
     onRequestError({ request, error }) {
@@ -38,15 +38,15 @@ export default defineNuxtPlugin((nuxtApp) => {
       if (error?.name === 'AbortError' || String(error?.message).includes('aborted')) {
         return
       }
-      console.error('Request error:', error)
+      console.error('Request error:', error);
     },
     onResponseError({ request, response }) {
       // Handle 401 - unauthorized
       if (response.status === 401) {
-        console.warn('Unauthorized, logging out...')
-        authStore.logout()
+        console.warn('Unauthorized, logging out...');
+        authStore.logout();
       }
-    }
-  })
-})
+    },
+  });
+});
 

@@ -13,25 +13,25 @@
  */
 
 export default defineNuxtRouteMiddleware((to, from) => {
-  const authStore = useAuthStore()
+  const authStore = useAuthStore();
 
   // Check if authenticated
   if (!authStore.isAuthenticated) {
     
     if (process.client) {
-      localStorage.setItem('redirect_after_login', to.fullPath)
+      localStorage.setItem('redirect_after_login', to.fullPath);
     }
     
-    return navigateTo('/login')
+    return navigateTo('/login');
   }
 
   // Check if user is admin
-  const userRole = authStore.user?.role
+  const userRole = authStore.user?.role;
 
   if (userRole !== 'admin' && userRole !== 'super_admin') {
     
     // Redirect to dashboard or unauthorized
-    return navigateTo('/unauthorized')
+    return navigateTo('/unauthorized');
   }
-})
+});
 

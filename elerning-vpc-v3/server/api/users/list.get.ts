@@ -3,34 +3,34 @@
  * Returns list of all users (with fallback to mock service)
  */
 
-export default defineEventHandler(async (event) => {
+export default defineEventHandler(async event => {
   try {
-    const config = useRuntimeConfig()
-    const query = getQuery(event)
+    const config = useRuntimeConfig();
+    const query = getQuery(event);
     
     // Call backend API
     const response = await $fetch(`${config.public.apiHost}/api/a/users-management`, {
       method: 'GET',
       query,
       headers: {
-        'Authorization': `Bearer ${getHeader(event, 'authorization')?.replace('Bearer ', '') || ''}`
-      }
-    })
+        'Authorization': `Bearer ${getHeader(event, 'authorization')?.replace('Bearer ', '') || ''}`,
+      },
+    });
 
     return {
       success: true,
       data: {
         users: response.data.users || [],
-        total: response.data.pagination?.total || 0
-      }
-    }
+        total: response.data.pagination?.total || 0,
+      },
+    };
 
   } catch (error: any) {
     
     // Fallback to mock service
     try {
-      const { MockUserService } = await import('~/server/services/MockUserService')
-      const users = await MockUserService.getAllUsers()
+      const { MockUserService } = await import('~/server/services/MockUserService');
+      const users = await MockUserService.getAllUsers();
       
       return {
         success: true,
@@ -46,18 +46,18 @@ export default defineEventHandler(async (event) => {
             role: user.role,
             permissions: user.permissions || [],
             createdAt: user.createdAt?.toISOString() || user.createdAt,
-            updatedAt: user.updatedAt?.toISOString() || user.updatedAt
+            updatedAt: user.updatedAt?.toISOString() || user.updatedAt,
           })),
-          total: users.length
-        }
-      }
+          total: users.length,
+        },
+      };
     } catch (mockError: any) {
       
       return {
         success: false,
-        error: 'Failed to get users from both backend and mock service'
-      }
+        error: 'Failed to get users from both backend and mock service',
+      };
     }
   }
-})
+});
 

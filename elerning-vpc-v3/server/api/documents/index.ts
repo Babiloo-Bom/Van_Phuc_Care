@@ -1,11 +1,11 @@
-export default defineEventHandler(async (event) => {
-  const method = getMethod(event)
-  const url = getRequestURL(event)
+export default defineEventHandler(async event => {
+  const method = getMethod(event);
+  const url = getRequestURL(event);
   
   try {
     if (method === 'GET') {
       // Extract path parameters from URL
-      const pathMatch = url.pathname.match(/\/api\/documents\/course\/([^\/]+)\/chapter\/([^\/]+)\/lesson\/([^\/]+)/)
+      const pathMatch = url.pathname.match(/\/api\/documents\/course\/([^\/]+)\/chapter\/([^\/]+)\/lesson\/([^\/]+)/);
       
       if (!pathMatch) {
         throw createError({
@@ -26,12 +26,12 @@ export default defineEventHandler(async (event) => {
     
     throw createError({
       statusCode: 405,
-      statusMessage: 'Method not allowed'
-    })
+      statusMessage: 'Method not allowed',
+    });
   } catch (error: any) {
     throw createError({
       statusCode: error.statusCode || 500,
-      statusMessage: error.statusMessage || 'Internal server error'
-    })
+      statusMessage: error.statusMessage || 'Internal server error',
+    });
   }
-})
+});

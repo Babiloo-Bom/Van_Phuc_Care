@@ -3,43 +3,43 @@
  * Returns user statistics and analytics
  */
 
-export default defineEventHandler(async (event) => {
+export default defineEventHandler(async event => {
   try {
-    const config = useRuntimeConfig()
+    const config = useRuntimeConfig();
     
     // Call backend API
     const response = await $fetch(`${config.public.apiHost}/api/a/users-management/stats`, {
       method: 'GET',
       headers: {
-        'Authorization': `Bearer ${getHeader(event, 'authorization')?.replace('Bearer ', '') || ''}`
-      }
-    })
+        'Authorization': `Bearer ${getHeader(event, 'authorization')?.replace('Bearer ', '') || ''}`,
+      },
+    });
 
     return {
       success: true,
-      data: response.data
-    }
+      data: response.data,
+    };
 
   } catch (error: any) {
-    console.error('❌ Get user stats from backend failed:', error)
+    console.error('❌ Get user stats from backend failed:', error);
     
     // Fallback to mock service
     try {
-      const { MockUserService } = await import('~/server/services/MockUserService')
-      const stats = await MockUserService.getUserStats()
+      const { MockUserService } = await import('~/server/services/MockUserService');
+      const stats = await MockUserService.getUserStats();
       
       return {
         success: true,
-        data: stats
-      }
+        data: stats,
+      };
     } catch (mockError: any) {
-      console.error('❌ Mock service also failed:', mockError)
+      console.error('❌ Mock service also failed:', mockError);
       
       return {
         success: false,
-        error: 'Failed to get user statistics from both backend and mock service'
-      }
+        error: 'Failed to get user statistics from both backend and mock service',
+      };
     }
   }
-})
+});
 

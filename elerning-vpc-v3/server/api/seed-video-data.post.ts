@@ -1,4 +1,4 @@
-export default defineEventHandler(async (event) => {
+export default defineEventHandler(async event => {
   try {
     
     // Sample video data for testing
@@ -21,7 +21,7 @@ export default defineEventHandler(async (event) => {
                   quality: '1080',
                   duration: 2400, // 40 minutes
                   content: '<p>Python là ngôn ngữ lập trình đa năng, dễ học và mạnh mẽ...</p>',
-                  videoIframe: `<iframe width="100%" height="400" src="https://www.youtube.com/embed/dQw4w9WgXcQ" frameborder="0" allowfullscreen></iframe>`
+                  videoIframe: `<iframe width="100%" height="400" src="https://www.youtube.com/embed/dQw4w9WgXcQ" frameborder="0" allowfullscreen></iframe>`,
                 },
                 {
                   title: 'Biến và kiểu dữ liệu',
@@ -33,9 +33,9 @@ export default defineEventHandler(async (event) => {
                   quality: '1080',
                   duration: 1800, // 30 minutes
                   content: '<p>Biến trong Python được khai báo đơn giản và linh hoạt...</p>',
-                  videoIframe: `<iframe width="100%" height="400" src="https://www.youtube.com/embed/dQw4w9WgXcQ" frameborder="0" allowfullscreen></iframe>`
-                }
-              ]
+                  videoIframe: `<iframe width="100%" height="400" src="https://www.youtube.com/embed/dQw4w9WgXcQ" frameborder="0" allowfullscreen></iframe>`,
+                },
+              ],
             },
             {
               title: 'Cấu trúc điều khiển',
@@ -51,36 +51,36 @@ export default defineEventHandler(async (event) => {
                   quality: '1080',
                   duration: 2100, // 35 minutes
                   content: '<p>Vòng lặp giúp thực hiện một đoạn code nhiều lần...</p>',
-                  videoIframe: `<iframe width="100%" height="400" src="https://www.youtube.com/embed/dQw4w9WgXcQ" frameborder="0" allowfullscreen></iframe>`
-                }
-              ]
-            }
-          ]
-        }
-      ]
-    }
+                  videoIframe: `<iframe width="100%" height="400" src="https://www.youtube.com/embed/dQw4w9WgXcQ" frameborder="0" allowfullscreen></iframe>`,
+                },
+              ],
+            },
+          ],
+        },
+      ],
+    };
     
     // Update course with video data
     const response = await $fetch(`${process.env.API_BASE_URL}/api/a/courses/68fcdc39f681bccec39c8ef0/chapters`, {
       method: 'PUT',
       headers: {
-        'Content-Type': 'application/json'
+        'Content-Type': 'application/json',
       },
       body: {
-        chapters: videoData.courses[0].chapters
-      }
-    })
+        chapters: videoData.courses[0].chapters,
+      },
+    });
     
     
     return {
       success: true,
       message: 'Video data seeded successfully',
-      data: videoData
-    }
+      data: videoData,
+    };
   } catch (error: any) {
     throw createError({
       statusCode: 500,
-      statusMessage: error.message || 'Failed to seed video data'
-    })
+      statusMessage: error.message || 'Failed to seed video data',
+    });
   }
-})
+});

@@ -1,20 +1,28 @@
 <template>
   <div class="reset-password-container">
-    <!-- Logo (mobile absolute positioning) -->
-    <div class="logo-section">
-        <img src="/images/logo_van_phuc.png" alt="Van Phuc Care" class="logo" />
-    </div>
-
-    <!-- Title and Subtitle (mobile absolute positioning) -->
-    <div class="title-section">
-      <h1 class="main-title">Tạo mật khẩu mới</h1>
-      <p class="subtitle">Chào mừng bạn đến với Vạn Phúc Care</p>
-    </div>
-
     <!-- Left Side - Reset Password Form -->
     <div class="reset-password-form-section">
       <div class="content-wrapper">
-    <!-- Reset Password Form -->
+        <!-- Logo (mobile absolute positioning) -->
+        <div class="logo-section">
+          <img
+            src="/images/logo-vanphuc-new-mobile.png"
+            alt="Van Phuc Care"
+            class="lg:hidden logo"
+          />
+          <img
+            src="/images/logo-vanphuc-new.png"
+            alt="Van Phuc Care"
+            class="hidden lg:block logo"
+          />
+        </div>
+
+        <!-- Title and Subtitle (mobile absolute positioning) -->
+        <div class="title-section">
+          <h1 class="main-title">Tạo mật khẩu mới</h1>
+          <p class="subtitle">Cập nhật thay đổi mật khẩu</p>
+        </div>
+        <!-- Reset Password Form -->
         <form @submit.prevent="handleSubmit" class="reset-password-form">
           <!-- New Password Field -->
           <div class="form-group">
@@ -32,13 +40,46 @@
                 @click="showNewPassword = !showNewPassword"
                 class="password-toggle"
               >
-                <svg v-if="showNewPassword" width="20" height="20" viewBox="0 0 24 24" fill="none">
-                  <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z" stroke="currentColor" stroke-width="2"/>
-                  <circle cx="12" cy="12" r="3" stroke="currentColor" stroke-width="2"/>
+                <svg
+                  v-if="showNewPassword"
+                  width="20"
+                  height="20"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                >
+                  <path
+                    d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"
+                    stroke="currentColor"
+                    stroke-width="2"
+                  />
+                  <circle
+                    cx="12"
+                    cy="12"
+                    r="3"
+                    stroke="currentColor"
+                    stroke-width="2"
+                  />
                 </svg>
-                <svg v-else width="20" height="20" viewBox="0 0 24 24" fill="none">
-                  <path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24" stroke="currentColor" stroke-width="2"/>
-                  <line x1="1" y1="1" x2="23" y2="23" stroke="currentColor" stroke-width="2"/>
+                <svg
+                  v-else
+                  width="20"
+                  height="20"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                >
+                  <path
+                    d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"
+                    stroke="currentColor"
+                    stroke-width="2"
+                  />
+                  <line
+                    x1="1"
+                    y1="1"
+                    x2="23"
+                    y2="23"
+                    stroke="currentColor"
+                    stroke-width="2"
+                  />
                 </svg>
               </button>
             </div>
@@ -60,21 +101,58 @@
                 @click="showConfirmPassword = !showConfirmPassword"
                 class="password-toggle"
               >
-                <svg v-if="showConfirmPassword" width="20" height="20" viewBox="0 0 24 24" fill="none">
-                  <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z" stroke="currentColor" stroke-width="2"/>
-                  <circle cx="12" cy="12" r="3" stroke="currentColor" stroke-width="2"/>
+                <svg
+                  v-if="showConfirmPassword"
+                  width="20"
+                  height="20"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                >
+                  <path
+                    d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"
+                    stroke="currentColor"
+                    stroke-width="2"
+                  />
+                  <circle
+                    cx="12"
+                    cy="12"
+                    r="3"
+                    stroke="currentColor"
+                    stroke-width="2"
+                  />
                 </svg>
-                <svg v-else width="20" height="20" viewBox="0 0 24 24" fill="none">
-                  <path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24" stroke="currentColor" stroke-width="2"/>
-                  <line x1="1" y1="1" x2="23" y2="23" stroke="currentColor" stroke-width="2"/>
+                <svg
+                  v-else
+                  width="20"
+                  height="20"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                >
+                  <path
+                    d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"
+                    stroke="currentColor"
+                    stroke-width="2"
+                  />
+                  <line
+                    x1="1"
+                    y1="1"
+                    x2="23"
+                    y2="23"
+                    stroke="currentColor"
+                    stroke-width="2"
+                  />
                 </svg>
               </button>
             </div>
           </div>
 
           <!-- Submit Button -->
-          <button type="submit" :disabled="loading || !isFormValid" class="submit-btn">
-            {{ loading ? 'Đang xử lý...' : 'Tạo mật khẩu mới' }}
+          <button
+            type="submit"
+            :disabled="loading || !isFormValid"
+            class="submit-btn"
+          >
+            {{ loading ? "Đang xử lý..." : "Tạo mật khẩu mới" }}
           </button>
 
           <!-- Login Link -->
@@ -97,14 +175,19 @@
 
       <!-- Dragon Banner -->
       <div class="dragon-banner">
-        <img src="/images/dragon_banner.png" alt="Dragon Character" class="dragon-image" />
+        <img
+          src="/images/dragon_banner.png"
+          alt="Dragon Character"
+          class="dragon-image"
+        />
       </div>
 
       <!-- Marketing Text -->
       <div class="marketing-text">
         <h2 class="marketing-title">Hành trình cùng mẹ, trải đầy yêu thương</h2>
         <p class="marketing-description">
-          Vạn Phúc Care là người bạn đồng hành đáng tin cậy của cha mẹ trong hành trình chăm sóc sức khoẻ Mẹ và Bé
+          Vạn Phúc Care là người bạn đồng hành đáng tin cậy của cha mẹ trong
+          hành trình chăm sóc sức khoẻ Mẹ và Bé
         </p>
       </div>
     </div>
@@ -112,77 +195,79 @@
 </template>
 
 <script setup lang="ts">
-import { ref, reactive, computed } from 'vue'
-import { useAuthStore } from '~/stores/auth'
-import { message } from 'ant-design-vue'
+import { ref, reactive, computed } from "vue";
+import { useAuthStore } from "~/stores/auth";
+import { message } from "ant-design-vue";
 
 // Use auth layout
 definePageMeta({
-  layout: 'auth'
-})
+  layout: "auth",
+});
 
 // SEO
 useHead({
-  title: 'Lấy lại mật khẩu - Van Phuc Care E-Learning',
+  title: "Lấy lại mật khẩu - Van Phuc Care E-Learning",
   meta: [
     {
-      name: 'description',
-      content: 'Tạo mật khẩu mới tại Van Phuc Care E-Learning',
+      name: "description",
+      content: "Tạo mật khẩu mới tại Van Phuc Care E-Learning",
     },
   ],
-})
+});
 
-const authStore = useAuthStore()
-const loading = ref(false)
-const showNewPassword = ref(false)
-const showConfirmPassword = ref(false)
+const authStore = useAuthStore();
+const loading = ref(false);
+const showNewPassword = ref(false);
+const showConfirmPassword = ref(false);
 
 const form = reactive({
-  newPassword: '',
-  confirmPassword: '',
-})
+  newPassword: "",
+  confirmPassword: "",
+});
 
 // Form validation
 const isFormValid = computed(() => {
-  return form.newPassword.length >= 6 && 
-         form.confirmPassword.length >= 6 && 
-         form.newPassword === form.confirmPassword
-})
+  return (
+    form.newPassword.length >= 6 &&
+    form.confirmPassword.length >= 6 &&
+    form.newPassword === form.confirmPassword
+  );
+});
 
 const handleSubmit = async () => {
   if (!isFormValid.value) {
-    message.error('Mật khẩu phải có ít nhất 6 ký tự và khớp nhau')
-    return
+    message.error("Mật khẩu phải có ít nhất 6 ký tự và khớp nhau");
+    return;
   }
 
   try {
-    loading.value = true
-    
+    loading.value = true;
+
     // Get token from URL params
-    const route = useRoute()
-    const token = route.query.token as string
-    
+    const route = useRoute();
+    const token = route.query.token as string;
+
     if (!token) {
-      message.error('Token không hợp lệ')
-      return
+      message.error("Token không hợp lệ");
+      return;
     }
-    
+
     // Call reset password API
-    const result = await authStore.resetPassword(token, form.newPassword)
+    const result = await authStore.resetPassword(token, form.newPassword);
 
     if (result.success) {
-      message.success('Mật khẩu đã được cập nhật thành công')
+      message.success("Mật khẩu đã được cập nhật thành công");
       // Redirect to login page
-      await navigateTo('/login')
+      await navigateTo("/login");
     } else {
-      message.error(result.error || 'Không thể cập nhật mật khẩu')
+      message.error(result.error || "Không thể cập nhật mật khẩu");
     }
   } catch (error: any) {
     message.error('Không thể cập nhật mật khẩu')
   } finally {
-    loading.value = false
+    loading.value = false;
   }
-}
+};
 </script>
 
 <style scoped>
@@ -191,8 +276,8 @@ const handleSubmit = async () => {
   width: 100vw;
   height: 100vh;
   display: flex;
-  background: #FFFFFF;
-  font-family: 'SVN-Gilroy', sans-serif;
+  background: #ffffff;
+  font-family: "SVN-Gilroy", sans-serif;
   overflow: hidden;
 }
 
@@ -201,7 +286,7 @@ const handleSubmit = async () => {
   position: relative;
   width: 50%;
   height: 100vh;
-  background: #FFFFFF;
+  background: #ffffff;
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -235,12 +320,12 @@ const handleSubmit = async () => {
 .title-section {
   position: relative;
   width: 100%;
-  text-align: center;
-  margin-top: 20px;
+  text-align: left;
+  margin-bottom: 20px;
 }
 
 .main-title {
-  font-family: 'SVN-Gilroy';
+  font-family: "SVN-Gilroy";
   font-style: normal;
   font-weight: 700;
   font-size: 32px;
@@ -252,13 +337,13 @@ const handleSubmit = async () => {
 }
 
 .subtitle {
-  font-family: 'SVN-Gilroy';
+  font-family: "SVN-Gilroy";
   font-style: normal;
   font-weight: 500;
   font-size: 16px;
   line-height: 24px;
   letter-spacing: 0.3px;
-  color: #4A4A4A;
+  color: #4a4a4a;
   margin: 0;
 }
 
@@ -280,13 +365,13 @@ const handleSubmit = async () => {
 }
 
 .form-label {
-  font-family: 'SVN-Gilroy';
+  font-family: "SVN-Gilroy";
   font-style: normal;
   font-weight: 700;
   font-size: 20px;
   line-height: 24px;
   letter-spacing: 0.3px;
-  color: #4A4A4A;
+  color: #4a4a4a;
 }
 
 .input-container {
@@ -298,8 +383,8 @@ const handleSubmit = async () => {
   gap: 10px;
   width: 100%;
   height: 54px;
-  background: #FAFBFF;
-  border: 1px solid #D9D9D9;
+  background: #fafbff;
+  border: 1px solid #d9d9d9;
   border-radius: 12px;
   box-sizing: border-box;
 }
@@ -308,18 +393,18 @@ const handleSubmit = async () => {
   flex: 1;
   border: none;
   background: transparent;
-  font-family: 'SVN-Gilroy';
+  font-family: "SVN-Gilroy";
   font-style: normal;
   font-weight: 500;
   font-size: 16px;
   line-height: 24px;
   letter-spacing: 0.3px;
-  color: #4A4A4A;
+  color: #4a4a4a;
   outline: none;
 }
 
 .form-input::placeholder {
-  color: #8C8C8C;
+  color: #8c8c8c;
   text-align: left;
 }
 
@@ -328,7 +413,7 @@ const handleSubmit = async () => {
   border: none;
   cursor: pointer;
   padding: 4px;
-  color: #8C8C8C;
+  color: #8c8c8c;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -336,7 +421,7 @@ const handleSubmit = async () => {
 }
 
 .password-toggle:hover {
-  color: #4A4A4A;
+  color: #4a4a4a;
 }
 
 .submit-btn {
@@ -348,7 +433,7 @@ const handleSubmit = async () => {
   gap: 10px;
   width: 100%;
   height: 60px;
-  background: #317BC4;
+  background: #317bc4;
   border-radius: 12px;
   border: none;
   cursor: pointer;
@@ -366,14 +451,14 @@ const handleSubmit = async () => {
 }
 
 .submit-btn span {
-  font-family: 'SVN-Gilroy';
+  font-family: "SVN-Gilroy";
   font-style: normal;
   font-weight: 700;
   font-size: 20px;
   line-height: 30px;
   text-align: center;
   letter-spacing: 0.3px;
-  color: #FFFFFF;
+  color: #ffffff;
 }
 
 .login-link {
@@ -388,25 +473,25 @@ const handleSubmit = async () => {
 }
 
 .login-link span {
-  font-family: 'SVN-Gilroy';
+  font-family: "SVN-Gilroy";
   font-style: italic;
   font-weight: 600;
   font-size: 13px;
   line-height: 24px;
   text-align: center;
   letter-spacing: 0.3px;
-  color: #4A4A4A;
+  color: #4a4a4a;
 }
 
 .login-text {
-  font-family: 'SVN-Gilroy';
+  font-family: "SVN-Gilroy";
   font-style: italic;
   font-weight: 600;
   font-size: 13px;
   line-height: 24px;
   text-align: center;
   letter-spacing: 0.3px;
-  color: #317BC4;
+  color: #317bc4;
   text-decoration: none;
 }
 
@@ -419,7 +504,7 @@ const handleSubmit = async () => {
   position: relative;
   width: 50%;
   height: 100vh;
-  background: #317BC4;
+  background: #317bc4;
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -439,7 +524,11 @@ const handleSubmit = async () => {
 .circle {
   position: absolute;
   border-radius: 50%;
-  background: linear-gradient(180deg, rgba(59, 140, 220, 0.9) 0%, rgba(73, 145, 216, 0.351) 100%);
+  background: linear-gradient(
+    180deg,
+    rgba(59, 140, 220, 0.9) 0%,
+    rgba(73, 145, 216, 0.351) 100%
+  );
 }
 
 .circle-1 {
@@ -483,7 +572,8 @@ const handleSubmit = async () => {
 
 .marketing-text {
   position: absolute;
-  width: 526.45px;
+  width: 90%;
+  max-width: 526.45px;
   left: 50%;
   top: 75%;
   transform: translateX(-50%);
@@ -492,117 +582,121 @@ const handleSubmit = async () => {
 }
 
 .marketing-title {
-  font-family: 'SVN-Gilroy';
+  font-family: "SVN-Gilroy";
   font-style: normal;
   font-weight: 700;
   font-size: 24px;
   line-height: 36px;
   letter-spacing: 0.3px;
-  color: #FFFFFF;
+  color: #ffffff;
   margin: 0 0 12px 0;
 }
 
 .marketing-description {
-  font-family: 'SVN-Gilroy';
+  font-family: "SVN-Gilroy";
   font-style: italic;
   font-weight: 500;
   font-size: 16px;
   line-height: 24px;
   text-align: center;
   letter-spacing: 0.3px;
-  color: #FFFFFF;
+  color: #ffffff;
   margin: 0;
 }
 
 /* Responsive Design */
-@media (max-width: 1024px) {
-  .reset-password-container {
-    flex-direction: column;
-    height: auto;
-    min-height: 100vh;
-  }
-  
+@media (max-width: 1023.5px) {
   .reset-password-form-section,
   .marketing-section {
     width: 100%;
     height: 50vh;
     min-height: 500px;
   }
-  
+
   .reset-password-form-section {
     padding: 40px 20px;
   }
-  
+
   .logo-section,
   .title-section,
   .reset-password-form {
     position: static;
     margin-bottom: 20px;
   }
-  
+
   .background-circles,
   .dragon-banner,
   .marketing-text {
     display: none;
   }
-}
 
-@media (max-width: 768px) {
   .reset-password-container {
     position: relative;
     width: 375px;
-    height: 812px;
     margin: 0 auto;
     flex-direction: column;
   }
 
-  .marketing-section { display: none; }
+  .marketing-section {
+    display: none;
+  }
 
   .reset-password-form-section {
     position: absolute;
     width: 343px;
     height: 453.04px;
     left: 16px;
-    top: calc(50% - 453.04px/2 - 12px);
+    top: calc(50% - 453.04px / 2 - 12px);
     background: transparent;
     padding: 0;
   }
 
-  .content-wrapper { width: 100%; gap: 0; padding: 0; }
+  .content-wrapper {
+    width: 100%;
+    gap: 0;
+    padding: 0;
+  }
 
   /* Logo */
   .logo-section {
-    position: absolute;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+  .logo {
     width: 80.1px;
     height: 62.09px;
-    left: calc(50% - 80.1px/2 - 1.14px);
-    top: 167.48px;
-    text-align: center;
   }
-  .logo { width: 80.1px; height: 62.09px; }
 
   /* Title group */
   .title-section {
-    position: absolute;
-    width: 265px;
-    height: 56px;
-    left: 55px;
-    top: 243.56px;
     display: flex;
     flex-direction: column;
-    align-items: flex-start;
+    align-items: center;
     padding: 0;
   }
-  .main-title { width: 265px; height: 32px; font-size: 24px; line-height: 32px; text-align: left; letter-spacing: 0.3px; margin: 0; }
-  .subtitle { width: 265px; height: 24px; font-size: 14px; line-height: 24px; letter-spacing: 0.3px; margin: 0; text-align: left; }
+  .main-title {
+    width: 265px;
+    height: 32px;
+    font-size: 24px;
+    line-height: 32px;
+    text-align: center;
+    letter-spacing: 0.3px;
+    margin: 0;
+  }
+  .subtitle {
+    width: 265px;
+    height: 24px;
+    font-size: 14px;
+    line-height: 24px;
+    letter-spacing: 0.3px;
+    margin: 0;
+    text-align: center;
+  }
 
   /* Form */
   .reset-password-form {
-    position: absolute;
     width: 343px;
-    height: 296px;
-    left: 16px;
-    top: 324.52px;
     display: flex;
     flex-direction: column;
     align-items: flex-start;
@@ -610,14 +704,33 @@ const handleSubmit = async () => {
   }
 
   /* First field block */
-  .form-group { width: 343px; }
-  .form-label { width: 343px; font-size: 16px; }
-  .input-container { width: 343px; height: 48px; padding: 15px 20px; }
-  .form-input { font-size: 14px; }
+  .form-group {
+    width: 343px;
+  }
+  .form-label {
+    width: 343px;
+    font-size: 16px;
+  }
+  .input-container {
+    width: 343px;
+    height: 48px;
+    padding: 15px 20px;
+  }
+  .form-input {
+    font-size: 14px;
+  }
 
   /* Submit */
-  .submit-btn { width: 343px; height: 52px; align-self: flex-start; }
+  .submit-btn {
+    width: 343px;
+    height: 52px;
+    align-self: flex-start;
+  }
 
-  .login-link { width: 242px; height: 24px; align-self: flex-start; }
+  .login-link {
+    width: 242px;
+    height: 24px;
+    align-self: flex-start;
+  }
 }
 </style>
