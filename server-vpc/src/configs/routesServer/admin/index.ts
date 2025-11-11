@@ -27,9 +27,13 @@ import DocumentsRouter from './Documents';
 import UpdateVideoRouter from './UpdateVideo';
 import LessonsRouter from './Lessons';
 import PasswordsRouter from './Passwords';
+import TicketsRouter from './Tickets';
+import DashboardRouter from './Dashboard';
+import ServicesRouter from './Services';
 
 const router = Router();
 
+router.use('/dashboard', adminPassport.authenticate('jwt', { session: false }), DashboardRouter);
 router.use('/categories', adminPassport.authenticate('jwt', { session: false }), CategoryRouter);
 router.use('/faqs', adminPassport.authenticate('jwt', { session: false }), FaqRouter);
 router.use('/courses', CoursesRouter);
@@ -41,6 +45,7 @@ router.use('/products', adminPassport.authenticate('jwt', { session: false }), P
 router.use('/product-collections', adminPassport.authenticate('jwt', { session: false }), ProductCollectionsRouter);
 router.use('/product-reviews', adminPassport.authenticate('jwt', { session: false }), ProductReviewsRouter);
 router.use('/customers', adminPassport.authenticate('jwt', { session: false }), CustomersRouter);
+router.use('/services', adminPassport.authenticate('jwt', { session: false }), ServicesRouter);
 router.use('/orders', adminPassport.authenticate('jwt', { session: false }), OrdersRouter);
 router.use('/cart', CartRouter); // Public cart routes
 router.use('/reviews', ReviewsRouter); // Public reviews routes
@@ -50,6 +55,7 @@ router.use('/access-permissions', adminPassport.authenticate('jwt', { session: f
 router.use('/health-book', adminPassport.authenticate('jwt', { session: false }), HealthBookRouter);
 router.use('/transactions', adminPassport.authenticate('jwt', { session: false }), TransactionsRouter);
 router.use('/schedule-vaccin', adminPassport.authenticate('jwt', { session: false }), ScheduleVaccinRouter);
+router.use('/tickets', adminPassport.authenticate('jwt', { session: false }), TicketsRouter);
 router.use('/coupons', CouponsRouter); // Public coupon routes
 router.use('/orders', OrdersRouter); // Public order routes
 router.use('/progress', ProgressRouter); // Progress tracking routes

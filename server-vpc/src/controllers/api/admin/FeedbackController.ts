@@ -33,7 +33,15 @@ class BusinessAreasController {
       }
       const feedbacks = await MongoDbFeedbacks.model.find(queryString).skip(offset).limit(limit).sort({ createdAt: -1 });
       const total = await MongoDbFeedbacks.model.find(queryString).countDocuments();
-      sendSuccess(res, { feedbacks, pagination: { total, page, limit } });
+      // Standardized pagination response format
+      sendSuccess(res, { 
+        data: feedbacks, 
+        pagination: { 
+          page, 
+          pageSize: limit, 
+          total 
+        } 
+      });
     } catch (error: any) {
       sendError(res, 500, error.message, error as Error);
     }
