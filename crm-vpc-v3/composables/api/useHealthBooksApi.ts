@@ -5,91 +5,111 @@
  * All health book-related API calls
  */
 
-import type { HealthBook, BaseQueryParams, PaginatedResponse } from '~/types/api'
+import type {
+  HealthBook,
+  HealthBookResponse,
+  HealthBooksListResponse,
+  TemperatureHistoryResponse,
+  HealthBookQueryParams,
+} from '~/types/api';
 
 export const useHealthBooksApi = () => {
-  const apiClient = useApiClient()
+  const apiClient = useApiClient();
 
   return {
     /**
-     * Get health books list
+     * Get health books list with pagination
+     * GET /api/a/health-book/all
      */
-    async getHealthBooks(params?: BaseQueryParams) {
-      return apiClient.get<PaginatedResponse<HealthBook>>('/api/a/health-book/all', {
+    async getHealthBooks(params?: HealthBookQueryParams) {
+      return apiClient.get<HealthBooksListResponse>('/api/a/health-book/all', {
         params,
-        showError: false
-      })
+        showError: false,
+      });
     },
 
     /**
      * Get health book by ID
+     * GET /api/a/health-book/:id
      */
-    async getHealthBook(id: string) {
-      return apiClient.get<{ healthBook: HealthBook }>(`/api/a/health-book/${id}`)
+    async getHealthBook(id: string, date?: string) {
+      return apiClient.get<HealthBookResponse>(`/api/a/health-book/${id}`, {
+        params: date ? { date } : undefined,
+      });
     },
 
     /**
-     * Get health book by customer and date
+     * Get health book by customer ID/email and date
+     * GET /api/a/health-book/by-date/:customerId
      */
     async getHealthBookByDate(customerId: string, date: string) {
-      return apiClient.get<{ healthBook: HealthBook }>(`/api/a/health-book/byDate/${customerId}`, {
-        params: { date }
-      })
+      return apiClient.get<HealthBookResponse>(`/api/a/health-book/by-date/${customerId}`, {
+        params: { date },
+      });
+    },
+
+    /**
+     * Get current user's health book (show endpoint)
+     * GET /api/a/health-book/show
+     */
+    async getCurrentHealthBook(date?: string) {
+      return apiClient.get<HealthBookResponse>('/api/a/health-book/show', {
+        params: date ? { date } : undefined,
+      });
+    },
+
+    /**
+     * Get temperature history (last 30 records before date)
+     * GET /api/a/health-book/temperature
+     */
+    async getTemperatureHistory(date: string) {
+      return apiClient.get<TemperatureHistoryResponse>('/api/a/health-book/temperature', {
+        params: { date },
+      });
     },
 
     /**
      * Create new health book
+     * POST /api/a/health-book
      */
-    async createHealthBook(data: Partial<HealthBook>) {
-      return apiClient.post<{ healthBook: HealthBook }>('/api/a/health-book', data, {
-        errorMessage: 'Không thể tạo sổ sức khỏe'
-      })
+    async createHealthBook(data: Partial<HealthBook> & { 
+      customerEmail: string
+      recordedAt: string 
+    }) {
+      return apiClient.post<{ status: boolean }>('/api/a/health-book', data, {
+        errorMessage: 'Không thể tạo sổ sức khỏe',
+      });
     },
 
     /**
      * Update health book
+     * PATCH /api/a/health-book/:id
      */
     async updateHealthBook(id: string, data: Partial<HealthBook>) {
-      return apiClient.patch<{ healthBook: HealthBook }>(`/api/a/health-book/${id}`, data, {
-        errorMessage: 'Không thể cập nhật sổ sức khỏe'
-      })
+      return apiClient.patch<{ healthBookCheck: HealthBook }>(`/api/a/health-book/${id}`, data, {
+        errorMessage: 'Không thể cập nhật sổ sức khỏe',
+      });
     },
 
     /**
      * Delete health book
+     * DELETE /api/a/health-book/:id
      */
     async deleteHealthBook(id: string) {
-      return apiClient.delete(`/api/a/health-book/${id}`, {
-        errorMessage: 'Không thể xóa sổ sức khỏe'
-      })
-    },
-
-    /**
-     * Get health book comments
-     */
-    async getComments(healthBookId: string) {
-      return apiClient.get('/api/a/comments', {
-        params: { healthBookId }
-      })
+      return apiClient.delete<{ status: boolean }>(`/api/a/health-book/${id}`, {
+        errorMessage: 'Không thể xóa sổ sức khỏe',
+      });
     },
 
     /**
      * Add comment to health book
+     * POST /api/a/health-book/comment
      */
-    async addComment(healthBookId: string, content: string) {
-      return apiClient.post('/api/a/comments', { healthBookId, content }, {
-        errorMessage: 'Không thể thêm ghi chú'
-      })
+    async addComment(data: { healthBookId: string; content: string }) {
+      return apiClient.post<{ status: boolean }>('/api/a/health-book/comment', data, {
+        errorMessage: 'Không thể thêm ghi chú',
+      });
     },
-
-    /**
-     * Delete comment
-     */
-    async deleteComment(id: string) {
-      return apiClient.delete(`/api/a/comments/${id}`, {
-        errorMessage: 'Không thể xóa ghi chú'
-      })
-    }
-  }
-}
+  };
+};
 

@@ -9,7 +9,7 @@
 // Common Response Types
 // ============================================
 
-export interface ApiResponse<T = any> {
+export interface ApiResponse<T = unknown> {
   status: boolean
   data?: T
   message?: string
@@ -29,7 +29,7 @@ export interface PaginationMeta {
   totalPages: number
 }
 
-export interface PaginatedResponse<T = any> {
+export interface PaginatedResponse<T = unknown> {
   data: T[]
   pagination: PaginationMeta
 }
@@ -40,10 +40,10 @@ export interface PaginatedResponse<T = any> {
 
 export interface ApiRequestOptions {
   // Query parameters
-  params?: Record<string, any>
+  params?: Record<string, string | number | boolean | undefined>
   
   // Request body
-  body?: any
+  body?: Record<string, unknown>
   
   // Custom headers
   headers?: Record<string, string>
@@ -178,14 +178,76 @@ export interface Course {
 export interface HealthBook {
   _id: string
   customerId: string
+  customerEmail?: string
   name: string
   dob: string
+  avatar?: string
   gender: 'male' | 'female'
   weight?: string
   height?: string
+  skinConditions?: string
+  tooth?: {
+    count: string
+    descriptions: string
+  }
+  nutrition?: {
+    count: string
+    descriptions: string
+  }
+  sleep?: {
+    time: string
+    descriptions: string
+  }
+  frequencyOfDefecation?: string
+  fecalCondition?: string
+  digestiveProblems?: string
   healthCondition?: string
+  vaccination?: string
+  vaccinationDate?: string
+  vaccinationContent?: string
+  exerciseAndSkills?: string
+  method?: {
+    status: string
+    descriptions: string
+  }
+  note?: string
+  temperature?: string
+  recordedAt?: string
+  isAcceptedHealthBook?: boolean
+  createdBy?: {
+    name: string
+  }
   domain: string
+  origin?: string
   createdAt: string
+  updatedAt: string
+}
+
+// Temperature History Item from aggregate query
+export interface TemperatureRecord {
+  _id: string
+  temperature: string
+  recordedAt: string
+  createdAt: string
+}
+
+// Health Book API Responses
+export interface HealthBookResponse {
+  message?: string
+  data: HealthBook | Record<string, never> // Can be empty object {}
+}
+
+export interface HealthBooksListResponse {
+  message?: string
+  data: {
+    pagination: PaginationMeta
+    healthBooks: HealthBook[]
+  }
+}
+
+export interface TemperatureHistoryResponse {
+  message?: string
+  data: TemperatureRecord[]
 }
 
 export interface Transaction {
@@ -229,11 +291,17 @@ export interface BaseQueryParams {
   limit?: number
   searchKey?: string
   status?: string
+  [key: string]: string | number | boolean | undefined
 }
 
 export interface CustomerQueryParams extends BaseQueryParams {
   city?: string
   gender?: string
+}
+
+export interface HealthBookQueryParams extends BaseQueryParams {
+  category?: string
+  date?: string
 }
 
 export interface ProductQueryParams extends BaseQueryParams {

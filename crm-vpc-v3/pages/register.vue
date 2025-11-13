@@ -5,13 +5,22 @@
       <div class="content-wrapper">
         <!-- Logo -->
         <div class="logo-section">
-          <img src="/images/logo_van_phuc.png" alt="Van Phuc Care" class="logo" />
+          <img
+            src="/images/logo-vanphuc-new-mobile.png"
+            alt="Van Phuc Care"
+            class="lg:hidden logo"
+          />
+          <img
+            src="/images/logo-vanphuc-new.png"
+            alt="Van Phuc Care"
+            class="hidden lg:block logo"
+          />
         </div>
 
         <!-- Title and Subtitle -->
         <div class="title-section">
           <h1 class="main-title">Đăng ký</h1>
-          <p class="subtitle">Chào mừng bạn đến với Vạn Phúc Care</p>
+          <p class="subtitle">Tạo mới tài khoản chỉ cần 30 giây!</p>
         </div>
 
         <!-- Registration Form -->
@@ -274,15 +283,20 @@ const handleSuccessClose = () => {
   display: flex;
   flex-direction: column;
   align-items: flex-start;
-  gap: 36px;
+  gap: 20px;
+  padding-top: 60px;
+  padding-bottom: 30px;
 }
 
 .logo-section {
   position: relative;
   width: 100%;
+  margin-top: 0;
 }
 
 .logo {
+  width: 149.71px;
+  height: 70.48px;
   object-fit: contain;
 }
 
@@ -296,14 +310,20 @@ const handleSuccessClose = () => {
   font-family: 'SVN-Gilroy';
   font-style: normal;
   font-weight: 700;
+  font-size: 24px;
+  line-height: 32px;
+  letter-spacing: 0.3px;
   color: #000000;
-  margin: 0;
+  margin: 0 0 8px 0;
 }
 
 .subtitle {
   font-family: 'SVN-Gilroy';
   font-style: normal;
   font-weight: 500;
+  font-size: 14px;
+  line-height: 24px;
+  letter-spacing: 0.3px;
   color: #4A4A4A;
   margin: 0;
 }

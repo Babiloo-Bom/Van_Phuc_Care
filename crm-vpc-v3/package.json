@@ -12,9 +12,11 @@
     "lint:fix": "eslint . --ext .js,.ts,.vue --fix"
   },
   "dependencies": {
+    "@ant-design/icons-vue": "^7.0.1",
     "@pinia/nuxt": "^0.11.2",
     "@types/jsonwebtoken": "^9.0.10",
     "ant-design-vue": "^4.2.6",
+    "dayjs": "^1.11.13",
     "jsonwebtoken": "^9.0.2",
     "mongoose": "^8.19.2",
     "nuxt": "^4.1.3",

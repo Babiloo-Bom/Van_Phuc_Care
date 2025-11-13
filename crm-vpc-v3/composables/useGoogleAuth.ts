@@ -3,25 +3,25 @@
  * Handles Google login flow and user management
  */
 
-import { computed } from 'vue'
+import { computed } from 'vue';
 import type { 
   GoogleOAuthConfig, 
   GoogleUserProfile, 
   GoogleTokenResponse,
   GoogleLoginRequest,
-  GoogleLoginResponse 
-} from '~/types/google'
+  GoogleLoginResponse, 
+} from '~/types/google';
 
 export const useGoogleAuth = () => {
-  const config = useRuntimeConfig()
+  const config = useRuntimeConfig();
 
   // ===== GOOGLE OAUTH CONFIG =====
   const googleConfig: GoogleOAuthConfig = {
     clientId: config.public.googleClientId || '',
     clientSecret: '', // Client secret không được expose ra client-side
     redirectUri: `${config.public.baseUrl}/auth/google/callback`,
-    scope: ['openid', 'email', 'profile']
-  }
+    scope: ['openid', 'email', 'profile'],
+  };
 
   // ===== GENERATE GOOGLE AUTH URL =====
   const generateAuthUrl = (state?: string): string => {
@@ -32,11 +32,11 @@ export const useGoogleAuth = () => {
       scope: googleConfig.scope.join(' '),
       access_type: 'offline',
       prompt: 'consent',
-      ...(state && { state })
-    })
+      ...(state && { state }),
+    });
 
-    return `https://accounts.google.com/o/oauth2/v2/auth?${params.toString()}`
-  }
+    return `https://accounts.google.com/o/oauth2/v2/auth?${params.toString()}`;
+  };
 
   // ===== EXCHANGE CODE FOR TOKEN =====
   const exchangeCodeForToken = async (code: string): Promise<GoogleTokenResponse> => {
@@ -46,16 +46,16 @@ export const useGoogleAuth = () => {
         method: 'POST',
         body: {
           code,
-          redirectUri: googleConfig.redirectUri
-        }
-      })
+          redirectUri: googleConfig.redirectUri,
+        },
+      });
 
-      return data.value!
+      return data.value!;
     } catch (error: any) {
-      console.error('❌ Google token exchange failed:', error)
-      throw new Error('Không thể xác thực với Google. Vui lòng thử lại.')
+      console.error('❌ Google token exchange failed:', error);
+      throw new Error('Không thể xác thực với Google. Vui lòng thử lại.');
     }
-  }
+  };
 
   // ===== GET GOOGLE USER PROFILE =====
   const getGoogleUserProfile = async (accessToken: string): Promise<GoogleUserProfile> => {
@@ -64,31 +64,31 @@ export const useGoogleAuth = () => {
       const { data } = await useFetch<GoogleUserProfile>('/api/auth/google/profile', {
         method: 'POST',
         body: {
-          accessToken
-        }
-      })
+          accessToken,
+        },
+      });
 
-      return data.value!
+      return data.value!;
     } catch (error: any) {
-      console.error('❌ Google user profile fetch failed:', error)
-      throw new Error('Không thể lấy thông tin người dùng từ Google.')
+      console.error('❌ Google user profile fetch failed:', error);
+      throw new Error('Không thể lấy thông tin người dùng từ Google.');
     }
-  }
+  };
 
   // ===== GOOGLE LOGIN API =====
   const googleLogin = async (request: GoogleLoginRequest): Promise<GoogleLoginResponse> => {
     try {
       const { data } = await useFetch<GoogleLoginResponse>('/api/auth/google/login-backend', {
         method: 'POST',
-        body: request
-      })
+        body: request,
+      });
 
-      return data.value!
+      return data.value!;
     } catch (error: any) {
-      console.error('❌ Google login API failed:', error)
-      throw new Error('Đăng nhập Google thất bại. Vui lòng thử lại.')
+      console.error('❌ Google login API failed:', error);
+      throw new Error('Đăng nhập Google thất bại. Vui lòng thử lại.');
     }
-  }
+  };
 
   // ===== COMPLETE GOOGLE LOGIN FLOW =====
   const completeGoogleLogin = async (code: string, state?: string): Promise<GoogleLoginResponse> => {
@@ -97,30 +97,30 @@ export const useGoogleAuth = () => {
       const loginResponse = await googleLogin({
         code,
         state,
-        redirectUri: googleConfig.redirectUri
-      })
+        redirectUri: googleConfig.redirectUri,
+      });
 
-      return loginResponse
+      return loginResponse;
       
     } catch (error: any) {
-      console.error('❌ Google login flow failed:', error)
-      throw error
+      console.error('❌ Google login flow failed:', error);
+      throw error;
     }
-  }
+  };
 
   // ===== CHECK GOOGLE CONFIG =====
   const isGoogleConfigured = computed((): boolean => {
-    return !!(googleConfig.clientId) // Chỉ cần clientId, clientSecret không cần trên client-side
-  })
+    return !!(googleConfig.clientId); // Chỉ cần clientId, clientSecret không cần trên client-side
+  });
 
   // ===== GET GOOGLE LOGIN URL =====
   const getGoogleLoginUrl = (): string => {
     if (!isGoogleConfigured.value) {
-      throw new Error('Google OAuth chưa được cấu hình')
+      throw new Error('Google OAuth chưa được cấu hình');
     }
     
-    return generateAuthUrl()
-  }
+    return generateAuthUrl();
+  };
 
   return {
     // Configuration
@@ -134,6 +134,6 @@ export const useGoogleAuth = () => {
     // Direct API calls
     exchangeCodeForToken,
     getGoogleUserProfile,
-    googleLogin
-  }
-}
+    googleLogin,
+  };
+};
