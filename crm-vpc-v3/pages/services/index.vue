@@ -2,49 +2,98 @@
   <div>
     <div class="flex justify-between items-center mb-8">
       <div>
-        <h1 class="text-3xl font-bold text-gray-900">Services</h1>
-        <p class="text-gray-600 mt-2">Manage service offerings</p>
+        <h1 class="text-3xl font-bold text-gray-900">Dịch vụ</h1>
+        <p class="text-gray-600 mt-2">Các dịch vụ chăm sóc mẹ và bé</p>
       </div>
-      <button class="btn-primary flex items-center gap-2">
-        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
-        </svg>
-        Add Service
-      </button>
+      <!-- Có thể thêm nút đăng ký dịch vụ nếu cần -->
+    </div>
+
+    <div class="flex gap-4 mb-6">
+      <button
+        class="px-4 py-2 rounded-full font-semibold"
+        :class="{ 'bg-primary-500 text-white': activeTab === 'used', 'bg-gray-100 text-gray-700': activeTab !== 'used' }"
+        @click="activeTab = 'used'"
+      >Đã sử dụng</button>
+      <button
+        class="px-4 py-2 rounded-full font-semibold"
+        :class="{ 'bg-primary-500 text-white': activeTab === 'all', 'bg-gray-100 text-gray-700': activeTab !== 'all' }"
+        @click="activeTab = 'all'"
+      >Tất cả dịch vụ</button>
     </div>
 
     <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-      <div v-for="i in 6" :key="i" class="card hover:shadow-xl transition-shadow">
-        <div class="aspect-video bg-gradient-to-br from-teal-400 to-teal-600 rounded-lg mb-4 flex items-center justify-center">
-          <span class="text-5xl">💼</span>
+      <div
+        v-for="service in filteredServices"
+        :key="service._id"
+        class="card hover:shadow-xl transition-shadow bg-white rounded-xl border border-gray-100 p-4 flex flex-col"
+      >
+        <div class="aspect-video rounded-lg mb-4 flex items-center justify-center overflow-hidden bg-gray-50">
+          <img
+            v-if="service.thumbnail"
+            :src="service.thumbnail"
+            alt="service"
+            class="object-cover w-full h-full"
+          />
+          <span v-else class="text-5xl">💼</span>
         </div>
-        <h3 class="text-lg font-semibold text-gray-900 mb-2">Service Package {{ i }}</h3>
-        <p class="text-gray-600 text-sm mb-4">Comprehensive service description and benefits</p>
+        <h3 class="text-lg font-semibold text-primary-700 mb-2">{{ service.title }}</h3>
+        <p class="text-gray-600 text-sm mb-4 line-clamp-2">{{ service.shortDescriptions || service.descriptions }}</p>
         <div class="flex justify-between items-center mb-4">
-          <span class="text-2xl font-bold text-primary-500">${{ (i * 100) + 99 }}/mo</span>
-          <span class="px-2 py-1 text-xs rounded-full bg-green-100 text-green-800">Active</span>
+          <span class="px-2 py-1 text-xs rounded-full" :class="service.status === 'active' ? 'bg-green-100 text-green-800' : 'bg-gray-200 text-gray-500'">
+            {{ service.status === 'active' ? 'Đang hoạt động' : 'Tạm ngưng' }}
+          </span>
         </div>
-        <div class="space-y-2 text-sm text-gray-600 mb-4">
-          <div class="flex items-center gap-2">
-            <svg class="w-4 h-4 text-green-500" fill="currentColor" viewBox="0 0 20 20">
-              <path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd" />
-            </svg>
-            <span>Feature {{ i }} included</span>
-          </div>
-          <div class="flex items-center gap-2">
-            <svg class="w-4 h-4 text-green-500" fill="currentColor" viewBox="0 0 20 20">
-              <path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd" />
-            </svg>
-            <span>24/7 Support</span>
-          </div>
-        </div>
-        <button class="btn-secondary w-full">Manage Service</button>
+        <button class="text-primary-500 font-semibold text-sm underline w-fit" @click="goDetail(service)">Chi tiết</button>
       </div>
     </div>
   </div>
 </template>
 
 <script setup lang="ts">
+import { ref, computed, onMounted } from 'vue'
+import { useServicesApi } from '~/composables/api/useServicesApi'
+import { useRouter } from 'vue-router'
+
 definePageMeta({ layout: 'default' })
-useHead({ title: 'Services' })
+useHead({ title: 'Dịch vụ' })
+
+const { getServices } = useServicesApi()
+const router = useRouter()
+
+const services = ref<any[]>([])
+const activeTab = ref<'all' | 'used'>('all')
+
+const fetchServices = async () => {
+  try {
+    const res = await getServices({})
+    services.value = res.data?.data || []
+  } catch (e) {
+    // handle error
+  }
+}
+
+onMounted(fetchServices)
+
+const filteredServices = computed<any[]>(() => {
+  if (activeTab.value === 'used') {
+    return services.value.filter(s => s.used)
+  }
+  return services.value
+})
+
+function goDetail(service: any) {
+  router.push(`/services/${service.slug || service._id}`)
+}
 </script>
+
+<style scoped>
+.card {
+  min-height: 340px;
+}
+.line-clamp-2 {
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+</style>

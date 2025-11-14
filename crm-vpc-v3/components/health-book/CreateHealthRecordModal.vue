@@ -287,6 +287,7 @@
 
 <script setup lang="ts">
 import { ref, reactive, watch } from 'vue'
+import { useHealthRecordsApi } from '~/composables/api/useHealthRecordsApi'
 import { message } from 'ant-design-vue'
 import type { FormInstance } from 'ant-design-vue'
 import type { Rule } from 'ant-design-vue/es/form'
@@ -389,10 +390,11 @@ const disabledDate = (current: Dayjs) => {
 }
 
 // Form handlers
+const { createHealthRecord } = useHealthRecordsApi()
+
 const handleSubmit = async () => {
   try {
     loading.value = true
-
     // Prepare data
     const healthRecordData = {
       customerId: formState.customerId,
@@ -418,13 +420,8 @@ const handleSubmit = async () => {
       notes: formState.notes,
       healthStatus: formState.healthStatus,
     }
-
-    // TODO: Call API to save health record
-    // await createHealthRecord(healthRecordData)
-
-    // Simulate API call
-    await new Promise((resolve) => setTimeout(resolve, 1000))
-
+    // Gọi API tạo phiếu sức khỏe
+    await createHealthRecord(healthRecordData)
     message.success('Đã lưu thông tin sức khỏe thành công!')
     emit('success')
     handleClose()

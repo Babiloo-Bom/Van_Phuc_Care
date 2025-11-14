@@ -17,6 +17,7 @@ import AdminsRouter from './Admins';
 import GoogleAuthRouter from './GoogleAuth';
 import AccessPermissionsRouter from './AccessPermissions';
 import HealthBookRouter from './HealthBook';
+import HealthRecordRouter from './HealthRecord';
 import TransactionsRouter from './Transactions';
 import ScheduleVaccinRouter from './ScheduleVaccins';
 import CouponsRouter from './Coupons';
@@ -53,6 +54,7 @@ router.use('/users-management', adminPassport.authenticate('jwt', { session: fal
 router.use('/admins', AdminsRouter);
 router.use('/access-permissions', adminPassport.authenticate('jwt', { session: false }), AccessPermissionsRouter);
 router.use('/health-book', adminPassport.authenticate('jwt', { session: false }), HealthBookRouter);
+router.use('/health-records', adminPassport.authenticate('jwt', { session: false }), HealthRecordRouter);
 router.use('/transactions', adminPassport.authenticate('jwt', { session: false }), TransactionsRouter);
 router.use('/schedule-vaccin', adminPassport.authenticate('jwt', { session: false }), ScheduleVaccinRouter);
 router.use('/tickets', adminPassport.authenticate('jwt', { session: false }), TicketsRouter);

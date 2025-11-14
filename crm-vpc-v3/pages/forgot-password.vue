@@ -5,16 +5,8 @@
       <div class="content-wrapper">
         <!-- Logo -->
         <div class="logo-section">
-          <img
-            src="/images/logo-vanphuc-new-mobile.png"
-            alt="Van Phuc Care"
-            class="lg:hidden logo"
-          />
-          <img
-            src="/images/logo-vanphuc-new.png"
-            alt="Van Phuc Care"
-            class="hidden lg:block logo"
-          />
+          <img src="/images/logo-vanphuc-new-mobile.png" alt="Van Phuc Care" class="lg:hidden logo" />
+          <img src="/images/logo-vanphuc-new.png" alt="Van Phuc Care" class="hidden lg:block logo" />
         </div>
 
         <!-- Title and Subtitle -->
@@ -29,13 +21,7 @@
           <div class="form-group">
             <label class="form-label">Email/ Số điện thoại</label>
             <div class="input-container">
-              <input
-                v-model="form.emailOrPhone"
-                type="text"
-                placeholder="Email/SĐT"
-                class="form-input"
-                required
-              />
+              <input v-model="form.emailOrPhone" type="text" placeholder="Email/SĐT" class="form-input" required />
             </div>
           </div>
 
@@ -75,14 +61,9 @@
     </div>
 
     <!-- Success Modal -->
-    <SuccessModal
-      :visible="showSuccessModal"
-      title="Lấy lại mật khẩu"
+    <SuccessModal :visible="showSuccessModal" title="Lấy lại mật khẩu"
       description="Email tạo lại mật khẩu đã được gửi về tài khoản, vui lòng truy cập để tạo mật khẩu mới."
-      button-text="Xác nhận"
-      @confirm="handleSuccessConfirm"
-      @close="handleSuccessClose"
-    />
+      button-text="Xác nhận" @confirm="handleSuccessConfirm" @close="handleSuccessClose" />
   </div>
 </template>
 
@@ -379,11 +360,9 @@ const handleSuccessClose = () => {
 .circle {
   position: absolute;
   border-radius: 50%;
-  background: linear-gradient(
-    180deg,
-    rgba(59, 140, 220, 0.9) 0%,
-    rgba(73, 145, 216, 0.351) 100%
-  );
+  background: linear-gradient(180deg,
+      rgba(59, 140, 220, 0.9) 0%,
+      rgba(73, 145, 216, 0.351) 100%);
 }
 
 .circle-1 {
@@ -493,58 +472,3 @@ const handleSuccessClose = () => {
     font-size: 14px;
   }
 }
-
-    if (result.success) {
-      success.value = 'Mã xác thực đã được gửi vào email của bạn'
-      message.success('Đã gửi OTP vào email')
-      showOtpInput.value = true
-    } else {
-      error.value = result.error || 'Gửi OTP thất bại'
-    }
-  } catch (validationError) {
-    console.error('Validation error:', validationError)
-  } finally {
-    loading.value = false
-  }
-}
-
-// Handle verify OTP
-const handleVerifyOtp = async () => {
-  try {
-    await otpFormRef.value.validate()
-
-    loading.value = true
-    error.value = ''
-
-    // Verify OTP and get token
-    const result = await authStore.verifyOtpForPassword(
-      emailForm.email,
-      otpForm.otp
-    )
-
-    if (result.success && result.token) {
-      message.success('Xác thực OTP thành công!')
-
-      // Redirect to reset password page with email and token
-      router.push({
-        path: '/reset-password',
-        query: {
-          email: emailForm.email,
-          token: result.token
-        }
-      })
-    } else {
-      error.value = result.error || 'Mã OTP không chính xác'
-    }
-  } catch (validationError) {
-    console.error('Validation error:', validationError)
-  } finally {
-    loading.value = false
-  }
-}
-</script>
-
-<style scoped>
-/* Custom styles */
-</style>
-
