@@ -46,7 +46,15 @@ class TransactionController {
           .lean(),
         MongoDbTransaction.model.countDocuments(queryString),
       ]);
-      sendSuccess(res, { pagination: { total, page, limit }, transactions });
+      // Standardized pagination response format
+      sendSuccess(res, { 
+        data: transactions, 
+        pagination: { 
+          page, 
+          pageSize: limit, 
+          total 
+        } 
+      });
     } catch (error: any) {
       sendError(res, 500, error.message, error as Error);
     }

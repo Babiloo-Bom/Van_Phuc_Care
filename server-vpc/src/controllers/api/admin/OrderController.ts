@@ -392,13 +392,13 @@ class OrderController {
 
       const total = await Order.countDocuments(query);
 
+      // Standardized pagination response format
       sendSuccess(res, {
-        orders,
+        data: orders,
         pagination: {
           page: Number(page),
-          limit: Number(limit),
-          total,
-          pages: Math.ceil(total / Number(limit))
+          pageSize: Number(limit),
+          total
         }
       });
     } catch (error: any) {
