@@ -143,25 +143,13 @@ async function seedCourses() {
     
     // Clear existing courses
     await coursesCollection.deleteMany({});
-    console.log('🗑️ Cleared existing courses');
     
     // Insert sample courses
     const result = await coursesCollection.insertMany(sampleCourses);
-    console.log(`✅ Inserted ${result.insertedCount} courses`);
-    
-    // Display inserted courses
-    sampleCourses.forEach((course, index) => {
-      console.log(`${index + 1}. ${course.title} - ${course.price.toLocaleString('vi-VN')} VNĐ`);
-    });
-    
-    console.log('\n🎉 Course seeding completed successfully!');
-    console.log('You can now check the courses at: http://localhost:3102/');
     
   } catch (error) {
-    console.error('❌ Error seeding courses:', error);
   } finally {
     await client.close();
-    console.log('🔌 Disconnected from MongoDB');
   }
 }
 

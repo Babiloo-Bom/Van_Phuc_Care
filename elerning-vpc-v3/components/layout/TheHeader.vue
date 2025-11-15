@@ -314,35 +314,19 @@ const isLoggedIn = computed(() => authStore.isLoggedIn);
 const user = computed(() => authStore.user);
 
 // Watch for auth changes
-watch(
-  () => authStore.isLoggedIn,
-  (newValue, oldValue) => {
-    console.log("🔄 Auth state changed in header:", {
-      from: oldValue,
-      to: newValue,
-      user: authStore.user,
-      token: authStore.token ? "exists" : "null",
-    });
-  },
-  { immediate: true }
-);
+
 
 // Watch for user changes
-watch(
-  () => authStore.user,
-  (newUser) => {
-    console.log("👤 User changed in header:", newUser);
-  },
-  { immediate: true }
-);
+watch(() => authStore.user, (newUser) => {
+}, { immediate: true })
 
 // Methods
-const handleLogout = async (e: Event) => {
-  if (!isLoggedIn.value) {
-    return;
+const handleLogout = async () => {
+  try {
+    await authStore.logout()
+    navigateTo('/')
+  } catch (error) {
   }
-  e.preventDefault();
-  e.stopPropagation();
   try {
     await authStore.logout();
     console.log("✅ Logged out successfully");

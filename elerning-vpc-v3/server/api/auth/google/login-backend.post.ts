@@ -7,13 +7,10 @@ import type { GoogleLoginResponse } from '~/types/google';
 
 export default defineEventHandler(async (event): Promise<GoogleLoginResponse> => {
   try {
-    console.log('🔄 Google login API endpoint called');
-    const body = await readBody(event);
-    console.log('🔍 Request body:', body);
-    const { code, redirectUri: bodyRedirectUri } = body;
+    const body = await readBody(event)
+    const { code, redirectUri: bodyRedirectUri } = body
 
     if (!code) {
-      console.log('❌ No authorization code provided');
       return {
         success: false,
         error: 'Authorization code is required',
@@ -30,8 +27,6 @@ export default defineEventHandler(async (event): Promise<GoogleLoginResponse> =>
     const baseUrl = bodyRedirectUri ? undefined : `${protocol}://${host}`;
     const redirectUri = bodyRedirectUri || `${baseUrl}/auth/google/callback`;
 
-    console.log('🔄 Proxy code to backend for token exchange...');
-    console.log('🔍 Redirect URI used for backend exchange:', redirectUri);
 
     // Delegate code exchange to main backend
     try {
@@ -44,19 +39,13 @@ export default defineEventHandler(async (event): Promise<GoogleLoginResponse> =>
         },
       });
 
-      console.log('✅ Step 3: Backend response received');
-      console.log('📦 Backend response type:', typeof backendResponse);
-      console.log('📦 Backend response keys:', Object.keys(backendResponse || {}));
-      console.log('📦 Backend response:', JSON.stringify(backendResponse, null, 2));
 
       // Check if backend returned success
       if (!backendResponse || !backendResponse.data) {
-        console.error('❌ Invalid backend response:', backendResponse);
-        throw new Error(backendResponse?.message || 'Backend authentication failed');
+        throw new Error(backendResponse?.message || 'Backend authentication failed')
       }
 
       // Backend response is valid, continue
-      console.log('✅ Backend authentication successful');
 
       // Extract data from backend response
       const userData = backendResponse.data;
@@ -81,17 +70,11 @@ export default defineEventHandler(async (event): Promise<GoogleLoginResponse> =>
       };
 
     } catch (backendError: any) {
-      console.error('❌ Backend API error:', backendError);
-      throw new Error(backendError.message || 'Backend authentication failed');
+      throw new Error(backendError.message || 'Backend authentication failed')
     }
 
   } catch (error: any) {
-    console.error('❌ Google login failed:', error);
-    console.error('❌ Error details:', {
-      message: error.message,
-      stack: error.stack,
-      name: error.name,
-    });
+   
     return {
       success: false,
       error: error.message || 'Google login failed',

@@ -1,21 +1,13 @@
 <template>
   <div class="coupon-input">
-    <div class="mb-4">
-      <h4 class="text-lg font-semibold text-gray-800 mb-3 flex items-center gap-2">
-        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" class="fill-none stroke-current text-primary-100">
-          <path d="M21 12c0 4.97-4.03 9-9 9s-9-4.03-9-9 4.03-9 9-9c1.3 0 2.52.28 3.6.8" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
-          <path d="M9 12l2 2 4-4" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
-        </svg>
-        Mã giảm giá
-      </h4>
-      
+    <div v-if="!appliedCoupon">
       <div class="flex gap-3">
         <div class="flex-1">
           <a-input
             v-model:value="couponCode"
-            placeholder="Nhập mã giảm giá"
+            placeholder="Mã ưu đãi"
             size="large"
-            class="!rounded-lg !border-gray-300 focus:!border-prim-100"
+            class="!rounded-lg !border-gray-300 focus:!border-prim-100 !h-14"
             :disabled="isLoading"
             @keyup.enter="applyCoupon"
             @input="clearMessages"
@@ -26,36 +18,26 @@
           size="large"
           :loading="isLoading"
           :disabled="!couponCode.trim()"
-          class="!bg-prim-100 !border-prim-100 hover:!bg-blue-600 !rounded-lg !px-6"
+          class="!bg-[#1A75BB] !text-white !border-prim-100 hover:!bg-blue-600 !rounded-lg !px-6 w-20 !h-14 flex items-center justify-center"
           @click="applyCoupon"
         >
-          Áp dụng
+          Nhập
         </a-button>
       </div>
       
       <!-- Error message -->
-      <div v-if="errorMessage && !successMessage" class="mt-2 p-3 bg-red-50 border border-red-200 rounded-lg">
-        <div class="flex items-center gap-2">
-          <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" class="fill-none stroke-red-500">
-            <path d="M12 9v4M12 17h.01M21 12c0 4.97-4.03 9-9 9s-9-4.03-9-9 4.03-9 9-9c1.3 0 2.52.28 3.6.8" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
-          </svg>
-          <span class="text-red-700 text-sm">{{ errorMessage }}</span>
-        </div>
+      <div v-if="errorMessage && !successMessage" class="mt-2 p-2 bg-red-50 border border-red-200 rounded-lg">
+        <span class="text-red-700 text-xs sm:text-sm">{{ errorMessage }}</span>
       </div>
       
       <!-- Success message -->
-      <div v-if="successMessage && !errorMessage" class="mt-2 p-3 bg-green-50 border border-green-200 rounded-lg">
-        <div class="flex items-center gap-2">
-          <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" class="fill-none stroke-green-500">
-            <path d="M9 12l2 2 4-4M21 12c0 4.97-4.03 9-9 9s-9-4.03-9-9 4.03-9 9-9c1.3 0 2.52.28 3.6.8" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
-          </svg>
-          <span class="text-green-700 text-sm">{{ successMessage }}</span>
-        </div>
+      <div v-if="successMessage && !errorMessage" class="mt-2 p-2 bg-green-50 border border-green-200 rounded-lg">
+        <span class="text-green-700 text-xs sm:text-sm">{{ successMessage }}</span>
       </div>
     </div>
     
-    <!-- Applied coupon display -->
-    <div v-if="appliedCoupon" class="applied-coupon">
+    <!-- Applied coupon display - Hidden in cart page, shown in summary -->
+    <div v-if="appliedCoupon" class="applied-coupon hidden">
       <div class="bg-green-50 border border-green-200 rounded-lg p-4">
         <div class="flex items-center justify-between">
           <div class="flex items-center gap-3">
@@ -140,7 +122,7 @@ const applyCoupon = async () => {
   isLoading.value = true
   
   try {
-    const response = await $fetch('http://localhost:3000/api/a/coupons/apply', {
+    const response: any = await $fetch('http://localhost:3000/api/a/coupons/apply', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json'
@@ -151,13 +133,9 @@ const applyCoupon = async () => {
       }
     })
     
-    console.log('🎫 Coupon response:', response)
-    console.log('🎫 Response data:', response.data)
-    console.log('🎫 Response message:', response.message)
     
     // Check if response is successful (status 200 and has data)
     if (response && response.data && response.data.message === 'Coupon applied successfully') {
-      console.log('✅ Coupon applied successfully')
       
       // Clear any existing error message immediately
       errorMessage.value = ''
@@ -176,11 +154,9 @@ const applyCoupon = async () => {
         successMessage.value = ''
       }, 3000)
     } else {
-      console.log('❌ Coupon application failed')
       errorMessage.value = response.message || response.data?.message || 'Có lỗi xảy ra khi áp dụng mã giảm giá'
     }
   } catch (error: any) {
-    console.error('❌ Apply coupon error:', error)
     errorMessage.value = error.data?.message || 'Có lỗi xảy ra khi áp dụng mã giảm giá'
   } finally {
     isLoading.value = false
@@ -197,11 +173,11 @@ const removeCoupon = async () => {
   successMessage.value = ''
   
   try {
-    const response = await $fetch(`http://localhost:3000/api/a/coupons/cart/${authStore.user.id}`, {
+    const response: any = await $fetch(`http://localhost:3000/api/a/coupons/cart/${authStore.user.id}`, {
       method: 'DELETE'
     })
     
-    if (response.data && response.data.message) {
+    if (response && response.data && response.data.message) {
       // Clear any existing error message
       errorMessage.value = ''
       
@@ -218,7 +194,6 @@ const removeCoupon = async () => {
       errorMessage.value = response.message || 'Có lỗi xảy ra khi xóa mã giảm giá'
     }
   } catch (error: any) {
-    console.error('❌ Remove coupon error:', error)
     errorMessage.value = error.data?.message || 'Có lỗi xảy ra khi xóa mã giảm giá'
   } finally {
     isLoading.value = false

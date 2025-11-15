@@ -193,12 +193,6 @@ interface Props {
 const props = defineProps<Props>()
 const cartStore = useCartStore()
 
-// Debug props
-console.log('🔍 CourseCard props:', {
-  course: props.course?.title,
-  isRegister: props.isRegister,
-  courseId: props.course?._id
-})
 
 // Computed để xác định trạng thái khóa học
 const courseStatus = computed(() => {
@@ -217,12 +211,6 @@ const isInCart = computed(() => {
 
 // Handle card click
 const handleCardClick = () => {
-  console.log('🔍 CourseCard clicked:', {
-    course: props.course?.title,
-    slug: props.course?.slug,
-    isRegister: props.isRegister,
-    targetUrl: `${props.isRegister ? '/my-learning' : '/courses'}/${props.course.slug}`
-  })
 }
 
 // Toggle course trong giỏ hàng

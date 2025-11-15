@@ -31,7 +31,7 @@ export default defineEventHandler(async event => {
       // Mark lesson as completed
       const body = await readBody(event);
       
-      const response = await $fetch(`${process.env.API_BASE_URL}/api/a/progress/lesson-completed`, {
+      const response = await $fetch(`${process.env.API_BASE_URL}/api/u/progress/lesson-completed`, {
         method: 'POST',
         headers: {
           'Authorization': `Bearer ${getCookie(event, 'auth_token') || getHeader(event, 'authorization')?.replace('Bearer ', '')}`,

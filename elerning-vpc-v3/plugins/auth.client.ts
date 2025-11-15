@@ -36,8 +36,7 @@ export default defineNuxtPlugin(nuxtApp => {
     onRequestError({ request, error }) {
       // Ignore AbortError (request cancelled due to navigation/reload)
       if (error?.name === 'AbortError' || String(error?.message).includes('aborted')) {
-        console.log('[API] Request cancelled (navigation/reload)');
-        return;
+        return
       }
       console.error('Request error:', error);
     },

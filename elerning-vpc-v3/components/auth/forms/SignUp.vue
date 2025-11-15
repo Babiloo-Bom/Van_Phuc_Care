@@ -209,7 +209,6 @@ const handleSubmit = async () => {
       }
     }
   } catch (error: any) {
-    console.error('Register error:', error)
     message.error('Đăng ký thất bại')
   } finally {
     loading.value = false
@@ -231,12 +230,10 @@ const handleSubmitVerify = async () => {
         // Auto login after successful verification
         const loginResult = await authStore.loginAfterRegister(form.email, form.password)
         if (loginResult.success) {
-          console.log('✅ Auto login successful after registration')
           setTimeout(() => {
             navigateTo('/')
           }, 1500)
         } else {
-          console.log('⚠️ Auto login failed, redirecting to login page')
           setTimeout(() => {
             navigateTo('/login')
           }, 1500)
@@ -246,7 +243,6 @@ const handleSubmitVerify = async () => {
       }
     }
   } catch (error: any) {
-    console.error('Verify error:', error)
     message.error('Xác thực thất bại!')
   } finally {
     loading.value = false

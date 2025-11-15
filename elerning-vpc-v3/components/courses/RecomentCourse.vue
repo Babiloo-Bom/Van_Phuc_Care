@@ -48,7 +48,6 @@ const courses = computed(() => coursesStore.courses)
 const displayedCourses = computed(() => {
   // Hiển thị tối đa 4 khóa học
   if (!courses.value || !Array.isArray(courses.value)) {
-    console.log('🔍 courses.value is not an array:', courses.value)
     return []
   }
   return courses.value.slice(0, 4)
@@ -61,9 +60,7 @@ const isPurchased = (courseId: string) => {
 const fetchCourses = async () => {
   try {
     loading.value = true
-    console.log('🔍 RecomentCourse: Fetching courses...')
     await coursesStore.fetchAll()
-    console.log('✅ RecomentCourse: Courses fetched:', coursesStore.courses.length)
   } catch (error) {
     console.error('❌ RecomentCourse: Error fetching courses:', error)
   } finally {
@@ -73,7 +70,6 @@ const fetchCourses = async () => {
 
 // Event handlers
 const handleAddToCart = async (course: any) => {
-  console.log('🛒 Adding to cart from RecomentCourse:', course.title)
   try {
     await cartStore.addToCart({ courseId: course._id, quantity: 1 })
   } catch (error) {
@@ -82,7 +78,6 @@ const handleAddToCart = async (course: any) => {
 }
 
 const handleBuyNow = async (course: any) => {
-  console.log('💳 Buy now from RecomentCourse:', course.title)
   try {
     await cartStore.addToCart({ courseId: course._id, quantity: 1 })
     navigateTo('/checkout')
@@ -92,7 +87,6 @@ const handleBuyNow = async (course: any) => {
 }
 
 const handleViewDetail = (course: any) => {
-  console.log('👁️ View detail from RecomentCourse:', course.title)
   navigateTo(`/courses/${course.slug}`)
 }
 

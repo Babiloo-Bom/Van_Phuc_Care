@@ -23,7 +23,7 @@ const RETRY_CONFIG = {
 export const useAuthApi = () => {
   const config = useRuntimeConfig();
   // Hardcode for testing - should be http://localhost:3000/api/a
-  let apiBase = config.public.apiBase || "http://localhost:3000/api/u";
+  let apiBase = "http://localhost:3000/api/u";
 
   // Debug: Log API base URL
   console.log("🔍 API Base URL:", apiBase);
@@ -232,14 +232,7 @@ export const useAuthApi = () => {
       phone?: string
     ) {
       try {
-        console.log("🔍 Register API call:", {
-          url: `${apiBase}/sessions`,
-          email,
-          fullname: fullname || email.split("@")[0],
-          domain: "vanphuccare.gensi.vn",
-          origin: "vanphuccare.gensi.vn",
-        });
-
+        
         const result = await withRetry(() =>
           fetchWithTimeout(`${apiBase}/sessions`, {
             method: "POST",
@@ -253,13 +246,11 @@ export const useAuthApi = () => {
               origin: "vanphuccare.gensi.vn",
             },
           })
-        );
-
-        console.log("🔍 Register API response:", result);
-        return result;
+        )
+        
+        return result
       } catch (error: any) {
-        console.error("🔍 Register API error:", error);
-        throw transformError(error);
+        throw transformError(error)
       }
     },
 
@@ -484,15 +475,9 @@ export const useAuthApi = () => {
      */
     async getUserProfile() {
       try {
-        const authStore = useAuthStore();
-        const token = authStore.token;
-
-        console.log(
-          "🔍 JWT Token for getUserProfile:",
-          token ? token.substring(0, 20) + "..." : "null"
-        );
-        console.log("🔍 API URL:", `${apiBase}/admins/profile`);
-
+        const authStore = useAuthStore()
+        const token = authStore.token
+        
         return await withRetry(() =>
           fetchWithTimeout(`${apiBase}/admins/profile`, {
             method: "GET",
@@ -502,8 +487,7 @@ export const useAuthApi = () => {
           })
         );
       } catch (error: any) {
-        console.error("❌ getUserProfile error:", error);
-        throw transformError(error);
+        throw transformError(error)
       }
     },
 
@@ -515,16 +499,9 @@ export const useAuthApi = () => {
       action: "add" | "remove" = "add"
     ) {
       try {
-        const authStore = useAuthStore();
-        const token = authStore.token;
-
-        console.log(
-          "🔍 JWT Token for updateCourseRegister:",
-          token ? token.substring(0, 20) + "..." : "null"
-        );
-        console.log("🔍 API URL:", `${apiBase}/admins/course-register`);
-        console.log("🔍 Request body:", { courseIds, action });
-
+        const authStore = useAuthStore()
+        const token = authStore.token
+        
         return await withRetry(() =>
           fetchWithTimeout(`${apiBase}/admins/course-register`, {
             method: "PUT",
@@ -539,8 +516,7 @@ export const useAuthApi = () => {
           })
         );
       } catch (error: any) {
-        console.error("❌ updateCourseRegister error:", error);
-        throw transformError(error);
+        throw transformError(error)
       }
     },
   };

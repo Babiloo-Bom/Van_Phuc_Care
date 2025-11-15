@@ -14,8 +14,7 @@ export default defineNuxtRouteMiddleware((to, from) => {
 
   // First check if authenticated
   if (!authStore.isAuthenticated) {
-    console.warn('[Role Middleware] User not authenticated');
-    return navigateTo('/login');
+    return navigateTo('/login')
   }
 
   // Get required role from route meta
@@ -30,7 +29,6 @@ export default defineNuxtRouteMiddleware((to, from) => {
   const userRole = authStore.user?.role;
 
   if (!userRole || userRole !== requiredRole) {
-    console.warn('[Role Middleware] User does not have required role:', requiredRole);
     
     // Redirect to unauthorized page or dashboard
     return navigateTo('/unauthorized');

@@ -1,7 +1,7 @@
 <template>
   <div class="documents-container">
     <!-- Documents Header -->
-    <div class="documents-header bg-white rounded-lg shadow-sm p-6 mb-6">
+    <div class="documents-header  mb-6">
       <div class="flex items-center gap-3 mb-4">
         <div class="w-10 h-10 bg-blue-100 rounded-full flex items-center justify-center">
           <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" class="fill-none stroke-blue-600">
@@ -23,8 +23,8 @@
     <!-- Documents List -->
     <div v-if="documents.length > 0" class="documents-list space-y-4">
       <div 
-        v-for="document in documents" 
-        :key="document._id"
+        v-for="(document, index) in documents" 
+        :key="`${document.fileName}-${index}`"
         class="document-item bg-white rounded-lg shadow-sm border border-gray-200 hover:shadow-md transition-shadow"
       >
         <div class="p-6">
@@ -77,14 +77,7 @@
                 <div class="flex-1">
                   <h4 class="text-lg font-semibold text-gray-800 mb-1">
                     {{ document.title }}
-                    <span v-if="document.isRequired" class="ml-2 px-2 py-1 text-xs font-medium bg-red-100 text-red-600 rounded-full">
-                      Bắt buộc
-                    </span>
                   </h4>
-                  
-                  <p v-if="document.description" class="text-gray-600 text-sm mb-2">
-                    {{ document.description }}
-                  </p>
                   
                   <div class="flex items-center gap-4 text-sm text-gray-500">
                     <span class="flex items-center gap-1">
@@ -104,17 +97,9 @@
                         <path d="M16 17H8" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
                         <path d="M10 9H8" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
                       </svg>
-                      {{ document.fileType.toUpperCase() }}
+                      {{ getFileExtension(document.fileType).toUpperCase() }}
                     </span>
                     
-                    <span v-if="document.downloadCount > 0" class="flex items-center gap-1">
-                      <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" class="fill-none stroke-current">
-                        <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
-                        <path d="M7 10l5 5 5-5" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
-                        <path d="M12 15V3" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
-                      </svg>
-                      {{ document.downloadCount }} lượt tải
-                    </span>
                   </div>
                 </div>
 
@@ -122,8 +107,8 @@
                 <div class="flex-shrink-0 ml-4">
                   <a-button 
                     type="primary"
-                    @click="downloadDocument(document)"
-                    :loading="downloading[document._id]"
+                    @click="downloadDocument(document, index)"
+                    :loading="downloading[`${document.fileName}-${index}`]"
                     class="!flex items-center gap-2"
                   >
                     <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" class="fill-none stroke-current">
@@ -165,88 +150,121 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted } from 'vue'
+import { ref, computed, watch, onMounted } from 'vue'
+import { useCoursesStore } from '~/stores/courses'
 
 interface Document {
-  _id: string
-  courseId: string
-  chapterIndex: number
-  lessonIndex: number
   title: string
-  description: string
   fileUrl: string
   fileName: string
-  fileSize: number
+  fileSize?: number
   fileType: string
-  downloadCount: number
-  isRequired: boolean
-  status: string
+  index?: number
 }
 
 const props = defineProps<{
   courseId: string
-  chapterIndex: number
-  lessonIndex: number
+  chapterId: string
+  lessonId: string
 }>()
+
+const coursesStore = useCoursesStore()
 
 // State
 const documents = ref<Document[]>([])
 const loading = ref(false)
 const downloading = ref<Record<string, boolean>>({})
 
-// Methods
-const fetchDocuments = async () => {
-  try {
-    loading.value = true
-    
-    const response = await $fetch(`/api/documents/course/${props.courseId}/chapter/${props.chapterIndex}/lesson/${props.lessonIndex}`)
-    
-    if (response.success) {
-      documents.value = response.data.documents || []
-    }
-  } catch (error) {
-    console.error('Error fetching documents:', error)
-  } finally {
-    loading.value = false
+// Get documents from lesson data
+const loadDocuments = () => {
+  if (!coursesStore.course) return
+  
+  const chapter = coursesStore.course.chapters?.find(ch => ch._id === props.chapterId)
+  if (!chapter) return
+  
+  const lesson = chapter.lessons?.find(les => les._id === props.lessonId)
+  if (!lesson) return
+  
+  // Get documents from lesson
+  if (lesson.documents && Array.isArray(lesson.documents) && lesson.documents.length > 0) {
+    documents.value = lesson.documents.map((doc: any) => ({
+      title: doc.title || doc.fileName || 'Document',
+      fileUrl: doc.fileUrl || doc.url || '',
+      fileName: doc.fileName || doc.name || 'document',
+      fileSize: doc.fileSize || 0,
+      fileType: doc.fileType || doc.mimeType || 'application/pdf',
+      index: doc.index || 0
+    }))
+  } else {
+    documents.value = []
   }
 }
 
-const downloadDocument = async (document: Document) => {
+// Watch for course changes
+watch(() => coursesStore.course, () => {
+  loadDocuments()
+}, { deep: true, immediate: true })
+
+onMounted(() => {
+  loadDocuments()
+})
+
+const downloadDocument = async (doc: Document, index: number) => {
+  if (typeof window === 'undefined') return
+  
   try {
-    downloading.value[document._id] = true
+    const docKey = `${doc.fileName}-${index}`
+    downloading.value[docKey] = true
     
-    // Call backend to track download
-    const response = await $fetch(`/api/documents/${document._id}/download`, {
-      method: 'GET'
-    })
+    // Create download link directly from fileUrl
+    const link = window.document.createElement('a')
+    link.href = doc.fileUrl
+    link.download = doc.fileName
+    link.target = '_blank'
+    link.rel = 'noopener noreferrer'
     
-    if (response.success) {
-      // Create download link
-      const link = document.createElement('a')
-      link.href = document.fileUrl
-      link.download = document.fileName
-      link.target = '_blank'
-      document.body.appendChild(link)
-      link.click()
-      document.body.removeChild(link)
-      
-      // Update download count locally
-      const docIndex = documents.value.findIndex(doc => doc._id === document._id)
-      if (docIndex >= 0) {
-        documents.value[docIndex].downloadCount++
-      }
-      
-      // Show success message
-      console.log('✅ Document downloaded successfully')
-    }
+    window.document.body.appendChild(link)
+    link.click()
+    window.document.body.removeChild(link)
+    
   } catch (error) {
     console.error('Error downloading document:', error)
   } finally {
-    downloading.value[document._id] = false
+    const docKey = `${doc.fileName}-${index}`
+    downloading.value[docKey] = false
   }
 }
 
+// Extract file extension from fileType (could be mime type or extension)
+const getFileExtension = (fileType: string): string => {
+  if (!fileType) return ''
+  
+  const lowerType = fileType.toLowerCase()
+  
+  // If it's already an extension (no slash)
+  if (!lowerType.includes('/')) {
+    return lowerType
+  }
+  
+  // If it's a mime type, extract extension
+  const mimeToExt: Record<string, string> = {
+    'application/pdf': 'pdf',
+    'application/msword': 'doc',
+    'application/vnd.openxmlformats-officedocument.wordprocessingml.document': 'docx',
+    'application/vnd.ms-powerpoint': 'ppt',
+    'application/vnd.openxmlformats-officedocument.presentationml.presentation': 'pptx',
+    'text/plain': 'txt',
+    'application/zip': 'zip',
+    'application/x-rar-compressed': 'rar',
+    'text/x-python': 'py',
+    'application/x-python-code': 'py'
+  }
+  
+  return mimeToExt[lowerType] || lowerType.split('/').pop()?.split(';')[0] || ''
+}
+
 const getFileTypeColor = (fileType: string) => {
+  const ext = getFileExtension(fileType)
   const colors: Record<string, string> = {
     'pdf': 'bg-red-100 text-red-600',
     'doc': 'bg-blue-100 text-blue-600',
@@ -259,11 +277,11 @@ const getFileTypeColor = (fileType: string) => {
     'rar': 'bg-purple-100 text-purple-600'
   }
   
-  return colors[fileType.toLowerCase()] || 'bg-gray-100 text-gray-600'
+  return colors[ext] || 'bg-gray-100 text-gray-600'
 }
 
-const formatFileSize = (bytes: number) => {
-  if (bytes === 0) return '0 Bytes'
+const formatFileSize = (bytes?: number) => {
+  if (!bytes || bytes === 0) return '0 Bytes'
   
   const k = 1024
   const sizes = ['Bytes', 'KB', 'MB', 'GB']
@@ -271,11 +289,6 @@ const formatFileSize = (bytes: number) => {
   
   return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i]
 }
-
-// Lifecycle
-onMounted(() => {
-  fetchDocuments()
-})
 </script>
 
 <style scoped>

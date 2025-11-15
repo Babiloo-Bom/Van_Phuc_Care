@@ -152,12 +152,10 @@ export const saveCartToCache = (userId: string, cart: Cart): void => {
       const cacheKey = getCartCacheKey(userId);
       const cacheData = {
         cart,
-        timestamp: Date.now(),
-      };
-      localStorage.setItem(cacheKey, JSON.stringify(cacheData));
-      console.log('💾 Cart saved to cache:', cacheKey);
+        timestamp: Date.now()
+      }
+      localStorage.setItem(cacheKey, JSON.stringify(cacheData))
     } catch (error) {
-      console.error('❌ Error saving cart to cache:', error);
     }
   }
 };
@@ -183,11 +181,9 @@ export const loadCartFromCache = (userId: string): Cart | null => {
       return null;
     }
 
-    console.log('💾 Cart loaded from cache:', cacheKey);
-    return cacheData.cart;
+    return cacheData.cart
   } catch (error) {
-    console.error('❌ Error loading cart from cache:', error);
-    return null;
+    return null
   }
 };
 
@@ -197,11 +193,9 @@ export const loadCartFromCache = (userId: string): Cart | null => {
 export const clearCartCache = (userId: string): void => {
   if (process.client) {
     try {
-      const cacheKey = getCartCacheKey(userId);
-      localStorage.removeItem(cacheKey);
-      console.log('🗑️ Cart cache cleared:', cacheKey);
+      const cacheKey = getCartCacheKey(userId)
+      localStorage.removeItem(cacheKey)
     } catch (error) {
-      console.error('❌ Error clearing cart cache:', error);
     }
   }
 };

@@ -89,7 +89,6 @@ const rules = {
 const handleLogin = async () => {
   try {
     loading.value = true
-    console.log('🔐 Attempting login...', { username: formData.username })
 
     const result = await authStore.login(
       formData.username,
@@ -98,7 +97,6 @@ const handleLogin = async () => {
     )
 
     if (result.success) {
-      console.log('✅ Login successful!', result.user)
       
       // Show success message
       // You can add a notification here if needed
@@ -106,14 +104,12 @@ const handleLogin = async () => {
       // Redirect to home page
       await navigateTo('/')
     } else {
-      console.error('❌ Login failed:', result.error)
       
       // Show error message
       // You can add error notification here
       alert(result.error || 'Đăng nhập thất bại')
     }
   } catch (error) {
-    console.error('❌ Login error:', error)
     alert('Có lỗi xảy ra khi đăng nhập')
   } finally {
     loading.value = false
@@ -122,7 +118,6 @@ const handleLogin = async () => {
 
 // Handle forgot password
 const handleForgotPassword = () => {
-  console.log('🔑 Forgot password clicked')
   // Navigate to forgot password page or show modal
   // navigateTo('/forgot-password')
 }

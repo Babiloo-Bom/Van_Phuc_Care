@@ -57,7 +57,6 @@ const chaptersData = {
 
 async function updateCourseChapters() {
   try {
-    console.log('🚀 Starting to update course chapters...');
     
     const response = await fetch(`${API_BASE}/courses/phan-tich-du-lieu-voi-python/chapters`, {
       method: 'PUT',
@@ -68,14 +67,6 @@ async function updateCourseChapters() {
     });
 
     const result = await response.json();
-    
-    if (response.ok) {
-      console.log('✅ Successfully updated course chapters');
-      console.log('📚 Course:', result.data?.course?.title);
-      console.log('📖 Chapters:', result.data?.course?.chapters?.length || 0);
-    } else {
-      console.error('❌ Failed to update course chapters:', result);
-    }
   } catch (error) {
     console.error('❌ Error updating course chapters:', error);
   }

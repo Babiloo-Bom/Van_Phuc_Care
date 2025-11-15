@@ -2,6 +2,7 @@ import { sendError, sendSuccess } from '@libs/response';
 import { Request, Response } from 'express';
 import MongoDbQuizzes from '@mongodb/quizzes';
 import MongoDbQuizAttempts from '@mongodb/quiz-attempts';
+import mongoose from 'mongoose';
 
 export default class QuizController {
   /**
@@ -9,12 +10,12 @@ export default class QuizController {
    */
   public static async getQuiz(req: Request, res: Response) {
     try {
-      const { courseId, chapterIndex, lessonIndex } = req.params;
+      const { courseId, chapterId, lessonId } = req.params;
       
       const quiz = await MongoDbQuizzes.findOne({
         courseId,
-        chapterIndex: parseInt(chapterIndex),
-        lessonIndex: parseInt(lessonIndex),
+        chapterId,
+        lessonId,
         status: 'active'
       });
 
@@ -55,10 +56,10 @@ export default class QuizController {
         return sendError(res, 401, 'User not authenticated');
       }
 
-      const { quizId, courseId, chapterIndex, lessonIndex, answers, timeSpent } = req.body;
+      const { quizId, courseId, chapterId, lessonId, answers, timeSpent } = req.body;
 
       // Get quiz details
-      const quiz = await MongoDbQuizzes.findById(quizId);
+      const quiz: any = await MongoDbQuizzes.findById(quizId);
       if (!quiz) {
         return sendError(res, 404, 'Quiz not found');
       }
@@ -100,8 +101,8 @@ export default class QuizController {
         userId: userId.toString(),
         quizId,
         courseId,
-        chapterIndex,
-        lessonIndex,
+        chapterId,
+        lessonId,
         attemptNumber: attemptCount + 1,
         answers: processedAnswers,
         score,
@@ -113,6 +114,88 @@ export default class QuizController {
       });
 
       await quizAttempt.save();
+
+      // Nếu quiz passed, tự động mark lesson completed
+      if (passed) {
+        try {
+          const LessonProgress = mongoose.model('LessonProgress');
+          const CourseProgress = mongoose.model('CourseProgress');
+          
+          // Mark lesson as completed
+          await LessonProgress.findOneAndUpdate(
+            {
+              userId: userId.toString(),
+              courseId,
+              chapterId,
+              lessonId
+            },
+            {
+              userId: userId.toString(),
+              courseId,
+              chapterId,
+              lessonId,
+              completed: true,
+              completedAt: new Date(),
+              timeSpent: timeSpent || 0
+            },
+            { upsert: true, new: true }
+          );
+
+          // Update course progress
+          const completedLessons = await LessonProgress.countDocuments({
+            userId: userId.toString(),
+            courseId,
+            completed: true
+          });
+
+          const Course = mongoose.model('Course');
+          const course = await Course.findById(courseId);
+          
+          if (course) {
+            // Calculate total lessons from Chapters and Lessons collections
+            const ChaptersModel = (await import('@mongodb/chapters')).default;
+            const LessonsModel = (await import('@mongodb/lessons')).default;
+            
+            const chapters = await ChaptersModel.model.find({
+              courseId: course._id,
+              status: 'active'
+            });
+            
+            let totalLessons = 0;
+            for (const chapter of chapters) {
+              const lessonCount = await LessonsModel.model.countDocuments({
+                chapterId: chapter._id,
+                status: 'active'
+              });
+              totalLessons += lessonCount;
+            }
+
+            const progressPercentage = totalLessons > 0 ? Math.round((completedLessons / totalLessons) * 100) : 0;
+
+            await CourseProgress.findOneAndUpdate(
+              {
+                userId: userId.toString(),
+                courseId
+              },
+              {
+                userId: userId.toString(),
+                courseId,
+                totalLessons,
+                completedLessons,
+                progressPercentage,
+                lastAccessedAt: new Date(),
+                completedAt: progressPercentage === 100 ? new Date() : undefined
+              },
+              { upsert: true, new: true }
+            );
+          }
+          
+          console.log(`✅ Lesson ${chapterId}-${lessonId} auto-completed after quiz passed`);
+        } catch (progressError: any) {
+          console.error('Error auto-updating progress after quiz:', progressError);
+          // Don't fail the quiz submission if progress update fails
+        }
+      }
 
       sendSuccess(res, { 
         quizAttempt,

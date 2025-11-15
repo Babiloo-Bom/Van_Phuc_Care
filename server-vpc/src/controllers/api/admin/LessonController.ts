@@ -1,7 +1,7 @@
 import { sendError, sendSuccess } from '@libs/response';
 import { Request, Response } from 'express';
 import LessonsModel from '@mongodb/lessons';
-import CourseModulesModel from '@mongodb/course-modules';
+import ChaptersModel from '@mongodb/chapters';
 import QuizzesModel from '@mongodb/quizzes';
 import MinioService from '@services/minio';
 
@@ -12,7 +12,7 @@ class LessonController {
       const { lessonId } = req.params;
 
       const lesson = await LessonsModel.model.findById(lessonId)
-        .populate('courseModule')
+        .populate('chapter')
         .populate('quiz');
 
       if (!lesson) {
@@ -28,40 +28,20 @@ class LessonController {
 
   public static async createLesson(req: Request, res: Response) {
     try {
-      const { courseModuleId, title, description, content, type, isPreview } = req.body;
+      const { chapterId, title, description, content, type, isPreview } = req.body;
       
-      const courseModule = await CourseModulesModel.model.findById(courseModuleId).populate('courseId');
-      if (!courseModule) {
-        return sendError(res, 404, 'Course module không tồn tại');
+      const chapter = await ChaptersModel.model.findById(chapterId).populate('courseId');
+      if (!chapter) {
+        return sendError(res, 404, 'Chapter không tồn tại');
       }
 
-      const courseModuleData = courseModule as any;
-
-      let quizId = null;
-      if (req.body.quizData) {
-        const quizDataJson = typeof req.body.quizData === 'string' ? JSON.parse(req.body.quizData) : req.body.quizData;
-        
-        const newQuiz = await QuizzesModel.create({
-          courseId: courseModuleData.courseId.toString(),
-          chapterIndex: courseModuleData.index,
-          lessonIndex: 0,
-          title: quizDataJson.title || 'Quiz',
-          description: quizDataJson.description || '',
-          questions: quizDataJson.questions || [],
-          passingScore: quizDataJson.passingScore || 80,
-          timeLimit: quizDataJson.timeLimit || 0,
-          attempts: quizDataJson.attempts || 3,
-          status: 'active'
-        });
-
-        quizId = newQuiz._id;
-      }
+      const chapterData = chapter as any;
 
       const parsedDocuments = req.body.documents ? JSON.parse(req.body.documents) : [];
       const parsedVideos = req.body.videos ? JSON.parse(req.body.videos) : [];
 
       const lessonData: any = {
-        courseModuleId,
+        chapterId,
         title,
         description: description || '',
         content: content || '',
@@ -71,15 +51,29 @@ class LessonController {
         videos: [],
       };
 
-      if (quizId) {
-        lessonData.quizId = quizId;
-      }
-
-      const nextLessonIndex = await LessonsModel.model.countDocuments({ courseModuleId });
       const lesson = await LessonsModel.model.create(lessonData);
 
-      if (quizId) {
-        await QuizzesModel.findByIdAndUpdate(quizId, { lessonIndex: nextLessonIndex });
+      // Create quiz if exists, using chapterId and lessonId
+      if (req.body.quizData) {
+        const quizDataJson = typeof req.body.quizData === 'string' ? JSON.parse(req.body.quizData) : req.body.quizData;
+        
+        const newQuiz = await QuizzesModel.create({
+          courseId: chapterData.courseId.toString(),
+          chapterId: chapterId.toString(),
+          lessonId: lesson._id.toString(),
+          title: quizDataJson.title || 'Quiz',
+          description: quizDataJson.description || '',
+          questions: quizDataJson.questions || [],
+          passingScore: quizDataJson.passingScore || 80,
+          timeLimit: quizDataJson.timeLimit || 0,
+          attempts: quizDataJson.attempts || 3,
+          status: 'active'
+        });
+
+        // Update lesson with quizId
+        await LessonsModel.model.findByIdAndUpdate(lesson._id, {
+          quizId: newQuiz._id
+        });
       }
 
       const files = req.files as Express.Multer.File[];
@@ -215,18 +209,16 @@ class LessonController {
             attempts: quizDataJson.attempts ?? undefined,
           }, { new: true });
         } else {
-          const moduleId = req.body.courseModuleId || lessonData.courseModuleId;
-          const moduleDoc: any = await CourseModulesModel.model.findById(moduleId);
-          if (!moduleDoc) {
-            return sendError(res, 404, 'Course module không tồn tại');
+          const chapterId = req.body.chapterId || lessonData.chapterId;
+          const chapterDoc: any = await ChaptersModel.model.findById(chapterId);
+          if (!chapterDoc) {
+            return sendError(res, 404, 'Chapter không tồn tại');
           }
 
-          const currentIndex = await LessonsModel.model.countDocuments({ courseModuleId: moduleId });
-
           const newQuiz = await QuizzesModel.create({
-            courseId: moduleDoc.courseId.toString(),
-            chapterIndex: moduleDoc.index,
-            lessonIndex: currentIndex,
+            courseId: chapterDoc.courseId.toString(),
+            chapterId: chapterId.toString(),
+            lessonId: lessonId.toString(),
             title: quizDataJson.title || 'Quiz',
             description: quizDataJson.description || '',
             questions: quizDataJson.questions || [],

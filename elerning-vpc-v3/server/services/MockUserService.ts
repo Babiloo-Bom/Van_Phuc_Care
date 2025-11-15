@@ -35,9 +35,8 @@ class MockUserServiceClass {
         existingUser.avatar = googleData.picture;
         existingUser.updatedAt = new Date();
         
-        this.users.set(existingUser.id, existingUser);
-        console.log('✅ MockUserService: Updated existing user:', existingUser.email);
-        return existingUser;
+        this.users.set(existingUser.id, existingUser)
+        return existingUser
       }
 
       // Find by email
@@ -49,9 +48,8 @@ class MockUserServiceClass {
         emailUser.provider = 'google';
         emailUser.updatedAt = new Date();
         
-        this.users.set(emailUser.id, emailUser);
-        console.log('✅ MockUserService: Linked Google account to existing user:', emailUser.email);
-        return emailUser;
+        this.users.set(emailUser.id, emailUser)
+        return emailUser
       }
 
       // Create new user
@@ -69,13 +67,11 @@ class MockUserServiceClass {
         updatedAt: new Date(),
       };
 
-      this.users.set(newUser.id, newUser);
-      console.log('✅ MockUserService: Created new user:', newUser.email);
-      return newUser;
+      this.users.set(newUser.id, newUser)
+      return newUser
 
     } catch (error: any) {
-      console.error('❌ MockUserService: Failed to manage Google user:', error);
-      throw new Error(`Failed to manage Google user: ${error.message}`);
+      throw new Error(`Failed to manage Google user: ${error.message}`)
     }
   }
 
@@ -122,9 +118,8 @@ class MockUserServiceClass {
 
   // ===== CLEAR ALL USERS (for testing) =====
   async clearAllUsers(): Promise<void> {
-    this.users.clear();
-    this.idCounter = 1;
-    console.log('✅ MockUserService: All users cleared');
+    this.users.clear()
+    this.idCounter = 1
   }
 }
 

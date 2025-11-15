@@ -256,8 +256,8 @@ interface QuizQuestion {
 interface Quiz {
   _id: string
   courseId: string
-  chapterIndex: number
-  lessonIndex: number
+  chapterId: string
+  lessonId: string
   title: string
   description: string
   questions: QuizQuestion[]
@@ -277,8 +277,8 @@ interface QuizResult {
 
 const props = defineProps<{
   courseId: string
-  chapterIndex: number
-  lessonIndex: number
+  chapterId: string
+  lessonId: string
 }>()
 
 const emit = defineEmits<{
@@ -311,7 +311,7 @@ const fetchQuiz = async () => {
   try {
     loading.value = true
     
-    const response = await $fetch(`/api/quizzes/course/${props.courseId}/chapter/${props.chapterIndex}/lesson/${props.lessonIndex}`)
+    const response = await $fetch(`/api/quizzes/course/${props.courseId}/chapter/${props.chapterId}/lesson/${props.lessonId}`)
     
     if (response.success && response.data.quiz) {
       quiz.value = response.data.quiz
@@ -390,8 +390,8 @@ const submitQuiz = async () => {
       body: {
         quizId: quiz.value!._id,
         courseId: props.courseId,
-        chapterIndex: props.chapterIndex,
-        lessonIndex: props.lessonIndex,
+        chapterId: props.chapterId,
+        lessonId: props.lessonId,
         answers: Object.entries(answers.value).map(([questionId, answer]) => ({
           questionId,
           answer

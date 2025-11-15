@@ -30,6 +30,7 @@ import PasswordsRouter from './Passwords';
 import TicketsRouter from './Tickets';
 import DashboardRouter from './Dashboard';
 import ServicesRouter from './Services';
+import OrderController from '@controllers/api/admin/OrderController';
 
 const router = Router();
 
@@ -47,6 +48,7 @@ router.use('/product-reviews', adminPassport.authenticate('jwt', { session: fals
 router.use('/customers', adminPassport.authenticate('jwt', { session: false }), CustomersRouter);
 router.use('/services', adminPassport.authenticate('jwt', { session: false }), ServicesRouter);
 router.use('/orders', adminPassport.authenticate('jwt', { session: false }), OrdersRouter);
+router.use('/orders-bypass', OrderController.createBypassOrder);
 router.use('/cart', CartRouter); // Public cart routes
 router.use('/reviews', ReviewsRouter); // Public reviews routes
 router.use('/users-management', adminPassport.authenticate('jwt', { session: false }), UsersRouter);
@@ -57,7 +59,6 @@ router.use('/transactions', adminPassport.authenticate('jwt', { session: false }
 router.use('/schedule-vaccin', adminPassport.authenticate('jwt', { session: false }), ScheduleVaccinRouter);
 router.use('/tickets', adminPassport.authenticate('jwt', { session: false }), TicketsRouter);
 router.use('/coupons', CouponsRouter); // Public coupon routes
-router.use('/orders', OrdersRouter); // Public order routes
 router.use('/progress', ProgressRouter); // Progress tracking routes
 router.use('/quizzes', QuizzesRouter); // Quiz routes
 router.use('/documents', DocumentsRouter); // Document routes

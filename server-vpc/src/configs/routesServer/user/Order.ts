@@ -42,8 +42,8 @@ router.get('/', OrderController.index);
  *     security:
  *      - Bearer: []
  */
-router.get('/:orderId', OrderController.show);
+router.get('/:orderId', OrderController.getOrderByOrderId);
 router.post('/', OrderController.create);
 router.patch('/:orderId', OrderController.update);
-
+router.post('/payment', OrderController.processPayment);
 export default router;

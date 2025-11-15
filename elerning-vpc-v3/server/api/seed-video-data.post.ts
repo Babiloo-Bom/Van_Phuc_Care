@@ -1,6 +1,5 @@
 export default defineEventHandler(async event => {
   try {
-    console.log('🎬 Starting to seed video data...');
     
     // Sample video data for testing
     const videoData = {
@@ -72,7 +71,6 @@ export default defineEventHandler(async event => {
       },
     });
     
-    console.log('✅ Video data seeded:', response.message);
     
     return {
       success: true,
@@ -80,7 +78,6 @@ export default defineEventHandler(async event => {
       data: videoData,
     };
   } catch (error: any) {
-    console.error('❌ Error seeding video data:', error);
     throw createError({
       statusCode: 500,
       statusMessage: error.message || 'Failed to seed video data',

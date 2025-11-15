@@ -202,12 +202,6 @@ const props = defineProps<{
   progress?: number;
 }>();
 
-// Debug log
-console.log(`🔍 CourseCard for ${props.course.title}:`, {
-  courseId: props.course._id,
-  isPurchased: props.isPurchased,
-});
-
 const emit = defineEmits<{
   addToCart: [course: Course];
   buyNow: [course: Course];

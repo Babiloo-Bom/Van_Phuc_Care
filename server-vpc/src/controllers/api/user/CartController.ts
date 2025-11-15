@@ -55,7 +55,6 @@ class CartController {
       if (!cart) {
         return sendError(res, 404, NoData);
       }
-      console.log(cart, params);
       await cart.update({
         customer: {
           fullname: params.fullname || cart.get('customer.fullname'),
