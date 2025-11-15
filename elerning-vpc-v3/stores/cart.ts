@@ -161,10 +161,10 @@ export const useCartStore = defineStore('cart', {
 
         const authStore = useAuthStore();
         
-        if (!authStore.isLoggedIn || !authStore.user?._id) {
-          await navigateTo('/login')
-          return
-        }
+        // if (!authStore.isLoggedIn || !authStore.user?._id) {
+        //   await navigateTo('/login')
+        //   return
+        // }
         
         // Validate courseId
         if (!data.courseId) {

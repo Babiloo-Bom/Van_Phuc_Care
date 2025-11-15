@@ -23,7 +23,7 @@ const RETRY_CONFIG = {
 export const useAuthApi = () => {
   const config = useRuntimeConfig();
   // Hardcode for testing - should be http://localhost:3000/api/a
-  let apiBase = config.public.apiBase || "http://localhost:3000/api/u";
+  let apiBase = "http://localhost:3000/api/u";
 
   // Debug: Log API base URL
   console.log("🔍 API Base URL:", apiBase);

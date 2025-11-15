@@ -119,33 +119,39 @@ class CourseController {
   /**
    * Convert MinIO path to full URL (presigned or public)
    */
-  private static async convertMinioPathToUrl(path: string | null | undefined): Promise<string | null> {
+  private static async convertMinioPathToUrl(
+    path: string | null | undefined
+  ): Promise<string | null> {
     if (!path) return null;
-    
+
     // If already a full URL (http/https), return as is
-    if (path.startsWith('http://') || path.startsWith('https://')) {
+    if (path.startsWith("http://") || path.startsWith("https://")) {
       return path;
     }
-    
+
     // If it's a MinIO path (starts with /van-phuc-care/)
-    if (path.startsWith('/van-phuc-care/')) {
+    if (path.startsWith("/van-phuc-care/")) {
       try {
         // Remove leading slash and bucket name to get object name
-        const objectName = path.replace(/^\/van-phuc-care\//, '');
-        
+        const objectName = path.replace(/^\/van-phuc-care\//, "");
+
         // Get presigned URL (valid for 7 days)
-        const presignedUrl = await MinioService.getFileUrl(objectName, 7 * 24 * 60 * 60);
+        const presignedUrl = await MinioService.getFileUrl(
+          objectName,
+          7 * 24 * 60 * 60
+        );
         return presignedUrl;
       } catch (error) {
-        console.error('Error getting presigned URL for:', path, error);
+        console.error("Error getting presigned URL for:", path, error);
         // Fallback: construct public URL (requires public bucket)
-        const minioEndpoint = process.env.MINIO_ENDPOINT || 'localhost';
-        const minioPort = process.env.MINIO_PORT || '9000';
-        const protocol = process.env.MINIO_USE_SSL === 'true' ? 'https' : 'http';
+        const minioEndpoint = process.env.MINIO_ENDPOINT || "localhost";
+        const minioPort = process.env.MINIO_PORT || "9000";
+        const protocol =
+          process.env.MINIO_USE_SSL === "true" ? "https" : "http";
         return `${protocol}://${minioEndpoint}:${minioPort}${path}`;
       }
     }
-    
+
     return path;
   }
   /**
@@ -321,55 +327,55 @@ class CourseController {
         }
       };
 
-       const isLessonLocked = async (
-         chapterId: string,
-         lessonId: string,
-         chapterIndex: number,
-         lessonIndex: number,
-         allLessons: any[]
-       ) => {
-         if (chapterIndex === 0 && lessonIndex <= 1) return false;
+      const isLessonLocked = async (
+        chapterId: string,
+        lessonId: string,
+        chapterIndex: number,
+        lessonIndex: number,
+        allLessons: any[]
+      ) => {
+        if (chapterIndex === 0 && lessonIndex <= 1) return false;
 
-         if (!userId) return true;
+        if (!userId) return true;
 
-         if (lessonIndex > 0) {
-           const prevLesson = allLessons[lessonIndex - 1];
-           const prevHasQuiz = !!prevLesson.quizId || !!prevLesson.quiz;
-           const prevCompleted = isLessonCompleted(
-             chapterId,
-             prevLesson._id.toString(),
-             prevHasQuiz
-           );
+        if (lessonIndex > 0) {
+          const prevLesson = allLessons[lessonIndex - 1];
+          const prevHasQuiz = !!prevLesson.quizId || !!prevLesson.quiz;
+          const prevCompleted = isLessonCompleted(
+            chapterId,
+            prevLesson._id.toString(),
+            prevHasQuiz
+          );
 
-           if (!prevCompleted) return true;
-         }
+          if (!prevCompleted) return true;
+        }
 
-         if (chapterIndex > 0 && lessonIndex === 0) {
-           const prevChapter = chapters[chapterIndex - 1];
-           const prevLessons = await LessonsModel.model
-             .find({
-               chapterId: prevChapter._id,
-               status: "active",
-             })
-             .populate("quiz")
-             .sort({ createdAt: 1 });
+        if (chapterIndex > 0 && lessonIndex === 0) {
+          const prevChapter = chapters[chapterIndex - 1];
+          const prevLessons = await LessonsModel.model
+            .find({
+              chapterId: prevChapter._id,
+              status: "active",
+            })
+            .populate("quiz")
+            .sort({ createdAt: 1 });
 
-           if (prevLessons.length > 0) {
-             const lastPrevLesson: any = prevLessons[prevLessons.length - 1];
-             const lastPrevHasQuiz =
-               !!lastPrevLesson.quizId || !!lastPrevLesson.quiz;
-             const lastPrevCompleted = isLessonCompleted(
-               prevChapter._id.toString(),
-               lastPrevLesson._id.toString(),
-               lastPrevHasQuiz
-             );
+          if (prevLessons.length > 0) {
+            const lastPrevLesson: any = prevLessons[prevLessons.length - 1];
+            const lastPrevHasQuiz =
+              !!lastPrevLesson.quizId || !!lastPrevLesson.quiz;
+            const lastPrevCompleted = isLessonCompleted(
+              prevChapter._id.toString(),
+              lastPrevLesson._id.toString(),
+              lastPrevHasQuiz
+            );
 
-             if (!lastPrevCompleted) return true;
-           }
-         }
+            if (!lastPrevCompleted) return true;
+          }
+        }
 
-         return false;
-       };
+        return false;
+      };
 
       const transformedChapters = await Promise.all(
         chapters.map(async (chapter: any, chapterIndex: number) => {
@@ -412,26 +418,33 @@ class CourseController {
               );
 
               // Convert video URLs
-              const convertedVideoUrl = await CourseController.convertMinioPathToUrl(
-                'http://localhost:9001/browser/van-phuc-care/sticktune_TikTok_NoWatermark.mp4'
-              );
+              const convertedVideoUrl =
+                await CourseController.convertMinioPathToUrl(
+                  firstVideo?.videoUrl || null
+                );
 
               // Convert thumbnail
-              const convertedThumbnail = await CourseController.convertMinioPathToUrl(
-                firstVideo?.thumbnail || courseData.thumbnail || null
-              );
+              const convertedThumbnail =
+                await CourseController.convertMinioPathToUrl(
+                  firstVideo?.thumbnail || courseData.thumbnail || null
+                );
 
               // Convert document URL
-              const convertedDocumentUrl = await CourseController.convertMinioPathToUrl(
-                firstDocument?.fileUrl || null
-              );
+              const convertedDocumentUrl =
+                await CourseController.convertMinioPathToUrl(
+                  firstDocument?.fileUrl || null
+                );
 
               // Convert videos array
               const convertedVideos = await Promise.all(
                 (lessonData.videos || []).map(async (video: any) => ({
                   ...video,
-                  videoUrl: await CourseController.convertMinioPathToUrl(video.videoUrl),
-                  thumbnail: await CourseController.convertMinioPathToUrl(video.thumbnail),
+                  videoUrl: await CourseController.convertMinioPathToUrl(
+                    video.videoUrl
+                  ),
+                  thumbnail: await CourseController.convertMinioPathToUrl(
+                    video.thumbnail
+                  ),
                 }))
               );
 
@@ -439,7 +452,9 @@ class CourseController {
               const convertedDocuments = await Promise.all(
                 (lessonData.documents || []).map(async (doc: any) => ({
                   ...doc,
-                  fileUrl: await CourseController.convertMinioPathToUrl(doc.fileUrl),
+                  fileUrl: await CourseController.convertMinioPathToUrl(
+                    doc.fileUrl
+                  ),
                 }))
               );
 
@@ -482,24 +497,62 @@ class CourseController {
       // Calculate course progress
       let totalLessons = 0;
       let completedLessons = 0;
-      
+
       for (const chapter of transformedChapters) {
         if (chapter.lessons && Array.isArray(chapter.lessons)) {
           totalLessons += chapter.lessons.length;
-          completedLessons += chapter.lessons.filter((lesson: any) => lesson.isCompleted === true).length;
+          completedLessons += chapter.lessons.filter(
+            (lesson: any) => lesson.isCompleted === true
+          ).length;
         }
       }
-      
-      const progressPercentage = totalLessons > 0 ? Math.round((completedLessons / totalLessons) * 100) : 0;
-      
+
+      const progressPercentage =
+        totalLessons > 0
+          ? Math.round((completedLessons / totalLessons) * 100)
+          : 0;
+
       // Add progress data to course
       courseData.progress = {
         totalLessons,
         completedLessons,
         progressPercentage,
-        isCompleted: progressPercentage === 100
+        isCompleted: progressPercentage === 100,
       };
 
+      let totalVideoCount = 0;
+      let totalDocumentCount = 0;
+
+      for (const chapter of chapters) {
+        const lessons = await LessonsModel.model.find({
+          chapterId: chapter._id,
+          status: "active",
+        });
+
+        for (const lesson of lessons) {
+          const lessonData: any = lesson.toObject();
+
+          if (lessonData.videos && Array.isArray(lessonData.videos)) {
+            totalVideoCount += lessonData.videos.length;
+          } else if (lessonData.type === "video" && lessonData.videoUrl) {
+            totalVideoCount += 1;
+          }
+
+          if (lessonData.documents && Array.isArray(lessonData.documents)) {
+            totalDocumentCount += lessonData.documents.length;
+          } else if (lessonData.type === "document" && lessonData.documentUrl) {
+            totalDocumentCount += 1;
+          }
+        }
+      }
+
+      const totalQuizCount = await QuizzesModel.countDocuments({
+        courseId: course._id.toString(),
+        status: "active",
+      });
+      courseData.videoCount = totalVideoCount;
+      courseData.documentCount = totalDocumentCount;
+      courseData.quizCount = totalQuizCount;
       sendSuccess(res, { course: courseData });
     } catch (error: any) {
       sendError(res, 500, error.message, error as Error);
@@ -605,7 +658,7 @@ class CourseController {
 
       if (chapters.length > 0) sendSuccess(res, { course, chapters });
       else sendSuccess(res, { course });
-    } catch (error: any) {  
+    } catch (error: any) {
       sendError(res, 500, error.message, error as Error);
     }
   }
@@ -736,7 +789,7 @@ class CourseController {
 
                   // Update lesson with quizId
                   await LessonsModel.model.findByIdAndUpdate(lesson._id, {
-                    quizId: quiz._id
+                    quizId: quiz._id,
                   });
 
                   totalQuizzes++;

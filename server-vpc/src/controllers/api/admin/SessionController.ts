@@ -17,7 +17,6 @@ class SessionController {
       
       let admin = null;
       admin = await MongoDbAdmins.model.findOne({ email: username, status: MongoDbAdmins.STATUS_ENUM.ACTIVE });
-      
       if (!admin || !await bcrypt.compare(password, admin.get('password'))) {
         return sendError(res, 404, BadAuthentication);
       }
