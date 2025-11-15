@@ -2,7 +2,7 @@
   <div class="">
     <!-- Hero Banner -->
     <div
-      class="h-auto md:mb-[5rem] sm:h-[500px] py-10 sm:pt-20 sm:pb-20 md:pb-60 bg-cover bg-center bg-no-repeat bg-[url('https://cdn.synck.io.vn/vanphuccare/banner/main.webp')]
+      class="h-auto md:mb-[5rem] sm:h-[400px] md:h-[500px] py-8 sm:py-10 sm:pt-16 sm:pb-20 md:pb-60 bg-cover bg-center bg-no-repeat bg-[url('https://cdn.synck.io.vn/vanphuccare/banner/main.webp')]
              relative z-[0] after:absolute after:content-[''] after:top-0 after:left-0 after:w-full after:h-full after:opacity-60 after:bg-prim-100"
     >
       <div class="absolute inset-0 bg-[#1A75BBB2]"></div>
@@ -90,30 +90,30 @@
     </div>
 
     <!-- Courses Section -->
-    <section class="pb-20 p-4 lg:pt-20 sm:pt-10 bg-[#f4f7f9]">
-      <div class="container mx-auto px-4 md:px-0">
+    <section class="pb-10 sm:pb-20 pt-4 sm:pt-10 lg:pt-20 bg-[#f4f7f9] max-md:pt-[6rem]">
+      <div class="container mx-auto px-4 sm:px-4 md:px-0">
         <div v-if="!loading">
           <div
             v-if="filteredCourses.length"
-            class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 xl:grid-cols-4 gap-6 -mt-80 sm:-mt-64 md:-mt-40 lg:-mt-60"
+            class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 xl:grid-cols-4 gap-4 sm:gap-6 -mt-32 sm:-mt-48 md:-mt-40 lg:-mt-60"
           >
-            <CourseCard
+            <PurchasedCourseCard
               v-for="(course, index) in filteredCourses"
               :key="index"
-              :course="course"
+              :course="course as any"
               :is-purchased="true"
               :progress="getProgress(course._id)"
               @view-detail="handleViewDetail"
               class="transform transition hover:-translate-y-1 duration-150"
             />
           </div>
-          <div v-else class="">
+          <div v-else class="pt-20 sm:pt-0">
             <a-empty description="Bạn chưa có khóa học nào" />
           </div>
         </div>
         <div
           v-else
-          class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 xl:grid-cols-4 gap-6 -mt-80 sm:-mt-64 md:-mt-40 lg:-mt-60"
+          class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 xl:grid-cols-4 gap-4 sm:gap-6 -mt-32 sm:-mt-48 md:-mt-40 lg:-mt-60"
         >
           <div
             v-for="index in [1, 2, 3, 4]"
@@ -137,7 +137,7 @@
 <script setup lang="ts">
 import { ref, computed, onMounted } from "vue";
 import { useCoursesStore } from "~/stores/courses";
-import CourseCard from "~/components/courses/CourseCard.vue";
+import PurchasedCourseCard from "~/components/courses/PurchasedCourseCard.vue";
 
 // SEO
 useHead({
@@ -176,8 +176,10 @@ const handleSearch = (e: Event) => {
 };
 
 const getProgress = (courseId: string) => {
-  // TODO: Implement actual progress calculation
-  // For now, return 0
+  const course = coursesStore.myCourses.find((c: any) => c._id === courseId);
+  if (course && course.progress) {
+    return course.progress.progressPercentage || 0;
+  }
   return 0;
 };
 
@@ -194,20 +196,7 @@ const fetchData = async () => {
     const authStore = useAuthStore()
     
     // Get all courses first
-    await coursesStore.fetchAll()
-    
-    // Filter courses that user has purchased
-    if (authStore.user?.courseRegister && coursesStore.courses) {
-      const purchasedCourseIds = authStore.user.courseRegister
-      
-      const purchasedCourses = coursesStore.courses.filter(course => 
-        purchasedCourseIds.includes(course._id)
-      )
-      
-      coursesStore.myCourses = purchasedCourses
-    } else {
-      coursesStore.myCourses = []
-    }
+    await coursesStore.fetchMyCourses()
   } catch (error) {
   } finally {
     loading.value = false;

@@ -154,7 +154,7 @@
 
     <!-- Courses Section -->
     <section class="pb-20 p-4 lg:pt-20 sm:pt-10 bg-[#f4f7f9]">
-      <div class="container mx-auto !px-0 md:!px-auto">
+      <div class="container mx-auto !px-0 md:!px-auto max-[639px]:!pt-[18rem]">
         <div
           v-if="googleError"
           class="flex justify-center items-center min-h-[300px]"

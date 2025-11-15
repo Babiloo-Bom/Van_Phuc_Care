@@ -38,6 +38,7 @@ export interface Course {
   reviewsCount?: number
   videoCount?: number
   documentCount?: number
+  quizCount?: number
   examCount?: number
   chapters?: Chapter[]
   progress?: {
@@ -260,6 +261,33 @@ export const useCoursesStore = defineStore('courses', {
         throw error
       } finally {
         this.loading = false;
+      }
+    },
+
+    async fetchMyCourses(params?: any) {
+      this.loading = true;
+      try {
+        const courseApi = useCourseApi()
+        const response: any = await courseApi.getMyCourses(params)
+        console.log('responsessssssssssss', response.data.courses);
+        this.myCourses = response.data?.courses || response.data || response.courses || response
+      } catch (error) {
+        throw error
+      } finally {
+        this.loading = false;
+      }
+    },
+
+    async fetchMyCourseBySlug(slug: string) {
+      this.loadingDetail = true;
+      try {
+        const courseApi = useCourseApi()
+        const response: any = await courseApi.getMyCourseBySlug(slug)
+        this.course = response.data?.course || response.data || response.course || response
+      } catch (error) {
+        throw error
+      } finally {
+        this.loadingDetail = false;
       }
     },
 

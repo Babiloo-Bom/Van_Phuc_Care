@@ -78,7 +78,7 @@ export const useAuthStore = defineStore("auth", {
         
         // Create basic user object (will be enhanced later if needed)
         this.user = {
-          id: response.id || "temp-id",
+          id: response.data.id || "temp-id",
           email: username,
           username: username,
           fullname: response.fullname || username,

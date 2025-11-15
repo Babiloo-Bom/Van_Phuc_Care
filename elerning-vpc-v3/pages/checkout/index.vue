@@ -426,7 +426,7 @@ const handleSubmit = async (e?: Event) => {
     
     // Create order first
     const orderData = {
-      userId: authStore.user._id,
+      userId: authStore.user?.id,
       customerInfo: {
         fullName: checkoutForm.value.fullName,
         phone: checkoutForm.value.phone,
@@ -450,7 +450,7 @@ const handleSubmit = async (e?: Event) => {
     }
 
     // Create order
-    const orderResponse: any = await $fetch('http://localhost:3000/api/a/orders', {
+    const orderResponse: any = await $fetch('http://localhost:3000/api/u/orders', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json'
@@ -472,7 +472,7 @@ const handleSubmit = async (e?: Event) => {
       
       
       // Update order status
-      await $fetch(`http://localhost:3000/api/a/orders/payment`, {
+      await $fetch(`http://localhost:3000/api/u/orders/payment`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json'
@@ -507,7 +507,7 @@ const handleSubmit = async (e?: Event) => {
     if (paymentResult.success) {
 
       // Update order status
-      await $fetch(`http://localhost:3000/api/a/orders/payment`, {
+      await $fetch(`http://localhost:3000/api/u/orders/payment`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json'

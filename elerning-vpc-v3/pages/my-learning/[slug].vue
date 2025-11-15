@@ -503,7 +503,7 @@ const handleTabChange = (key: string) => {
 const fetchCourseDetail = async () => {
   try {
     loading.value = true;
-    await coursesStore.fetchDetail(slug.value);
+    await coursesStore.fetchMyCourseBySlug(slug.value);
 
     const chapterParam = route.query.chapter;
     const lessonParam = route.query.lesson;
@@ -523,7 +523,7 @@ const fetchCourseDetail = async () => {
       currentLessonIndex.value = 0;
     }
   } catch (error) {
-    // navigateTo('/my-learning')
+    navigateTo('/my-learning')
   } finally {
     loading.value = false;
   }

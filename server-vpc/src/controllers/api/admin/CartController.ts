@@ -1,6 +1,9 @@
 import { sendError, sendSuccess } from '@libs/response';
 import { Request, Response } from 'express';
 import mongoose from 'mongoose';
+import ChaptersModel from '@mongodb/chapters';
+import LessonsModel from '@mongodb/lessons';
+import QuizzesModel from '@mongodb/quizzes';
 
 // Cart schema
 const cartSchema = new mongoose.Schema({
@@ -59,6 +62,72 @@ const Cart = mongoose.models.Cart || mongoose.model('Cart', cartSchema);
 
 class CartController {
   /**
+   * Calculate videoCount, documentCount, quizCount for a course
+   */
+  private static async calculateCourseCounts(courseId: string | mongoose.Types.ObjectId) {
+    try {
+      let totalVideoCount = 0;
+      let totalDocumentCount = 0;
+
+      // Convert courseId to ObjectId if it's a string
+      const courseObjectId = typeof courseId === 'string' 
+        ? new mongoose.Types.ObjectId(courseId) 
+        : courseId;
+
+      // Get chapters for this course
+      const chapters = await ChaptersModel.model.find({
+        courseId: courseObjectId,
+        status: 'active',
+      });
+
+      // Calculate video and document counts from lessons
+      for (const chapter of chapters) {
+        const lessons = await LessonsModel.model.find({
+          chapterId: chapter._id,
+          status: 'active',
+        });
+
+        for (const lesson of lessons) {
+          const lessonData: any = lesson.toObject();
+
+          // Count videos
+          if (lessonData.videos && Array.isArray(lessonData.videos)) {
+            totalVideoCount += lessonData.videos.length;
+          } else if (lessonData.type === 'video' && lessonData.videoUrl) {
+            totalVideoCount += 1;
+          }
+
+          // Count documents
+          if (lessonData.documents && Array.isArray(lessonData.documents)) {
+            totalDocumentCount += lessonData.documents.length;
+          } else if (lessonData.type === 'document' && lessonData.documentUrl) {
+            totalDocumentCount += 1;
+          }
+        }
+      }
+
+      // Count quizzes
+      const totalQuizCount = await QuizzesModel.countDocuments({
+        courseId: courseObjectId.toString(),
+        status: 'active',
+      });
+
+      return {
+        videoCount: totalVideoCount,
+        documentCount: totalDocumentCount,
+        quizCount: totalQuizCount,
+      };
+    } catch (error: any) {
+      console.error('❌ Error calculating course counts:', error);
+      return {
+        videoCount: 0,
+        documentCount: 0,
+        quizCount: 0,
+      };
+    }
+  }
+
+  /**
    * Get user's cart
    */
   public static async getCart(req: Request, res: Response) {
@@ -79,8 +148,46 @@ class CartController {
           totalItems: 0
         });
       }
+
+      // Calculate and add videoCount, documentCount, quizCount for each course in cart
+      const cartData = cart.toObject();
+      if (cartData.items && cartData.items.length > 0) {
+        const itemsWithCounts = await Promise.all(
+          cartData.items.map(async (item: any) => {
+            const courseId = item.courseId?.toString() || item.course?._id?.toString();
+            
+            if (!courseId) {
+              return item;
+            }
+
+            // Calculate counts if not already present
+            if (
+              item.course?.videoCount === undefined ||
+              item.course?.documentCount === undefined ||
+              item.course?.quizCount === undefined
+            ) {
+              const counts = await CartController.calculateCourseCounts(courseId);
+              
+              // Update course object with counts
+              return {
+                ...item,
+                course: {
+                  ...item.course,
+                  videoCount: counts.videoCount,
+                  documentCount: counts.documentCount,
+                  quizCount: counts.quizCount,
+                },
+              };
+            }
+
+            return item;
+          })
+        );
+
+        cartData.items = itemsWithCounts;
+      }
       
-      sendSuccess(res, { cart });
+      sendSuccess(res, { cart: cartData });
     } catch (error: any) {
       console.error('❌ Get cart error:', error);
       sendError(res, 500, error.message, error as Error);

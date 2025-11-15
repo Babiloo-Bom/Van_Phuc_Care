@@ -129,7 +129,7 @@
               type="primary" 
               size="large" 
               class="w-full !bg-prim-100 !py-4 !h-[60px] !text-white !border-prim-100 !text-xl !font-bold !rounded-xl !shadow-lg hover:!shadow-xl transition-all duration-300 !flex !items-center !justify-center !gap-3"
-              @click="navigateTo('/khoa-hoc-cua-toi')"
+              @click="navigateTo('/my-learning')"
             >
               <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" class="fill-none stroke-current">
                 <path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
@@ -236,7 +236,7 @@ const fetchOrderDetails = async () => {
 
   try {
     
-    const response = await $fetch(`http://localhost:3000/api/a/orders/order/${orderId.value}`)
+    const response: any = await $fetch(`http://localhost:3000/api/u/orders/${orderId.value}`)
     
     if (response.data && response.data.order) {
       order.value = response.data.order

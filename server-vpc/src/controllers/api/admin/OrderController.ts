@@ -1,6 +1,7 @@
 import { sendError, sendSuccess } from '@libs/response';
 import { Request, Response } from 'express';
 import mongoose from 'mongoose';
+import MongoDbUsers from '@mongodb/users';
 
 // Order schema
 const orderSchema = new mongoose.Schema({
@@ -433,6 +434,200 @@ class OrderController {
       });
     } catch (error: any) {
       console.error('❌ Get order stats error:', error);
+      sendError(res, 500, error.message, error as Error);
+    }
+  }
+
+  /**
+   * Create order with bypass payment (for testing)
+   * This will create an order from cart and automatically complete payment
+   */
+  public static async createBypassOrder(req: Request, res: Response) {
+    try {
+      const { userId, customerInfo } = req.body;
+
+      if (!userId) {
+        return sendError(res, 400, 'User ID is required');
+      }
+
+      // Get cart schema (same as CartController)
+      const cartSchema = new mongoose.Schema({
+        userId: {
+          type: String,
+          required: true
+        },
+        items: [{
+          courseId: {
+            type: mongoose.Schema.Types.ObjectId,
+            ref: 'courses',
+            required: true
+          },
+          course: {
+            type: Object,
+            required: true
+          },
+          addedAt: {
+            type: Date,
+            default: Date.now
+          }
+        }],
+        totalPrice: {
+          type: Number,
+          default: 0
+        },
+        totalItems: {
+          type: Number,
+          default: 0
+        },
+        coupon: {
+          code: {
+            type: String
+          },
+          name: {
+            type: String
+          },
+          type: {
+            type: String,
+            enum: ['percentage', 'fixed']
+          },
+          value: {
+            type: Number
+          },
+          discountAmount: {
+            type: Number,
+            default: 0
+          }
+        }
+      }, {
+        timestamps: true
+      });
+
+      const Cart = mongoose.models.Cart || mongoose.model('Cart', cartSchema);
+
+      // Handle guest user - use consistent ID
+      const actualUserId = userId === 'guest' ? 'guest_user' : userId;
+
+      // Get user's cart
+      const cart = await Cart.findOne({ userId: actualUserId });
+      
+      if (!cart || !cart.items || cart.items.length === 0) {
+        return sendError(res, 400, 'Cart is empty');
+      }
+
+      // Calculate order details from cart
+      const items = cart.items.map((item: any) => ({
+        courseId: item.courseId,
+        course: item.course,
+        price: item.course?.price || item.course?.price || 0
+      }));
+
+      const subtotal = cart.items.reduce((sum: number, item: any) => {
+        return sum + (item.course?.price || item.course?.price || 0);
+      }, 0);
+
+      const discount = cart.coupon ? {
+        type: cart.coupon.type || 'percentage',
+        value: cart.coupon.value || 0,
+        amount: cart.coupon.discountAmount || 0,
+        couponCode: cart.coupon.code || null
+      } : {
+        type: 'percentage',
+        value: 0,
+        amount: 0,
+        couponCode: null
+      };
+
+      const totalAmount = subtotal - (discount.amount || 0);
+
+      // Get user info for customerInfo if not provided
+      let finalCustomerInfo = customerInfo;
+      if (!finalCustomerInfo) {
+        const user: any = await MongoDbUsers.model.findById(actualUserId);
+        if (user) {
+          finalCustomerInfo = {
+            fullName: user.fullname || user.name || 'Guest User',
+            phone: user.phoneNumber || '',
+            email: user.email || '',
+            address: user.address || ''
+          };
+        } else {
+          finalCustomerInfo = {
+            fullName: 'Guest User',
+            phone: '',
+            email: '',
+            address: ''
+          };
+        }
+      }
+
+      // Generate unique order ID
+      const orderId = `VPC${Date.now()}${Math.random().toString(36).substr(2, 5).toUpperCase()}`;
+
+      // Create order with bypass payment
+      const order = await Order.create({
+        orderId,
+        userId: actualUserId,
+        customerInfo: finalCustomerInfo,
+        items,
+        subtotal,
+        discount,
+        totalAmount,
+        paymentMethod: 'bypass',
+        paymentStatus: 'completed',
+        transactionId: `BYPASS_${Date.now()}`,
+        status: 'completed',
+        notes: 'Bypass payment for testing purposes'
+      });
+
+      // Add courses to user's courseRegister
+      if (actualUserId !== 'guest_user') {
+        try {
+          const user: any = await MongoDbUsers.model.findById(actualUserId);
+          if (user) {
+            // Initialize courseRegister if not exists
+            if (!user.courseRegister) {
+              user.courseRegister = [];
+            }
+
+            // Get course IDs from order
+            const courseIds = items.map((item: any) => {
+              const id = item.courseId?.toString() || item.course?._id?.toString();
+              return id;
+            }).filter(Boolean);
+
+            // Add new courses (avoid duplicates)
+            const newCourses = courseIds.filter((id: string) => !user.courseRegister.includes(id));
+            if (newCourses.length > 0) {
+              user.courseRegister = [...user.courseRegister, ...newCourses];
+              await user.save();
+              console.log(`✅ Added ${newCourses.length} courses to user ${actualUserId}`);
+            }
+          }
+        } catch (error: any) {
+          console.error('❌ Error updating user courseRegister:', error);
+          // Don't fail the order creation if this fails
+        }
+      }
+
+      // Clear cart after successful order
+      try {
+        cart.items = [];
+        cart.totalItems = 0;
+        cart.totalPrice = 0;
+        cart.coupon = undefined;
+        await cart.save();
+        console.log(`✅ Cart cleared for user ${actualUserId}`);
+      } catch (error: any) {
+        console.error('❌ Error clearing cart:', error);
+        // Don't fail the order creation if this fails
+      }
+
+      sendSuccess(res, {
+        message: 'Order created and payment completed successfully (bypass)',
+        order
+      });
+    } catch (error: any) {
+      console.error('❌ Create bypass order error:', error);
       sendError(res, 500, error.message, error as Error);
     }
   }

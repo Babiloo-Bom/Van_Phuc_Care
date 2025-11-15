@@ -5,6 +5,7 @@
 
 export const useCourseApi = () => {
   const apiBase = 'http://localhost:3000/api/a'
+  const apiUserBase = 'http://localhost:3000/api/u'
 
   /**
    * Get all courses
@@ -19,6 +20,33 @@ export const useCourseApi = () => {
       throw error
     }
   };
+
+  /**
+   * Get all courses
+   */
+  const getMyCourses = async (params?: any) => {
+    try {
+      const response = await $fetch(`${apiUserBase}/courses/my-courses`, {
+        params
+      })
+      return response
+    } catch (error: any) {
+      throw error
+    }
+  }
+
+  /**
+   * Get my course by slug
+   */
+  const getMyCourseBySlug = async (slug: string) => {
+    try {
+      const response = await $fetch(`${apiUserBase}/courses/my-courses/${slug}`)
+      return response
+    } catch (error: any) {
+      throw error
+    }
+  }
+
 
   /**
    * Get course detail by slug
@@ -58,6 +86,8 @@ export const useCourseApi = () => {
 
   return {
     getAllCourses,
+    getMyCourses,
+    getMyCourseBySlug,
     getDetail,
     getCourseBySlug,
     getById,

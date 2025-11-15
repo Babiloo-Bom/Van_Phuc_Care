@@ -42,7 +42,7 @@ const adminStrategy = new Strategy(adminOptions, async (req: Request, payload: {
 const userStrategy = new Strategy(userOptions, async (req: Request, payload: {id: string}, next: any) => {
   try {
     // Find user in admins collection since Google login creates users there
-    const user = await MongoDbAdmins.model.findOne({ _id: payload.id, status: MongoDbAdmins.STATUS_ENUM.ACTIVE });
+    const user = await MongodbUsers.model.findOne({ _id: payload.id, status: MongodbUsers.STATUS_ENUM.ACTIVE });
     if (user) {
       req.currentUser = user;
       next(null, user);

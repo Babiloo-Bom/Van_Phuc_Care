@@ -40,7 +40,7 @@ class SessionController {
       const accessToken = jwt.sign({ id: userAnyStatus.get('_id') }, settings.jwt.userSecret, { expiresIn: settings.jwt.ttl });
       const timestampNow = Date.now()
       const tokenExpireAt = new Date(timestampNow + settings.jwt.ttl)
-      sendSuccess(res, { accessToken, tokenExpireAt: tokenExpireAt });
+      sendSuccess(res, { accessToken, tokenExpireAt: tokenExpireAt, id: userAnyStatus.get('_id') as string });
     } catch (error: any) {
       console.error('❌ Login error:', error);
       sendError(res, 500, error.message, error as Error);

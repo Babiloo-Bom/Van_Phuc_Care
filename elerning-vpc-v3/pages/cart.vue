@@ -19,12 +19,12 @@
               <div 
                 v-for="(course, index) in cartItems" 
                 :key="`items_cart_${index}`" 
-                class="bg-gray-50 rounded-lg border border-gray-200 p-4 sm:p-5 relative"
+                class="bg-white rounded-lg border border-gray-200 overflow-hidden"
               >
-                <div class="flex gap-4">
-                  <!-- Course Thumbnail -->
-                  <div class="w-24 sm:w-32 h-20 sm:h-24 flex-shrink-0">
-                    <div class="relative overflow-hidden rounded-lg">
+                <div class="flex">
+                  <!-- Course Thumbnail - Left Section (40%) -->
+                  <div class="w-[40%] flex-shrink-0">
+                    <div class="relative w-full h-full min-h-[200px] sm:min-h-[240px]">
                       <img
                         class="w-full h-full object-cover"
                         :src="(course as any).course?.thumbnail || (course as any).thumbnail || '/images/courses/python-course.jpg'"
@@ -33,73 +33,108 @@
                     </div>
                   </div>
                   
-                  <!-- Course Info -->
-                  <div class="flex-1 min-w-0">
-                    <h3 class="mb-2 font-semibold text-base sm:text-lg text-primary-100 cursor-pointer line-clamp-2" 
+                  <!-- Course Info - Right Section (60%) -->
+                  <div class="flex-1 min-w-0 p-4 sm:p-6 relative">
+                    <!-- Title -->
+                    <h3 class="mb-3 font-bold text-lg sm:text-xl text-primary-100 cursor-pointer line-clamp-2 pr-32 sm:pr-40" 
                         @click="navigateTo(`/courses/${(course as any).course?.slug || (course as any).slug}`)">
                       {{ (course as any).course?.title || (course as any).title }}
                     </h3>
                     
-                    <!-- Rating -->
-                    <div class="flex items-center gap-2 mb-2">
-                      <a-rate
-                        :style="{ fontSize: '14px', color: '#FFD74B', marginRight: '0px' }"
-                        :value="(course as any).course?.rating?.average || (course as any).rating?.average || 5"
-                        disabled
+                    <!-- Rating and Reviews -->
+                    <div class="flex items-center gap-2 mb-3">
+                      <Rating
+                        :value="(course as any).course?.rating?.average || (course as any).rating?.average || 0"
+                        :size="16"
+                        active-color="#FFD74B"
+                        inactive-color="#E5E7EB"
+                        :disabled="true"
+                        :allow-half="false"
                       />
-                      <span class="text-xs sm:text-sm text-gray-500">
+                      <span class="text-sm text-gray-500">
                         ({{ ((course as any).course?.rating?.count || (course as any).rating?.count || 0)?.toLocaleString('en-US') }} lượt đánh giá)
                       </span>
                     </div>
                     
                     <!-- Course Content: Video, Documents, Quizzes -->
-                    <div class="flex items-center gap-4 sm:gap-6 text-xs sm:text-sm text-gray-600 mb-3">
-                      <span v-if="getVideoCount(course)" class="flex items-center gap-1">
-                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" class="fill-none stroke-current text-primary-100">
-                          <path d="M14.752 11.168l-3.197-2.132A1 1 0 0 0 10 9.87v4.263a1 1 0 0 0 1.555.832l3.197-2.132a1 1 0 0 0 0-1.664Z" stroke-width="1.5"/>
-                          <path d="M21 12c0 4.97-4.03 9-9 9s-9-4.03-9-9 4.03-9 9-9c1.3 0 2.52.28 3.6.8" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+                    <div class="flex items-center gap-4 sm:gap-6 text-sm text-[#393939] pb-4 border-b border-[#D9D9D9]">
+                      <span v-if="course.course?.videoCount || course.course?.videoCount === 0" class="flex items-center gap-1">
+                        <svg
+                          xmlns="http://www.w3.org/2000/svg"
+                          width="10"
+                          height="10"
+                          viewBox="0 0 9 9"
+                          fill="none"
+                        >
+                          <path
+                            d="M5.86759 4.70128L5.67654 4.4078L5.66699 4.41447L5.86759 4.70128ZM5.86759 4.12602L5.66006 4.40786L5.67567 4.41936L5.69246 4.42906L5.86759 4.12602ZM3.56207 2.42835L3.7696 2.14651L3.75973 2.13924L3.74937 2.13268L3.56207 2.42835ZM3.07874 2.68192L3.42879 2.6809L3.42866 2.67478L3.07874 2.68192ZM3.0884 6.01671L2.73841 6.01773L2.73843 6.02763L2.73902 6.03751L3.0884 6.01671ZM3.58946 6.29461L3.75894 6.60084L3.77501 6.59195L3.79006 6.58142L3.58946 6.29461ZM4.36303 8.37586V8.02586C2.34005 8.02586 0.700098 6.38591 0.700098 4.36293H0.350098H9.76622e-05C9.76622e-05 6.77251 1.95345 8.72586 4.36303 8.72586V8.37586ZM8.37596 4.36293H8.02596C8.02596 6.38591 6.38601 8.02586 4.36303 8.02586V8.37586V8.72586C6.77261 8.72586 8.72596 6.77251 8.72596 4.36293H8.37596ZM4.36303 0.35V0.7C6.38601 0.7 8.02596 2.33995 8.02596 4.36293H8.37596H8.72596C8.72596 1.95335 6.77261 3.8743e-07 4.36303 3.8743e-07V0.35ZM4.36303 0.35V3.8743e-07C1.95345 3.8743e-07 9.76622e-05 1.95335 9.76622e-05 4.36293H0.350098H0.700098C0.700098 2.33995 2.34005 0.7 4.36303 0.7V0.35ZM5.86759 4.70128L6.05854 4.99461C6.23456 4.88002 6.4387 4.68699 6.43831 4.40486C6.43792 4.11489 6.2239 3.92769 6.04272 3.82299L5.86759 4.12602L5.69246 4.42906C5.71573 4.4425 5.73205 4.45407 5.74294 4.46295C5.7539 4.47188 5.75777 4.47678 5.75765 4.47663C5.7574 4.4763 5.75239 4.46982 5.74742 4.4568C5.74223 4.4432 5.73834 4.42565 5.73831 4.40582C5.73829 4.3861 5.74208 4.36984 5.74622 4.3586C5.75016 4.34792 5.75363 4.34382 5.75199 4.34604C5.75028 4.34835 5.74447 4.35554 5.73179 4.3668C5.71918 4.37801 5.70126 4.39194 5.67664 4.40796L5.86759 4.70128ZM5.86759 4.12602L6.07512 3.84419L3.7696 2.14651L3.56207 2.42835L3.35454 2.71019L5.66006 4.40786L5.86759 4.12602ZM3.56207 2.42835L3.74937 2.13268C3.56521 2.01602 3.31398 1.95371 3.0803 2.06283C2.82728 2.18096 2.72366 2.43692 2.72881 2.68906L3.07874 2.68192L3.42866 2.67478C3.42798 2.64144 3.4346 2.63752 3.42813 2.64992C3.42481 2.65625 3.41885 2.66521 3.40923 2.67452C3.39957 2.68387 3.38829 2.69156 3.37645 2.69709C3.35227 2.70838 3.33601 2.70628 3.33625 2.70631C3.33695 2.70641 3.35073 2.70879 3.37478 2.72402L3.56207 2.42835ZM3.07874 2.68192L2.72874 2.68293L2.73841 6.01773L3.0884 6.01671L3.4384 6.0157L3.42874 2.6809L3.07874 2.68192ZM3.0884 6.01671L2.73902 6.03751C2.75182 6.2524 2.82557 6.51946 3.07436 6.65234C3.31954 6.78328 3.57963 6.70008 3.75894 6.60084L3.58946 6.29461L3.41999 5.98838C3.3977 6.00071 3.37996 6.00855 3.36676 6.01336C3.35349 6.0182 3.34648 6.01936 3.34522 6.01954C3.3441 6.01969 3.35002 6.01873 3.36127 6.02038C3.37303 6.0221 3.38816 6.02635 3.40413 6.03488C3.42015 6.04344 3.43252 6.0539 3.44106 6.06343C3.44926 6.07258 3.45211 6.07879 3.45191 6.07836C3.45163 6.07775 3.4488 6.07144 3.44564 6.05728C3.44249 6.04318 3.4394 6.02306 3.43779 5.99591L3.0884 6.01671ZM3.58946 6.29461L3.79006 6.58142L6.06819 4.9881L5.86759 4.70128L5.66699 4.41447L3.38887 6.0078L3.58946 6.29461Z"
+                            fill="#393939"
+                          />
                         </svg>
-                        {{ getVideoCount(course) }} video
+                        <span>{{ course.course?.videoCount }} video</span>
                       </span>
-                      <span v-if="getDocumentCount(course)" class="flex items-center gap-1">
-                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" class="fill-none stroke-current text-primary-100">
-                          <path d="m21.67 14.3-.4 5c-.15 1.53-.27 2.7-2.98 2.7H5.71C3 22 2.88 20.83 2.73 19.3l-.4-5c-.08-.83.18-1.6.65-2.19l.02-.02C3.55 11.42 4.38 11 5.31 11h13.38c.93 0 1.75.42 2.29 1.07.01.01.02.02.02.03.49.59.76 1.36.67 2.2Z" stroke-width="1.5" stroke-miterlimit="10"/>
-                          <path d="M3.5 11.43V6.28c0-3.4.85-4.25 4.25-4.25h1.27c1.27 0 1.56.38 2.04 1.02l1.27 1.7c.32.42.51.68 1.36.68h2.55c3.4 0 4.25.85 4.25 4.25v1.79M9.43 17h5.14" stroke-width="1.5" stroke-miterlimit="10" stroke-linecap="round" stroke-linejoin="round"/>
+                      <span v-if="course.course?.documentCount || course.course?.documentCount === 0" class="flex items-center gap-1">
+                        <svg
+                          xmlns="http://www.w3.org/2000/svg"
+                          width="10"
+                          height="10"
+                          viewBox="0 0 9 8"
+                          fill="none"
+                        >
+                          <path
+                            d="M7.53101 3.15905V1.28635H4.1517L3.30687 0.35H0.349976V7.37263H1.61722V6.90445L2.88446 3.15905H8.37584L7.1086 7.37263H1.1948"
+                            stroke="#393939"
+                            stroke-width="0.7"
+                            stroke-linecap="round"
+                            stroke-linejoin="round"
+                          />
                         </svg>
-                        {{ getDocumentCount(course) }} Tài liệu
+                        <span>{{ course.course?.documentCount }} Tài liệu</span>
                       </span>
-                      <span v-if="getExamCount(course)" class="flex items-center gap-1">
-                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" class="fill-none stroke-current text-primary-100">
-                          <path d="M9 5H7a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V7a2 2 0 0 0-2-2h-2M9 5a2 2 0 0 0 2 2h2a2 2 0 0 0 2-2M9 5a2 2 0 0 1 2-2h2a2 2 0 0 1 2 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+                      <span v-if="course.course?.quizCount || course.course?.quizCount === 0" class="flex items-center gap-1">
+                        <svg
+                          xmlns="http://www.w3.org/2000/svg"
+                          width="10"
+                          height="10"
+                          viewBox="0 0 9 9"
+                          fill="none"
+                        >
+                          <path
+                            d="M3.59632 8.37586H1.43209C0.83445 8.37586 0.349972 7.92669 0.349976 7.37262L0.350017 1.35323C0.350021 0.799161 0.8345 0.35 1.43213 0.35H6.30177C6.89941 0.35 7.38389 0.799164 7.38389 1.35324V4.11213M5.21967 6.95463L6.21161 7.87427L8.37584 5.86771M2.24385 2.35647H5.49019M2.24385 3.86132H5.49019M2.24385 5.36618H3.86702"
+                            stroke="#393939"
+                            stroke-width="0.7"
+                            stroke-linecap="round"
+                            stroke-linejoin="round"
+                          />
                         </svg>
-                        {{ getExamCount(course) }} bài trắc nghiệm
+                        <span>{{ course.course?.quizCount }} bài trắc nghiệm</span>
                       </span>
                     </div>
                     
-                    <!-- Price -->
-                    <div class="mb-2">
-                      <div v-if="(course as any).course?.price || (course as any).price" class="text-lg sm:text-xl font-bold text-gray-900">
+                    <!-- Price - Top Right Corner -->
+                    <div class="absolute top-4 sm:top-6 right-4 sm:right-6 text-right">
+                      <div v-if="(course as any).course?.price || (course as any).price" class="text-xl sm:text-2xl font-bold text-gray-900 mb-1">
                         {{ Number((course as any).course?.price || (course as any).price).toLocaleString('vi-VN') }} Đ
                       </div>
-                      <div v-else class="text-lg sm:text-xl font-bold text-green-600">
+                      <div v-else class="text-xl sm:text-2xl font-bold text-green-600 mb-1">
                         Miễn phí
                       </div>
-                      <div v-if="(course as any).course?.originalPrice || (course as any).originalPrice" class="text-sm sm:text-base line-through text-gray-400 mt-1">
+                      <div v-if="(course as any).course?.originalPrice || (course as any).originalPrice" class="text-sm sm:text-base line-through text-gray-400">
                         {{ Number((course as any).course?.originalPrice || (course as any).originalPrice).toLocaleString('vi-VN') }} Đ
                       </div>
                     </div>
-                  </div>
-                  
-                  <!-- Remove Button -->
-                  <div class="flex-shrink-0 self-end">
-                    <button
-                      class="w-8 h-8 sm:w-10 sm:h-10 bg-red-500 hover:bg-red-600 rounded flex items-center justify-center transition-colors"
-                      @click="handleRemoveFromCart(course)"
-                    >
-                      <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" class="fill-none stroke-white">
-                        <path d="M3 6h18M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6M10 11v6M14 11v6" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
-                      </svg>
-                    </button>
+                    
+                    <!-- Remove Button - Bottom Right Corner -->
+                    <div class="absolute bottom-4 sm:bottom-6 right-4 sm:right-6">
+                      <button
+                        class="w-10 h-10 sm:w-12 sm:h-12 bg-red-500 hover:bg-red-600 rounded-lg flex items-center justify-center transition-colors shadow-sm"
+                        @click="handleRemoveFromCart(course)"
+                      >
+                        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" class="fill-none stroke-white">
+                          <path d="M3 6h18M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6M10 11v6M14 11v6" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+                        </svg>
+                      </button>
+                    </div>
                   </div>
                 </div>
               </div>
@@ -207,6 +242,16 @@
                     Thanh toán bằng
                     <img src="../public/images/svg/zalopay.svg" alt="Zalo pay" class="w-6 h-6" />
                   </a-button>
+                  <a-button 
+                    type="primary"
+                    size="large"
+                    class="w-full !bg-[#00CF6A] hover:!bg-green-600 !h-12 sm:!h-14 !text-white !border-green-500 !text-base sm:!text-base !font-semibold !rounded-lg !flex !items-center !justify-center !gap-2"
+                    :disabled="cartItems.length === 0"
+                    :loading="false"
+                    @click="handlePayment('bypass')"
+                  >
+                    By Pass
+                  </a-button>
                 </div>
               </div>
             </div>
@@ -223,10 +268,13 @@
 <script setup lang="ts">
 import { ref, computed, onMounted } from 'vue'
 import { useCartStore } from '~/stores/cart'
+import { useAuthStore } from '~/stores/auth'
 import CartToast from '~/components/cart/Toast.vue'
 import CouponInput from '~/components/cart/CouponInput.vue'
+import Rating from '~/components/courses/Rating.vue'
 
 const cartStore = useCartStore()
+const authStore = useAuthStore()
 
 // Reactive data
 const cartItems = computed(() => {

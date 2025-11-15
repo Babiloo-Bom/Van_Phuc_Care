@@ -719,6 +719,7 @@ import { useAuthStore } from "~/stores/auth";
 import ContentCourse from "~/components/courses/ContentCourse.vue";
 import RecomentCourse from "~/components/courses/RecomentCourse.vue";
 import CartToast from "~/components/cart/Toast.vue";
+import type { AddToCartData } from "~/types/cart";
 
 const route = useRoute();
 const router = useRouter();
@@ -1004,7 +1005,8 @@ const addToCart = async () => {
     await cartStore.addToCart({
       courseId: course.value._id,
       quantity: 1,
-    });
+      userId: String(authStore?.user?.id)
+    } as AddToCartData);
   } catch (error) {
     console.error("Error adding to cart:", error);
   }

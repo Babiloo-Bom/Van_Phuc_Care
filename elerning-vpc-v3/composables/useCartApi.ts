@@ -13,10 +13,10 @@ export const useCartApi = () => {
   
 
   // Fetch user's cart
-  const fetchCart = async (): Promise<Cart> => {
+  const fetchCart = async (userId: string): Promise<Cart> => {
     try {
       
-      const response = await $fetch<{ message: string; data: { cart: Cart } }>(`${apiBase}/cart/google-user-1761474076029`, {
+      const response = await $fetch<{ message: string; data: { cart: Cart } }>(`${apiBase}/cart/${userId}`, {
         method: 'GET',
         headers: {
           'Content-Type': 'application/json',
@@ -33,7 +33,7 @@ export const useCartApi = () => {
   const addToCart = async (data: AddToCartData): Promise<Cart> => {
     try {
       
-      const response = await $fetch<{ message: string; data: { cart: Cart } }>(`${apiBase}/cart/google-user-1761474076029/add`, {
+      const response = await $fetch<{ message: string; data: { cart: Cart } }>(`${apiBase}/cart/${data.userId}/add`, {
         method: 'POST',
         body: data,
       });
@@ -45,10 +45,10 @@ export const useCartApi = () => {
   };
 
   // Remove item from cart
-  const removeFromCart = async (courseId: string): Promise<Cart> => {
+  const removeFromCart = async (courseId: string, userId: string): Promise<Cart> => {
     try {
       
-      const response = await $fetch<{ message: string; data: { cart: Cart } }>(`${apiBase}/cart/google-user-1761474076029/remove/${courseId}`, {
+      const response = await $fetch<{ message: string; data: { cart: Cart } }>(`${apiBase}/cart/${userId}/remove/${courseId}`, {
         method: 'DELETE',
       });
 
@@ -59,10 +59,10 @@ export const useCartApi = () => {
   };
 
   // Update item quantity
-  const updateCartItem = async (data: UpdateCartItemData): Promise<Cart> => {
+  const updateCartItem = async (data: UpdateCartItemData, userId: string): Promise<Cart> => {
     try {
       
-      const response = await $fetch<{ message: string; data: { cart: Cart } }>(`${apiBase}/cart/google-user-1761474076029/update`, {
+      const response = await $fetch<{ message: string; data: { cart: Cart } }>(`${apiBase}/cart/${userId}/update`, {
         method: 'PUT',
         body: data,
       });
@@ -74,10 +74,10 @@ export const useCartApi = () => {
   };
 
   // Clear entire cart
-  const clearCart = async (): Promise<void> => {
+  const clearCart = async (userId: string): Promise<void> => {
     try {
       
-      await $fetch(`${apiBase}/cart/google-user-1761474076029/clear`, {
+      await $fetch(`${apiBase}/cart/${userId}/clear`, {
         method: 'DELETE',
       });
 
@@ -87,10 +87,10 @@ export const useCartApi = () => {
   };
 
   // Apply coupon
-  const applyCoupon = async (data: ApplyCouponData): Promise<Cart> => {
+  const applyCoupon = async (data: ApplyCouponData, userId: string): Promise<Cart> => {
     try {
       
-      const response = await $fetch<{ message: string; data: { cart: Cart } }>(`${apiBase}/cart/google-user-1761474076029/apply-coupon`, {
+      const response = await $fetch<{ message: string; data: { cart: Cart } }>(`${apiBase}/cart/${userId}/apply-coupon`, {
         method: 'POST',
         body: data,
       });
@@ -102,10 +102,10 @@ export const useCartApi = () => {
   };
 
   // Remove coupon
-  const removeCoupon = async (): Promise<Cart> => {
+  const removeCoupon = async (userId: string): Promise<Cart> => {
     try {
       
-      const response = await $fetch<{ message: string; data: { cart: Cart } }>(`${apiBase}/cart/google-user-1761474076029/remove-coupon`, {
+      const response = await $fetch<{ message: string; data: { cart: Cart } }>(`${apiBase}/cart/${userId}/remove-coupon`, {
         method: 'DELETE',
       });
 
