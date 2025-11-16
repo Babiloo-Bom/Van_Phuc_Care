@@ -1,7 +1,7 @@
-import { useApiClient } from '~/composables/useApiClient'
+import { useApiClient } from '~/composables/useApiClient';
 
 export const useHealthRecordsApi = () => {
-  const apiClient = useApiClient()
+  const apiClient = useApiClient();
 
   return {
     /**
@@ -11,7 +11,7 @@ export const useHealthRecordsApi = () => {
     async createHealthRecord(data) {
       return apiClient.post('/api/a/health-records', data, {
         errorMessage: 'Không thể tạo phiếu sức khỏe',
-      })
+      });
     },
 
     /**
@@ -22,7 +22,7 @@ export const useHealthRecordsApi = () => {
       return apiClient.get('/api/a/health-records', {
         params,
         showError: false,
-      })
+      });
     },
-  }
-}
+  };
+};

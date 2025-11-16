@@ -14,24 +14,50 @@
             <p class="text-teal-100 text-sm font-medium">Total Customers</p>
             <p class="text-3xl font-bold mt-2">2,547</p>
           </div>
-          <div class="w-12 h-12 bg-white/20 rounded-lg flex items-center justify-center">
-            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
+          <div
+            class="w-12 h-12 bg-white/20 rounded-lg flex items-center justify-center"
+          >
+            <svg
+              class="w-6 h-6"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+            >
+              <path
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                stroke-width="2"
+                d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z"
+              />
             </svg>
           </div>
         </div>
         <p class="text-teal-100 text-sm mt-4">↑ 18% from last month</p>
       </div>
 
-      <div class="card bg-gradient-to-br from-green-500 to-green-600 text-white">
+      <div
+        class="card bg-gradient-to-br from-green-500 to-green-600 text-white"
+      >
         <div class="flex items-center justify-between">
           <div>
             <p class="text-green-100 text-sm font-medium">Active Tickets</p>
             <p class="text-3xl font-bold mt-2">156</p>
           </div>
-          <div class="w-12 h-12 bg-white/20 rounded-lg flex items-center justify-center">
-            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 5v2m0 4v2m0 4v2M5 5a2 2 0 00-2 2v3a2 2 0 110 4v3a2 2 0 002 2h14a2 2 0 002-2v-3a2 2 0 110-4V7a2 2 0 00-2-2H5z" />
+          <div
+            class="w-12 h-12 bg-white/20 rounded-lg flex items-center justify-center"
+          >
+            <svg
+              class="w-6 h-6"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+            >
+              <path
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                stroke-width="2"
+                d="M15 5v2m0 4v2m0 4v2M5 5a2 2 0 00-2 2v3a2 2 0 110 4v3a2 2 0 002 2h14a2 2 0 002-2v-3a2 2 0 110-4V7a2 2 0 00-2-2H5z"
+              />
             </svg>
           </div>
         </div>
@@ -44,24 +70,50 @@
             <p class="text-blue-100 text-sm font-medium">Services</p>
             <p class="text-3xl font-bold mt-2">48</p>
           </div>
-          <div class="w-12 h-12 bg-white/20 rounded-lg flex items-center justify-center">
-            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 13.255A23.931 23.931 0 0112 15c-3.183 0-6.22-.62-9-1.745M16 6V4a2 2 0 00-2-2h-4a2 2 0 00-2 2v2m4 6h.01M5 20h14a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
+          <div
+            class="w-12 h-12 bg-white/20 rounded-lg flex items-center justify-center"
+          >
+            <svg
+              class="w-6 h-6"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+            >
+              <path
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                stroke-width="2"
+                d="M21 13.255A23.931 23.931 0 0112 15c-3.183 0-6.22-.62-9-1.745M16 6V4a2 2 0 00-2-2h-4a2 2 0 00-2 2v2m4 6h.01M5 20h14a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"
+              />
             </svg>
           </div>
         </div>
         <p class="text-blue-100 text-sm mt-4">12 active campaigns</p>
       </div>
 
-      <div class="card bg-gradient-to-br from-purple-500 to-purple-600 text-white">
+      <div
+        class="card bg-gradient-to-br from-purple-500 to-purple-600 text-white"
+      >
         <div class="flex items-center justify-between">
           <div>
             <p class="text-purple-100 text-sm font-medium">Satisfaction</p>
             <p class="text-3xl font-bold mt-2">94%</p>
           </div>
-          <div class="w-12 h-12 bg-white/20 rounded-lg flex items-center justify-center">
-            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14.828 14.828a4 4 0 01-5.656 0M9 10h.01M15 10h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+          <div
+            class="w-12 h-12 bg-white/20 rounded-lg flex items-center justify-center"
+          >
+            <svg
+              class="w-6 h-6"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+            >
+              <path
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                stroke-width="2"
+                d="M14.828 14.828a4 4 0 01-5.656 0M9 10h.01M15 10h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
+              />
             </svg>
           </div>
         </div>
@@ -75,16 +127,27 @@
       <div class="card">
         <h3 class="text-lg font-semibold text-gray-900 mb-4">Recent Tickets</h3>
         <div class="space-y-4">
-          <div v-for="i in 5" :key="i" class="flex items-start space-x-3 pb-4 border-b border-gray-100 last:border-0">
-            <div class="w-10 h-10 rounded-full bg-teal-100 flex items-center justify-center flex-shrink-0">
+          <div
+            v-for="i in 5"
+            :key="i"
+            class="flex items-start space-x-3 pb-4 border-b border-gray-100 last:border-0"
+          >
+            <div
+              class="w-10 h-10 rounded-full bg-teal-100 flex items-center justify-center flex-shrink-0"
+            >
               <span class="text-teal-500 font-semibold">#{{ i }}</span>
             </div>
             <div class="flex-1">
-              <p class="text-sm font-medium text-gray-900">Ticket #TK-{{ 2000 + i }}</p>
+              <p class="text-sm font-medium text-gray-900">
+                Ticket #TK-{{ 2000 + i }}
+              </p>
               <p class="text-sm text-gray-500">Customer support request</p>
               <p class="text-xs text-gray-400 mt-1">{{ i * 5 }} minutes ago</p>
             </div>
-            <span class="px-2 py-1 text-xs rounded-full bg-yellow-100 text-yellow-800">Pending</span>
+            <span
+              class="px-2 py-1 text-xs rounded-full bg-yellow-100 text-yellow-800"
+              >Pending</span
+            >
           </div>
         </div>
       </div>
@@ -93,19 +156,30 @@
       <div class="card">
         <h3 class="text-lg font-semibold text-gray-900 mb-4">Quick Actions</h3>
         <div class="grid grid-cols-2 gap-4">
-          <NuxtLink to="/customers" class="p-4 border-2 border-gray-200 rounded-lg hover:border-primary-500 hover:bg-teal-50 transition-all text-center">
+          <NuxtLink
+            to="/customers"
+            class="p-4 border-2 border-gray-200 rounded-lg hover:border-primary-500 hover:bg-teal-50 transition-all text-center"
+          >
             <div class="text-3xl mb-2">👥</div>
             <p class="font-medium text-gray-900">Customers</p>
           </NuxtLink>
-          <NuxtLink to="/tickets" class="p-4 border-2 border-gray-200 rounded-lg hover:border-primary-500 hover:bg-teal-50 transition-all text-center">
+          <NuxtLink
+            to="/tickets"
+            class="p-4 border-2 border-gray-200 rounded-lg hover:border-primary-500 hover:bg-teal-50 transition-all text-center"
+          >
             <div class="text-3xl mb-2">🎫</div>
             <p class="font-medium text-gray-900">Tickets</p>
           </NuxtLink>
-          <NuxtLink to="/services" class="p-4 border-2 border-gray-200 rounded-lg hover:border-primary-500 hover:bg-teal-50 transition-all text-center">
+          <NuxtLink
+            to="/services"
+            class="p-4 border-2 border-gray-200 rounded-lg hover:border-primary-500 hover:bg-teal-50 transition-all text-center"
+          >
             <div class="text-3xl mb-2">💼</div>
             <p class="font-medium text-gray-900">Services</p>
           </NuxtLink>
-          <button class="p-4 border-2 border-gray-200 rounded-lg hover:border-primary-500 hover:bg-teal-50 transition-all text-center">
+          <button
+            class="p-4 border-2 border-gray-200 rounded-lg hover:border-primary-500 hover:bg-teal-50 transition-all text-center"
+          >
             <div class="text-3xl mb-2">📊</div>
             <p class="font-medium text-gray-900">Reports</p>
           </button>
@@ -115,15 +189,51 @@
 
     <!-- API Config -->
     <div class="card mt-6 bg-teal-50 border-2 border-teal-200">
-      <h3 class="text-lg font-semibold text-gray-900 mb-4">🔌 API Configuration</h3>
+      <h3 class="text-lg font-semibold text-gray-900 mb-4">
+        🔌 API Configuration
+      </h3>
       <div class="space-y-2 font-mono text-sm">
         <p><strong>API Host:</strong> {{ apiHost }}</p>
         <p><strong>API Base:</strong> {{ apiBase }}</p>
-        <p><strong>Environment:</strong> 
-          <span class="px-2 py-1 rounded text-white text-xs" :class="isDevelopment ? 'bg-yellow-500' : 'bg-green-500'">
-            {{ isDevelopment ? 'Development' : 'Production' }}
+        <p>
+          <strong>Environment:</strong>
+          <span
+            class="px-2 py-1 rounded text-white text-xs"
+            :class="isDevelopment ? 'bg-yellow-500' : 'bg-green-500'"
+          >
+            {{ isDevelopment ? "Development" : "Production" }}
           </span>
         </p>
+      </div>
+    </div>
+
+    <!-- Login GG -->
+    <div v-if="googleLoading" class="google-loading-overlay">
+      <!-- Loading State -->
+      <div class="google-loading-popup">
+        <a-spin size="large" />
+        <h3>Đang xử lý đăng nhập Google...</h3>
+        <p>Vui lòng đợi trong giây lát</p>
+      </div>
+    </div>
+    <!-- Error State -->
+    <div
+      v-else-if="googleError"
+      class="flex justify-center items-center min-h-[300px]"
+    >
+      <div class="callback-container">
+        <div class="error-state">
+          <a-result
+            status="error"
+            title="Đăng nhập thất bại"
+            :sub-title="googleError"
+          >
+            <template #extra>
+              <a-button type="primary" @click="goToLogin"> Thử lại </a-button>
+              <a-button @click="goToLogin"> Về trang đăng nhập </a-button>
+            </template>
+          </a-result>
+        </div>
       </div>
     </div>
   </div>
@@ -131,12 +241,124 @@
 
 <script setup lang="ts">
 definePageMeta({
-  layout: 'default'
-})
+  layout: "default",
+});
 
 useHead({
-  title: 'Dashboard'
-})
+  title: "Dashboard",
+});
 
-const { apiHost, apiBase, isDevelopment } = useEnvConfig()
+const { apiHost, apiBase, isDevelopment } = useEnvConfig();
+
+import { nextTick } from "vue";
+
+// ===== Google OAuth STATE =====
+const googleLoading = ref(false);
+const googleError = ref("");
+const googleSuccess = ref(false);
+
+// ===== COMPOSABLES =====
+const { completeGoogleLogin } = useGoogleAuth();
+const authStore = useAuthStore();
+const router = useRouter();
+const route = useRoute();
+
+const goToLogin = () => {
+  router.push("/login");
+};
+
+// ===== LIFECYCLE =====
+onMounted(async () => {
+  // Xử lý đăng nhập Google nếu có code trên URL
+  const urlParams = new URLSearchParams(window.location.search);
+  const code = urlParams.get("code");
+  const state = urlParams.get("state");
+  console.log('-------------', code, state);
+  if (code) {
+    googleLoading.value = true;
+    googleError.value = "";
+    try {
+      const response = await completeGoogleLogin(code, state || undefined);
+      if (response && response.success && response.data) {
+        let tokenExpireAtNum;
+        if (typeof response.data.tokenExpireAt === "string") {
+          tokenExpireAtNum = Date.now() + 7 * 24 * 60 * 60 * 1000;
+        } else {
+          tokenExpireAtNum =
+            response.data.tokenExpireAt || Date.now() + 7 * 24 * 60 * 60 * 1000;
+        }
+        const userData = {
+          ...response.data.user,
+          id: response.data.user?._id || `google-user-${Date.now()}`,
+          email: response.data.user?.email || "user@google.com",
+          fullname: response.data.user?.fullname || "Google User",
+          avatar: response.data.user?.avatar || "",
+          role: response.data.user?.role || "user",
+          verified: true,
+        };
+        await authStore.completeGoogleLogin(
+          response.data.accessToken,
+          tokenExpireAtNum,
+          userData
+        );
+        googleSuccess.value = true;
+        await nextTick();
+        window.location.href = "/";
+        // Giữ loading cho đến khi reload lại trang hoặc chuyển hướng rõ ràng
+        setTimeout(() => {
+          googleLoading.value = false;
+        }, 1000);
+      } else {
+        throw new Error(response.error || "Đăng nhập Google thất bại");
+      }
+    } catch (error) {
+      if (error instanceof Error) {
+        googleError.value = error.message || "Đăng nhập Google thất bại";
+      } else {
+        googleError.value = "Đăng nhập Google thất bại";
+      }
+      // Chuyển về trang login nếu lỗi
+      setTimeout(() => {
+        googleLoading.value = false;
+        // window.location.href = "/login";
+      }, 1000);
+    }
+    // Không tắt loading ngay lập tức
+    return;
+  }
+});
 </script>
+<style scoped>
+.google-loading-overlay {
+  position: fixed;
+  z-index: 9999;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  background: rgba(30, 41, 59, 0.55);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.google-loading-popup {
+  background: #fff;
+  border-radius: 16px;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.18);
+  padding: 48px 32px 32px 32px;
+  min-width: 320px;
+  text-align: center;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+.google-loading-popup h3 {
+  margin: 24px 0 8px;
+  color: #333;
+  font-size: 20px;
+}
+.google-loading-popup p {
+  color: #666;
+  margin: 0;
+}
+</style>

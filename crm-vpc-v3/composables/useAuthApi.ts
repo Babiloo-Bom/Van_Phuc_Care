@@ -22,33 +22,36 @@ const RETRY_CONFIG = {
 
 export const useAuthApi = () => {
   const config = useRuntimeConfig();
+  // Hardcode for testing - should be http://localhost:3000/api/a
   let apiBase = config.public.apiBase || 'http://localhost:3000/api/u';
-  
-  // Debug: Log raw config value
-  console.log('🔍 Raw API Base from config:', config.public.apiBase);
-  
+
+  // Debug: Log API base URL
+  console.log('🔍 API Base URL:', apiBase);
+  console.log('🔍 Config public.apiBase:', config.public.apiBase);
+
   // Check if it's absolute path (http://...) or relative path
-  const isAbsolutePath = apiBase.startsWith('http://') || apiBase.startsWith('https://');
-  
+  const isAbsolutePath =
+    apiBase.startsWith('http://') || apiBase.startsWith('https://');
+
   // Store isAbsolutePath for use in Google OAuth methods
   const _isAbsolutePath = isAbsolutePath;
-  
+
   // For absolute paths (development/local/Docker), normalize and use /api/u
   if (isAbsolutePath) {
     // Step 1: Remove ALL duplicate /api/api/ patterns (handle multiple duplicates)
     while (apiBase.includes('/api/api/')) {
       apiBase = apiBase.replace(/\/api\/api\//g, '/api/');
     }
-    
+
     // Step 2: Normalize trailing slashes
     apiBase = apiBase.replace(/\/+$/, '');
-    
+
     // Step 3: Extract base URL (http://host:port) and path
     const urlMatch = apiBase.match(/^(https?:\/\/[^\/]+)(\/.*)?$/);
     if (urlMatch) {
       const baseUrl = urlMatch[1]; // e.g., http://localhost:3000
       let path = urlMatch[2] || ''; // e.g., /u, /api/a, /a, etc.
-      
+
       // Step 4: Normalize path to /api/u
       if (path === '/u' || path === '/u/') {
         // Case: http://localhost:3000/u -> http://localhost:3000/api/u
@@ -70,13 +73,13 @@ export const useAuthApi = () => {
           path = '/api/u';
         }
       }
-      
+
       apiBase = baseUrl + path;
     }
   } else {
     // Relative path (production) - Nginx has /api/ prefix, so use /u
     apiBase = apiBase.replace(/\/+$/, '');
-    
+
     if (apiBase.endsWith('/api/u') || apiBase.endsWith('/api/u/')) {
       apiBase = apiBase.replace(/\/api\/u\/?$/, '/u');
     } else if (apiBase.endsWith('/a') || apiBase.endsWith('/a/')) {
@@ -87,17 +90,18 @@ export const useAuthApi = () => {
       apiBase = apiBase + '/u';
     }
   }
-  
+
   // Final normalize: remove any remaining duplicate /api/api/
   apiBase = apiBase.replace(/\/api\/api+/g, '/api');
-  
+  // apiBase = 'http://localhost:3000/api/a'
   // Debug: Log final API base URL
   console.log('🔍 Final API Base URL:', apiBase);
 
   /**
    * Exponential backoff delay
    */
-  const delay = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
+  const delay = (ms: number) =>
+    new Promise(resolve => setTimeout(resolve, ms));
 
   /**
    * Retry wrapper with exponential backoff
@@ -117,7 +121,9 @@ export const useAuthApi = () => {
 
         // Exponential backoff: 1s, 2s, 4s, 8s...
         const backoffDelay = RETRY_CONFIG.retryDelay * Math.pow(2, attempt);
-        console.warn(`🔄 Retry attempt ${attempt + 1}/${retries} after ${backoffDelay}ms`);
+        console.warn(
+          `🔄 Retry attempt ${attempt + 1}/${retries} after ${backoffDelay}ms`,
+        );
         await delay(backoffDelay);
       }
     }
@@ -135,50 +141,29 @@ export const useAuthApi = () => {
     }
 
     // Try to extract message from API response
-    // Backend format: { error: { code: number, message: string } }
     let customMessage = null;
-    let errorCodeFromBackend = null;
-    
     if (error.data?.error) {
-      // Handle both cases: error.data.error could be string or object
-      if (typeof error.data.error === 'string') {
-        customMessage = error.data.error;
-      } else if (error.data.error?.message) {
-        customMessage = error.data.error.message;
-        errorCodeFromBackend = error.data.error?.code;
-      } else if (typeof error.data.error === 'object') {
-        customMessage = error.data.error.message || JSON.stringify(error.data.error);
-        errorCodeFromBackend = error.data.error?.code;
-      }
+      customMessage = error.data.error;
     } else if (error.data?.message) {
       customMessage = error.data.message;
-    } else if (error.message) {
-      customMessage = error.message;
     }
 
     // Get error code and create AuthError
     const errorCode = getErrorCode(error);
     const statusCode = error.statusCode || error.status || 500;
-    
-    // Ensure statusCode is a valid number
-    const validStatusCode = typeof statusCode === 'number' && !isNaN(statusCode) ? statusCode : 500;
-    const validErrorCode = errorCode || AuthErrorCode.UNKNOWN_ERROR;
-
-    // Special handling for BadAuthentication (code 215) - always map to Vietnamese
-    if (errorCodeFromBackend === 215 || (validStatusCode === 404 && customMessage?.toLowerCase().includes('bad authentication'))) {
-      const authError = new AuthError(AuthErrorCode.INVALID_CREDENTIALS, validStatusCode, error);
-      authError.message = 'Tên đăng nhập hoặc mật khẩu không chính xác';
-      return authError;
-    }
 
     // Create AuthError with custom message if available
     if (customMessage) {
-      const authError = new AuthError(validErrorCode, validStatusCode, error);
+      const authError = new AuthError(
+        errorCode as AuthErrorCode,
+        statusCode,
+        error,
+      );
       authError.message = customMessage;
       return authError;
     }
 
-    return new AuthError(validErrorCode, validStatusCode, error);
+    return new AuthError(errorCode as AuthErrorCode, statusCode, error);
   };
 
   /**
@@ -186,27 +171,21 @@ export const useAuthApi = () => {
    */
   const fetchWithTimeout = async <T>(url: string, options: any): Promise<T> => {
     const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), RETRY_CONFIG.timeout);
+    const timeoutId = setTimeout(
+      () => controller.abort(),
+      RETRY_CONFIG.timeout,
+    );
 
     try {
-      const response = await $fetch<T>(url, {
+      const response = (await $fetch(url, {
         ...options,
         signal: controller.signal,
-      }) as T;
+      })) as T;
       return response;
     } catch (error: any) {
       if (error.name === 'AbortError') {
         throw new TimeoutError(error);
       }
-      // Log error for debugging
-      console.log('🔍 API Error Response:', {
-        status: error.status || error.statusCode,
-        data: error.data,
-        dataError: error.data?.error,
-        dataErrorMessage: error.data?.error?.message,
-        message: error.message,
-        url,
-      });
       throw error;
     } finally {
       clearTimeout(timeoutId);
@@ -222,12 +201,11 @@ export const useAuthApi = () => {
      */
     async login(username: string, password: string, remindAccount = false) {
       try {
-        // Backend expects 'email' field, not 'username'
-        return await withRetry(() => 
+        return await withRetry(() =>
           fetchWithTimeout(`${apiBase}/sessions/login`, {
             method: 'POST',
             body: {
-              email: username, // Map username to email for backend
+              username,
               password,
               remindAccount,
               origin: 'vanphuccare.gensi.vn',
@@ -245,9 +223,14 @@ export const useAuthApi = () => {
      * @param password Password
      * @param repeat_password Repeat password
      * @param fullname Full name
-     * @param phone Phone number
      */
-    async register(email: string, password: string, repeat_password: string, fullname?: string, phone?: string) {
+    async register(
+      email: string,
+      password: string,
+      repeat_password: string,
+      fullname?: string,
+      phone?: string,
+    ) {
       try {
         console.log('🔍 Register API call:', {
           url: `${apiBase}/sessions`,
@@ -256,7 +239,7 @@ export const useAuthApi = () => {
           domain: 'vanphuccare.gensi.vn',
           origin: 'vanphuccare.gensi.vn',
         });
-        
+
         const result = await withRetry(() =>
           fetchWithTimeout(`${apiBase}/sessions`, {
             method: 'POST',
@@ -271,7 +254,7 @@ export const useAuthApi = () => {
             },
           }),
         );
-        
+
         console.log('🔍 Register API response:', result);
         return result;
       } catch (error: any) {
@@ -358,36 +341,19 @@ export const useAuthApi = () => {
     },
 
     /**
-     * Verify OTP for forgot password
-     * @param email Email
-     * @param otp OTP code
-     */
-    async verifyOtp(email: string, otp: string) {
-      try {
-        return await withRetry(() =>
-          fetchWithTimeout(`${apiBase}/passwords/verify_otp`, {
-            method: 'POST',
-            body: { email, otp },
-          }),
-        );
-      } catch (error: any) {
-        throw transformError(error);
-      }
-    },
-
-    /**
      * Reset password with token
-     * @param email Email
      * @param token Token from OTP verification
      * @param newPassword New password
      */
-    async resetPassword(email: string, token: string, newPassword: string) {
+    async resetPassword(token: string, newPassword: string) {
       try {
         return await withRetry(() =>
-          fetchWithTimeout(`${apiBase}/passwords`, {
+          fetchWithTimeout(`${apiBase}/passwords/reset`, {
             method: 'POST',
-            params: { email, token },
-            body: { password: newPassword },
+            body: {
+              token,
+              password: newPassword,
+            },
           }),
         );
       } catch (error: any) {
@@ -469,12 +435,13 @@ export const useAuthApi = () => {
         let googleBase: string;
         if (_isAbsolutePath) {
           // Absolute path: replace /api/u or /u with /api/a
-          googleBase = apiBase.replace(/\/api\/u\/?$/, '/api/a').replace(/\/u\/?$/, '/api/a');
+          googleBase = apiBase
+            .replace(/\/api\/u\/?$/, '/api/a')
+            .replace(/\/u\/?$/, '/api/a');
         } else {
           // Relative path: use /api/a (Nginx will add /api/ prefix in production)
           googleBase = '/api/a';
         }
-        
         return await withRetry(() =>
           fetchWithTimeout(`${googleBase}/auth/google/login`, {
             method: 'POST',
@@ -488,7 +455,6 @@ export const useAuthApi = () => {
 
     /**
      * Get Google OAuth URL
-     * Note: Google OAuth always uses /api/a (admin endpoint), not /api/u
      */
     async getGoogleAuthUrl() {
       try {
@@ -496,18 +462,84 @@ export const useAuthApi = () => {
         let googleBase: string;
         if (_isAbsolutePath) {
           // Absolute path: replace /api/u or /u with /api/a
-          googleBase = apiBase.replace(/\/api\/u\/?$/, '/api/a').replace(/\/u\/?$/, '/api/a');
+          googleBase = apiBase
+            .replace(/\/api\/u\/?$/, '/api/a')
+            .replace(/\/u\/?$/, '/api/a');
         } else {
           // Relative path: use /api/a (Nginx will add /api/ prefix in production)
           googleBase = '/api/a';
         }
-        
         return await withRetry(() =>
           fetchWithTimeout(`${googleBase}/auth/google/url`, {
             method: 'GET',
           }),
         );
       } catch (error: any) {
+        throw transformError(error);
+      }
+    },
+
+    /**
+     * Get user profile
+     */
+    async getUserProfile() {
+      try {
+        const authStore = useAuthStore();
+        const token = authStore.token;
+
+        console.log(
+          '🔍 JWT Token for getUserProfile:',
+          token ? token.substring(0, 20) + '...' : 'null',
+        );
+        console.log('🔍 API URL:', `${apiBase}/admins/profile`);
+
+        return await withRetry(() =>
+          fetchWithTimeout(`${apiBase}/admins/profile`, {
+            method: 'GET',
+            headers: {
+              Authorization: `Bearer ${token}`,
+            },
+          }),
+        );
+      } catch (error: any) {
+        console.error('❌ getUserProfile error:', error);
+        throw transformError(error);
+      }
+    },
+
+    /**
+     * Update course register
+     */
+    async updateCourseRegister(
+      courseIds: string[],
+      action: 'add' | 'remove' = 'add',
+    ) {
+      try {
+        const authStore = useAuthStore();
+        const token = authStore.token;
+
+        console.log(
+          '🔍 JWT Token for updateCourseRegister:',
+          token ? token.substring(0, 20) + '...' : 'null',
+        );
+        console.log('🔍 API URL:', `${apiBase}/admins/course-register`);
+        console.log('🔍 Request body:', { courseIds, action });
+
+        return await withRetry(() =>
+          fetchWithTimeout(`${apiBase}/admins/course-register`, {
+            method: 'PUT',
+            headers: {
+              Authorization: `Bearer ${token}`,
+              'Content-Type': 'application/json',
+            },
+            body: {
+              courseIds,
+              action,
+            },
+          }),
+        );
+      } catch (error: any) {
+        console.error('❌ updateCourseRegister error:', error);
         throw transformError(error);
       }
     },

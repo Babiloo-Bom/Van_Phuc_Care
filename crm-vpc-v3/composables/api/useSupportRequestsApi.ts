@@ -5,15 +5,15 @@
 
 // ==================== Type Definitions ====================
 
-export type SupportRequestCategory = "parent_support" | "health_issue" | "service" | "course" | "other";
+export type SupportRequestCategory = 'parent_support' | 'health_issue' | 'service' | 'course' | 'other';
 
-export type SupportRequestStatus = "pending" | "processing" | "completed";
+export type SupportRequestStatus = 'pending' | 'processing' | 'completed';
 
-type TicketCategory = "technical" | "billing" | "general" | "complaint" | "feature_request";
+type TicketCategory = 'technical' | 'billing' | 'general' | 'complaint' | 'feature_request';
 
-type TicketStatus = "open" | "pending" | "in_progress" | "resolved" | "closed";
+type TicketStatus = 'open' | 'pending' | 'in_progress' | 'resolved' | 'closed';
 
-export type TicketPriority = "low" | "medium" | "high" | "urgent";
+export type TicketPriority = 'low' | 'medium' | 'high' | 'urgent';
 
 export interface Attachment {
   filename: string;
@@ -96,42 +96,42 @@ export interface PaginatedResponse<T> {
 
 const mapCategoryToBackend = (category: SupportRequestCategory): TicketCategory => {
   const mapping: Record<SupportRequestCategory, TicketCategory> = {
-    parent_support: "general",
-    health_issue: "technical",
-    service: "billing",
-    course: "feature_request",
-    other: "general",
+    parent_support: 'general',
+    health_issue: 'technical',
+    service: 'billing',
+    course: 'feature_request',
+    other: 'general',
   };
   return mapping[category];
 };
 
 const mapCategoryToFrontend = (category: TicketCategory): SupportRequestCategory => {
   const mapping: Record<TicketCategory, SupportRequestCategory> = {
-    technical: "health_issue",
-    billing: "service",
-    general: "parent_support",
-    complaint: "other",
-    feature_request: "course",
+    technical: 'health_issue',
+    billing: 'service',
+    general: 'parent_support',
+    complaint: 'other',
+    feature_request: 'course',
   };
   return mapping[category];
 };
 
 const mapStatusToBackend = (status: SupportRequestStatus): TicketStatus => {
   const mapping: Record<SupportRequestStatus, TicketStatus> = {
-    pending: "open",
-    processing: "in_progress",
-    completed: "resolved",
+    pending: 'open',
+    processing: 'in_progress',
+    completed: 'resolved',
   };
   return mapping[status];
 };
 
 const mapStatusToFrontend = (status: TicketStatus): SupportRequestStatus => {
   const mapping: Record<TicketStatus, SupportRequestStatus> = {
-    open: "pending",
-    pending: "pending",
-    in_progress: "processing",
-    resolved: "completed",
-    closed: "completed",
+    open: 'pending',
+    pending: 'pending',
+    in_progress: 'processing',
+    resolved: 'completed',
+    closed: 'completed',
   };
   return mapping[status];
 };
@@ -160,7 +160,7 @@ const transformTicketToSupportRequest = (ticket: BackendTicket): SupportRequest 
 
 export const useSupportRequestsApi = () => {
   const config = useRuntimeConfig();
-  const baseURL = (config.public.apiBaseUrl as string) || "http://localhost:5002";
+  const baseURL = (config.public.apiBaseUrl as string) || 'http://localhost:5002';
 
   const getSupportRequests = async (params?: {
     customerId?: string;
@@ -184,12 +184,12 @@ export const useSupportRequestsApi = () => {
       const response = await $fetch<{
         data: BackendTicket[];
         pagination: { page: number; pageSize: number; total: number };
-      }>("/api/a/tickets", {
+      }>('/api/a/tickets', {
         baseURL,
-        method: "GET",
+        method: 'GET',
         params: backendParams,
         headers: {
-          Authorization: `Bearer ${useCookie("admin_token").value}`,
+          Authorization: `Bearer ${useCookie('admin_token').value}`,
         },
       });
 
@@ -206,9 +206,9 @@ export const useSupportRequestsApi = () => {
     try {
       const response = await $fetch<{ ticket: BackendTicket }>(`/api/a/tickets/${id}`, {
         baseURL,
-        method: "GET",
+        method: 'GET',
         headers: {
-          Authorization: `Bearer ${useCookie("admin_token").value}`,
+          Authorization: `Bearer ${useCookie('admin_token').value}`,
         },
       });
 
@@ -226,16 +226,16 @@ export const useSupportRequestsApi = () => {
         customerId: payload.customerId,
         category: mapCategoryToBackend(payload.category),
         attachments: payload.attachments,
-        priority: payload.priority || "medium",
+        priority: payload.priority || 'medium',
       };
 
-      const response = await $fetch<{ ticket: BackendTicket }>("/api/a/tickets", {
+      const response = await $fetch<{ ticket: BackendTicket }>('/api/a/tickets', {
         baseURL,
-        method: "POST",
+        method: 'POST',
         body: backendPayload,
         headers: {
-          Authorization: `Bearer ${useCookie("admin_token").value}`,
-          "Content-Type": "application/json",
+          Authorization: `Bearer ${useCookie('admin_token').value}`,
+          'Content-Type': 'application/json',
         },
       });
 
@@ -257,11 +257,11 @@ export const useSupportRequestsApi = () => {
 
       const response = await $fetch<{ ticket: BackendTicket }>(`/api/a/tickets/${id}`, {
         baseURL,
-        method: "PATCH",
+        method: 'PATCH',
         body: backendPayload,
         headers: {
-          Authorization: `Bearer ${useCookie("admin_token").value}`,
-          "Content-Type": "application/json",
+          Authorization: `Bearer ${useCookie('admin_token').value}`,
+          'Content-Type': 'application/json',
         },
       });
 
@@ -275,9 +275,9 @@ export const useSupportRequestsApi = () => {
     try {
       await $fetch(`/api/a/tickets/${id}`, {
         baseURL,
-        method: "DELETE",
+        method: 'DELETE',
         headers: {
-          Authorization: `Bearer ${useCookie("admin_token").value}`,
+          Authorization: `Bearer ${useCookie('admin_token').value}`,
         },
       });
     } catch (error) {
@@ -287,11 +287,11 @@ export const useSupportRequestsApi = () => {
 
   const getSupportRequestStatistics = async (): Promise<unknown> => {
     try {
-      const response = await $fetch("/api/a/tickets/statistics", {
+      const response = await $fetch('/api/a/tickets/statistics', {
         baseURL,
-        method: "GET",
+        method: 'GET',
         headers: {
-          Authorization: `Bearer ${useCookie("admin_token").value}`,
+          Authorization: `Bearer ${useCookie('admin_token').value}`,
         },
       });
 

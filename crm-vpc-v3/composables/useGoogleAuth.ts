@@ -4,22 +4,23 @@
  */
 
 import { computed } from 'vue';
-import type { 
-  GoogleOAuthConfig, 
-  GoogleUserProfile, 
+import type {
+  GoogleOAuthConfig,
+  GoogleUserProfile,
   GoogleTokenResponse,
   GoogleLoginRequest,
-  GoogleLoginResponse, 
+  GoogleLoginResponse,
 } from '~/types/google';
 
 export const useGoogleAuth = () => {
   const config = useRuntimeConfig();
+  const { baseUrl } = useBaseUrl();
 
   // ===== GOOGLE OAUTH CONFIG =====
   const googleConfig: GoogleOAuthConfig = {
     clientId: config.public.googleClientId || '',
     clientSecret: '', // Client secret không được expose ra client-side
-    redirectUri: `${config.public.baseUrl}/auth/google/callback`,
+    redirectUri: `${baseUrl}`,
     scope: ['openid', 'email', 'profile'],
   };
 
@@ -39,16 +40,21 @@ export const useGoogleAuth = () => {
   };
 
   // ===== EXCHANGE CODE FOR TOKEN =====
-  const exchangeCodeForToken = async (code: string): Promise<GoogleTokenResponse> => {
+  const exchangeCodeForToken = async (
+    code: string,
+  ): Promise<GoogleTokenResponse> => {
     try {
       // Gọi API backend để exchange code for token
-      const { data } = await useFetch<GoogleTokenResponse>('/api/auth/google/token', {
-        method: 'POST',
-        body: {
-          code,
-          redirectUri: googleConfig.redirectUri,
+      const { data } = await useFetch<GoogleTokenResponse>(
+        '/api/auth/google/token',
+        {
+          method: 'POST',
+          body: {
+            code,
+            redirectUri: googleConfig.redirectUri,
+          },
         },
-      });
+      );
 
       return data.value!;
     } catch (error: any) {
@@ -58,15 +64,20 @@ export const useGoogleAuth = () => {
   };
 
   // ===== GET GOOGLE USER PROFILE =====
-  const getGoogleUserProfile = async (accessToken: string): Promise<GoogleUserProfile> => {
+  const getGoogleUserProfile = async (
+    accessToken: string,
+  ): Promise<GoogleUserProfile> => {
     try {
       // Gọi API backend để lấy user profile
-      const { data } = await useFetch<GoogleUserProfile>('/api/auth/google/profile', {
-        method: 'POST',
-        body: {
-          accessToken,
+      const { data } = await useFetch<GoogleUserProfile>(
+        '/api/auth/google/profile',
+        {
+          method: 'POST',
+          body: {
+            accessToken,
+          },
         },
-      });
+      );
 
       return data.value!;
     } catch (error: any) {
@@ -76,14 +87,29 @@ export const useGoogleAuth = () => {
   };
 
   // ===== GOOGLE LOGIN API =====
-  const googleLogin = async (request: GoogleLoginRequest): Promise<GoogleLoginResponse> => {
+  const googleLogin = async (
+    request: GoogleLoginRequest,
+  ): Promise<GoogleLoginResponse> => {
     try {
-      const { data } = await useFetch<GoogleLoginResponse>('/api/auth/google/login-backend', {
-        method: 'POST',
-        body: request,
-      });
+      console.log('🔄 Calling Google login API with request:', request);
 
-      return data.value!;
+      const response = await $fetch<GoogleLoginResponse>(
+        '/api/auth/google/login-backend',
+        {
+          method: 'POST',
+          body: request,
+        },
+      );
+
+      console.log('🔍 Google login API response:', response);
+
+      if (!response) {
+        console.error('❌ No data received from server');
+        throw new Error('Không nhận được phản hồi từ server');
+      }
+
+      console.log('✅ Google login API success:', response);
+      return response;
     } catch (error: any) {
       console.error('❌ Google login API failed:', error);
       throw new Error('Đăng nhập Google thất bại. Vui lòng thử lại.');
@@ -91,7 +117,10 @@ export const useGoogleAuth = () => {
   };
 
   // ===== COMPLETE GOOGLE LOGIN FLOW =====
-  const completeGoogleLogin = async (code: string, state?: string): Promise<GoogleLoginResponse> => {
+  const completeGoogleLogin = async (
+    code: string,
+    state?: string,
+  ): Promise<GoogleLoginResponse> => {
     try {
       // Gọi API backend để xử lý toàn bộ Google OAuth flow
       const loginResponse = await googleLogin({
@@ -101,7 +130,6 @@ export const useGoogleAuth = () => {
       });
 
       return loginResponse;
-      
     } catch (error: any) {
       console.error('❌ Google login flow failed:', error);
       throw error;
@@ -110,7 +138,7 @@ export const useGoogleAuth = () => {
 
   // ===== CHECK GOOGLE CONFIG =====
   const isGoogleConfigured = computed((): boolean => {
-    return !!(googleConfig.clientId); // Chỉ cần clientId, clientSecret không cần trên client-side
+    return !!googleConfig.clientId; // Chỉ cần clientId, clientSecret không cần trên client-side
   });
 
   // ===== GET GOOGLE LOGIN URL =====
@@ -118,7 +146,7 @@ export const useGoogleAuth = () => {
     if (!isGoogleConfigured.value) {
       throw new Error('Google OAuth chưa được cấu hình');
     }
-    
+
     return generateAuthUrl();
   };
 
@@ -126,11 +154,11 @@ export const useGoogleAuth = () => {
     // Configuration
     googleConfig,
     isGoogleConfigured,
-    
+
     // Auth flow
     getGoogleLoginUrl,
     completeGoogleLogin,
-    
+
     // Direct API calls
     exchangeCodeForToken,
     getGoogleUserProfile,
