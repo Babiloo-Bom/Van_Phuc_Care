@@ -9,7 +9,7 @@ export interface ITicket extends Document {
   ticketNumber: string;
   title: string;
   description: string;
-  customerId: mongoose.Types.ObjectId;
+  userId: mongoose.Types.ObjectId;
   assignedTo?: mongoose.Types.ObjectId;
   priority: 'low' | 'medium' | 'high' | 'urgent';
   status: 'open' | 'pending' | 'in_progress' | 'resolved' | 'closed';
@@ -46,9 +46,9 @@ const TicketSchema = new mongoose.Schema<ITicket>(
       type: String,
       required: true,
     },
-    customerId: {
+    userId: {
       type: mongoose.Schema.Types.ObjectId,
-      ref: 'customers',
+      ref: 'users',
       required: true,
       index: true,
     },

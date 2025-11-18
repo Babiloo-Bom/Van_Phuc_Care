@@ -36,9 +36,9 @@ class TicketController {
         query.category = req.query.category;
       }
 
-      // Filter by customer
-      if (req.query.customerId) {
-        query.customerId = req.query.customerId;
+      // Filter by user
+      if (req.query.userId) {
+        query.userId = req.query.userId;
       }
 
       // Filter by assigned admin
@@ -70,7 +70,7 @@ class TicketController {
       const [tickets, total] = await Promise.all([
         MongoDbTickets.model
           .find(query)
-          .populate('customerId', 'firstname lastname email phone')
+          .populate('userId', 'fullname email phoneNumber')
           .populate('assignedTo', 'fullname email')
           .populate('resolvedBy', 'fullname email')
           .sort(sort)
@@ -105,7 +105,7 @@ class TicketController {
 
       const ticket = await MongoDbTickets.model
         .findById(id)
-        .populate('customerId', 'firstname lastname email phone address dateOfBirth')
+        .populate('userId', 'fullname email phoneNumber address')
         .populate('assignedTo', 'fullname email avatar')
         .populate('resolvedBy', 'fullname email')
         .lean();
@@ -128,19 +128,20 @@ class TicketController {
     try {
       const params = req.body;
 
-      // Validate customer exists
-      const customer = await MongoDbCustomers.model.findById(params.customerId);
-      if (!customer) {
-        return sendError(res, 404, 'Customer not found');
+      // Validate user exists
+      const MongoDbUsers = require('@mongodb/users').default;
+      const user = await MongoDbUsers.model.findById(params.userId);
+      if (!user) {
+        return sendError(res, 404, 'User not found');
       }
 
       // Create ticket
       const ticket = await MongoDbTickets.model.create(params);
 
-      // Populate customer details
+      // Populate user details
       const populatedTicket = await MongoDbTickets.model
         .findById(ticket._id)
-        .populate('customerId', 'firstname lastname email phone')
+        .populate('userId', 'fullname email phoneNumber')
         .populate('assignedTo', 'fullname email')
         .lean();
 
@@ -178,7 +179,7 @@ class TicketController {
       // Update ticket
       const ticket = await MongoDbTickets.model
         .findByIdAndUpdate(id, params, { new: true })
-        .populate('customerId', 'firstname lastname email phone')
+        .populate('userId', 'fullname email phoneNumber')
         .populate('assignedTo', 'fullname email')
         .populate('resolvedBy', 'fullname email')
         .lean();
@@ -271,7 +272,7 @@ class TicketController {
       // Latest tickets (limit 5)
       const latestTickets = await MongoDbTickets.model
         .find()
-        .populate('customerId', 'firstname lastname email')
+        .populate('userId', 'fullname email')
         .populate('assignedTo', 'fullname email')
         .sort({ createdAt: -1 })
         .limit(5)
@@ -327,6 +328,108 @@ class TicketController {
         `${result.deletedCount} ticket(s) deleted successfully`
       );
     } catch (error: any) {
+      sendError(res, 500, error.message, error as Error);
+    }
+  }
+
+  /**
+   * POST /api/a/seed/tickets
+   * Seed sample ticket data for testing
+   */
+  async seedTickets(req: Request, res: Response) {
+    try {
+      console.log('🎫 Starting Ticket Seed Process via API...\n');
+
+      // Get users
+      const MongoDbUsers = require('@mongodb/users').default;
+      const users = await MongoDbUsers.model.find().limit(50).lean();
+
+      if (users.length === 0) {
+        return sendError(res, 400, 'No users found. Please seed users first.');
+      }
+
+      // Ticket templates by category
+      const TEMPLATES = {
+        technical: [
+          { title: 'Cannot login to my account', description: 'I have been trying to log in but keep getting "Invalid credentials" error.', priority: 'high' as const },
+          { title: 'Website loading very slowly', description: 'The website has been loading extremely slowly for the past few days.', priority: 'medium' as const },
+          { title: 'Error when uploading files', description: 'Every time I try to upload a document, I get an error message.', priority: 'medium' as const },
+          { title: 'Mobile app keeps crashing', description: 'The mobile app crashes immediately after I open it.', priority: 'high' as const },
+        ],
+        billing: [
+          { title: 'Double charge on my card', description: 'I was charged twice for the same transaction.', priority: 'urgent' as const },
+          { title: 'Refund not received', description: 'I requested a refund but haven\'t received it yet.', priority: 'high' as const },
+          { title: 'Invoice missing', description: 'I need an invoice for my recent purchase.', priority: 'low' as const },
+        ],
+        complaint: [
+          { title: 'Cannot update profile', description: 'Unable to save changes to my profile information.', priority: 'medium' as const },
+          { title: 'Poor customer service', description: 'I am not satisfied with the customer service I received.', priority: 'high' as const },
+        ],
+        feature_request: [
+          { title: 'Add dark mode', description: 'It would be great to have a dark mode option.', priority: 'low' as const },
+          { title: 'Export data feature', description: 'Need ability to export my data to CSV.', priority: 'medium' as const },
+        ],
+        general: [
+          { title: 'How to use feature?', description: 'Need help understanding how to use the new feature.', priority: 'low' as const },
+          { title: 'Feedback on service', description: 'I want to provide feedback about your service.', priority: 'low' as const },
+        ],
+      };
+
+      // Generate tickets
+      const tickets: any[] = [];
+      const categories = Object.keys(TEMPLATES) as Array<keyof typeof TEMPLATES>;
+      const statuses = ['open', 'in_progress', 'resolved', 'closed'];
+      
+      let ticketNumber = 1000;
+      
+      for (let i = 0; i < 50; i++) {
+        const category = categories[Math.floor(Math.random() * categories.length)];
+        const templates = TEMPLATES[category];
+        const template = templates[Math.floor(Math.random() * templates.length)];
+        const user = users[Math.floor(Math.random() * users.length)];
+        const status = statuses[Math.floor(Math.random() * statuses.length)];
+        
+        ticketNumber++;
+        
+        const ticket: any = {
+          ticketNumber: `TKT-${ticketNumber}`,
+          title: template.title,
+          description: template.description,
+          category,
+          priority: template.priority,
+          status,
+          userId: user._id,
+          tags: [category, template.priority],
+          createdAt: new Date(Date.now() - Math.random() * 30 * 24 * 60 * 60 * 1000),
+        };
+
+        if (status === 'in_progress' || status === 'resolved' || status === 'closed') {
+          ticket.responses = [{
+            message: 'Thank you for contacting us. We are looking into this issue.',
+            respondedAt: new Date(ticket.createdAt.getTime() + Math.random() * 24 * 60 * 60 * 1000),
+          }];
+        }
+
+        if (status === 'resolved' || status === 'closed') {
+          ticket.resolvedAt = new Date(ticket.createdAt.getTime() + Math.random() * 7 * 24 * 60 * 60 * 1000);
+          ticket.resolution = 'Issue has been resolved. Please let us know if you need further assistance.';
+        }
+
+        tickets.push(ticket);
+      }
+
+      // Clear existing and insert new
+      await MongoDbTickets.model.deleteMany({});
+      const result = await MongoDbTickets.model.insertMany(tickets);
+
+      console.log(`✅ Successfully seeded ${result.length} tickets`);
+
+      sendSuccess(res, { 
+        count: result.length,
+        tickets: result 
+      }, `Successfully seeded ${result.length} tickets`);
+    } catch (error: any) {
+      console.error('❌ Error seeding tickets:', error);
       sendError(res, 500, error.message, error as Error);
     }
   }
