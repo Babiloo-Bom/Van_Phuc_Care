@@ -136,71 +136,26 @@
           <div class="hidden lg:block">
             <!-- Documents Section -->
             <div v-if="currentLesson" class="space-y-6 mb-6">
-              <!-- Document 1: Bảng mẫu lịch sinh hoạt -->
+              <!-- Documents Component (if documents exist) -->
+              <div class="mt-6">
+                <DocumentsComponent
+                  :course-id="course?._id || ''"
+                  :chapter-id="currentChapter?._id || ''"
+                  :lesson-id="currentLesson?._id || ''"
+                />
+              </div>
               <div
-                class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-4"
+                class="bg-white rounded-lg border border-gray-200 p-4 md:p-6"
               >
-                <h3 class="text-lg md:text-xl font-semibold text-gray-800">
-                  Bảng mẫu lịch sinh hoạt
+                <!-- Document 2: Text Content -->
+                <h3 class="text-lg md:text-xl font-semibold text-gray-800 mb-4">
+                  {{ currentLesson?.title || "Chưa có bài học" }}
                 </h3>
-                <a-button
-                  type="primary"
-                  class="!flex items-center gap-2 !bg-[#1A75BB] hover:!bg-[#155a8f] !rounded-lg !px-4 !py-2 !h-auto !min-w-fit sm:min-w-[160px]"
-                  @click="downloadDocument('schedule')"
-                >
-                  <svg
-                    xmlns="http://www.w3.org/2000/svg"
-                    width="18"
-                    height="18"
-                    viewBox="0 0 24 24"
-                    class="fill-none stroke-white"
-                  >
-                    <path
-                      d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"
-                      stroke-width="1.5"
-                      stroke-linecap="round"
-                      stroke-linejoin="round"
-                    />
-                    <path
-                      d="M7 10l5 5 5-5"
-                      stroke-width="1.5"
-                      stroke-linecap="round"
-                      stroke-linejoin="round"
-                    />
-                    <path
-                      d="M12 15V3"
-                      stroke-width="1.5"
-                      stroke-linecap="round"
-                      stroke-linejoin="round"
-                    />
-                  </svg>
-                  <span>Tải tài liệu</span>
-                </a-button>
+                <div 
+                  class="prose max-w-none text-gray-700 leading-relaxed text-sm md:text-base"
+                  v-html="currentLesson?.content || 'Chưa có nội dung'"
+                ></div>
               </div>
-
-              <!-- Document 2: Text Content -->
-              <h3 class="text-lg md:text-xl font-semibold text-gray-800 mb-4">
-                Trình tự sinh hoạt là gì?
-              </h3>
-              <div class="prose max-w-none">
-                <p class="text-gray-700 leading-relaxed text-sm md:text-base">
-                  Trình tự - routine là một nhóm hành động thực hiện theo thứ tự
-                  và được lặp đi, lặp lại nhiều lần trong ngày và trong một thời
-                  gian dài. Lâu dần, trình tự này sẽ trở thành một thói quen có
-                  ý thức hoặc trở thành phản xạ vô thức, do đó những người tham
-                  gia các hoạt động này có thể hiểu và biết trước những hành
-                  động gì sẽ đến tiếp theo.
-                </p>
-              </div>
-            </div>
-
-            <!-- Documents Component (if documents exist) -->
-            <div v-if="currentLesson" class="mb-6">
-              <DocumentsComponent
-                :course-id="course?._id || ''"
-                :chapter-id="currentChapter?._id || ''"
-                :lesson-id="currentLesson?._id || ''"
-              />
             </div>
           </div>
 
@@ -214,62 +169,40 @@
             >
               <a-tab-pane key="content" tab="Nội dung bài học">
                 <!-- Lesson Content -->
-                <div class="p-4 md:p-6">
-                  <!-- Progress Bar -->
-                  <div class="mb-6">
-                    <ProgressBar :percentage="courseProgress" />
+                <div class="py-4 md:py-6">
+                  <!-- Progress Section -->
+                  <div class="bg-white rounded-lg shadow-sm p-4 md:p-6 mb-4">
+                    <h3 class="text-lg font-semibold text-gray-800 mb-4">
+                      Tiến trình
+                    </h3>
+                    <div class="flex items-center gap-4">
+                      <div class="flex-1">
+                        <div
+                          class="w-full bg-gray-200 rounded-full h-2.5 overflow-hidden"
+                        >
+                          <div
+                            class="h-full bg-gradient-to-r from-[#15CF74] to-[#15CF74] rounded-full transition-all duration-500 ease-out"
+                            :style="{ width: `${courseProgress}%` }"
+                          />
+                        </div>
+                      </div>
+                      <span
+                        class="text-sm font-medium text-gray-700 whitespace-nowrap"
+                        >{{ courseProgress }}%</span
+                      >
+                    </div>
+                    <div
+                      v-if="course?.progress"
+                      class="mt-2 text-sm text-gray-600"
+                    >
+                      <span>{{ course.progress.completedLessons }}</span> /
+                      <span>{{ course.progress.totalLessons }}</span> bài học đã
+                      hoàn thành
+                    </div>
                   </div>
 
                   <!-- Documents Section -->
                   <div v-if="currentLesson" class="space-y-6">
-                    <!-- Document 1: Bảng mẫu lịch sinh hoạt -->
-                    <div
-                      class="bg-white rounded-lg border border-gray-200 p-4 md:p-6"
-                    >
-                      <div
-                        class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-4"
-                      >
-                        <h3
-                          class="text-base md:text-lg font-semibold text-gray-800"
-                        >
-                          Bảng mẫu lịch sinh hoạt
-                        </h3>
-                        <a-button
-                          type="primary"
-                          class="!flex items-center gap-2 !bg-[#1A75BB] hover:!bg-[#155a8f] !rounded-lg !px-4 !py-2 !h-auto !min-w-fit sm:min-w-[160px]"
-                          @click="downloadDocument('schedule')"
-                        >
-                          <svg
-                            xmlns="http://www.w3.org/2000/svg"
-                            width="18"
-                            height="18"
-                            viewBox="0 0 24 24"
-                            class="fill-none stroke-white"
-                          >
-                            <path
-                              d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"
-                              stroke-width="1.5"
-                              stroke-linecap="round"
-                              stroke-linejoin="round"
-                            />
-                            <path
-                              d="M7 10l5 5 5-5"
-                              stroke-width="1.5"
-                              stroke-linecap="round"
-                              stroke-linejoin="round"
-                            />
-                            <path
-                              d="M12 15V3"
-                              stroke-width="1.5"
-                              stroke-linecap="round"
-                              stroke-linejoin="round"
-                            />
-                          </svg>
-                          <span>Tải tài liệu</span>
-                        </a-button>
-                      </div>
-                    </div>
-
                     <!-- Document 2: Text Content -->
                     <div
                       class="bg-white rounded-lg border border-gray-200 p-4 md:p-6"
@@ -277,31 +210,13 @@
                       <h3
                         class="text-base md:text-lg font-semibold text-gray-800 mb-4"
                       >
-                        Trình tự sinh hoạt là gì?
+                        {{ currentLesson?.title || "Chưa có bài học" }}
                       </h3>
-                      <div class="prose max-w-none">
-                        <p
-                          class="text-gray-700 leading-relaxed text-sm md:text-base"
-                        >
-                          Trình tự - routine là một nhóm hành động thực hiện
-                          theo thứ tự và được lặp đi, lặp lại nhiều lần trong
-                          ngày và trong một thời gian dài. Lâu dần, trình tự này
-                          sẽ trở thành một thói quen có ý thức hoặc trở thành
-                          phản xạ vô thức, do đó những người tham gia các hoạt
-                          động này có thể hiểu và biết trước những hành động gì
-                          sẽ đến tiếp theo.
-                        </p>
-                      </div>
+                      <div 
+                        class="prose max-w-none text-gray-700 leading-relaxed text-sm md:text-base"
+                        v-html="currentLesson?.content || 'Chưa có nội dung'"
+                      ></div>
                     </div>
-                  </div>
-
-                  <!-- Documents Component (if documents exist) -->
-                  <div v-if="currentLesson" class="mt-6">
-                    <DocumentsComponent
-                      :course-id="course?._id || ''"
-                      :chapter-id="currentChapter?._id || ''"
-                      :lesson-id="currentLesson?._id || ''"
-                    />
                   </div>
                 </div>
               </a-tab-pane>
@@ -500,6 +415,101 @@ const handleTabChange = (key: string) => {
   activeTab.value = key;
 };
 
+const canMarkLessonCompleted = (
+  chapterIndex: number,
+  lessonIndex: number
+): boolean => {
+  if (!course.value?.chapters) return false;
+
+  const chapters = course.value.chapters;
+  const currentChapter = chapters[chapterIndex];
+
+  if (!currentChapter?.lessons) return false;
+
+  const lessons = currentChapter.lessons;
+  const currentLesson = lessons[lessonIndex];
+
+  if (!currentLesson) return false;
+
+  if (currentLesson.isLocked) return false;
+
+  if (currentLesson.isCompleted) return false;
+
+  if (lessonIndex > 0) {
+    const prevLesson = lessons[lessonIndex - 1];
+    if (!prevLesson?.isCompleted) {
+      return false;
+    }
+  }
+
+  if (chapterIndex > 0 && lessonIndex === 0) {
+    const prevChapter = chapters[chapterIndex - 1];
+    if (prevChapter?.lessons && prevChapter.lessons.length > 0) {
+      const lastPrevLesson =
+        prevChapter.lessons[prevChapter.lessons.length - 1];
+      if (!lastPrevLesson?.isCompleted) {
+        return false;
+      }
+    }
+  }
+
+  return true;
+};
+
+const findValidLesson = (): {
+  chapterIndex: number;
+  lessonIndex: number;
+} | null => {
+  if (!course.value?.chapters || course.value.chapters.length === 0) {
+    return null;
+  }
+
+  const chapters = course.value.chapters;
+
+  for (let chIdx = 0; chIdx < chapters.length; chIdx++) {
+    const chapter = chapters[chIdx];
+    if (!chapter?.lessons || chapter.lessons.length === 0) continue;
+
+    const lessons = chapter.lessons;
+
+    for (let lesIdx = 0; lesIdx < lessons.length; lesIdx++) {
+      const lesson = lessons[lesIdx];
+
+      if (!lesson) continue;
+
+      if (lesson.isCompleted) continue;
+
+      if (lesson.isLocked) continue;
+
+      if (lesIdx > 0) {
+        const prevLesson = lessons[lesIdx - 1];
+        if (!prevLesson?.isCompleted) {
+          continue;
+        }
+      }
+
+      if (chIdx > 0 && lesIdx === 0) {
+        const prevChapter = chapters[chIdx - 1];
+        if (prevChapter?.lessons && prevChapter.lessons.length > 0) {
+          const lastPrevLesson =
+            prevChapter.lessons[prevChapter.lessons.length - 1];
+          if (!lastPrevLesson?.isCompleted) {
+            continue;
+          }
+        }
+      }
+
+      return { chapterIndex: chIdx, lessonIndex: lesIdx };
+    }
+  }
+
+  if (chapters[0]?.lessons && chapters[0].lessons.length > 0) {
+    return { chapterIndex: 0, lessonIndex: 0 };
+  }
+
+  return null;
+};
+
 const fetchCourseDetail = async () => {
   try {
     loading.value = true;
@@ -523,7 +533,7 @@ const fetchCourseDetail = async () => {
       currentLessonIndex.value = 0;
     }
   } catch (error) {
-    navigateTo('/my-learning')
+    navigateTo("/my-learning");
   } finally {
     loading.value = false;
   }
@@ -541,6 +551,21 @@ watch(
     )
       return;
 
+    if (
+      !canMarkLessonCompleted(
+        currentChapterIndex.value,
+        currentLessonIndex.value
+      )
+    ) {
+      const validLesson = findValidLesson();
+      if (validLesson) {
+        navigateTo(
+          `/my-learning/${slug.value}?chapter=${validLesson.chapterIndex}&lesson=${validLesson.lessonIndex}`
+        );
+      }
+      return;
+    }
+
     const hasQuiz = lesson.hasQuiz || !!lesson.quizId || !!lesson.quiz;
 
     if (!hasQuiz && !lesson.isCompleted) {
@@ -554,7 +579,7 @@ watch(
           0
         );
 
-        await coursesStore.fetchDetail(slug.value);
+        await coursesStore.fetchMyCourseBySlug(slug.value);
       } catch (error) {
       } finally {
         markingCompleted.value = false;

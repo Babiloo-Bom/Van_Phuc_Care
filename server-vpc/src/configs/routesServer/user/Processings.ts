@@ -5,6 +5,6 @@ import { userPassport } from '@middlewares/passport';
 
 const router = Router();
 
-router.get('/:targetId', ProcessingController.show);
 router.post('/lesson-completed', userPassport.authenticate('jwt', { session: false }), ProgressController.markLessonCompleted);
+router.get('/:targetId', ProcessingController.show);
 export default router;

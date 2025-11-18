@@ -123,31 +123,24 @@ class CourseController {
     ): Promise<string | null> {
       if (!path) return null;
   
-      // If already a full URL (http/https), return as is
       if (path.startsWith("http://") || path.startsWith("https://")) {
         return path;
       }
-  
-      // If it's a MinIO path (starts with /van-phuc-care/)
+      
       if (path.startsWith("/van-phuc-care/")) {
         try {
-          // Remove leading slash and bucket name to get object name
           const objectName = path.replace(/^\/van-phuc-care\//, "");
   
-          // Get presigned URL (valid for 7 days)
-          const presignedUrl = await MinioService.getFileUrl(
+          const fileUrl = await MinioService.getFileUrlWithFallback(
             objectName,
+            false,
             7 * 24 * 60 * 60
           );
-          return presignedUrl;
+          return fileUrl; 
         } catch (error) {
-          console.error("Error getting presigned URL for:", path, error);
-          // Fallback: construct public URL (requires public bucket)
-          const minioEndpoint = process.env.MINIO_ENDPOINT || "localhost";
-          const minioPort = process.env.MINIO_PORT || "9000";
-          const protocol =
-            process.env.MINIO_USE_SSL === "true" ? "https" : "http";
-          return `${protocol}://${minioEndpoint}:${minioPort}${path}`;
+          console.error("❌ Error converting MinIO path to URL:", path, error);
+          const objectName = path.replace(/^\/van-phuc-care\//, "");
+          return MinioService.getPublicUrl(objectName);
         }
       }
   
@@ -160,7 +153,6 @@ class CourseController {
    */
   private static async getPurchasedCourseIds(userId: string): Promise<string[]> {
     try {
-      // Get Order model (same schema as OrderController)
       const orderSchema = new mongoose.Schema({
         orderId: { type: String, required: true, unique: true },
         userId: { type: String, required: true },
@@ -175,14 +167,12 @@ class CourseController {
 
       const OrderModel = mongoose.models.Order || mongoose.model('Order', orderSchema);
 
-      // Find all completed orders for this user
       const completedOrders = await OrderModel.find({
         userId: userId.toString(),
         status: 'completed',
         paymentStatus: 'completed'
       });
 
-      // Extract all unique courseIds from order items
       const purchasedCourseIds = new Set<string>();
       
       completedOrders.forEach((order: any) => {
@@ -221,14 +211,12 @@ class CourseController {
         return sendError(res, 400, 'User ID not found');
       }
 
-      // Get purchased course IDs from orders
       const purchasedCourseIds = await CourseController.getPurchasedCourseIds(userId);
 
       if (purchasedCourseIds.length === 0) {
         return sendSuccess(res, { courses: [] });
       }
 
-      // Get courses that user has purchased
       const courses = await Course.find({
         _id: { $in: purchasedCourseIds.map(id => new mongoose.Types.ObjectId(id)) },
         status: 'active'
@@ -237,11 +225,9 @@ class CourseController {
       const LessonsModel = (await import("@mongodb/lessons")).default;
       const QuizzesModel = (await import("@mongodb/quizzes")).default;
 
-      // Get user's progress for all courses
       const LessonProgress = mongoose.model("LessonProgress");
       const MongoDbQuizAttempts = (await import("@mongodb/quiz-attempts")).default;
 
-      // Get all lesson progress and quiz attempts for this user across all purchased courses
       const [allLessonProgress, allQuizAttempts] = await Promise.all([
         LessonProgress.find({
           userId: userId.toString(),
@@ -255,7 +241,6 @@ class CourseController {
         }),
       ]);
 
-      // Calculate statistics and progress for each course
       const coursesWithStats = await Promise.all(
         courses.map(async (course: any) => {
           const courseData = course.toObject();
@@ -271,7 +256,6 @@ class CourseController {
           let totalLessons = 0;
           let completedLessons = 0;
 
-          // Get lesson progress and quiz attempts for this specific course
           const courseLessonProgress = allLessonProgress.filter(
             (p: any) => p.courseId?.toString() === courseId
           );
@@ -290,14 +274,12 @@ class CourseController {
               const lessonId = lesson._id.toString();
               const chapterId = chapter._id.toString();
 
-              // Count videos
               if (lessonData.videos && Array.isArray(lessonData.videos)) {
                 totalVideoCount += lessonData.videos.length;
               } else if (lessonData.type === "video" && lessonData.videoUrl) {
                 totalVideoCount += 1;
               }
 
-              // Count documents
               if (lessonData.documents && Array.isArray(lessonData.documents)) {
                 totalDocumentCount += lessonData.documents.length;
               } else if (
@@ -307,12 +289,10 @@ class CourseController {
                 totalDocumentCount += 1;
               }
 
-              // Check if lesson is completed for progress calculation
               totalLessons += 1;
               const hasQuiz = !!lessonData.quizId || !!lessonData.quiz;
 
               if (hasQuiz) {
-                // For lessons with quiz, check if user passed the quiz
                 const passedAttempt = courseQuizAttempts.find(
                   (attempt: any) =>
                     attempt.chapterId?.toString() === chapterId &&
@@ -323,7 +303,6 @@ class CourseController {
                   completedLessons += 1;
                 }
               } else {
-                // For lessons without quiz, check lesson progress
                 const progress = courseLessonProgress.find(
                   (p: any) =>
                     p.chapterId?.toString() === chapterId &&
@@ -342,7 +321,6 @@ class CourseController {
             status: "active",
           });
 
-          // Calculate progress percentage
           const progressPercentage =
             totalLessons > 0
               ? Math.round((completedLessons / totalLessons) * 100)

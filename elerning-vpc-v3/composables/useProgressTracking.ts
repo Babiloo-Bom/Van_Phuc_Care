@@ -60,7 +60,6 @@ export const useProgressTracking = () => {
       const apiBase = 'http://localhost:3000/api/u'
       loading.value = true
       error.value = null
-
       // Check if already completed
       const existingProgress = lessonProgress.value.find(
         progress => 

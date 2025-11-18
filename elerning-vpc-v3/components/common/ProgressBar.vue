@@ -6,7 +6,7 @@
     </div>
     <div class="w-full bg-gray-200 rounded-full h-2.5 overflow-hidden">
       <div
-        class="h-full bg-gradient-to-r from-blue-400 to-blue-600 rounded-full transition-all duration-500 ease-out"
+        class="h-full bg-gradient-to-r from-[#15CF74] to-[#15CF74] rounded-full transition-all duration-500 ease-out"
         :style="{ width: `${percentage}%` }"
       />
     </div>

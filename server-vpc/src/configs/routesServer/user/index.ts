@@ -8,6 +8,7 @@ import OrdersRouter from './Order';
 import SessionRouter from './Sessions';
 import UserRouter from './Users';
 import CourseRouter from './Courses';
+import ProcessingRouter from './Processings';
 
 const router = Router();
 
@@ -20,4 +21,5 @@ router.use('/products', ProductsRouter);
 router.use('/sessions', SessionRouter);
 router.use('/users', UserRouter);
 router.use('/courses', CourseRouter);
+router.use('/progress', ProcessingRouter);
 export default router;

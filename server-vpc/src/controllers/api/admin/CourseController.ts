@@ -124,31 +124,24 @@ class CourseController {
   ): Promise<string | null> {
     if (!path) return null;
 
-    // If already a full URL (http/https), return as is
     if (path.startsWith("http://") || path.startsWith("https://")) {
       return path;
     }
 
-    // If it's a MinIO path (starts with /van-phuc-care/)
     if (path.startsWith("/van-phuc-care/")) {
       try {
-        // Remove leading slash and bucket name to get object name
         const objectName = path.replace(/^\/van-phuc-care\//, "");
 
-        // Get presigned URL (valid for 7 days)
-        const presignedUrl = await MinioService.getFileUrl(
+        const fileUrl = await MinioService.getFileUrlWithFallback(
           objectName,
+          false,
           7 * 24 * 60 * 60
         );
-        return presignedUrl;
+        return fileUrl;
       } catch (error) {
-        console.error("Error getting presigned URL for:", path, error);
-        // Fallback: construct public URL (requires public bucket)
-        const minioEndpoint = process.env.MINIO_ENDPOINT || "localhost";
-        const minioPort = process.env.MINIO_PORT || "9000";
-        const protocol =
-          process.env.MINIO_USE_SSL === "true" ? "https" : "http";
-        return `${protocol}://${minioEndpoint}:${minioPort}${path}`;
+        console.error("❌ Error converting MinIO path to URL:", path, error);
+        const objectName = path.replace(/^\/van-phuc-care\//, "");
+        return MinioService.getPublicUrl(objectName);
       }
     }
 
