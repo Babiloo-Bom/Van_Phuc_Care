@@ -5,14 +5,18 @@
     </div>
     <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
       <div class="profile-card bg-white rounded-xl p-8 flex flex-col items-center justify-center">
-        <img src="/images/avatar.png" alt="Avatar" class="w-28 h-28 rounded-full mb-4" />
-        <h2 class="text-xl font-bold mb-1">Nguyễn Văn A</h2>
-        <p class="text-gray-600">nguyenvana@gmail.com</p>
+        <a-spin v-if="loading" />
+        <template v-else>
+          <img :src="userInfo?.avatar || '/images/avatar.png'" alt="Avatar" class="w-28 h-28 rounded-full mb-4" />
+          <h2 class="text-xl font-bold mb-1">{{ userInfo?.name || userInfo?.fullname || 'Chưa có tên' }}</h2>
+          <p class="text-gray-600">{{ userInfo?.email || 'Chưa có email' }}</p>
+        </template>
       </div>
       <div class="profile-form bg-white rounded-xl p-8">
-        <a-tabs v-model:activeKey="activeTab" class="mb-6">
-          <a-tab-pane key="info" tab="Thông tin tài khoản">
-            <a-form :model="infoForm" layout="vertical" @finish="handleInfoSubmit">
+        <a-spin :spinning="loading">
+          <a-tabs v-model:activeKey="activeTab" class="mb-6">
+            <a-tab-pane key="info" tab="Thông tin tài khoản">
+              <a-form :model="infoForm" layout="vertical" @finish="handleInfoSubmit">
               <a-form-item label="Họ và tên" name="name">
                 <a-input v-model:value="infoForm.name" placeholder="Nguyễn Văn A" size="large" />
               </a-form-item>
@@ -66,20 +70,25 @@
             </a-form>
           </a-tab-pane>
         </a-tabs>
+        </a-spin>
       </div>
     </div>
   </div>
 </template>
 
 <script setup lang="ts">
-import { ref, reactive } from 'vue'
+import { ref, reactive, onMounted } from 'vue'
 import { message } from 'ant-design-vue'
 import { useUserManagement } from '~/composables/useUserManagement'
 import { useAuth } from '~/composables/useAuth'
 import { useApiClient } from '~/composables/useApiClient'
+import { useAuthStore } from '~/stores/auth'
 import type { UploadFile } from 'ant-design-vue'
 
 const activeTab = ref('info')
+const loading = ref(false)
+const userInfo = ref<any>(null)
+
 const infoForm = reactive({
   name: '',
   phone: '',
@@ -97,65 +106,164 @@ const errorForm = reactive({
 })
 
 const { user } = useAuth()
+const authStore = useAuthStore()
 const apiClient = useApiClient()
 
 async function fetchUserInfo() {
   try {
-    const userId = user.value?.id
-    if (!userId) return
-    const res = await apiClient.get(`/api/a/users/${userId}`)
-    const u = res.data?.user || {}
-    infoForm.name = u.name || u.fullname || ''
-    infoForm.phone = u.phone || ''
-    infoForm.email = u.email || ''
-    infoForm.address = u.address || ''
+    loading.value = true
+    console.log('🔍 Fetching user profile...')
+    
+    const res = await apiClient.get('/api/a/admins/profile', {
+      showError: false, // Disable automatic error toast
+    })
+    
+    console.log('✅ Profile response:', res)
+    console.log('✅ Response structure check:', {
+      'res.data': res.data,
+      'res.data.user': res.data?.user,
+      'res.data.data': res.data?.data,
+    })
+    
+    // Try different response structures
+    // Backend might return: {status: true, data: {user: {...}}}
+    // Or: {data: {user: {...}}}
+    const u = res.data?.data?.user || res.data?.user || res.data?.data || {}
+    userInfo.value = u
+    
+    console.log('📝 User data extracted:', u)
+    
+    // API returns: name, phone, email, address
+    // Use Object.assign to ensure reactivity
+    Object.assign(infoForm, {
+      name: u.name || u.fullname || '',
+      phone: u.phone || u.phoneNumber || '',
+      email: u.email || '',
+      address: u.address || ''
+    })
+    
+    console.log('📋 Form data filled:', { ...infoForm })
+    console.log('📋 Check each field:', {
+      name: infoForm.name,
+      phone: infoForm.phone,
+      email: infoForm.email,
+      address: infoForm.address
+    })
   } catch (e) {
-    // fallback: giữ trống
+    console.error('❌ Failed to fetch user info:', e)
+    message.error('Không thể tải thông tin người dùng')
+  } finally {
+    loading.value = false
   }
 }
 
-fetchUserInfo()
+onMounted(() => {
+  console.log('🚀 Profile page mounted')
+  console.log('👤 Current user from auth:', user.value)
+  console.log('👤 Current user from authStore:', authStore.user)
+  fetchUserInfo()
+})
 
 async function handleInfoSubmit() {
   try {
     const userId = user.value?.id
-    if (!userId) throw new Error('User not found')
-    await apiClient.put(`/api/a/users/${userId}`, infoForm)
-    message.success('Cập nhật thông tin thành công!')
-  } catch (e) {
-    message.error('Cập nhật thất bại!')
+    if (!userId) {
+      message.error('Không tìm thấy thông tin người dùng')
+      return
+    }
+    
+    // Use existing updateUser API with users-management endpoint
+    const response = await apiClient.put(`/api/a/users-management/${userId}`, {
+      name: infoForm.name,
+      phoneNumber: infoForm.phone,
+      email: infoForm.email,
+      address: infoForm.address,
+    }, {
+      showError: false, // Disable automatic error toast
+    })
+    
+    if (response.status) {
+      message.success('Cập nhật thông tin thành công!')
+      // Refresh user info
+      await fetchUserInfo()
+    } else {
+      message.error(response.message || 'Cập nhật thất bại!')
+    }
+  } catch (e: any) {
+    console.error('Failed to update user info:', e)
+    message.error(e?.message || 'Cập nhật thất bại, vui lòng thử lại!')
   }
 }
 
 async function handlePasswordSubmit() {
-  if (!passwordForm.newPassword || passwordForm.newPassword !== passwordForm.confirmPassword) {
+  if (!passwordForm.currentPassword) {
+    message.error('Vui lòng nhập mật khẩu hiện tại')
+    return
+  }
+  if (!passwordForm.newPassword) {
+    message.error('Vui lòng nhập mật khẩu mới')
+    return
+  }
+  if (passwordForm.newPassword !== passwordForm.confirmPassword) {
     message.error('Mật khẩu xác nhận không khớp!')
     return
   }
+  if (passwordForm.newPassword.length < 6) {
+    message.error('Mật khẩu mới phải có ít nhất 6 ký tự')
+    return
+  }
+  
   try {
-    await apiClient.post('/api/a/passwords/reset', {
-      token: '', // Nếu cần token, lấy từ xác thực
+    const response = await apiClient.post('/api/a/passwords/reset', {
+      currentPassword: passwordForm.currentPassword,
       password: passwordForm.newPassword,
+    }, {
+      showError: false, // Disable automatic error toast
     })
-    message.success('Đổi mật khẩu thành công!')
-  } catch (e) {
-    message.error('Đổi mật khẩu thất bại!')
+    
+    if (response.status) {
+      message.success('Đổi mật khẩu thành công!')
+      // Clear form
+      passwordForm.currentPassword = ''
+      passwordForm.newPassword = ''
+      passwordForm.confirmPassword = ''
+    } else {
+      message.error(response.message || 'Đổi mật khẩu thất bại!')
+    }
+  } catch (e: any) {
+    console.error('Failed to change password:', e)
+    message.error(e?.message || 'Đổi mật khẩu thất bại, vui lòng thử lại!')
   }
 }
 
 async function handleErrorSubmit() {
+  if (!errorForm.note.trim()) {
+    message.error('Vui lòng nhập nội dung phản hồi')
+    return
+  }
+  
   try {
     const formData = new FormData()
     formData.append('content', errorForm.note)
     if (errorForm.fileList.length > 0 && errorForm.fileList[0]?.originFileObj) {
       formData.append('file', errorForm.fileList[0].originFileObj as File)
     }
-    await apiClient.post('/api/a/feedbacks', formData)
-    message.success('Gửi phản hồi thành công!')
-    errorForm.note = ''
-    errorForm.fileList = []
-  } catch (e) {
-    message.error('Gửi phản hồi thất bại!')
+    
+    const response = await apiClient.post('/api/a/feedbacks', formData, {
+      showError: false, // Disable automatic error toast
+    })
+    
+    if (response.status) {
+      message.success('Gửi phản hồi thành công! Cảm ơn bạn đã đóng góp ý kiến.')
+      // Clear form
+      errorForm.note = ''
+      errorForm.fileList = []
+    } else {
+      message.error(response.message || 'Gửi phản hồi thất bại!')
+    }
+  } catch (e: any) {
+    console.error('Failed to submit feedback:', e)
+    message.error(e?.message || 'Gửi phản hồi thất bại, vui lòng thử lại!')
   }
 }
 </script>

@@ -1,5 +1,31 @@
 <template>
   <div>
+    <!-- Loading State -->
+    <div v-if="isCheckingAuth || isLoading" class="fixed top-0 left-0 right-0 bottom-0 bg-white/95 flex items-center justify-center z-[9999]">
+      <div class="text-center p-8">
+        <a-spin size="large" />
+        <h3 class="mt-4 text-lg font-semibold text-gray-900">{{ isLoading ? 'Đang xử lý đăng nhập Google...' : 'Đang kiểm tra xác thực...' }}</h3>
+        <p class="mt-2 text-gray-500">Vui lòng đợi trong giây lát</p>
+      </div>
+    </div>
+
+    <!-- Error State -->
+    <div v-else-if="error" class="p-8 flex items-center justify-center min-h-[400px]">
+      <a-result
+        status="error"
+        title="Đăng nhập Google thất bại"
+        :sub-title="error"
+      >
+        <template #extra>
+          <a-button type="primary" @click="goToLogin">
+            Quay lại đăng nhập
+          </a-button>
+        </template>
+      </a-result>
+    </div>
+
+    <!-- Dashboard Content -->
+    <div v-else>
     <!-- Page Header -->
     <div class="mb-8">
       <h1 class="text-3xl font-bold text-gray-900">CRM Dashboard</h1>
@@ -8,7 +34,7 @@
 
     <!-- Stats Grid -->
     <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-      <div class="card bg-gradient-to-br from-teal-500 to-teal-600 text-white">
+      <div class="bg-white rounded-xl p-6 shadow-sm bg-gradient-to-br from-teal-500 to-teal-600 text-white">
         <div class="flex items-center justify-between">
           <div>
             <p class="text-teal-100 text-sm font-medium">Total Customers</p>
@@ -36,7 +62,7 @@
       </div>
 
       <div
-        class="card bg-gradient-to-br from-green-500 to-green-600 text-white"
+        class="bg-white rounded-xl p-6 shadow-sm bg-gradient-to-br from-green-500 to-green-600 text-white"
       >
         <div class="flex items-center justify-between">
           <div>
@@ -64,7 +90,7 @@
         <p class="text-green-100 text-sm mt-4">24 pending resolution</p>
       </div>
 
-      <div class="card bg-gradient-to-br from-blue-500 to-blue-600 text-white">
+      <div class="bg-white rounded-xl p-6 shadow-sm bg-gradient-to-br from-blue-500 to-blue-600 text-white">
         <div class="flex items-center justify-between">
           <div>
             <p class="text-blue-100 text-sm font-medium">Services</p>
@@ -92,7 +118,7 @@
       </div>
 
       <div
-        class="card bg-gradient-to-br from-purple-500 to-purple-600 text-white"
+        class="bg-white rounded-xl p-6 shadow-sm bg-gradient-to-br from-purple-500 to-purple-600 text-white"
       >
         <div class="flex items-center justify-between">
           <div>
@@ -124,7 +150,7 @@
     <!-- Content Grid -->
     <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
       <!-- Recent Tickets -->
-      <div class="card">
+      <div class="bg-white rounded-xl p-6 shadow-sm">
         <h3 class="text-lg font-semibold text-gray-900 mb-4">Recent Tickets</h3>
         <div class="space-y-4">
           <div
@@ -153,7 +179,7 @@
       </div>
 
       <!-- Quick Actions -->
-      <div class="card">
+      <div class="bg-white rounded-xl p-6 shadow-sm">
         <h3 class="text-lg font-semibold text-gray-900 mb-4">Quick Actions</h3>
         <div class="grid grid-cols-2 gap-4">
           <NuxtLink
@@ -188,7 +214,7 @@
     </div>
 
     <!-- API Config -->
-    <div class="card mt-6 bg-teal-50 border-2 border-teal-200">
+    <div class="rounded-xl p-6 shadow-sm mt-6 bg-teal-50 border-2 border-teal-200">
       <h3 class="text-lg font-semibold text-gray-900 mb-4">
         🔌 API Configuration
       </h3>
@@ -206,42 +232,17 @@
         </p>
       </div>
     </div>
-
-    <!-- Login GG -->
-    <div v-if="googleLoading" class="google-loading-overlay">
-      <!-- Loading State -->
-      <div class="google-loading-popup">
-        <a-spin size="large" />
-        <h3>Đang xử lý đăng nhập Google...</h3>
-        <p>Vui lòng đợi trong giây lát</p>
-      </div>
-    </div>
-    <!-- Error State -->
-    <div
-      v-else-if="googleError"
-      class="flex justify-center items-center min-h-[300px]"
-    >
-      <div class="callback-container">
-        <div class="error-state">
-          <a-result
-            status="error"
-            title="Đăng nhập thất bại"
-            :sub-title="googleError"
-          >
-            <template #extra>
-              <a-button type="primary" @click="goToLogin"> Thử lại </a-button>
-              <a-button @click="goToLogin"> Về trang đăng nhập </a-button>
-            </template>
-          </a-result>
-        </div>
-      </div>
     </div>
   </div>
 </template>
 
 <script setup lang="ts">
+import { ref, onMounted } from "vue";
+import { message } from "ant-design-vue";
+
 definePageMeta({
   layout: "default",
+  middleware: [], // No middleware - handle auth in component
 });
 
 useHead({
@@ -250,115 +251,111 @@ useHead({
 
 const { apiHost, apiBase, isDevelopment } = useEnvConfig();
 
-import { nextTick } from "vue";
-
-// ===== Google OAuth STATE =====
-const googleLoading = ref(false);
-const googleError = ref("");
-const googleSuccess = ref(false);
-
-// ===== COMPOSABLES =====
+// Composables
 const { completeGoogleLogin } = useGoogleAuth();
 const authStore = useAuthStore();
 const router = useRouter();
-const route = useRoute();
 
+// State
+const isLoading = ref(false);
+const error = ref("");
+const isCheckingAuth = ref(true);
+
+// Navigate to login
 const goToLogin = () => {
   router.push("/login");
 };
 
-// ===== LIFECYCLE =====
+// Check authentication and handle Google OAuth
 onMounted(async () => {
-  // Xử lý đăng nhập Google nếu có code trên URL
   const urlParams = new URLSearchParams(window.location.search);
   const code = urlParams.get("code");
   const state = urlParams.get("state");
-  console.log('-------------', code, state);
+
+  // Case 1: Google OAuth callback
   if (code) {
-    googleLoading.value = true;
-    googleError.value = "";
+    console.log("🔐 Google OAuth Callback:", { code: !!code, state });
+    isLoading.value = true;
+    error.value = "";
+
     try {
+      console.log("🔄 Completing Google login...");
       const response = await completeGoogleLogin(code, state || undefined);
-      if (response && response.success && response.data) {
-        let tokenExpireAtNum;
-        if (typeof response.data.tokenExpireAt === "string") {
-          tokenExpireAtNum = Date.now() + 7 * 24 * 60 * 60 * 1000;
-        } else {
-          tokenExpireAtNum =
-            response.data.tokenExpireAt || Date.now() + 7 * 24 * 60 * 60 * 1000;
-        }
-        const userData = {
-          ...response.data.user,
-          id: response.data.user?._id || `google-user-${Date.now()}`,
-          email: response.data.user?.email || "user@google.com",
-          fullname: response.data.user?.fullname || "Google User",
-          avatar: response.data.user?.avatar || "",
-          role: response.data.user?.role || "user",
-          verified: true,
-        };
-        await authStore.completeGoogleLogin(
-          response.data.accessToken,
-          tokenExpireAtNum,
-          userData
-        );
-        googleSuccess.value = true;
-        await nextTick();
-        window.location.href = "/";
-        // Giữ loading cho đến khi reload lại trang hoặc chuyển hướng rõ ràng
-        setTimeout(() => {
-          googleLoading.value = false;
-        }, 1000);
-      } else {
-        throw new Error(response.error || "Đăng nhập Google thất bại");
+
+      if (!response || !response.success || !response.data) {
+        throw new Error(response?.error || "Đăng nhập Google thất bại");
       }
-    } catch (error) {
-      if (error instanceof Error) {
-        googleError.value = error.message || "Đăng nhập Google thất bại";
+
+      console.log("✅ Google login successful:", response);
+
+      // Calculate token expiry time
+      let tokenExpireAtNum: number;
+      if (typeof response.data.tokenExpireAt === "string") {
+        tokenExpireAtNum = Date.now() + 7 * 24 * 60 * 60 * 1000; // 7 days
       } else {
-        googleError.value = "Đăng nhập Google thất bại";
+        tokenExpireAtNum =
+          response.data.tokenExpireAt || Date.now() + 7 * 24 * 60 * 60 * 1000;
       }
-      // Chuyển về trang login nếu lỗi
+
+      // Prepare user data
+      const userData = {
+        ...response.data.user,
+        id: (response.data.user as any)?._id || response.data.user?.id || `google-user-${Date.now()}`,
+        email: response.data.user?.email || "user@google.com",
+        fullname: (response.data.user as any)?.fullname || response.data.user?.name || "Google User",
+        avatar: response.data.user?.avatar || "",
+        role: (response.data.user as any)?.role || "user",
+        verified: true,
+      };
+
+      console.log("💾 Saving auth data to store...");
+
+      // Save to auth store
+      await authStore.completeGoogleLogin(
+        response.data.accessToken,
+        tokenExpireAtNum,
+        userData
+      );
+
+      console.log("✅ Auth data saved successfully");
+
+      // Show success message
+      message.success("Đăng nhập Google thành công!");
+
+      // Clean URL (remove query params)
+      window.history.replaceState({}, document.title, "/");
+
+      // Allow UI to render
+      isLoading.value = false;
+      isCheckingAuth.value = false;
+    } catch (err: any) {
+      console.error("❌ Google login error:", err);
+
+      error.value = err.message || "Đăng nhập Google thất bại. Vui lòng thử lại.";
+      isLoading.value = false;
+      isCheckingAuth.value = false;
+
+      // Show error message
+      message.error(error.value);
+
+      // Redirect to login after 3 seconds
       setTimeout(() => {
-        googleLoading.value = false;
-        // window.location.href = "/login";
-      }, 1000);
+        router.push("/login");
+      }, 3000);
     }
-    // Không tắt loading ngay lập tức
     return;
   }
+
+  // Case 2: Normal page visit - check authentication
+  if (!authStore.isAuthenticated) {
+    console.log("⚠️ User not authenticated, redirecting to login");
+    // Save intended destination
+    localStorage.setItem("redirect_after_login", "/");
+    router.push("/login");
+    return;
+  }
+
+  // User is authenticated, show dashboard
+  isCheckingAuth.value = false;
 });
 </script>
-<style scoped>
-.google-loading-overlay {
-  position: fixed;
-  z-index: 9999;
-  top: 0;
-  left: 0;
-  width: 100vw;
-  height: 100vh;
-  background: rgba(30, 41, 59, 0.55);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
-.google-loading-popup {
-  background: #fff;
-  border-radius: 16px;
-  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.18);
-  padding: 48px 32px 32px 32px;
-  min-width: 320px;
-  text-align: center;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-}
-.google-loading-popup h3 {
-  margin: 24px 0 8px;
-  color: #333;
-  font-size: 20px;
-}
-.google-loading-popup p {
-  color: #666;
-  margin: 0;
-}
-</style>

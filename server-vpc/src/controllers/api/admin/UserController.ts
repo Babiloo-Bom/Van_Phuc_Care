@@ -233,8 +233,10 @@ export default class UserController {
       // Return user profile without sensitive data
       const userProfile = {
         _id: user._id,
+        name: user.name || user.fullname,
         fullname: user.fullname || user.name,
         email: user.email,
+        phone: user.phoneNumber,
         phoneNumber: user.phoneNumber,
         avatar: user.avatar,
         gender: user.gender,
@@ -247,6 +249,7 @@ export default class UserController {
         updatedAt: user.updatedAt
       };
 
+      console.log('✅ Returning user profile:', userProfile);
       sendSuccess(res, { user: userProfile });
     } catch (error: any) {
       sendError(res, 500, error.message, error as Error);
@@ -321,6 +324,98 @@ export default class UserController {
 
       sendSuccess(res, { user: userProfile });
     } catch (error: any) {
+      sendError(res, 500, error.message, error as Error);
+    }
+  }
+
+  /**
+   * POST /api/a/seed/users
+   * Seed sample user data for testing
+   */
+  public static async seedUsers(req: Request, res: Response) {
+    try {
+      const bcrypt = require('bcryptjs');
+      const MongoDbUsers = require('@mongodb/users').default;
+
+      console.log('👥 Starting User Seed Process via API...\n');
+
+      const salt = bcrypt.genSaltSync();
+
+      // Sample users data
+      const usersData = [
+        {
+          fullname: 'Nguyễn Văn A',
+          email: 'nguyenvana@example.com',
+          phoneNumber: '0987654321',
+          password: bcrypt.hashSync('user123', salt),
+          address: {
+            province: { id: '01', name: 'Hà Nội' },
+            district: { id: '001', name: 'Ba Đình' },
+            ward: { id: '0001', name: 'Phúc Xá' },
+            addressDetail: 'Số 1 Phúc Xá',
+          },
+          gender: 'male',
+          status: 'active',
+          type: 'normal',
+        },
+        {
+          fullname: 'Trần Thị B',
+          email: 'tranthib@example.com',
+          phoneNumber: '0976543210',
+          password: bcrypt.hashSync('user123', salt),
+          address: {
+            province: { id: '79', name: 'Hồ Chí Minh' },
+            district: { id: '760', name: 'Quận 1' },
+            ward: { id: '00001', name: 'Bến Nghé' },
+            addressDetail: 'Số 10 Nguyễn Huệ',
+          },
+          gender: 'female',
+          status: 'active',
+          type: 'vip',
+        },
+        {
+          fullname: 'Lê Minh C',
+          email: 'leminhc@example.com',
+          phoneNumber: '0965432109',
+          password: bcrypt.hashSync('user123', salt),
+          address: {
+            province: { id: '48', name: 'Đà Nẵng' },
+            district: { id: '490', name: 'Hải Châu' },
+            ward: { id: '00001', name: 'Thanh Bình' },
+            addressDetail: 'Số 20 Trần Phú',
+          },
+          gender: 'male',
+          status: 'active',
+          type: 'normal',
+        },
+      ];
+
+      // Delete existing users with same emails
+      const emails = usersData.map(u => u.email);
+      await MongoDbUsers.model.deleteMany({ email: { $in: emails } });
+
+      // Insert new users
+      const result = await MongoDbUsers.model.insertMany(usersData);
+
+      console.log(`✅ Successfully seeded ${result.length} users`);
+
+      sendSuccess(
+        res,
+        {
+          count: result.length,
+          users: result.map((user: any) => ({
+            _id: user._id,
+            fullname: user.fullname,
+            email: user.email,
+            phoneNumber: user.phoneNumber,
+            status: user.status,
+            type: user.type,
+          })),
+        },
+        `Successfully seeded ${result.length} users`
+      );
+    } catch (error: any) {
+      console.error('❌ Error seeding users:', error);
       sendError(res, 500, error.message, error as Error);
     }
   }

@@ -1,10 +1,10 @@
 <template>
-  <div class="bg-white rounded-lg shadow-sm p-6">
-    <h4 class="font-semibold text-blue-600 mb-4 text-base">
+  <div class="bg-white rounded-none lg:rounded-lg shadow-none lg:shadow-sm p-6 border-b border-gray-200 lg:border-0">
+    <h4 class="font-semibold text-gray-800 mb-4 text-base">
       Sức khỏe tiêu hóa:
     </h4>
     
-    <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+    <div class="grid grid-cols-1 gap-4">
       <!-- Frequency of Defecation -->
       <div class="flex items-start gap-3">
         <div class="flex-shrink-0 w-12 h-12 bg-blue-50 rounded-lg flex items-center justify-center">

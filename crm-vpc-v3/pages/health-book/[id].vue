@@ -21,64 +21,144 @@
     </div>
 
     <!-- Main Content -->
-    <div v-else-if="healthBook" class="container mx-auto px-4 py-6">
-      <!-- Header with Baby Info (Mobile) -->
-      <div class="lg:hidden mb-6">
-        <HealthProfileCard :health-book="healthBook" />
+    <div v-else class="container mx-auto px-4 py-6">
+      <!-- Page Title (Mobile only) -->
+      <div class="lg:hidden mb-4">
+        <h1 class="text-xl font-bold text-blue-600 text-center">
+          Sổ sức khỏe điện tử
+        </h1>
       </div>
 
-      <!-- Header -->
-      <div class="mb-6">
-        <div class="flex items-center justify-between mb-4">
-          <div class="flex items-center gap-3">
-            <a-button class="hidden lg:inline-flex" @click="navigateTo('/customers')">
-              <template #icon>
-                <ArrowLeftOutlined />
-              </template>
-              Quay lại
-            </a-button>
-            <h1 class="text-2xl font-bold text-gray-800 mb-0 hidden lg:block">
-              Sổ sức khỏe điện tử
-            </h1>
-          </div>
-          
-          <div class="flex items-center gap-3">
-            <!-- Add Health Record Button -->
-            <a-button
-              type="primary"
-              @click="showCreateModal = true"
-              class="hidden lg:inline-flex"
-            >
-              <template #icon>
-                <PlusOutlined />
-              </template>
-              Nhập thông tin
-            </a-button>
-
-            <!-- Date Picker (Desktop only) -->
+      <!-- Profile Header Section - Always visible -->
+      <div class="bg-white rounded-lg shadow-sm p-4 lg:p-6 mb-6">
+        <!-- Mobile Layout -->
+        <div class="lg:hidden">
+          <!-- Date Picker (Mobile - Top) -->
+          <div class="flex justify-center mb-4">
             <a-date-picker
-              v-if="activeTab === 'overview'"
               v-model:value="selectedDate"
               format="DD/MM/YYYY"
               placeholder="Chọn ngày"
               @change="handleDateChange"
-              class="w-48 hidden lg:block"
+              class="w-full max-w-xs"
+              size="large"
             />
+          </div>
+
+          <!-- Profile Info (Mobile) -->
+          <div class="flex flex-col items-center">
+            <!-- Avatar -->
+            <div class="relative mb-3">
+              <img
+                v-if="userAvatar"
+                :src="userAvatar"
+                :alt="userName"
+                class="w-24 h-24 rounded-full object-cover border-4 border-blue-100"
+              />
+              <div
+                v-else
+                class="w-24 h-24 rounded-full bg-blue-100 flex items-center justify-center border-4 border-blue-200"
+              >
+                <UserOutlined class="text-4xl text-blue-500" />
+              </div>
+              <CameraOutlined class="absolute bottom-0 right-0 bg-white rounded-full p-1 text-gray-500 text-sm shadow" />
+            </div>
+
+            <!-- Name -->
+            <h2 class="text-2xl font-bold text-blue-600 mb-1 text-center">
+              {{ userName }}
+            </h2>
+
+            <!-- Date of Birth & Age -->
+            <div v-if="userDob" class="text-gray-600 text-sm mb-3">
+              <span>Ngày sinh: {{ formatDate(userDob) }}</span>
+              <span class="mx-2">—</span>
+              <span>{{ calculateAge(userDob) }}</span>
+            </div>
           </div>
         </div>
 
-        <!-- Tabs -->
+        <!-- Desktop Layout -->
+        <div class="hidden lg:flex items-center justify-between">
+          <!-- Left: Profile Info -->
+          <div class="flex items-center gap-4">
+            <!-- Avatar -->
+            <div class="relative">
+              <img
+                v-if="userAvatar"
+                :src="userAvatar"
+                :alt="userName"
+                class="w-32 h-32 rounded-full object-cover border-4 border-blue-100"
+              />
+              <div
+                v-else
+                class="w-32 h-32 rounded-full bg-blue-100 flex items-center justify-center border-4 border-blue-200"
+              >
+                <UserOutlined class="text-5xl text-blue-500" />
+              </div>
+              <CameraOutlined class="absolute bottom-1 right-1 bg-white rounded-full p-2 text-gray-500 shadow cursor-pointer hover:bg-gray-50" />
+            </div>
+
+            <!-- Info -->
+            <div>
+              <h2 class="text-3xl font-bold text-blue-600 mb-2">
+                {{ userName }}
+              </h2>
+              <div v-if="userDob" class="text-gray-600 flex items-center gap-2">
+                <span>Ngày sinh: {{ formatDate(userDob) }}</span>
+                <span>—</span>
+                <span>{{ calculateAge(userDob) }}</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Right: Actions -->
+          <div class="flex items-center gap-3">
+            <!-- Date Picker -->
+            <a-date-picker
+              v-model:value="selectedDate"
+              format="DD/MM/YYYY"
+              placeholder="Chọn ngày"
+              @change="handleDateChange"
+              class="w-48"
+              size="large"
+            >
+              <template #suffixIcon>
+                <CalendarOutlined class="text-blue-500" />
+              </template>
+            </a-date-picker>
+
+            <!-- Create Button -->
+            <a-button
+              type="primary"
+              @click="showCreateModal = true"
+              size="large"
+            >
+              <template #icon>
+                <EditOutlined />
+              </template>
+              Tạo bản ghi
+            </a-button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Tabs - Always visible -->
+      <div class="mb-6">
         <a-tabs v-model:activeKey="activeTab" class="health-book-tabs">
           <a-tab-pane key="overview" tab="Tổng quan">
+            <!-- DEBUG: Check if this renders -->
+            <div v-if="healthBook" class="p-4 mb-4 bg-green-100 border border-green-500">
+              <h3 class="font-bold">DEBUG: Health Book Data Found!</h3>
+              <p>ID: {{ healthBook._id }}</p>
+              <p>Weight: {{ healthBook.weight }}</p>
+              <p>Height: {{ healthBook.height }}</p>
+            </div>
+            
             <!-- Overview Content -->
-            <div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
-              <!-- Left Column: Baby Profile + Health Metrics -->
+            <div v-if="healthBook" class="grid grid-cols-1 lg:grid-cols-12 gap-6">
+              <!-- Left Column: Health Metrics -->
               <div class="lg:col-span-4 space-y-6">
-                <!-- Baby Profile Card (Desktop only - shown above tabs on mobile) -->
-                <div class="hidden lg:block">
-                  <HealthProfileCard :health-book="healthBook" />
-                </div>
-
                 <!-- Health Metrics Card -->
                 <HealthMetricsCard :health-book="healthBook" />
 
@@ -101,11 +181,23 @@
                 <ExerciseMethodCard :health-book="healthBook" />
               </div>
             </div>
+
+            <!-- Empty State when no health book data in Overview tab -->
+            <div v-else class="flex flex-col items-center justify-center min-h-[50vh] px-4">
+              <a-empty description="Không có dữ liệu sổ sức khỏe cho ngày này">
+                <a-button type="primary" size="large" @click="showCreateModal = true">
+                  <template #icon>
+                    <PlusOutlined />
+                  </template>
+                  Tạo bản ghi
+                </a-button>
+              </a-empty>
+            </div>
           </a-tab-pane>
 
           <!-- Vaccination Schedule Tab -->
           <a-tab-pane key="vaccination" tab="Lịch tiêm">
-            <VaccinationSchedule />
+            <VaccinationSchedule :customer-id="customerId" />
           </a-tab-pane>
 
           <!-- Support Request Tab -->
@@ -116,42 +208,32 @@
       </div>
     </div>
 
-    <!-- No Data State -->
-    <div v-else class="flex flex-col items-center justify-center min-h-screen px-4">
-      <a-empty description="Không có dữ liệu sổ sức khỏe">
-        <a-button type="primary" @click="navigateTo('/customers')">
-          Quay lại danh sách khách hàng
-        </a-button>
-      </a-empty>
-    </div>
-
     <!-- Create Health Record Modal -->
     <CreateHealthRecordModal
       v-model:visible="showCreateModal"
       :customer-id="customerId"
+      :selected-date="selectedDate"
       @success="handleRecordCreated"
     />
-
-    <!-- Floating Action Button (Mobile) -->
-    <a-button
-      type="primary"
-      shape="circle"
-      size="large"
-      class="floating-add-button lg:hidden"
-      @click="showCreateModal = true"
-    >
-      <template #icon>
-        <PlusOutlined :style="{ fontSize: '24px' }" />
-      </template>
-    </a-button>
   </div>
 </template>
 
 <script setup lang="ts">
-import { ArrowLeftOutlined, PlusOutlined } from '@ant-design/icons-vue'
+import { UserOutlined, CalendarOutlined, CameraOutlined, EditOutlined, PlusOutlined } from '@ant-design/icons-vue'
 import dayjs, { Dayjs } from 'dayjs'
 import type { HealthBook } from '~/types/api'
+import { useHealthRecordsApi } from '~/composables/api/useHealthRecordsApi'
 import { useHealthBooksApi } from '~/composables/api/useHealthBooksApi'
+import { useAuthStore } from '~/stores/auth'
+import CreateHealthRecordModal from '~/components/health-book/CreateHealthRecordModal.vue'
+import HealthMetricsCard from '~/components/health-book/HealthMetricsCard.vue'
+import HealthConditionsCard from '~/components/health-book/HealthConditionsCard.vue'
+import DigestiveHealthCard from '~/components/health-book/DigestiveHealthCard.vue'
+import TemperatureChartCard from '~/components/health-book/TemperatureChartCard.vue'
+import HealthStatusCard from '~/components/health-book/HealthStatusCard.vue'
+import ExerciseMethodCard from '~/components/health-book/ExerciseMethodCard.vue'
+import VaccinationSchedule from '~/components/health-book/VaccinationSchedule.vue'
+import SupportRequestList from '~/components/health-book/SupportRequestList.vue'
 
 // Define page meta
 definePageMeta({
@@ -161,10 +243,14 @@ definePageMeta({
 
 // Get route params
 const route = useRoute()
-const customerId = computed(() => route.params.id as string)
+const authStore = useAuthStore()
 
-// API composable
-const { getHealthBook, getHealthBookByDate } = useHealthBooksApi()
+// Get customerId from authenticated user
+const customerId = computed(() => authStore.user?.id?.toString() || '')
+
+// API composables
+const { getHealthRecords } = useHealthRecordsApi()
+const { getCurrentHealthBook } = useHealthBooksApi()
 
 // State
 const healthBook = ref<HealthBook | null>(null)
@@ -173,38 +259,158 @@ const error = ref('')
 const selectedDate = ref<Dayjs>(dayjs())
 const activeTab = ref('overview')
 const showCreateModal = ref(false)
+const profileInfo = ref<{ name?: string; dob?: string; gender?: string; avatar?: string }>({})
 
-// Fetch health book data
+// Baby profile info - from health book
+const userName = computed(() => {
+  // Prioritize: profile info -> health book -> user name
+  return profileInfo.value?.name || healthBook.value?.name || authStore.user?.fullname || authStore.user?.name || 'Chưa cập nhật'
+})
+const userAvatar = computed(() => {
+  // Get avatar from profile info or user
+  return profileInfo.value?.avatar || authStore.user?.avatar || ''
+})
+const userDob = computed(() => {
+  // Get dob from profile info or health book
+  return profileInfo.value?.dob || healthBook.value?.dob || ''
+})
+const userGender = computed(() => profileInfo.value?.gender || healthBook.value?.gender || 'male')
+
+// Fetch profile info from health book
+const fetchProfileInfo = async () => {
+  try {
+    const response = await getCurrentHealthBook()
+    if (response?.healthBook) {
+      const book = response.healthBook
+      profileInfo.value = {
+        name: book.name || '',
+        dob: book.dob || '',
+        gender: book.gender || 'male',
+        avatar: book.avatar || ''
+      }
+    }
+  } catch (err) {
+    console.error('Error fetching profile info:', err)
+  }
+}
+
+// Helper functions
+const formatDate = (date: string) => {
+  return dayjs(date).format('DD/MM/YYYY')
+}
+
+const calculateAge = (dob: string) => {
+  const birthDate = dayjs(dob)
+  const now = dayjs()
+  const months = now.diff(birthDate, 'month')
+  const years = Math.floor(months / 12)
+  const remainingMonths = months % 12
+
+  if (years > 0) {
+    return remainingMonths > 0 
+      ? `${years} tuổi ${remainingMonths} tháng`
+      : `${years} tuổi`
+  }
+  return `${months} tháng tuổi`
+}
+
+// Fetch health records for current logged-in user
 const fetchHealthBook = async (date?: string) => {
   try {
     loading.value = true
     error.value = ''
 
-    let response
-    if (date) {
-      response = await getHealthBookByDate(customerId.value, date)
-    } else {
-      response = await getHealthBook(customerId.value)
+    if (!customerId.value) {
+      error.value = 'Không tìm thấy thông tin người dùng'
+      return
     }
 
-    // Response format: HealthBookResponse = { message?: string, data: HealthBook | Record<string, never> }
-    // Type guard: check if data has HealthBook properties
-    if (
-      response?.data &&
-      typeof response.data === 'object' &&
-      '_id' in response.data &&
-      'customerId' in response.data
-    ) {
-      healthBook.value = response.data as unknown as HealthBook
+    // Format date to YYYY-MM-DD for API
+    const selectedDateObj = date ? dayjs(date, 'DD/MM/YYYY') : dayjs()
+    const formattedDate = selectedDateObj.format('YYYY-MM-DD')
+
+    // Get health records by customerId and date
+    const response = await getHealthRecords({
+      customerId: customerId.value,
+      date: formattedDate
+    })
+
+    // Response format: { status: true, data: { message: "", data: { records: [...] } } }
+    const records = response?.data?.data?.records || response?.data?.records || []
+    
+    console.log('=== DEBUG HEALTH BOOK ===')
+    console.log('Response:', response)
+    console.log('Records:', records)
+    console.log('Records is array:', Array.isArray(records))
+    console.log('Records length:', records?.length)
+    
+    if (Array.isArray(records) && records.length > 0) {
+      // Get the most recent record for the date
+      const record = records[0]
+      console.log('Mapping record to healthBook:', record)
+      
+      // Map health record to health book format for display
+      healthBook.value = {
+        _id: record._id,
+        customerId: record.customerId,
+        name: authStore.user?.fullname || authStore.user?.name || 'Chưa cập nhật',
+        dob: '', // Will be filled from user profile if available
+        gender: 'male',
+        avatar: authStore.user?.avatar || '',
+        weight: record.weight?.toString() || '',
+        height: record.height?.toString() || '',
+        temperature: record.temperature?.toString() || '',
+        skinConditions: record.skinCondition || '',
+        tooth: {
+          count: '',
+          descriptions: record.oralHealth || ''
+        },
+        nutrition: {
+          count: '',
+          descriptions: record.nutrition || ''
+        },
+        sleep: {
+          time: '',
+          descriptions: record.sleep || ''
+        },
+        frequencyOfDefecation: record.stoolFrequency || '',
+        fecalCondition: record.stoolCondition || '',
+        digestiveProblems: record.digestiveIssues || '',
+        healthCondition: record.healthStatus || '',
+        vaccination: record.vaccination?.dose || '',
+        vaccinationDate: record.vaccination?.date ? dayjs(record.vaccination.date).format('DD/MM/YYYY') : '',
+        method: {
+          status: record.method || '',
+          descriptions: ''
+        },
+        exerciseAndSkills: record.motorSkills || '',
+        note: record.notes || '',
+        recordedAt: formattedDate,
+        domain: '',
+        origin: '',
+        createdAt: record.createdAt || '',
+        updatedAt: record.updatedAt || ''
+      } as HealthBook
+      
+      console.log('HealthBook value set to:', healthBook.value)
+      console.log('HealthBook is null?', healthBook.value === null)
     } else {
-      error.value = 'Không tìm thấy dữ liệu sổ sức khỏe'
+      // No data found for this date - show empty state
+      console.log('No records found, setting healthBook to null')
+      healthBook.value = null
+      error.value = ''
     }
   } catch (err: unknown) {
-    console.error('Error fetching health book:', err)
+    console.error('Error fetching health records:', err)
     const errorMessage = err instanceof Error ? err.message : 'Có lỗi xảy ra khi tải dữ liệu'
     error.value = errorMessage
   } finally {
     loading.value = false
+    console.log('=== FINAL STATE ===')
+    console.log('loading:', loading.value)
+    console.log('error:', error.value)
+    console.log('healthBook:', healthBook.value)
+    console.log('healthBook truthy?', !!healthBook.value)
   }
 }
 
@@ -219,13 +425,15 @@ const handleDateChange = (date: Dayjs | null) => {
 // Handle record created
 const handleRecordCreated = () => {
   showCreateModal.value = false
-  // Reload health book data
-  fetchHealthBook()
+  // Reload health book data for the selected date
+  const formattedDate = selectedDate.value.format('DD/MM/YYYY')
+  fetchHealthBook(formattedDate)
 }
 
 // Initial load
-onMounted(() => {
-  fetchHealthBook()
+onMounted(async () => {
+  await fetchProfileInfo()
+  await fetchHealthBook()
 })
 </script>
 

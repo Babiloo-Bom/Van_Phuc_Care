@@ -1,27 +1,11 @@
 <template>
-  <div class="bg-white rounded-lg shadow-sm p-6">
-    <div class="flex item// Generate mock temperature data for last 15 days
-const chartData = computed(() => {
-  // TODO: Fetch real temperature history from API
-  // const { getTemperatureHistory } = useHealthBooksApi()
-  // await getTemperatureHistory(date)
-  
-  // Mock data for now
-  const data = []
-  for (let i = 14; i >= 0; i--) {
-    const date = dayjs().subtract(i, 'day')
-    data.push({
-      date: date.format('DD/MM'),
-      value: 36.5 + Math.random() * 1.5, // Random between 36.5 and 38
-    })
-  }
-  return data
-})ween mb-4">
-      <h4 class="font-semibold text-blue-600 text-base">
+  <div class="bg-white rounded-none lg:rounded-lg shadow-none lg:shadow-sm p-6 border-b border-gray-200 lg:border-0">
+    <div class="flex items-center justify-between mb-4">
+      <h4 class="font-semibold text-gray-800 text-base">
         Nhiệt độ cơ thể:
       </h4>
       <span 
-        class="text-3xl font-bold"
+        class="text-2xl font-bold"
         :style="{ color: getTemperatureColor(healthBook.temperature) }"
       >
         {{ healthBook.temperature ? `${healthBook.temperature}°C` : '--' }}
