@@ -8,6 +8,7 @@ import OrdersRouter from './Order';
 import SessionRouter from './Sessions';
 import UserRouter from './Users';
 import CourseRouter from './Courses';
+import TicketRouter from './Tickets';
 
 const router = Router();
 
@@ -20,4 +21,5 @@ router.use('/products', ProductsRouter);
 router.use('/sessions', SessionRouter);
 router.use('/users', UserRouter);
 router.use('/courses', CourseRouter);
+router.use('/tickets', TicketRouter);
 export default router;
