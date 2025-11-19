@@ -19,7 +19,7 @@ const userOptions = {
     ExtractJwt.fromUrlQueryParameter('accessToken'),
     ExtractJwt.fromAuthHeaderAsBearerToken(),
   ]),
-  secretOrKey: settings.jwt.adminSecret,
+  secretOrKey: settings.jwt.userSecret,
   passReqToCallback: true,
 };
 

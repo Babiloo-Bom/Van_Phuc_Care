@@ -398,7 +398,7 @@ useHead({
 // Methods
 const goToCourseHome = () => {
   // Navigate to course detail page
-  navigateTo(`/courses/${slug.value}`);
+  navigateTo(`/my-learning/`);
 };
 
 const downloadDocument = (docType: string) => {

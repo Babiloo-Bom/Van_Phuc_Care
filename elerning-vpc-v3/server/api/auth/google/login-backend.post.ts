@@ -31,7 +31,7 @@ export default defineEventHandler(async (event): Promise<GoogleLoginResponse> =>
     // Delegate code exchange to main backend
     try {
       const apiHost = config.apiHostInternal || config.public.apiHost;
-      const backendResponse = await $fetch<any>(`${apiHost}/api/a/auth/google/login`, {
+      const backendResponse = await $fetch<any>(`${apiHost}/api/u/auth/google/login`, {
         method: 'POST',
         body: {
           code,

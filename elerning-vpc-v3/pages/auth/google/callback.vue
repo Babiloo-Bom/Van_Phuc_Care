@@ -102,7 +102,7 @@ const handleGoogleCallback = async () => {
 
 
       // Store auth data directly in auth store
-      const result = await authStore.completeGoogleLogin(
+      await authStore.completeGoogleLogin(
         response.data.accessToken,
         tokenExpireAtNum,
         userData

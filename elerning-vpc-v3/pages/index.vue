@@ -185,7 +185,7 @@
               <CourseCard
                 v-for="(course, index) in filteredCourses"
                 :key="index"
-                :course="course"
+                :course="course as any"
                 :is-purchased="isPurchased(course._id)"
                 @add-to-cart="handleAddToCart"
                 @buy-now="handleBuyNow"
@@ -598,7 +598,7 @@ const isPurchased = (courseId: string) => {
 // Cart handlers
 const handleAddToCart = async (course: any) => {
   try {
-    await cartStore.addToCart({ courseId: course._id, quantity: 1 })
+    await cartStore.addToCart({ courseId: course._id, quantity: 1, userId: String(authStore.user?.id) || "" })
   } catch (error) {
     console.error("❌ Error adding to cart:", error);
   }
@@ -607,7 +607,7 @@ const handleAddToCart = async (course: any) => {
 const handleBuyNow = async (course: any) => {
   try {
     // Add to cart first
-    await cartStore.addToCart({ courseId: course._id, quantity: 1 });
+    await cartStore.addToCart({ courseId: course._id, quantity: 1, userId: String(authStore.user?.id) || "" });
     // Navigate to checkout
     navigateTo("/checkout");
   } catch (error) {

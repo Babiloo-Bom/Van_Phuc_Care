@@ -235,20 +235,19 @@ const handleGoogleLogin = async () => {
     const redirectUri = `${baseFrontend}`;
     const frontendUrl = baseFrontend;
 
-    // Google OAuth luôn dùng /api/a (admin endpoint)
+    // Google OAuth luôn dùng /api/u (user endpoint)
     const isAbsolutePath =
       baseFrontend.startsWith("http://localhost") ||
       baseFrontend.includes("localhost");
     const googleApiBase = isAbsolutePath
-      ? "http://localhost:3000/api/a"
-      : "/api/a";
+      ? "http://localhost:3000/api/u"
+      : "/api/u";
     const backendBase = googleApiBase.startsWith("http")
       ? googleApiBase
       : `${baseFrontend}${googleApiBase}`;
-
-    const url = `${backendBase}/auth/google?redirect_uri=${encodeURIComponent(
-      redirectUri
-    )}&frontend_url=${encodeURIComponent(frontendUrl)}`;
+      const url = `${backendBase}/auth/google?redirect_uri=${encodeURIComponent(
+        redirectUri
+      )}&frontend_url=${encodeURIComponent(frontendUrl)}`;
     window.location.href = url;
   } catch (error: any) {
     message.error('Đăng nhập Google thất bại')
