@@ -467,8 +467,19 @@
               </div>
               <!-- Pricing and Action Section -->
               <div class="mb-4">
-                <!-- Offer Timer -->
-                <div class="flex items-center gap-2 mb-2 sm:mb-3">
+                <!-- Purchased Badge -->
+                <div v-if="course?.isPurchased" class="mb-3 sm:mb-4">
+                  <div class="flex items-center justify-center gap-2 px-3 py-2 rounded-lg" style="background-color: #e6f7ff; border: 1px solid #1a75bb;">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#1a75bb" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                      <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path>
+                      <polyline points="22 4 12 14.01 9 11.01"></polyline>
+                    </svg>
+                    <span class="text-sm sm:text-base font-semibold" style="color: #1a75bb;">Đã mua khóa học này</span>
+                  </div>
+                </div>
+
+                <!-- Offer Timer (only show if not purchased) -->
+                <div v-if="!course?.isPurchased" class="flex items-center gap-2 mb-2 sm:mb-3">
                   <img
                     src="/images/svg/clock-pink.svg"
                     alt="clock"
@@ -479,8 +490,8 @@
                   >
                 </div>
 
-                <!-- Price -->
-                <div class="flex items-end gap-2 sm:gap-3 mb-3 sm:mb-4">
+                <!-- Price (only show if not purchased) -->
+                <div v-if="!course?.isPurchased" class="flex items-end gap-2 sm:gap-3 mb-3 sm:mb-4">
                   <h3
                     v-if="course?.price"
                     class="text-2xl sm:text-3xl md:text-4xl font-bold mb-0"
@@ -510,8 +521,19 @@
 
                 <!-- Action Buttons -->
                 <div class="flex flex-col gap-2 sm:gap-3">
-                  <!-- Mua ngay Button -->
+                  <!-- Vào học Button (if purchased) -->
                   <a-button
+                    v-if="course?.isPurchased"
+                    class="!w-full !py-2 sm:!py-3 !h-[44px] sm:!h-[50px] !text-white !border-none !font-bold !text-sm sm:!text-base !rounded-lg !transition-all !duration-200 hover:!opacity-90"
+                    style="background-color: #15cf74 !important"
+                    @click="goToLearning"
+                  >
+                    Vào học ngay
+                  </a-button>
+
+                  <!-- Mua ngay Button (if not purchased) -->
+                  <a-button
+                    v-else
                     class="!w-full !py-2 sm:!py-3 !h-[44px] sm:!h-[50px] !text-white !border-none !font-bold !text-sm sm:!text-base !rounded-lg !transition-all !duration-200 hover:!opacity-90"
                     style="background-color: #1a75bb !important"
                     @click="redirectCheckout"
@@ -519,8 +541,9 @@
                     Mua ngay
                   </a-button>
 
-                  <!-- Thêm vào giỏ hàng Button -->
+                  <!-- Thêm vào giỏ hàng Button (only show if not purchased) -->
                   <a-button
+                    v-if="!course?.isPurchased"
                     class="!w-full !py-2 sm:!py-3 !h-[44px] sm:!h-[50px] !text-white !border-none !font-bold !text-sm sm:!text-base !rounded-lg !transition-all !duration-200 hover:!opacity-90"
                     style="background-color: #f48283 !important"
                     @click="toggleCourse"
@@ -951,12 +974,6 @@ const isInCart = computed(() => {
   return cartStore.isInCart(course.value?._id || "");
 });
 
-// Check if course is purchased
-const isPurchased = computed(() => {
-  if (!course.value?._id || !authStore.user) return false;
-  return authStore.user.courseRegister?.includes(course.value._id) || false;
-});
-
 const currentVideoUrl = ref<string | null>(null);
 
 // Initialize with first lesson video if available
@@ -992,10 +1009,6 @@ const getIcon = (key: string) => {
     linkedin: "/images/svg/linkedin-original.svg",
   };
   return icons[key] || "";
-};
-
-const openSocial = (url: string) => {
-  window.open(url, "_blank");
 };
 
 const addToCart = async () => {
@@ -1037,6 +1050,11 @@ const redirectCheckout = () => {
     addToCart();
   }
   router.push("/checkout");
+};
+
+const goToLearning = () => {
+  if (!course.value?.slug) return;
+  router.push(`/my-learning/${course.value.slug}`);
 };
 
 const accessCourse = () => {

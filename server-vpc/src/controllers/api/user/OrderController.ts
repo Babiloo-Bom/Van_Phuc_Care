@@ -110,6 +110,61 @@ const orderSchema = new mongoose.Schema(
 const OrderModel =
   mongoose.models.Order || mongoose.model("Order", orderSchema);
 
+// Cart schema (same as admin CartController)
+const cartSchema = new mongoose.Schema({
+  userId: {
+    type: String,
+    required: true
+  },
+  items: [{
+    courseId: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: 'courses',
+      required: true
+    },
+    course: {
+      type: Object,
+      required: true
+    },
+    addedAt: {
+      type: Date,
+      default: Date.now
+    }
+  }],
+  totalPrice: {
+    type: Number,
+    default: 0
+  },
+  totalItems: {
+    type: Number,
+    default: 0
+  },
+  coupon: {
+    code: {
+      type: String
+    },
+    name: {
+      type: String
+    },
+    type: {
+      type: String,
+      enum: ['percentage', 'fixed']
+    },
+    value: {
+      type: Number
+    },
+    discountAmount: {
+      type: Number,
+      default: 0
+    }
+  }
+}, {
+  timestamps: true
+});
+
+// Create Cart model if it doesn't exist
+const Cart = mongoose.models.Cart || mongoose.model('Cart', cartSchema);
+
 class OrderController {
   public async create(req: Request, res: Response) {
     try {
@@ -259,9 +314,58 @@ class OrderController {
         order.transactionId = paymentResult.transactionId;
         await order.save();
 
-        // TODO: Add courses to user's purchased courses
+        // Add courses to user's courseRegister
+        if (order.userId && order.userId !== 'guest_user') {
+          try {
+            const MongoDbUsers = (await import("@mongodb/users")).default;
+            const user: any = await MongoDbUsers.model.findById(order.userId.toString());
+            
+            if (user) {
+              // Initialize courseRegister if not exists
+              if (!user.courseRegister) {
+                user.courseRegister = [];
+              }
+
+              // Get course IDs from order items
+              const courseIds = order.items.map((item: any) => {
+                const id = item.courseId?.toString() || item.course?._id?.toString();
+                return id;
+              }).filter(Boolean);
+
+              // Add new courses (avoid duplicates)
+              const newCourses = courseIds.filter((id: string) => !user.courseRegister.includes(id));
+              if (newCourses.length > 0) {
+                user.courseRegister = [...user.courseRegister, ...newCourses];
+                await user.save();
+                console.log(`✅ Added ${newCourses.length} courses to user ${order.userId} courseRegister`);
+              }
+            }
+          } catch (error: any) {
+            console.error('❌ Error updating user courseRegister:', error);
+            // Don't fail the payment processing if this fails
+          }
+        }
+
+        // Clear user's cart after successful payment
+        if (order.userId && order.userId !== 'guest_user') {
+          try {
+            const cart = await Cart.findOne({ userId: order.userId.toString() });
+            
+            if (cart) {
+              cart.items = [];
+              cart.totalItems = 0;
+              cart.totalPrice = 0;
+              cart.coupon = undefined;
+              await cart.save();
+              console.log(`✅ Cart cleared for user ${order.userId}`);
+            }
+          } catch (error: any) {
+            console.error('❌ Error clearing cart:', error);
+            // Don't fail the payment processing if this fails
+          }
+        }
+
         // TODO: Send confirmation email
-        // TODO: Clear user's cart
 
         console.log(
           `✅ Payment processed for order ${orderId}: ${paymentResult.transactionId}`

@@ -246,11 +246,12 @@
                     type="primary"
                     size="large"
                     class="w-full !bg-[#00CF6A] hover:!bg-green-600 !h-12 sm:!h-14 !text-white !border-green-500 !text-base sm:!text-base !font-semibold !rounded-lg !flex !items-center !justify-center !gap-2"
-                    :disabled="cartItems.length === 0"
-                    :loading="false"
+                    :disabled="cartItems.length === 0 || isProcessingOrder"
+                    :loading="isProcessingOrder"
                     @click="handlePayment('bypass')"
                   >
-                    By Pass
+                    <span v-if="!isProcessingOrder">By Pass</span>
+                    <span v-else>Đang xử lý...</span>
                   </a-button>
                 </div>
               </div>
@@ -267,6 +268,7 @@
 
 <script setup lang="ts">
 import { ref, computed, onMounted } from 'vue'
+import { message } from 'ant-design-vue'
 import { useCartStore } from '~/stores/cart'
 import { useAuthStore } from '~/stores/auth'
 import CartToast from '~/components/cart/Toast.vue'
@@ -275,6 +277,9 @@ import Rating from '~/components/courses/Rating.vue'
 
 const cartStore = useCartStore()
 const authStore = useAuthStore()
+
+// Loading state for bypass payment
+const isProcessingOrder = ref(false)
 
 // Reactive data
 const cartItems = computed(() => {
@@ -393,11 +398,116 @@ const handleRemoveFromCart = async (course: any) => {
   }
 }
 
-const handlePayment = (method: string) => {
+const handlePayment = async (method: string) => {
   if (cartItems.value.length === 0) return
   
-  // Navigate to checkout with payment method
+  // If bypass, process order directly without checkout
+  if (method === 'bypass') {
+    await processBypassOrder()
+    return
+  }
+  
+  // For other methods, navigate to checkout
   navigateTo(`/checkout?method=${method}`)
+}
+
+const processBypassOrder = async () => {
+  if (cartItems.value.length === 0) return
+  
+  try {
+    isProcessingOrder.value = true
+    
+    // Get user info from authStore
+    if (!authStore.user || !authStore.user.id) {
+      await navigateTo('/login')
+      return
+    }
+    
+    // Prepare order data
+    const orderData = {
+      userId: authStore.user.id,
+      customerInfo: {
+        fullName: authStore.user.fullname || authStore.user.name || '',
+        phone: authStore.user.phone || '',
+        email: authStore.user.email || ''
+      },
+      items: cartItems.value.map((item: any) => ({
+        courseId: item.courseId || item.course?._id || item._id,
+        course: item.course || item,
+        price: item.course?.price || item.price || 0
+      })),
+      subtotal: subtotalPrice.value,
+      discount: appliedCoupon.value ? {
+        type: appliedCoupon.value.type,
+        value: appliedCoupon.value.value,
+        amount: discountAmount.value,
+        couponCode: appliedCoupon.value.code
+      } : null,
+      totalAmount: totalPrice.value,
+      paymentMethod: 'bypass',
+      notes: ''
+    }
+    
+    // Create order
+    const orderResponse: any = await $fetch('http://localhost:3000/api/u/orders', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json'
+      },
+      body: orderData
+    })
+    
+    if (!orderResponse.data || !orderResponse.data.order) {
+      throw new Error('Failed to create order')
+    }
+    
+    const order = orderResponse.data.order
+    
+    // Simulate payment processing
+    await new Promise(resolve => setTimeout(resolve, 1000))
+    
+    // Process payment
+    await $fetch('http://localhost:3000/api/u/orders/payment', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json'
+      },
+      body: {
+        orderId: order.orderId,
+        paymentMethod: 'bypass',
+        paymentData: {}
+      }
+    })
+    
+    // Clear cart after successful payment
+    await cartStore.clearCart()
+    
+    // Show success message
+    message.success({
+      content: `Bạn đã mua khoá học thành công!`,
+      duration: 4,
+      style: {
+        marginTop: '80px',
+      },
+    })
+    
+    // Redirect to my-learning page
+    await navigateTo(`/my-learning/`)
+    
+  } catch (error: any) {
+    console.error('❌ Error processing bypass order:', error)
+    // Show error message to user
+    const errorMsg = error.data?.message || error.message || 'Có lỗi xảy ra khi xử lý đơn hàng'
+    message.error({
+      content: errorMsg,
+      duration: 5,
+      style: {
+        marginTop: '80px',
+      },
+    })
+  } finally {
+    isProcessingOrder.value = false
+  }
 }
 
 // Middleware để yêu cầu đăng nhập

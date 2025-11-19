@@ -8,11 +8,11 @@ export const useCourseApi = () => {
   const apiUserBase = 'http://localhost:3000/api/u'
 
   /**
-   * Get all courses
+   * Get all courses (user API - includes isPurchased)
    */
   const getAllCourses = async (params?: any) => {
     try {
-      const response = await $fetch(`${apiBase}/courses`, {
+      const response = await $fetch(`${apiUserBase}/courses`, {
         params
       })
       return response
@@ -49,11 +49,11 @@ export const useCourseApi = () => {
 
 
   /**
-   * Get course detail by slug
+   * Get course detail by slug (user API - includes isPurchased)
    */
   const getDetail = async (slug: string) => {
     try {
-      const response = await $fetch(`${apiBase}/courses/${slug}`)
+      const response = await $fetch(`${apiUserBase}/courses/${slug}`)
       return response
     } catch (error: any) {
       throw error

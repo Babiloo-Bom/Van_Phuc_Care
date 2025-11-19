@@ -47,6 +47,7 @@ export interface Course {
     progressPercentage: number
     isCompleted: boolean
   }
+  isPurchased?: boolean // Whether user has purchased this course
 }
 
 export interface Chapter {
