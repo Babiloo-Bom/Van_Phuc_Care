@@ -3,6 +3,7 @@ const fetch = (...args) => import('node-fetch').then(({default: fetch}) => fetch
 const transactions = [
   {
     origin: 'vanphuc-care',
+    userId: 'user001',
     type: 'payment',
     title: 'Thanh toán dịch vụ khám',
     total: 500000,
@@ -10,6 +11,7 @@ const transactions = [
   },
   {
     origin: 'vanphuc-care',
+    userId: 'user002',
     type: 'refund',
     title: 'Hoàn tiền dịch vụ tiêm chủng',
     total: 200000,
@@ -17,6 +19,7 @@ const transactions = [
   },
   {
     origin: 'vanphuc-care',
+    userId: 'user001',
     type: 'payment',
     title: 'Thanh toán dịch vụ xét nghiệm',
     total: 350000,
@@ -24,6 +27,7 @@ const transactions = [
   },
   {
     origin: 'vanphuc-care',
+    userId: 'user003',
     type: 'payment',
     title: 'Thanh toán dịch vụ tư vấn',
     total: 150000,
@@ -31,6 +35,7 @@ const transactions = [
   },
   {
     origin: 'vanphuc-care',
+    userId: 'user002',
     type: 'refund',
     title: 'Hoàn tiền dịch vụ khám',
     total: 100000,
