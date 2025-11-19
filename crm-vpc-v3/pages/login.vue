@@ -60,16 +60,16 @@
 
         <!-- Login Form -->
         <form @submit.prevent="handleSubmit" class="login-form">
-          <!-- Email/Phone Field -->
+          <!-- Email Field -->
           <div class="form-group">
-            <label for="email" class="form-label">Email/ Số điện thoại</label>
+            <label for="email" class="form-label">Email</label>
             <div class="input-container">
               <input
                 id="email"
                 v-model="form.email"
-                type="text"
+                type="email"
                 class="form-input"
-                placeholder="Email/SĐT"
+                placeholder="Email"
                 required
               />
             </div>
