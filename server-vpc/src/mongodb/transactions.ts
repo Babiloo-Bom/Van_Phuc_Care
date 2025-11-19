@@ -11,35 +11,19 @@ class TransactionModels {
   }
 
   public generateSchema () {
-    this.schema = new Schema({
-      // _id: Schema.Types.String,
-      origin: {
-        type: String,
-        require: true,
+    this.schema = new Schema(
+      {
+        origin: { type: String, require: true },
+        userId: { type: String, require: true },
+        type: { type: String, require: true },
+        title: { type: String, require: true },
+        total: { type: Number, require: true },
+        status: { type: String, default: "pending", enum: Object.values(this.STATUS_ENUM) },
       },
-      type: {
-        type: String,
-        require: true,
-      },
-      title: {
-        type: String,
-        require: true,
-      },
-      total: {
-        type: Number,
-        require: true,
-      },
-      status: {
-        type: String,
-        default: 'pending',
-        enum: this.STATUS_ENUM,
-      },
-    },
-    {
-      strict: false,
-      timestamps: {
-      },
-    },
+      {
+        strict: false,
+        timestamps: true,
+      }
     );
     if (!mongoose.models[TransactionModels.COLLECTION_NAME]) {
       mongoose.model(TransactionModels.COLLECTION_NAME, this.schema, TransactionModels.COLLECTION_NAME);

@@ -10,59 +10,27 @@ class ServiceModels {
   }
 
   public generateSchema () {
-    this.schema = new Schema({
-      // _id: Schema.Types.String,
-      origin: {
-        type: String,
-      },
-      customerId: {
-        type: String,
-        require: true,
-      },
-      title: {
-        type: String,
-      },
-      thumbnail: {
-        type: String,
-      },
-      descriptions: {
-        type: String,
-      },
-      shortDescriptions: {
-        type: String,
-      },
-      usageTimeUnit: {
-        type: String,
-      },
-      implementer: {
-        fullname: {
-          type: String,
+    this.schema = new Schema(
+      {
+        origin: { type: String },
+        title: { type: String },
+        thumbnail: { type: String },
+        descriptions: { type: String },
+        shortDescriptions: { type: String },
+        usageTimeUnit: { type: String },
+        implementer: {
+          fullname: { type: String },
+          avatar: { type: String },
+          position: { type: String },
         },
-        avatar: {
-          type: String,
-        },
-        position: {
-          type: String,
-        },
+        slug: { type: String },
+        reviews: { type: Number, default: 0 },
+        status: { type: String, default: "active", enum: ["active", "inactive"] },
       },
-      slug: {
-        type: String,
-      },
-      reviews: {
-        type: Number,
-        default: 0,
-      },
-      status: {
-        type: String,
-        default: 'active',
-        enum: ['active', 'inactive'],
-      },
-    },
-    {
-      strict: false,
-      timestamps: {
-      },
-    },
+      {
+        strict: false,
+        timestamps: true,
+      }
     );
     if (!mongoose.models[ServiceModels.COLLECTION_NAME]) {
       mongoose.model(ServiceModels.COLLECTION_NAME, this.schema, ServiceModels.COLLECTION_NAME);
