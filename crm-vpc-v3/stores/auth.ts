@@ -496,13 +496,15 @@ export const useAuthStore = defineStore('auth', {
               const expireTime = new Date(authData.tokenExpireAt).getTime();
               const now = Date.now();
 
-              console.log('🔍 Token expiry check:', {
+              console.log('🔍 [initAuth authData] Token expiry check:', {
+                tokenExpireAt: authData.tokenExpireAt,
                 expireTime: new Date(expireTime).toISOString(),
                 now: new Date(now).toISOString(),
+                isNaN: isNaN(expireTime),
                 isExpired: now >= expireTime,
               });
 
-              if (now >= expireTime) {
+              if (!isNaN(expireTime) && now >= expireTime) {
                 console.log('⚠️ Token expired, clearing data');
                 // Token expired, clear data
                 this.logout();
@@ -533,13 +535,15 @@ export const useAuthStore = defineStore('auth', {
               const expireTime = new Date(tokenExpireAt).getTime();
               const now = Date.now();
 
-              console.log('🔍 Token expiry check:', {
+              console.log('🔍 [initAuth localStorage] Token expiry check:', {
+                tokenExpireAt,
                 expireTime: new Date(expireTime).toISOString(),
                 now: new Date(now).toISOString(),
+                isNaN: isNaN(expireTime),
                 isExpired: now >= expireTime,
               });
 
-              if (now >= expireTime) {
+              if (!isNaN(expireTime) && now >= expireTime) {
                 console.log('⚠️ Token expired, clearing data');
                 // Token expired, clear data
                 this.logout();
@@ -599,7 +603,8 @@ export const useAuthStore = defineStore('auth', {
       // If ttl is a number (timestamp), convert to Date
       if (typeof ttl === 'number') {
         console.log('🔍 ttl is number');
-        return new Date(ttl).toISOString();
+
+        return new Date(ttl + new Date().getTime()).toISOString();
       }
 
       // If ttl is a string, parse it

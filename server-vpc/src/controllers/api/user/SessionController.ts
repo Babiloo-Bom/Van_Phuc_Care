@@ -12,13 +12,14 @@ import dayjs from 'dayjs';
 class SessionController {
   public async create (req: Request, res: Response) {
     try {
-      const { email, password } = req.body;
-      console.log('🔍 User login attempt:', { email, hasPassword: !!password });
+      const { email, username, password } = req.body;
+      const loginIdentifier = email || username;
+      console.log('🔍 User login attempt:', { loginIdentifier, hasPassword: !!password });
       
       // First check if user exists (regardless of status)
-      const userAnyStatus = await MongoDbUsers.model.findOne({ email: email });
+      const userAnyStatus = await MongoDbUsers.model.findOne({ email: loginIdentifier });
       if (!userAnyStatus) {
-        console.log('❌ User not found:', email);
+        console.log('❌ User not found:', loginIdentifier);
         return sendError(res, 404, BadAuthentication);
       }
       
@@ -30,7 +31,7 @@ class SessionController {
       
       // Check if user is active
       if (userAnyStatus.get('status') !== MongoDbUsers.STATUS_ENUM.ACTIVE) {
-        console.log('❌ User not active:', { email, status: userAnyStatus.get('status') });
+        console.log('❌ User not active:', { email: loginIdentifier, status: userAnyStatus.get('status') });
         return sendError(res, 404, BadAuthentication);
       }
       
@@ -50,7 +51,7 @@ class SessionController {
       }
       
       const accessToken = jwt.sign({ id: userAnyStatus.get('_id') }, settings.jwt.userSecret, { expiresIn: settings.jwt.ttl });
-      console.log('✅ Login successful:', email);
+      console.log('✅ Login successful:', loginIdentifier);
       sendSuccess(res, { accessToken, tokenExpireAt: settings.jwt.ttl });
     } catch (error: any) {
       console.error('❌ Login error:', error);

@@ -6,21 +6,47 @@ export const useServicesApi = () => {
 
   return {
     /**
-     * Get all services
-     * GET /api/a/services
+     * Get all services (public)
+     * GET /api/u/services
      */
     async getServices(params: Partial<BaseQueryParams> = {}) {
-      return apiClient.get('/api/a/services', {
+      return apiClient.get('/api/u/services', {
         params,
         showError: false,
       });
     },
+
     /**
-     * Đăng ký dịch vụ
-     * POST /api/a/services
+     * Get service detail by ID
+     * GET /api/u/services/:id
      */
-    async createService(data: any) {
-      return apiClient.post('/api/a/services', data, {
+    async getServiceDetail(id: string) {
+      return apiClient.get(`/api/u/services/${id}`, {
+        showError: false,
+      });
+    },
+
+    /**
+     * Get user's registered services (requires auth)
+     * GET /api/u/services/my-services
+     */
+    async getMyServices(params: Partial<BaseQueryParams> = {}) {
+      return apiClient.get('/api/u/services/my-services', {
+        params,
+        showError: false,
+      });
+    },
+
+    /**
+     * Đăng ký dịch vụ (requires auth)
+     * POST /api/u/services/register
+     */
+    async registerService(data: {
+      serviceId: string;
+      notes?: string;
+      preferredDate?: string;
+    }) {
+      return apiClient.post('/api/u/services/register', data, {
         errorMessage: 'Không thể đăng ký dịch vụ',
       });
     },

@@ -11,6 +11,7 @@ import CourseRouter from './Courses';
 import TicketRouter from './Tickets';
 import ServiceRegistrationRouter from "./ServiceRegistration";
 import TransactionListRouter from "./TransactionList";
+import ServicesRouter from './Services';
 
 const router = Router();
 
@@ -24,6 +25,7 @@ router.use("/sessions", SessionRouter);
 router.use("/users", UserRouter);
 router.use("/courses", CourseRouter);
 router.use("/tickets", TicketRouter);
+router.use("/services", ServicesRouter);
 router.use("/service-registration", ServiceRegistrationRouter);
 router.use("/transactions-list", TransactionListRouter);
 export default router;
