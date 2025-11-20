@@ -18,7 +18,6 @@ export default defineNuxtRouteMiddleware((to, from) => {
   const isVerified = authStore.user?.verified;
 
   if (!isVerified) {
-    console.warn('[Verified Middleware] User email not verified');
     
     // Redirect to email verification page
     return navigateTo('/verify-email');

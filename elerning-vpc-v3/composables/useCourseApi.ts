@@ -4,38 +4,59 @@
  */
 
 export const useCourseApi = () => {
-  const config = useRuntimeConfig();
-  const apiBase = 'http://localhost:3000/api/a'; // Hardcode for testing
-  
-  console.log('🔍 Course API Base URL:', apiBase);
+  const apiBase = 'http://localhost:3000/api/a'
+  const apiUserBase = 'http://localhost:3000/api/u'
 
   /**
-   * Get all courses
+   * Get all courses (user API - includes isPurchased)
    */
-  const getAllCourses = async () => {
+  const getAllCourses = async (params?: any) => {
     try {
-      console.log('🔍 Fetching all courses...');
-      const response = await $fetch(`${apiBase}/courses`);
-      console.log('✅ Courses fetched:', response);
-      return response;
+      const response = await $fetch(`${apiUserBase}/courses`, {
+        params
+      })
+      return response
     } catch (error: any) {
-      console.error('❌ Get courses error:', error);
-      throw error;
+      throw error
     }
   };
 
   /**
-   * Get course detail by slug
+   * Get all courses
+   */
+  const getMyCourses = async (params?: any) => {
+    try {
+      const response = await $fetch(`${apiUserBase}/courses/my-courses`, {
+        params
+      })
+      return response
+    } catch (error: any) {
+      throw error
+    }
+  }
+
+  /**
+   * Get my course by slug
+   */
+  const getMyCourseBySlug = async (slug: string) => {
+    try {
+      const response = await $fetch(`${apiUserBase}/courses/my-courses/${slug}`)
+      return response
+    } catch (error: any) {
+      throw error
+    }
+  }
+
+
+  /**
+   * Get course detail by slug (user API - includes isPurchased)
    */
   const getDetail = async (slug: string) => {
     try {
-      console.log('🔍 Fetching course detail for slug:', slug);
-      const response = await $fetch(`${apiBase}/courses/${slug}`);
-      console.log('✅ Course detail fetched:', response);
-      return response;
+      const response = await $fetch(`${apiUserBase}/courses/${slug}`)
+      return response
     } catch (error: any) {
-      console.error('❌ Get course detail error:', error);
-      throw error;
+      throw error
     }
   };
 
@@ -44,13 +65,10 @@ export const useCourseApi = () => {
    */
   const getCourseBySlug = async (slug: string) => {
     try {
-      console.log('🔍 Fetching course by slug:', slug);
-      const response = await $fetch(`${apiBase}/courses/${slug}`);
-      console.log('✅ Course fetched:', response);
-      return response;
+      const response = await $fetch(`${apiBase}/courses/${slug}`)
+      return response
     } catch (error: any) {
-      console.error('❌ Get course error:', error);
-      throw error;
+      throw error
     }
   };
 
@@ -59,18 +77,17 @@ export const useCourseApi = () => {
    */
   const getById = async (id: string) => {
     try {
-      console.log('🔍 Fetching course by ID:', id);
-      const response = await $fetch(`${apiBase}/courses/id/${id}`);
-      console.log('✅ Course fetched by ID:', response);
-      return response.data.course;
+      const response: any = await $fetch(`${apiBase}/courses/id/${id}`)
+      return response.data.course
     } catch (error: any) {
-      console.error('❌ Get course by ID error:', error);
-      throw error;
+      throw error
     }
   };
 
   return {
     getAllCourses,
+    getMyCourses,
+    getMyCourseBySlug,
     getDetail,
     getCourseBySlug,
     getById,

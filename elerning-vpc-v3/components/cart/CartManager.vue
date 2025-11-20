@@ -132,7 +132,6 @@ const handleUpdateQuantity = async (itemId: string, quantity: number) => {
   try {
     await updateQuantity({ itemId, quantity })
   } catch (error) {
-    console.error('Error updating quantity:', error)
   }
 }
 
@@ -140,7 +139,6 @@ const handleRemoveItem = async (itemId: string) => {
   try {
     await removeFromCart(itemId)
   } catch (error) {
-    console.error('Error removing item:', error)
   }
 }
 

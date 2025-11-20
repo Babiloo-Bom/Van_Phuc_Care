@@ -59,13 +59,6 @@ const {
   removeCourseFromCart 
 } = useCart()
 
-const handleAdded = (course) => {
-  console.log('Course added:', course)
-}
-
-const handleRemoved = (courseId) => {
-  console.log('Course removed:', courseId)
-}
 </script>
 ```
 

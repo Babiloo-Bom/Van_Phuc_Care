@@ -1,9 +1,9 @@
 import mongoose, { Model, Schema } from 'mongoose';
 
-class CourseModules {
+class Chapters {
   public schema: Schema;
   public model: Model<unknown>;
-  static readonly COLLECTION_NAME = 'course-modules';
+  static readonly COLLECTION_NAME = 'chapters';
 
   constructor() {
     this.generateSchema();
@@ -42,12 +42,12 @@ class CourseModules {
     // Tạo index cho courseId và index để query nhanh
     this.schema.index({ courseId: 1, index: 1 });
 
-    if (!mongoose.models[CourseModules.COLLECTION_NAME]) {
-      mongoose.model(CourseModules.COLLECTION_NAME, this.schema, CourseModules.COLLECTION_NAME);
+    if (!mongoose.models[Chapters.COLLECTION_NAME]) {
+      mongoose.model(Chapters.COLLECTION_NAME, this.schema, Chapters.COLLECTION_NAME);
     }
-    this.model = mongoose.model(CourseModules.COLLECTION_NAME);
+    this.model = mongoose.model(Chapters.COLLECTION_NAME);
   }
 }
 
-export default new CourseModules();
+export default new Chapters();
 

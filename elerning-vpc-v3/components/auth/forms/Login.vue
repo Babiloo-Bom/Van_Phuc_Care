@@ -110,14 +110,12 @@ const handleSubmit = async () => {
       
       if (result.success) {
         message.success('Đăng nhập thành công')
-        console.log('✅ Login successful, redirecting to home...')
         await navigateTo('/')
       } else {
         message.error(result.error || 'Tên đăng nhập hoặc mật khẩu không chính xác')
       }
     }
   } catch (error: any) {
-    console.error('Login error:', error)
     message.error('Tên đăng nhập hoặc mật khẩu không chính xác')
   } finally {
     loading.value = false

@@ -8,6 +8,8 @@ import OrdersRouter from './Order';
 import SessionRouter from './Sessions';
 import UserRouter from './Users';
 import CourseRouter from './Courses';
+import ProcessingRouter from './Processings';
+import GoogleAuthRouter from './GoogleAuth';
 
 const router = Router();
 
@@ -15,9 +17,11 @@ router.use('/cart', CartRouter);
 router.use('/categories', CategoryRouter);
 router.use('/faqs', FaqRouter);
 router.use('/feedbacks', FeedbackRouter);
-router.use('/order', OrdersRouter);
+router.use('/orders', OrdersRouter);
 router.use('/products', ProductsRouter);
 router.use('/sessions', SessionRouter);
 router.use('/users', UserRouter);
 router.use('/courses', CourseRouter);
+router.use('/progress', ProcessingRouter);
+router.use('/auth/google', GoogleAuthRouter);
 export default router;

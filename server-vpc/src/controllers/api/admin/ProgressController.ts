@@ -12,12 +12,12 @@ const lessonProgressSchema = new mongoose.Schema({
     type: String,
     required: true
   },
-  chapterIndex: {
-    type: Number,
+  chapterId: {
+    type: String,
     required: true
   },
-  lessonIndex: {
-    type: Number,
+  lessonId: {
+    type: String,
     required: true
   },
   completed: {
@@ -117,8 +117,8 @@ export default class ProgressController {
             {
               userId: userId.toString(),
               courseId: progress.courseId,
-              chapterIndex: progress.chapterIndex,
-              lessonIndex: progress.lessonIndex
+              chapterId: progress.chapterId,
+              lessonId: progress.lessonId
             },
             {
               ...progress,
@@ -154,6 +154,7 @@ export default class ProgressController {
 
   /**
    * Mark lesson as completed
+   * Checks if lesson has quiz - if yes, requires passed quiz attempt
    */
   public static async markLessonCompleted(req: Request, res: Response) {
     try {
@@ -163,10 +164,59 @@ export default class ProgressController {
         return sendError(res, 401, 'User not authenticated');
       }
 
-      const { courseId, chapterIndex, lessonIndex, timeSpent } = req.body;
+      const { courseId, chapterId, lessonId, timeSpent } = req.body;
 
-      if (!courseId || chapterIndex === undefined || lessonIndex === undefined) {
+      if (!courseId || chapterId === undefined || lessonId === undefined) {
         return sendError(res, 400, 'Missing required fields');
+      }
+
+      // Get course and lesson details to check if lesson has quiz
+      const Course = mongoose.model('Course');
+      const course = await Course.findById(courseId);
+      if (!course) {
+        return sendError(res, 404, 'Course not found');
+      }
+      
+      const ChaptersModel = (await import('@mongodb/chapters')).default;
+      const LessonsModel = (await import('@mongodb/lessons')).default;
+      
+      const chapter = await ChaptersModel.model.findOne({
+        courseId: course._id,
+        _id: chapterId,
+        status: 'active'
+      });
+      
+      if (!chapter) {
+        return sendError(res, 404, 'Chapter not found');
+      }
+      
+      const lesson: any = await LessonsModel.model.findOne({
+        _id: lessonId,
+        chapterId: chapter._id,
+        status: 'active'
+      }).populate('quiz');
+      if (!lesson) {
+        return sendError(res, 404, 'Lesson not found');
+      }
+      
+      // Check if lesson has quiz
+      const hasQuiz = !!lesson.quizId || !!lesson.quiz;
+      
+      if (hasQuiz) {
+        // Lesson có quiz: phải check quiz attempt passed
+        const MongoDbQuizAttempts = (await import('@mongodb/quiz-attempts')).default;
+        const passedAttempt = await MongoDbQuizAttempts.findOne({
+          userId: userId.toString(),
+          courseId: courseId.toString(),
+          chapterId: chapterId.toString(),
+          lessonId: lessonId.toString(),
+          status: 'completed',
+          passed: true
+        });
+        
+        if (!passedAttempt) {
+          return sendError(res, 400, 'Bạn phải hoàn thành quiz trước khi đánh dấu lesson hoàn thành');
+        }
       }
 
       // Update lesson progress
@@ -174,14 +224,14 @@ export default class ProgressController {
         {
           userId: userId.toString(),
           courseId,
-          chapterIndex,
-          lessonIndex
+          chapterId: chapterId.toString(),
+          lessonId: lessonId.toString()
         },
         {
           userId: userId.toString(),
           courseId,
-          chapterIndex,
-          lessonIndex,
+          chapterId: chapterId.toString(),
+          lessonId: lessonId.toString(),
           completed: true,
           completedAt: new Date(),
           timeSpent: timeSpent || 0
@@ -216,8 +266,23 @@ export default class ProgressController {
       
       if (!course) return;
 
-      const totalLessons = course.chapters?.reduce((total: number, chapter: any) => 
-        total + (chapter.lessons?.length || 0), 0) || 0;
+      // Calculate total lessons from Chapters and Lessons collections
+      const ChaptersModel = (await import('@mongodb/chapters')).default;
+      const LessonsModel = (await import('@mongodb/lessons')).default;
+      
+      const chapters = await ChaptersModel.model.find({
+        courseId: course._id,
+        status: 'active'
+      });
+      
+      let totalLessons = 0;
+      for (const chapter of chapters) {
+        const lessonCount = await LessonsModel.model.countDocuments({
+          chapterId: chapter._id,
+          status: 'active'
+        });
+        totalLessons += lessonCount;
+      }
 
       const progressPercentage = totalLessons > 0 ? Math.round((completedLessons / totalLessons) * 100) : 0;
 

@@ -18,12 +18,9 @@ class UserController {
 
   public async getProfile(req: Request, res: Response) {
     try {
-      console.log('🔍 getProfile called');
       const user = (req as any).currentUser;
-      console.log('🔍 currentUser:', user ? 'exists' : 'null');
       
       if (!user) {
-        console.log('❌ No user found');
         return sendError(res, 404, 'Không tìm thấy người dùng');
       }
 
@@ -52,11 +49,8 @@ class UserController {
 
   public async updateCourseRegister(req: Request, res: Response) {
     try {
-      console.log('🔍 updateCourseRegister called');
       const currentUser = (req as any).currentUser;
-      console.log('🔍 currentUser:', currentUser ? 'exists' : 'null');
       const { courseIds, action } = req.body;
-      console.log('🔍 Request body:', { courseIds, action });
 
       if (!currentUser) {
         return sendError(res, 404, 'Không tìm thấy người dùng');
