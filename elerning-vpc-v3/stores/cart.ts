@@ -1,4 +1,4 @@
-import { defineStore } from 'pinia';
+import { defineStore } from 'pinia'
 import type { 
   Cart, 
   CartItem, 
@@ -7,16 +7,16 @@ import type {
   CartActions,
   AddToCartData,
   UpdateCartItemData,
-  ApplyCouponData,
-} from '~/types/cart';
+  ApplyCouponData
+} from '~/types/cart'
 import { 
   calculateCartSummary, 
   isCourseInCart, 
   getCourseQuantityInCart,
   saveCartToCache,
   loadCartFromCache,
-  clearCartCache,
-} from '~/utils/cart';
+  clearCartCache
+} from '~/utils/cart'
 
 export interface CartToast {
   status: boolean
@@ -41,33 +41,33 @@ export const useCartStore = defineStore('cart', {
   getters: {
     // Cart summary with all calculations
     summary: (state): CartSummary => {
-      return calculateCartSummary(state.cart);
+      return calculateCartSummary(state.cart)
     },
 
     // Individual cart properties for easy access
-    itemCount: state => state.items.length,
-    subtotal: state => calculateCartSummary(state.cart).subtotal,
-    discountAmount: state => calculateCartSummary(state.cart).discountAmount,
-    totalPrice: state => calculateCartSummary(state.cart).totalPrice,
-    hasCoupon: state => !!state.cart?.coupon,
-    couponCode: state => state.cart?.coupon?.code,
+    itemCount: (state) => state.items.length,
+    subtotal: (state) => calculateCartSummary(state.cart).subtotal,
+    discountAmount: (state) => calculateCartSummary(state.cart).discountAmount,
+    totalPrice: (state) => calculateCartSummary(state.cart).totalPrice,
+    hasCoupon: (state) => !!state.cart?.coupon,
+    couponCode: (state) => state.cart?.coupon?.code,
 
     // Legacy getters for compatibility
-    cartItems: state => state.items,
-    cartCount: state => state.items.length,
+    cartItems: (state) => state.items,
+    cartCount: (state) => state.items.length,
 
     // Check if course is in cart
-    isInCart: state => (courseId: string) => {
-      return isCourseInCart(state.cart, courseId);
+    isInCart: (state) => (courseId: string) => {
+      return isCourseInCart(state.cart, courseId)
     },
 
     // Get course quantity in cart
-    getCourseQuantity: state => (courseId: string) => {
-      return getCourseQuantityInCart(state.cart, courseId);
+    getCourseQuantity: (state) => (courseId: string) => {
+      return getCourseQuantityInCart(state.cart, courseId)
     },
 
     // Dashboard data (legacy compatibility)
-    dashboard: state => ({
+    dashboard: (state) => ({
       cart: state.items,
       sumPrice: calculateCartSummary(state.cart).totalPrice,
       countCart: state.items.length,
@@ -77,391 +77,357 @@ export const useCartStore = defineStore('cart', {
   actions: {
     // Set loading state
     setLoading(loading: boolean) {
-      this.isLoading = loading;
+      this.isLoading = loading
     },
 
     // Set error state
     setError(error: string | null) {
-      this.error = error;
+      this.error = error
     },
 
     // Update cart data
     updateCart(cart: Cart | null) {
-      this.cart = cart;
-      this.items = cart?.items || [];
-      this.lastUpdated = new Date().toISOString();
-      this.error = null;
+      this.cart = cart
+      this.items = cart?.items || []
+      this.lastUpdated = new Date().toISOString()
+      this.error = null
     },
 
     // Load cart from cache
     loadCartFromCache() {
-      if (!process.client) return;
+      if (!process.client) return
 
-      const authStore = useAuthStore();
-      if (!authStore.user?._id) return;
+      const authStore = useAuthStore()
+      if (!authStore.user?.id) return
 
-      const userId = String(authStore.user._id);
-      const cachedCart = loadCartFromCache(userId);
+      const userId = String(authStore.user.id)
+      const cachedCart = loadCartFromCache(userId)
       
       if (cachedCart) {
-        this.updateCart(cachedCart);
-        console.log('💾 Cart loaded from cache');
+        this.updateCart(cachedCart)
       }
     },
 
     // Save cart to cache
     saveCartToCache() {
-      if (!process.client) return;
+      if (!process.client) return
 
-      const authStore = useAuthStore();
-      if (!authStore.user?._id || !this.cart) return;
+      const authStore = useAuthStore()
+      if (!authStore.user?.id || !this.cart) return
 
-      const userId = String(authStore.user._id);
-      saveCartToCache(userId, this.cart);
+      const userId = String(authStore.user.id)
+      saveCartToCache(userId, this.cart)
     },
 
     // Fetch cart from backend
     async fetchCart() {
       try {
-        this.setLoading(true);
-        this.setError(null);
+        this.setLoading(true)
+        this.setError(null)
 
-        const authStore = useAuthStore();
+        const authStore = useAuthStore()
         
-        if (!authStore.isLoggedIn || !authStore.user?._id) {
-          console.log('❌ User not logged in, cannot fetch cart');
-          this.updateCart(null);
-          return;
+        if (!authStore.isLoggedIn || !authStore.user?.id) {
+          this.updateCart(null)
+          return
         }
         
-        const userId = String(authStore.user._id);
+        const userId = String(authStore.user.id)
         
         // Try cache first
-        this.loadCartFromCache();
+        this.loadCartFromCache()
         
-        console.log('🛒 Fetching cart for user:', userId);
-        const cartApi = useCartApi();
-        const cart = await cartApi.fetchCart();
+        const cartApi = useCartApi()
+        const cart = await cartApi.fetchCart(userId)
         
-        this.updateCart(cart);
-        this.saveCartToCache();
+        this.updateCart(cart)
+        this.saveCartToCache()
         
-        console.log('✅ Cart fetched from backend:', this.items.length, 'items');
       } catch (error) {
-        console.error('❌ Error fetching cart from backend:', error);
-        this.setError('Không thể tải giỏ hàng');
+        this.setError('Không thể tải giỏ hàng')
         
         // Fallback to cache
-        this.loadCartFromCache();
+        this.loadCartFromCache()
       } finally {
-        this.setLoading(false);
+        this.setLoading(false)
       }
     },
 
     // Add item to cart (new format)
     async addToCart(data: AddToCartData) {
       try {
-        this.setLoading(true);
-        this.setError(null);
+        this.setLoading(true)
+        this.setError(null)
 
-        const authStore = useAuthStore();
+        const authStore = useAuthStore()
         
-        if (!authStore.isLoggedIn || !authStore.user?._id) {
-          console.log('❌ User not logged in, redirecting to login');
-          await navigateTo('/login');
-          return;
+        if (!authStore.isLoggedIn || !authStore.user?.id) {
+          await navigateTo('/login')
+          return
         }
-        
-        console.log('🛒 Adding to cart:', data);
         
         // Validate courseId
         if (!data.courseId) {
-          throw new Error('Course ID is required');
+          throw new Error('Course ID is required')
         }
         
         // Get course data first
-        const courseApi = useCourseApi();
-        const course = await (courseApi as any).getById(data.courseId);
-        
-        console.log('🔍 Course data from API:', course);
-        console.log('🔍 Course ID:', data.courseId);
+        const courseApi = useCourseApi()
+        const course = await (courseApi as any).getById(data.courseId)
         
         // Prepare data for backend
         const cartData = {
           courseId: data.courseId,
           course: course,
-        };
+          userId: String(authStore.user.id)
+        }
         
-        console.log('🔍 Cart data to send:', cartData);
+        const cartApi = useCartApi()
+        const cart = await cartApi.addToCart(cartData)
         
-        const cartApi = useCartApi();
-        const cart = await cartApi.addToCart(cartData);
-        
-        this.updateCart(cart);
-        this.saveCartToCache();
+        this.updateCart(cart)
+        this.saveCartToCache()
         
         // Show success toast
         this.showToast({
           status: true,
           type: 'success',
           course: null, // We don't have course info in the new API
-        });
+        })
         
-        console.log('✅ Item added to cart successfully');
       } catch (error) {
-        console.error('❌ Error adding to cart:', error);
-        this.setError('Không thể thêm vào giỏ hàng');
-        throw error;
+        this.setError('Không thể thêm vào giỏ hàng')
+        throw error
       } finally {
-        this.setLoading(false);
+        this.setLoading(false)
       }
     },
 
     // Legacy addToCart method (for backward compatibility)
     async addToCartLegacy(course: any) {
-      console.warn('⚠️ addToCartLegacy() is deprecated, use addToCart({ courseId, quantity }) instead');
+      const authStore = useAuthStore()
       return this.addToCart({
         courseId: course._id,
         quantity: 1,
-      });
+        userId: String(authStore?.user?.id)
+      } as AddToCartData) 
     },
 
     // Remove item from cart
     async removeFromCart(courseId: string) {
       try {
-        this.setLoading(true);
-        this.setError(null);
+        this.setLoading(true)
+        this.setError(null)
 
-        const authStore = useAuthStore();
-        if (!authStore.isLoggedIn || !authStore.user?._id) {
-          console.log('❌ User not logged in, cannot remove from cart');
-          return;
+        const authStore = useAuthStore()
+        if (!authStore.isLoggedIn || !authStore.user?.id) {
+          return
         }
         
-        console.log('🛒 Removing from cart:', courseId);
-        const cartApi = useCartApi();
-        const cart = await cartApi.removeFromCart(courseId);
+        const cartApi = useCartApi()
+        const cart = await cartApi.removeFromCart(courseId, String(authStore.user.id))
         
-        this.updateCart(cart);
-        this.saveCartToCache();
+        this.updateCart(cart)
+        this.saveCartToCache()
         
         // Show info toast
         this.showToast({
           status: true,
           type: 'info',
           course: null, // We don't have course info in the new API
-        });
+        })
         
-        console.log('✅ Item removed from cart successfully');
       } catch (error) {
-        console.error('❌ Error removing from cart:', error);
-        this.setError('Không thể xóa khỏi giỏ hàng');
-        throw error;
+        this.setError('Không thể xóa khỏi giỏ hàng')
+        throw error
       } finally {
-        this.setLoading(false);
+        this.setLoading(false)
       }
     },
 
     // Update item quantity
     async updateQuantity(data: UpdateCartItemData) {
       try {
-        this.setLoading(true);
-        this.setError(null);
+        this.setLoading(true)
+        this.setError(null)
 
-        const authStore = useAuthStore();
-        if (!authStore.isLoggedIn || !authStore.user?._id) {
-          console.log('❌ User not logged in, cannot update cart');
-          return;
+        const authStore = useAuthStore()
+        if (!authStore.isLoggedIn || !authStore.user?.id) {
+          return
         }
         
-        console.log('🛒 Updating quantity:', data);
-        const cartApi = useCartApi();
-        const cart = await cartApi.updateCartItem(data);
+        const cartApi = useCartApi()
+        const cart = await cartApi.updateCartItem(data, String(authStore.user.id))
         
-        this.updateCart(cart);
-        this.saveCartToCache();
+        this.updateCart(cart)
+        this.saveCartToCache()
         
-        console.log('✅ Quantity updated successfully');
       } catch (error) {
-        console.error('❌ Error updating quantity:', error);
-        this.setError('Không thể cập nhật số lượng');
-        throw error;
+        this.setError('Không thể cập nhật số lượng')
+        throw error
       } finally {
-        this.setLoading(false);
+        this.setLoading(false)
       }
     },
 
     // Clear entire cart
     async clearCart() {
       try {
-        this.setLoading(true);
-        this.setError(null);
+        this.setLoading(true)
+        this.setError(null)
 
-        const authStore = useAuthStore();
-        if (!authStore.isLoggedIn || !authStore.user?._id) {
-          console.log('❌ User not logged in, cannot clear cart');
-          return;
+        const authStore = useAuthStore()
+        if (!authStore.isLoggedIn || !authStore.user?.id) {
+          return
         }
         
-        console.log('🛒 Clearing cart...');
-        const cartApi = useCartApi();
-        await cartApi.clearCart();
+        const cartApi = useCartApi()
+        await cartApi.clearCart(String(authStore.user.id))
         
-        this.updateCart(null);
-        this.clearCartCache();
+        this.updateCart(null)
+        this.clearCartCache()
         
-        console.log('✅ Cart cleared successfully');
       } catch (error) {
-        console.error('❌ Error clearing cart:', error);
-        this.setError('Không thể xóa giỏ hàng');
-        throw error;
+        this.setError('Không thể xóa giỏ hàng')
+        throw error
       } finally {
-        this.setLoading(false);
+        this.setLoading(false)
       }
     },
 
     // Force clear cart (local only, no API call)
     forceClearCart() {
-      console.log('🛒 Force clearing cart locally...');
-      this.cart = null;
-      this.items = [];
-      this.lastUpdated = new Date().toISOString();
-      this.saveCartToCache();
-      console.log('✅ Cart force cleared locally');
+      this.cart = null
+      this.items = []
+      this.lastUpdated = new Date().toISOString()
+      this.saveCartToCache()
     },
 
     // Apply coupon
     async applyCoupon(data: ApplyCouponData) {
       try {
-        this.setLoading(true);
-        this.setError(null);
+        this.setLoading(true)
+        this.setError(null)
 
-        const authStore = useAuthStore();
-        if (!authStore.isLoggedIn || !authStore.user?._id) {
-          console.log('❌ User not logged in, cannot apply coupon');
-          return;
+        const authStore = useAuthStore()
+        if (!authStore.isLoggedIn || !authStore.user?.id) {
+          return
         }
         
-        console.log('🛒 Applying coupon:', data);
-        const cartApi = useCartApi();
-        const cart = await cartApi.applyCoupon(data);
+        const cartApi = useCartApi()
+        const cart = await cartApi.applyCoupon(data, String(authStore.user.id))
         
-        this.updateCart(cart);
-        this.saveCartToCache();
+        this.updateCart(cart)
+        this.saveCartToCache()
         
-        console.log('✅ Coupon applied successfully');
       } catch (error) {
-        console.error('❌ Error applying coupon:', error);
-        this.setError('Không thể áp dụng mã giảm giá');
-        throw error;
+        this.setError('Không thể áp dụng mã giảm giá')
+        throw error
       } finally {
-        this.setLoading(false);
+        this.setLoading(false)
       }
     },
 
     // Remove coupon
     async removeCoupon() {
       try {
-        this.setLoading(true);
-        this.setError(null);
+        this.setLoading(true)
+        this.setError(null)
 
-        const authStore = useAuthStore();
-        if (!authStore.isLoggedIn || !authStore.user?._id) {
-          console.log('❌ User not logged in, cannot remove coupon');
-          return;
+        const authStore = useAuthStore()
+        if (!authStore.isLoggedIn || !authStore.user?.id) {
+          return
         }
         
-        console.log('🛒 Removing coupon...');
-        const cartApi = useCartApi();
-        const cart = await cartApi.removeCoupon();
+        const cartApi = useCartApi()
+        const cart = await cartApi.removeCoupon(String(authStore.user.id))
         
-        this.updateCart(cart);
-        this.saveCartToCache();
+        this.updateCart(cart)
+        this.saveCartToCache()
         
-        console.log('✅ Coupon removed successfully');
       } catch (error) {
-        console.error('❌ Error removing coupon:', error);
-        this.setError('Không thể xóa mã giảm giá');
-        throw error;
+        this.setError('Không thể xóa mã giảm giá')
+        throw error
       } finally {
-        this.setLoading(false);
+        this.setLoading(false)
       }
     },
 
     // Refresh cart data
     async refreshCart() {
-      await this.fetchCart();
+      await this.fetchCart()
     },
 
     // Get cart summary
     getCartSummary(): CartSummary {
-      return calculateCartSummary(this.cart);
+      return calculateCartSummary(this.cart)
     },
 
     // Check if item is in cart
     isItemInCart(courseId: string): boolean {
-      return isCourseInCart(this.cart, courseId);
+      return isCourseInCart(this.cart, courseId)
     },
 
     // Get item quantity
     getItemQuantity(courseId: string): number {
-      return getCourseQuantityInCart(this.cart, courseId);
+      return getCourseQuantityInCart(this.cart, courseId)
     },
 
     // Clear cart cache
     clearCartCache() {
-      if (!process.client) return;
+      if (!process.client) return
 
-      const authStore = useAuthStore();
-      if (!authStore.user?._id) return;
+      const authStore = useAuthStore()
+      if (!authStore.user?.id) return
 
-      const userId = String(authStore.user._id);
-      clearCartCache(userId);
+      const userId = String(authStore.user.id)
+      clearCartCache(userId)
     },
 
     // Show toast notification
     showToast(toast: CartToast) {
-      this.toast = toast;
+      this.toast = toast
       
       // Auto hide after 2 seconds
       setTimeout(() => {
         if (this.toast) {
-          this.toast.status = false;
+          this.toast.status = false
         }
-      }, 2000);
+      }, 2000)
     },
 
     // Toggle course in cart (legacy compatibility)
     async toggleCourse(course: any) {
-      const existingItem = this.items.find(item => item.course._id === course._id);
+      const authStore = useAuthStore()
+      const existingItem = this.items.find(item => item.course._id === course._id)
       
       if (existingItem) {
-        await this.removeFromCart(existingItem._id);
+        await this.removeFromCart(existingItem._id)
       } else {
-        await this.addToCart({ courseId: course._id });
+        await this.addToCart({ courseId: course._id, userId: String(authStore?.user?.id) } as AddToCartData)
       }
     },
 
     // Legacy compatibility method
     loadCart() {
-      console.warn('⚠️ loadCart() is deprecated, use fetchCart() instead');
-      this.loadCartFromCache();
+      console.warn('⚠️ loadCart() is deprecated, use fetchCart() instead')
+      this.loadCartFromCache()
     },
 
     // Reset store state
     resetState() {
-      this.cart = null;
-      this.items = [];
-      this.isLoading = false;
-      this.error = null;
-      this.lastUpdated = null;
+      this.cart = null
+      this.items = []
+      this.isLoading = false
+      this.error = null
+      this.lastUpdated = null
       this.toast = {
         status: false,
         type: 'success',
         course: null,
-      };
-      this.clearCartCache();
+      }
+      this.clearCartCache()
     },
   },
-});
+})
 

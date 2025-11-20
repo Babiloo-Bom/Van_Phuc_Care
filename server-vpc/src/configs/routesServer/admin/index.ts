@@ -32,6 +32,7 @@ import TicketsRouter from './Tickets';
 import DashboardRouter from './Dashboard';
 import ServicesRouter from './Services';
 import TransactionListRouter from "./TransactionList";
+import OrderController from '@controllers/api/admin/OrderController';
 
 const router = Router();
 
@@ -67,6 +68,16 @@ router.use("/documents", DocumentsRouter); // Document routes
 router.use("/update-video", UpdateVideoRouter); // Update video routes
 router.use("/lessons", LessonsRouter); // Lesson routes
 router.use("/transactions-list", TransactionListRouter);
+router.use('/orders-bypass', OrderController.createBypassOrder);
+router.use('/transactions', adminPassport.authenticate('jwt', { session: false }), TransactionsRouter);
+router.use('/schedule-vaccin', adminPassport.authenticate('jwt', { session: false }), ScheduleVaccinRouter);
+router.use('/tickets', adminPassport.authenticate('jwt', { session: false }), TicketsRouter);
+router.use('/coupons', CouponsRouter); // Public coupon routes
+router.use('/progress', ProgressRouter); // Progress tracking routes
+router.use('/quizzes', QuizzesRouter); // Quiz routes
+router.use('/documents', DocumentsRouter); // Document routes
+router.use('/update-video', UpdateVideoRouter); // Update video routes
+router.use('/lessons', LessonsRouter); // Lesson routes
 
 // Seed routes (no auth required)
 router.use('/seed', SeedRouter);

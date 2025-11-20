@@ -6,6 +6,9 @@ const router = Router();
 // Create new order
 router.post('/', OrderController.createOrder);
 
+// Create bypass order (for testing)
+router.post('/bypass', OrderController.createBypassOrder);
+
 // Get order by ID
 router.get('/:id', OrderController.getOrderById);
 

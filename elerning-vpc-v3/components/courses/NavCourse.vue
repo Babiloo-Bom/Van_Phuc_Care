@@ -6,85 +6,120 @@
       :bordered="false"
     >
       <template #expandIcon="{ isActive }">
-        <div class="p-4">
-          <PlusOutlined v-if="!isActive" class="text-primary-100 text-lg rotate-90" />
-          <CloseOutlined v-else class="text-primary-100 text-lg" />
+        <div class="expand-icon-container absolute top-1 right-4 w-3 h-3">
+          <!-- Plus icon khi collapsed -->
+          <img 
+            v-if="!isActive" 
+            src="../../public/images/svg/plus.svg" 
+            alt="plus" 
+            class="expand-icon"
+            width="12"
+            height="12"
+          />
+          <!-- X icon khi expanded -->
+          <img 
+            v-if="isActive" 
+            src="../../public/images/svg/close.svg" 
+            alt="close" 
+            width="12"
+            height="12"
+            class="expand-icon"
+          />
         </div>
       </template>
       <a-collapse-panel
         v-for="(chapter, chapterIndex) in chapters"
         :key="`chapter_${chapterIndex}`"
-        class="relative bg-[#f8fcff] mb-4"
+        class="nav-chapter-panel !rounded-lg shadow-lg p-4 md:p-8"
       >
         <template #header>
-          <div class="w-[80%]" @click="handlePanelClick(chapterIndex)">
-            {{ chapter.title }}
-          </div>
-        </template>
-        <template #extra>
-          <div class="font-normal text-[#818a90] text-[14px] absolute left-0 bottom-0.5">
-            {{ chapter.lessons?.length }} chủ đề
-          </div>
-        </template>
-        <div class="flex flex-col gap-3">
-          <div v-for="(lesson, lessonIndex) in chapter.lessons" :key="`lesson_${chapterIndex}_${lessonIndex}`" class="!flex items-start">
-            <div class="text-xs text-gray-500 mb-1">Debug: Chapter {{ chapterIndex }}, Lesson {{ lessonIndex }}</div>
-            <svg
-              v-if="isLessonCompleted(chapterIndex, lessonIndex)"
-              xmlns="http://www.w3.org/2000/svg"
-              width="28"
-              height="28"
-              viewBox="0 0 14 14"
-              fill="none"
-              class="!mt-1 mr-1 min-w-[16px] min-h-[16px] w-4 h-4"
-            >
-              <circle
-                cx="7"
-                cy="7"
-                r="7"
-                fill="#15CF74"
-              />
-              <path
-                d="M4 7.005L5.892 8.9L9.79 5"
-                stroke="white"
-                stroke-width="1.5"
-                stroke-linecap="square"
-              />
-            </svg>
-            <a-radio v-else :checked="false" />
-            <div>
-              <h3 :class="`${isLessonCompleted(chapterIndex, lessonIndex) ? 'text-[#15CF74]' : 'text-primary-100'} text-lg font-semibold cursor-pointer`" @click="handleLessonClick(chapterIndex, lessonIndex)">
-                {{ lesson.title }}
-              </h3>
-              <div class="flex items-center gap-2">
-                <span>
-                  <svg
-                    xmlns="http://www.w3.org/2000/svg"
-                    width="20"
-                    height="20"
-                    viewBox="0 0 24 24"
-                    class="fill-none stroke-[#818a90]"
-                  >
-                    <path
-                      d="M3.5 18V7c0-4 1-5 5-5h7c4 0 5 1 5 5v10c0 .14 0 .28-.01.42"
-                      stroke-width="1.5"
-                      stroke-linecap="round"
-                      stroke-linejoin="round"
-                    />
-                    <path
-                      d="M6.35 15H20.5v3.5c0 1.93-1.57 3.5-3.5 3.5H7c-1.93 0-3.5-1.57-3.5-3.5v-.65C3.5 16.28 4.78 15 6.35 15ZM8 7h8M8 10.5h5"
-                      stroke-width="1.5"
-                      stroke-linecap="round"
-                      stroke-linejoin="round"
-                    />
-                  </svg>
-                </span>
-                <span class="text-[#818a90] font-medium">
-                  {{ lesson.descriptions }}
-                </span>
-              </div>
+          <div class="chapter-header border-b border-[#ACD7F9] pb-2" @click.stop="handlePanelClick(chapterIndex, $event)">
+            <div class="chapter-title">
+             Bài {{ chapterIndex + 1 }}: {{ chapter.title }}
+            </div>
+            <div class="chapter-lesson-count">
+              {{ getTotalLessons(chapter) }} Lesson
             </div>
           </div>
+        </template>
+        <div class="flex flex-col">
+          <template v-for="(lesson, lessonIndex) in chapter.lessons" :key="`lesson_${chapterIndex}_${lessonIndex}`">
+            <!-- Lesson Item -->
+            <div 
+              class="flex items-center gap-3 py-3 lesson-item border-b border-dotted border-gray-300"
+            >
+              <!-- Icon section -->
+              <div class="lesson-icon-container">
+                <!-- Checkmark icon nếu đã hoàn thành -->
+                <svg
+                  v-if="lesson.isCompleted"
+                  xmlns="http://www.w3.org/2000/svg"
+                  width="16"
+                  height="16"
+                  viewBox="0 0 14 14"
+                  fill="none"
+                  class="lesson-icon lesson-icon-completed"
+                >
+                  <circle
+                    cx="7"
+                    cy="7"
+                    r="7"
+                    fill="#15CF74"
+                  />
+                  <path
+                    d="M4 7.005L5.892 8.9L9.79 5"
+                    stroke="white"
+                    stroke-width="1.5"
+                    stroke-linecap="square"
+                  />
+                </svg>
+                <!-- Radio button nếu chưa hoàn thành -->
+                <div 
+                  v-else 
+                  class="lesson-icon lesson-icon-pending"
+                ></div>
+              </div>
+              
+              <!-- Content section -->
+              <div class="flex-1 min-w-0">
+                <h3 
+                    :class="`lesson-title ${
+                      lesson.isCompleted ? 'lesson-title-completed' : 'lesson-title-pending hover:!text-[#155a8f]'
+                      
+                  } ${lesson.isLocked ? 'lesson-title-locked' : ''}`
+                  " 
+                  @click="handleLessonClick(chapterIndex, lessonIndex)"
+                  :style="isLessonLocked(chapterIndex, lessonIndex) ? { cursor: 'not-allowed', opacity: 0.6 } : { cursor: 'pointer' }"
+                >
+                  {{ lesson.title }}
+                </h3>
+              </div>
+            </div>
+
+            <!-- Quiz Item (thụt vào dưới lesson) -->
+            <div 
+              v-if="hasQuiz(lesson)"
+              class="flex items-start gap-3 py-3 ml-7 quiz-item"
+              :class="{ 
+                'border-b border-dotted border-gray-300': lessonIndex < chapter.lessons.length - 1
+              }"
+            >
+              <!-- Quiz Icon -->
+              <div class="quiz-icon-container">
+                <img src="../../public/images/svg/quiz.svg" alt="quiz" class="quiz-icon" width="16" height="16" />
+              </div>
+              
+              <!-- Quiz Content -->
+              <div class="flex-1 min-w-0">
+                <h3 
+                  class="quiz-title" 
+                  @click="handleQuizClick(chapterIndex, lessonIndex, lesson)"
+                >
+                  {{ getQuizTitle(lesson) }}
+                </h3>
+              </div>
+            </div>
+          </template>
         </div>
       </a-collapse-panel>
     </a-collapse>
@@ -95,7 +130,7 @@
 import { ref, watch, computed } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useCoursesStore } from '~/stores/courses'
-import { PlusOutlined, CloseOutlined } from '@ant-design/icons-vue'
+import { message } from 'ant-design-vue'
 
 interface Lesson {
   title: string
@@ -114,7 +149,7 @@ interface Props {
   chapters?: Chapter[]
 }
 
-const props = withDefaults(defineProps<Props>(), {
+withDefaults(defineProps<Props>(), {
   chapters: () => [],
 })
 
@@ -126,30 +161,53 @@ const activeKey = ref<string>('chapter_0')
 
 // Computed
 const course = computed(() => coursesStore.course)
-const processing = computed(() => coursesStore.processing)
 
-// Debug: Log chapters data
-watch(() => props.chapters, (chapters) => {
-  console.log('🔍 NavCourse: Chapters data:', chapters)
-  if (chapters && chapters.length > 0) {
-    console.log('🔍 NavCourse: First chapter:', chapters[0])
-    console.log('🔍 NavCourse: First chapter lessons:', chapters[0]?.lessons)
-  }
-}, { immediate: true, deep: true })
-
-// Methods
-const isLessonCompleted = (chapterIndex: number, lessonIndex: number) => {
-  if (!processing.value?.complete) return false
+const isLessonLocked = (chapterIndex: number, lessonIndex: number) => {
+  if (!course.value) return false
   
-  return processing.value.complete.findIndex(
-    (lessonCompleted: any) =>
-      course.value._id === lessonCompleted.courseId &&
-      chapterIndex === lessonCompleted.chapterIndex &&
-      lessonCompleted.lessonIndex === lessonIndex
-  ) > -1
+  const lesson = course.value.chapters?.[chapterIndex]?.lessons?.[lessonIndex]
+  return lesson?.isLocked || false
 }
 
-const handlePanelClick = (chapter: number) => {
+const hasQuiz = (lesson: any) => {
+  return lesson.type === 'quiz' || lesson.quizId || lesson.quiz
+}
+
+const getQuizTitle = (lesson: any) => {
+  let title = 'Trắc nghiệm'
+  
+  if (lesson.type === 'quiz') {
+    title = lesson.title
+  } else if (lesson.quiz && typeof lesson.quiz === 'object') {
+    title = lesson.quiz.title || 'Trắc nghiệm'
+  }
+  
+  // Nếu title chưa có prefix "Trắc nghiệm:" thì thêm vào
+  if (!title.toLowerCase().includes('trắc nghiệm')) {
+    return `Trắc nghiệm: ${title}`
+  }
+  
+  return title
+}
+
+const getTotalLessons = (chapter: any) => {
+  if (!chapter.lessons) return 0
+  let count = chapter.lessons.length
+  // Đếm thêm quiz nếu có (quiz không phải là lesson type riêng)
+  chapter.lessons.forEach((lesson: any) => {
+    if (hasQuiz(lesson) && lesson.type !== 'quiz') {
+      count++
+    }
+  })
+  return count
+}
+
+const handlePanelClick = (chapter: number, event?: Event) => {
+  // Stop event propagation để không trigger collapse
+  if (event) {
+    event.stopPropagation()
+  }
+  
   // Get the current query parameters
   const queryParams = { ...route.query, chapter: chapter.toString() }
   
@@ -161,14 +219,27 @@ const handlePanelClick = (chapter: number) => {
 }
 
 const handleLessonClick = (chapterIndex: number, lessonIndex: number) => {
-  console.log('🔍 NavCourse: Lesson clicked:', { chapterIndex, lessonIndex })
+  // Check if lesson is locked
+  if (isLessonLocked(chapterIndex, lessonIndex)) {
+    // Show warning message
+    message.warning('Bạn cần hoàn thành bài học trước đó trước khi học bài này')
+    return
+  }
   
   const slug = route.params.slug
-  console.log('🔍 NavCourse: Current slug:', slug)
   
-  // Create the new URL including lessonIndex within the slug
-  const newPath = `/my-learning/${slug}/${lessonIndex}?chapter=${chapterIndex}`
-  console.log('🔍 NavCourse: Navigating to:', newPath)
+  // Navigate với query params cho chapter và lesson
+  const newPath = `/my-learning/${slug}?chapter=${chapterIndex}&lesson=${lessonIndex}`
+  
+  // Navigate to the new URL
+  router.push(newPath)
+}
+
+const handleQuizClick = (chapterIndex: number, lessonIndex: number, lesson: any) => {
+  const slug = route.params.slug
+  
+  // Navigate với query params cho chapter, lesson và quiz flag
+  const newPath = `/my-learning/${slug}?chapter=${chapterIndex}&lesson=${lessonIndex}&quiz=true`
   
   // Navigate to the new URL
   router.push(newPath)
@@ -189,17 +260,305 @@ watch(
 <style scoped>
 .nav-course {
   :deep(.ant-collapse-borderless) {
-    @apply bg-white;
-  }
-  :deep(.ant-collapse-header) {
-    @apply text-xl font-bold text-primary-100 px-0 pb-6 pt-0;
-  }
-  :deep(.ant-collapse-content-box) {
-    @apply p-0 pt-2;
+    background-color: transparent;
   }
   :deep(.ant-collapse-borderless > .ant-collapse-item) {
-    @apply border-[1px] border-solid border-gray-200 p-4 rounded-md;
+    border: 0;
   }
+  :deep(.ant-collapse-expand-icon) {
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  }
+  
+  /* Smooth collapse animation */
+  :deep(.ant-collapse-content) {
+    overflow: hidden;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  }
+  
+  :deep(.ant-collapse-content-active) {
+    animation: slideDown 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  }
+}
+
+/* Expand icon transition */
+.expand-icon-container {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  cursor: pointer;
+  position: relative;
+  z-index: 10;
+}
+
+.expand-icon {
+  width: 1.5rem;
+  height: 1.5rem;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  cursor: pointer;
+  animation: fadeIn 0.3s ease-in-out;
+}
+
+.expand-icon:hover {
+  transform: scale(1.1) rotate(90deg);
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: scale(0.8);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+@keyframes slideDown {
+  from {
+    opacity: 0;
+    max-height: 0;
+    transform: translateY(-10px);
+  }
+  to {
+    opacity: 1;
+    max-height: 1000px;
+    transform: translateY(0);
+  }
+}
+
+/* Chapter Panel */
+.nav-chapter-panel {
+  position: relative;
+  background-color: white;
+  margin-bottom: 1rem;
+  border-radius: 0.5rem;
+  border: 1px solid #e5e7eb;
+  box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  padding-top: 16px;
+  padding-bottom: 16px;
+  padding-left: 16px;
+  padding-right: 0;
+}
+
+@media (min-width: 768px) {
+  .nav-chapter-panel {
+    padding-left: 32px;
+  }
+}
+
+.nav-chapter-panel:hover {
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+  transform: translateY(-2px);
+}
+
+.nav-chapter-panel :deep(.ant-collapse-header) {
+  position: relative;
+  flex-direction: row-reverse;
+  padding: 0.75rem 0;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.nav-chapter-panel :deep(.ant-collapse-header:hover) {
+  background-color: rgba(0, 0, 0, 0.02);
+}
+
+.nav-chapter-panel :deep(.ant-collapse-content-box) {
+  padding: 0.5rem 1rem 0.75rem 1rem;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* Chapter Header */
+.chapter-header {
+  width: 100%;
+  padding-right: 1rem;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  cursor: pointer;
+}
+
+.chapter-title {
+  font-size: 1.125rem;
+  line-height: 1.75rem;
+  font-weight: 700;
+  color: #1a75bb;
+  margin-bottom: 0.25rem;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+@media (min-width: 768px) {
+  .chapter-title {
+    font-size: 1.25rem;
+    line-height: 1.75rem;
+  }
+}
+
+.chapter-header:hover .chapter-title {
+  color: #155a8f;
+  transform: translateX(2px);
+}
+
+.chapter-lesson-count {
+  font-weight: 400;
+  color: #818a90;
+  font-size: 0.875rem;
+  line-height: 1.25rem;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+@media (min-width: 768px) {
+  .chapter-lesson-count {
+    font-size: 1rem;
+    line-height: 1.5rem;
+  }
+}
+
+/* Lesson Item */
+.lesson-item {
+  display: flex;
+  gap: 0.75rem;
+  padding: 0.75rem 0;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  border-radius: 0.375rem;
+  position: relative;
+}
+
+.lesson-item:hover {
+  background-color: #f9fafb;
+  transform: translateX(4px);
+  padding-left: 0.5rem;
+}
+
+.lesson-icon-container {
+  flex-shrink: 0;
+  margin-top: 0.125rem;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.lesson-icon {
+  width: 1rem;
+  height: 1rem;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.lesson-icon-completed {
+  animation: scaleIn 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.lesson-icon-pending {
+  width: 1rem;
+  height: 1rem;
+  border: 2px solid #d1d5db;
+  border-radius: 9999px;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.lesson-item:hover .lesson-icon-pending {
+  border-color: #1a75bb;
+  transform: scale(1.1);
+}
+
+@keyframes scaleIn {
+  from {
+    opacity: 0;
+    transform: scale(0);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+.lesson-title {
+  font-size: 1rem;
+  line-height: 1.5rem;
+  margin-bottom: 0;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+@media (min-width: 768px) {
+  .lesson-title {
+    font-size: 1.125rem;
+    line-height: 1.75rem;
+  }
+}
+
+.lesson-title-completed {
+  color: #15CF74;
+}
+
+.lesson-title-pending {
+  color: #1f2937;
+}
+
+.lesson-title-locked {
+  color: #9ca3af;
+  cursor: not-allowed;
+}
+
+.lesson-item:hover .lesson-title {
+  text-decoration: underline;
+  transform: translateX(4px);
+}
+
+/* Quiz Item */
+.quiz-item {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.75rem;
+  padding: 0.75rem 0;
+  margin-left: 1.75rem;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  border-radius: 0.375rem;
+}
+
+.quiz-item:hover {
+  background-color: #f9fafb;
+  transform: translateX(4px);
+  padding-left: 0.5rem;
+}
+
+.quiz-icon-container {
+  flex-shrink: 0;
+  margin-top: 0.125rem;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.quiz-icon {
+  width: 1rem;
+  height: 1rem;
+  fill: none;
+  stroke: #818a90;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.quiz-item:hover .quiz-icon {
+  stroke: #1a75bb;
+  transform: scale(1.1);
+}
+
+.quiz-title {
+  color: #818a90;
+  font-size: 0.875rem;
+  line-height: 1.25rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+@media (min-width: 768px) {
+  .quiz-title {
+    font-size: 1rem;
+    line-height: 1.5rem;
+  }
+}
+
+.quiz-item:hover .quiz-title {
+  color: #1a75bb;
+  text-decoration: underline;
+  transform: translateX(4px);
 }
 </style>
 

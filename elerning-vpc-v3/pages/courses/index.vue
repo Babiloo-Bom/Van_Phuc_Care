@@ -2,7 +2,8 @@
   <div class="">
     <!-- Banner Section -->
     <div
-      class="h-[500px] py-10 sm:pt-20 sm:pb-20 md:pb-60 bg-cover bg-center bg-no-repeat bg-[url('https://cdn.synck.io.vn/vanphuccare/banner/main.webp')] relative z-[0] after:absolute after:content-[''] after:top-0 after:left-0 after:w-full after:h-full after:opacity-60 after:bg-prim-100"
+      class="h-auto md:mb-[5rem] sm:h-[500px] py-10 sm:pt-20 sm:pb-20 md:pb-60 bg-cover bg-center bg-no-repeat bg-[url('https://cdn.synck.io.vn/vanphuccare/banner/main.webp')]
+              relative z-[0] after:absolute after:content-[''] after:top-0 after:left-0 after:w-full after:h-full after:opacity-60 after:bg-prim-100"
     >
       <div class="absolute inset-0 bg-[#1A75BBB2]"></div>
       <div class="container h-full">
@@ -87,7 +88,7 @@
 
     <!-- Courses Section -->
     <section class="pb-20 p-4 lg:pt-20 sm:pt-10 bg-[#f4f7f9]">
-      <div class="container mx-auto !px-0 md:!px-auto">
+      <div class="container mx-auto !px-0 md:!px-auto max-[639px]:!pt-[18rem]">
         <div v-if="!loading">
           <div
             v-if="filteredCourses.length"
@@ -96,8 +97,8 @@
             <CourseCard
               v-for="(course, index) in filteredCourses"
               :key="index"
-              :course="course"
-              :is-purchased="isPurchased(course._id)"
+              :course="course as any"
+              :is-purchased="isPurchased(course)"
               @add-to-cart="handleAddToCart"
               @buy-now="handleBuyNow"
               @view-detail="handleViewDetail"
@@ -154,16 +155,10 @@ const getCourseStatus = (courseId: string) => {
   return "not_purchased";
 };
 
-// Check if course is purchased
-const isPurchased = (courseId: string) => {
-  const purchased = authStore.user?.courseRegister?.includes(courseId) || false;
-  console.log(`🔍 isPurchased check for ${courseId}:`, {
-    user: authStore.user?.email,
-    courseRegister: authStore.user?.courseRegister,
-    purchased,
-  });
-  return purchased;
-};
+// Check if course is purchased (use isPurchased from API response)
+const isPurchased = (course: any) => {
+  return course?.isPurchased || false
+}
 
 // Computed để sắp xếp theo thứ tự ưu tiên
 const sortedCourses = computed(() => {
@@ -186,15 +181,13 @@ const sortedCourses = computed(() => {
 });
 
 const filteredCourses = computed(() => {
-  if (!searchKey.value) return sortedCourses.value;
-
-  const searchTerm = searchKey.value.toLowerCase().trim();
-  if (!searchTerm) return sortedCourses.value;
-
-  console.log("🔍 Searching for:", searchTerm);
-  console.log("🔍 Total courses:", sortedCourses.value.length);
-
-  const results = sortedCourses.value.filter((course) => {
+  if (!searchKey.value) return sortedCourses.value
+  
+  const searchTerm = searchKey.value.toLowerCase().trim()
+  if (!searchTerm) return sortedCourses.value
+  
+  
+  const results = sortedCourses.value.filter(course => {
     // Tìm kiếm theo title
     const titleMatch =
       course.title?.toLowerCase().includes(searchTerm) || false;
@@ -220,22 +213,13 @@ const filteredCourses = computed(() => {
       titleMatch || shortDescMatch || descMatch || categoryMatch || tagsMatch;
 
     if (isMatch) {
-      console.log("✅ Found match:", {
-        title: course.title,
-        titleMatch,
-        shortDescMatch,
-        descMatch,
-        categoryMatch,
-        tagsMatch,
-      });
     }
-
-    return isMatch;
-  });
-
-  console.log("🔍 Search results:", results.length);
-  return results;
-});
+    
+    return isMatch
+  })
+  
+  return results
+})
 
 // Methods
 const handleSearch = (e: any) => {
@@ -253,43 +237,31 @@ const fetchCourses = async () => {
   }
 };
 
-// Cart handlers
 const handleAddToCart = async (course: any) => {
-  console.log("🛒 Adding to cart:", course.title);
-  console.log("🔍 Course object:", course);
-  console.log("🔍 Course ID:", course._id);
-  console.log("🔍 Course ID type:", typeof course._id);
-
   if (!course._id) {
     console.error("❌ Course ID is missing!");
     return;
   }
 
   try {
-    await cartStore.addToCart({ courseId: course._id, quantity: 1 });
-    console.log("✅ Added to cart successfully");
+    await cartStore.addToCart({ courseId: course._id, quantity: 1, userId: String(authStore.user?.id) || "" })
   } catch (error) {
     console.error("❌ Error adding to cart:", error);
   }
 };
 
 const handleBuyNow = async (course: any) => {
-  console.log("💳 Buy now:", course.title);
   try {
-    // Add to cart first
-    await cartStore.addToCart({ courseId: course._id, quantity: 1 });
-    // Navigate to checkout
-    navigateTo("/checkout");
+    await cartStore.addToCart({ courseId: course._id, quantity: 1, userId: String(authStore.user?.id) || "" })
+    navigateTo('/checkout')
   } catch (error) {
     console.error("❌ Error buying now:", error);
   }
 };
 
 const handleViewDetail = (course: any) => {
-  console.log("👁️ View detail:", course.title);
   try {
-    // Navigate to course detail page
-    navigateTo(`/courses/${course.slug}`);
+    navigateTo(`/courses/${course.slug}`)
   } catch (error) {
     console.error("❌ Error viewing detail:", error);
   }
@@ -297,12 +269,9 @@ const handleViewDetail = (course: any) => {
 
 // Lifecycle
 onMounted(async () => {
-  // Initialize auth first to ensure user data is loaded
-  authStore.initAuth();
-
-  // Fetch courses
-  await fetchCourses();
-});
+  authStore.initAuth()
+  await fetchCourses()
+})
 
 // Page meta
 definePageMeta({
@@ -310,7 +279,6 @@ definePageMeta({
 });
 
 // SEO Configuration for SPA mode
-console.log("🔍 Setting up SEO for courses page...");
 
 // Use direct DOM manipulation for SPA mode
 if (process.client) {
@@ -378,9 +346,8 @@ if (process.client) {
     canonical.setAttribute("rel", "canonical");
     document.head.appendChild(canonical);
   }
-  canonical.setAttribute("href", "https://vanphuccare.com/courses");
-
-  console.log("✅ SEO meta tags updated for courses page");
+  canonical.setAttribute('href', 'https://vanphuccare.com/courses')
+  
 }
 
 // Also use useHead as fallback
@@ -443,8 +410,6 @@ useHead({
     },
   ],
 });
-
-console.log("✅ SEO configuration applied for courses page");
 
 // Schema.org markup for Course List (temporarily disabled for testing)
 // useSchemaOrg([

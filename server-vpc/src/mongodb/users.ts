@@ -82,6 +82,12 @@ class Users {
       postNumber: {
         type: String,
       },
+      courseRegister: [{
+        type: String
+      }],
+      courseCompleted: [{
+        type: String
+      }],
     },
     {
       timestamps: {

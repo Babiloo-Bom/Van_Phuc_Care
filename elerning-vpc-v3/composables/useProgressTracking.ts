@@ -4,8 +4,8 @@ import { useCourseApi } from './useCourseApi';
 
 export interface LessonProgress {
   courseId: string
-  chapterIndex: number
-  lessonIndex: number
+  chapterId: string
+  lessonId: string
   completed: boolean
   completedAt?: Date
   timeSpent?: number // in seconds
@@ -30,15 +30,15 @@ export const useProgressTracking = () => {
   const error = ref<string | null>(null);
 
   // Computed
-  const isLessonCompleted = (courseId: string, chapterIndex: number, lessonIndex: number) => {
+  const isLessonCompleted = (courseId: string, chapterId: string, lessonId: string) => {
     return lessonProgress.value.some(
       progress => 
         progress.courseId === courseId && 
-        progress.chapterIndex === chapterIndex && 
-        progress.lessonIndex === lessonIndex && 
-        progress.completed,
-    );
-  };
+        progress.chapterId === chapterId && 
+        progress.lessonId === lessonId && 
+        progress.completed
+    )
+  }
 
   const getCourseProgress = (courseId: string) => {
     return courseProgress.value.find(progress => progress.courseId === courseId);
@@ -55,47 +55,50 @@ export const useProgressTracking = () => {
   };
 
   // Methods
-  const markLessonCompleted = async (courseId: string, chapterIndex: number, lessonIndex: number, timeSpent?: number) => {
+  const markLessonCompleted = async (courseId: string, chapterId: string, lessonId: string, timeSpent?: number) => {
     try {
-      loading.value = true;
-      error.value = null;
-
+      const apiBase = 'http://localhost:3000/api/u'
+      loading.value = true
+      error.value = null
       // Check if already completed
       const existingProgress = lessonProgress.value.find(
         progress => 
           progress.courseId === courseId && 
-          progress.chapterIndex === chapterIndex && 
-          progress.lessonIndex === lessonIndex,
-      );
+          progress.chapterId === chapterId && 
+          progress.lessonId === lessonId
+      )
 
       if (existingProgress?.completed) {
         return; // Already completed
       }
 
       // Call backend API to mark lesson as completed
-      const response = await $fetch('/api/progress', {
-        method: 'PUT',
+      const response: any = await $fetch(`${apiBase}/progress/lesson-completed`, {
+        method: 'POST',
         body: {
           courseId,
-          chapterIndex,
-          lessonIndex,
-          timeSpent: timeSpent || 0,
+          chapterId,
+          lessonId,
+          timeSpent: timeSpent || 0
         },
-      });
+        headers: {
+          'Content-Type': 'application/json',
+        }
+      })
 
       if (response.success) {
         // Update local state
         const progressIndex = lessonProgress.value.findIndex(
           progress => 
             progress.courseId === courseId && 
-            progress.chapterIndex === chapterIndex && 
-            progress.lessonIndex === lessonIndex,
-        );
+            progress.chapterId === chapterId && 
+            progress.lessonId === lessonId
+        )
 
         const newProgress: LessonProgress = {
           courseId,
-          chapterIndex,
-          lessonIndex,
+          chapterId,
+          lessonId,
           completed: true,
           completedAt: new Date(),
           timeSpent: timeSpent || 0,
@@ -110,12 +113,10 @@ export const useProgressTracking = () => {
         // Update course progress
         await updateCourseProgress(courseId);
 
-        console.log('✅ Lesson marked as completed:', courseId, chapterIndex, lessonIndex);
       }
 
     } catch (err: any) {
-      error.value = err.message || 'Failed to mark lesson as completed';
-      console.error('Error marking lesson completed:', err);
+      error.value = err.message || 'Failed to mark lesson as completed'
     } finally {
       loading.value = false;
     }
@@ -124,11 +125,11 @@ export const useProgressTracking = () => {
   const updateCourseProgress = async (courseId: string) => {
     try {
       // Get course details to calculate total lessons
-      const course = await courseApi.getCourseBySlug(courseId);
-      if (!course) return;
+      const course: any = await courseApi.getCourseBySlug(courseId)
+      if (!course) return
 
-      const totalLessons = course.chapters?.reduce((total, chapter) => 
-        total + (chapter.lessons?.length || 0), 0) || 0;
+      const totalLessons = course.chapters?.reduce((total: number, chapter: any) => 
+        total + (chapter.lessons?.length || 0), 0) || 0
 
       const completedLessons = lessonProgress.value.filter(
         progress => progress.courseId === courseId && progress.completed,
@@ -178,7 +179,6 @@ export const useProgressTracking = () => {
         const authApi = useAuthApi();
         await authApi.updateCourseRegister([courseId], 'add'); // This will also update courseCompleted
         
-        console.log('✅ Course marked as completed:', courseId);
       }
     } catch (err: any) {
       console.error('Error marking course as completed:', err);
@@ -188,17 +188,13 @@ export const useProgressTracking = () => {
   const saveProgressToBackend = async () => {
     try {
       // Save lesson progress to backend
-      const response = await $fetch('/api/progress', {
+      const response: any = await $fetch('/api/progress', {
         method: 'POST',
         body: {
           lessonProgress: lessonProgress.value,
-          courseProgress: courseProgress.value,
-        },
-      });
-
-      if (response.success) {
-        console.log('✅ Progress saved to backend');
-      }
+          courseProgress: courseProgress.value
+        }
+      })  
     } catch (err: any) {
       console.error('Error saving progress to backend:', err);
     }
@@ -209,14 +205,13 @@ export const useProgressTracking = () => {
       loading.value = true;
       error.value = null;
 
-      const response = await $fetch('/api/progress', {
-        method: 'GET',
-      });
+      const response: any = await $fetch('/api/progress', {
+        method: 'GET'
+      })
 
       if (response.success) {
-        lessonProgress.value = response.data.lessonProgress || [];
-        courseProgress.value = response.data.courseProgress || [];
-        console.log('✅ Progress loaded from backend');
+        lessonProgress.value = response.data.lessonProgress || []
+        courseProgress.value = response.data.courseProgress || []
       }
     } catch (err: any) {
       console.error('Error loading progress from backend:', err);
@@ -228,9 +223,9 @@ export const useProgressTracking = () => {
   const resetProgress = async (courseId: string) => {
     try {
       // Call backend API to reset progress
-      const response = await $fetch(`/api/progress?courseId=${courseId}`, {
-        method: 'DELETE',
-      });
+      const response: any = await $fetch(`/api/progress?courseId=${courseId}`, {
+        method: 'DELETE'
+      })
 
       if (response.success) {
         // Remove lesson progress for this course
@@ -243,7 +238,6 @@ export const useProgressTracking = () => {
           progress => progress.courseId !== courseId,
         );
 
-        console.log('✅ Progress reset for course:', courseId);
       }
     } catch (err: any) {
       console.error('Error resetting progress:', err);

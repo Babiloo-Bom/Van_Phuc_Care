@@ -244,7 +244,6 @@ const progressPercentage = computed(() => {
 const onVideoLoaded = () => {
   if (videoRef.value) {
     duration.value = videoRef.value.duration
-    console.log('📹 Video loaded:', { duration: duration.value })
   }
 }
 
@@ -272,7 +271,6 @@ const onVideoEnded = () => {
   // Mark as watched
   markAsWatched()
   
-  console.log('📹 Video ended:', { watchCount: watchCount.value })
 }
 
 const onVideoPlay = () => {
@@ -324,9 +322,7 @@ const markAsWatched = async () => {
     
     emit('watched', stats)
     
-    console.log('✅ Video marked as watched')
   } catch (error) {
-    console.error('Error marking video as watched:', error)
   } finally {
     markingWatched.value = false
   }

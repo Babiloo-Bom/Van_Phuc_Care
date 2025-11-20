@@ -26,7 +26,7 @@ export const coursesData = [
       isPublished: true,
       isFeatured: true,
       status: 'active',
-      modules: [
+      chapters: [
         {
           title: 'Giới thiệu về React',
           description: 'Tìm hiểu về React và cách thiết lập môi trường phát triển',
@@ -206,7 +206,7 @@ export const coursesData = [
       isPublished: true,
       isFeatured: true,
       status: 'active',
-      modules: [
+      chapters: [
         {
           title: 'Giới thiệu về Figma',
           description: 'Làm quen với Figma và các công cụ cơ bản',
@@ -300,7 +300,7 @@ export const coursesData = [
       isPublished: true,
       isFeatured: false,
       status: 'active',
-      modules: [
+        chapters: [
         {
           title: 'Giới thiệu Python cho Data Science',
           description: 'Làm quen với Python và các thư viện cần thiết',
@@ -395,7 +395,7 @@ export const coursesData = [
       isPublished: true,
       isFeatured: true,
       status: 'active',
-      modules: [
+      chapters: [
         {
           title: 'Giới thiệu Marketing Digital',
           description: 'Tìm hiểu về marketing digital và các kênh chính',
@@ -490,7 +490,7 @@ export const coursesData = [
       isPublished: true,
       isFeatured: false,
       status: 'active',
-      modules: [
+      chapters: [
         {
           title: 'Giới thiệu Node.js',
           description: 'Làm quen với Node.js và môi trường runtime',

@@ -129,7 +129,7 @@
               type="primary" 
               size="large" 
               class="w-full !bg-prim-100 !py-4 !h-[60px] !text-white !border-prim-100 !text-xl !font-bold !rounded-xl !shadow-lg hover:!shadow-xl transition-all duration-300 !flex !items-center !justify-center !gap-3"
-              @click="navigateTo('/khoa-hoc-cua-toi')"
+              @click="navigateTo('/my-learning')"
             >
               <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" class="fill-none stroke-current">
                 <path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
@@ -190,28 +190,23 @@ const paymentMethod = computed(() => {
 // Update user's courseRegister with purchased courses
 const updateUserCourseRegister = async () => {
   if (!order.value?.items || !authStore.user) {
-    console.log('⚠️ No order items or user not logged in')
     return
   }
 
   try {
-    console.log('🔄 Updating user courseRegister via API...')
     
     // Get course IDs from order
     const courseIds = order.value.items.map((item: any) => item.courseId || item._id)
-    console.log('📚 Course IDs to add:', courseIds)
     
     // Call API to update courseRegister
     const authApi = useAuthApi()
     const response = await authApi.updateCourseRegister(courseIds, 'add') as any
     
-    console.log('📡 API response:', response)
     
     if (response.data?.user) {
       // Update local user data
       authStore.user.courseRegister = response.data.user.courseRegister
       authStore.saveAuth()
-      console.log('✅ Course register updated via API:', authStore.user.courseRegister)
     } else {
       console.error('❌ Failed to update courseRegister via API:', response)
     }
@@ -224,10 +219,8 @@ const updateUserCourseRegister = async () => {
 // Refresh authStore to ensure data is synced
 const refreshAuthStore = async () => {
   try {
-    console.log('🔄 Refreshing authStore...')
     // Re-initialize authStore to pick up latest data from localStorage
     authStore.initAuth()
-    console.log('✅ AuthStore refreshed successfully')
   } catch (error) {
     console.error('❌ Error refreshing authStore:', error)
   }
@@ -242,13 +235,11 @@ const fetchOrderDetails = async () => {
   }
 
   try {
-    console.log('📦 Fetching order details for:', orderId.value)
     
-    const response = await $fetch(`http://localhost:3000/api/a/orders/order/${orderId.value}`)
+    const response: any = await $fetch(`http://localhost:3000/api/u/orders/${orderId.value}`)
     
     if (response.data && response.data.order) {
       order.value = response.data.order
-      console.log('✅ Order details loaded:', order.value)
       
       // Update user's courseRegister after successful payment
       await updateUserCourseRegister()
@@ -267,10 +258,6 @@ const fetchOrderDetails = async () => {
 }
 
 onMounted(() => {
-  console.log('🎉 Checkout success page mounted!')
-  console.log('🔍 Current route:', useRoute().path)
-  console.log('🔍 Order ID from URL:', orderId.value)
-  
   fetchOrderDetails()
 })
 </script>

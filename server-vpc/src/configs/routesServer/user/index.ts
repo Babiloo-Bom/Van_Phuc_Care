@@ -12,6 +12,8 @@ import TicketRouter from './Tickets';
 import ServiceRegistrationRouter from "./ServiceRegistration";
 import TransactionListRouter from "./TransactionList";
 import ServicesRouter from './Services';
+import ProcessingRouter from './Processings';
+import GoogleAuthRouter from './GoogleAuth';
 
 const router = Router();
 
@@ -28,4 +30,7 @@ router.use("/tickets", TicketRouter);
 router.use("/services", ServicesRouter);
 router.use("/service-registration", ServiceRegistrationRouter);
 router.use("/transactions-list", TransactionListRouter);
+router.use('/progress', ProcessingRouter);
+router.use('/auth/google', GoogleAuthRouter);
+
 export default router;

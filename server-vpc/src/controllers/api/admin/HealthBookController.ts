@@ -39,7 +39,6 @@ class HealthBookController {
           ],
         });
       }
-      console.log('QUerying', queryString);
       const [healthBooks, total] = await Promise.all([
         MongoDbHealthBooks.model.find(queryString)
           .select({ origin: 0, domain: 0 })

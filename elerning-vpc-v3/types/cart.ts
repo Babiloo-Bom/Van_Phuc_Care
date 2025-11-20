@@ -14,6 +14,14 @@ export interface CartItem {
       name: string
       avatar: string
     }
+    videoCount: number
+    documentCount: number
+    quizCount: number
+    rating: {
+      average: number
+      count: number
+    }
+    reviewsCount: number
   }
   quantity: number
   addedAt: string
@@ -47,6 +55,7 @@ export interface Cart {
 export interface AddToCartData {
   courseId: string
   quantity?: number
+  userId: string
 }
 
 export interface UpdateCartItemData {

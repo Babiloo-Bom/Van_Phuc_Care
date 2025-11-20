@@ -263,8 +263,7 @@ const handleSubmit = async () => {
       message.error(result.error || "Không thể cập nhật mật khẩu");
     }
   } catch (error: any) {
-    console.error("Reset password error:", error);
-    message.error("Không thể cập nhật mật khẩu");
+    message.error('Không thể cập nhật mật khẩu')
   } finally {
     loading.value = false;
   }

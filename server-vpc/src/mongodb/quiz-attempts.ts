@@ -1,4 +1,4 @@
-import mongoose, { Model, Schema } from 'mongoose';
+import mongoose, { Schema } from 'mongoose';
 
 const quizAttemptSchema = new Schema({
   userId: {
@@ -16,12 +16,12 @@ const quizAttemptSchema = new Schema({
     required: true,
     index: true
   },
-  chapterIndex: {
-    type: Number,
+  chapterId: {
+    type: String,
     required: true
   },
-  lessonIndex: {
-    type: Number,
+  lessonId: {
+    type: String,
     required: true
   },
   attemptNumber: {

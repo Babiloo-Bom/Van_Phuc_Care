@@ -5,7 +5,7 @@ import { adminPassport } from '@middlewares/passport';
 const router = Router();
 
 // Quiz routes
-router.get('/course/:courseId/chapter/:chapterIndex/lesson/:lessonIndex', QuizController.getQuiz);
+router.get('/course/:courseId/chapter/:chapterId/lesson/:lessonId', QuizController.getQuiz);
 router.post('/', QuizController.createQuiz);
 router.post('/submit', adminPassport.authenticate('jwt', { session: false }), QuizController.submitQuizAttempt);
 router.get('/attempts/course/:courseId', adminPassport.authenticate('jwt', { session: false }), QuizController.getUserQuizAttempts);

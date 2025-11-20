@@ -18,7 +18,6 @@ class PasswordController {
   public static async forgotPassword(req: Request, res: Response) {
     try {
       const { email } = req.body;
-      console.log('🔍 Forgot password request for:', email);
       
       if (!email) {
         return sendError(res, 400, invalidParameter);
@@ -30,7 +29,6 @@ class PasswordController {
       });
       
       if (!admin) {
-        console.log('❌ User not found or not active:', email);
         // Always return success for security (don't reveal if email exists)
         return sendSuccess(res, { message: 'Reset link sent successfully' });
       }
@@ -57,15 +55,12 @@ class PasswordController {
       // Send reset link via email
       try {
         await MailerService.sendForgotPasswordLink(email, resetLink);
-        console.log('✅ Reset link sent successfully to:', email);
         sendSuccess(res, { message: 'Reset link sent successfully' });
       } catch (emailError) {
-        console.error('❌ Email sending failed:', emailError);
         // Still return success for security (don't reveal if email exists)
         sendSuccess(res, { message: 'Reset link sent successfully' });
       }
     } catch (error: any) {
-      console.error('❌ Forgot password error:', error);
       sendError(res, 500, error.message, error as Error);
     }
   }
@@ -78,7 +73,6 @@ class PasswordController {
   public static async resetPassword(req: Request, res: Response) {
     try {
       const { token, password } = req.body;
-      console.log('🔍 Reset password request with token:', token ? 'exists' : 'missing');
       
       if (!token || !password) {
         return sendError(res, 400, invalidParameter);
@@ -94,14 +88,12 @@ class PasswordController {
       });
       
       if (!admin) {
-        console.log('❌ Invalid or expired token');
         return sendError(res, 404, NoData);
       }
 
       // Check if token is not expired
       const expireAt = admin.get('forgotPasswordExpireAt');
       if (!expireAt || dayjs().isAfter(dayjs(expireAt))) {
-        console.log('❌ Token expired');
         return sendError(res, 400, InvalidOtp);
       }
 
@@ -118,10 +110,8 @@ class PasswordController {
         }
       );
 
-      console.log('✅ Password reset successfully for:', admin.get('email'));
       sendSuccess(res, { message: 'Password reset successfully' });
     } catch (error: any) {
-      console.error('❌ Reset password error:', error);
       sendError(res, 500, error.message, error as Error);
     }
   }
