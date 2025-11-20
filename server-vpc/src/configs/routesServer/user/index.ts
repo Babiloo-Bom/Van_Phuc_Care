@@ -8,6 +8,7 @@ import OrdersRouter from './Order';
 import SessionRouter from './Sessions';
 import UserRouter from './Users';
 import CourseRouter from './Courses';
+import TicketRouter from './Tickets';
 import ProcessingRouter from './Processings';
 import GoogleAuthRouter from './GoogleAuth';
 
@@ -22,6 +23,7 @@ router.use('/products', ProductsRouter);
 router.use('/sessions', SessionRouter);
 router.use('/users', UserRouter);
 router.use('/courses', CourseRouter);
+router.use('/tickets', TicketRouter);
 router.use('/progress', ProcessingRouter);
 router.use('/auth/google', GoogleAuthRouter);
 export default router;
