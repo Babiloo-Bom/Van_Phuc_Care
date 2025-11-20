@@ -50,14 +50,11 @@
         <!-- Thumbnail -->
         <div class="card-image-wrapper">
           <img
-            v-if="service.thumbnail"
-            :src="service.thumbnail"
+            :src="service.thumbnail || '/images/service-thumbnail-default.png'"
             :alt="service.title"
             class="card-image"
+            @error="(e) => (e.target as HTMLImageElement).src = '/images/service-thumbnail-default.png'"
           />
-          <div v-else class="card-image-placeholder">
-            <span class="text-4xl">💼</span>
-          </div>
         </div>
 
         <!-- Content -->
@@ -110,12 +107,16 @@ const fetchServices = async () => {
     if (activeTab.value === 'used') {
       // Get user's registered services
       const res = await getMyServices({})
-      services.value = res.data?.data || []
+      console.log('My services response:', res)
+      services.value = res.data?.data?.data || res.data?.data || []
     } else {
       // Get all services
       const res = await getServices({})
-      services.value = res.data?.data || []
+      console.log('All services response:', res)
+      services.value = res.data?.data?.data || res.data?.data || []
     }
+    
+    console.log('Services loaded:', services.value)
   } catch (e) {
     console.error('Error fetching services:', e)
     services.value = []

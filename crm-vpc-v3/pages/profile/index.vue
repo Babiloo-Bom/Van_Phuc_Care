@@ -114,7 +114,7 @@ async function fetchUserInfo() {
     loading.value = true
     console.log('🔍 Fetching user profile...')
     
-    const res = await apiClient.get('/api/a/admins/profile', {
+    const res = await apiClient.get('/api/u/users/profile', {
       showError: false, // Disable automatic error toast
     })
     
@@ -133,7 +133,7 @@ async function fetchUserInfo() {
     
     console.log('📝 User data extracted:', u)
     
-    // API returns: name, phone, email, address
+    // API returns: fullname, phoneNumber, email, address
     // Use Object.assign to ensure reactivity
     Object.assign(infoForm, {
       name: u.name || u.fullname || '',
@@ -166,15 +166,9 @@ onMounted(() => {
 
 async function handleInfoSubmit() {
   try {
-    const userId = user.value?.id
-    if (!userId) {
-      message.error('Không tìm thấy thông tin người dùng')
-      return
-    }
-    
-    // Use existing updateUser API with users-management endpoint
-    const response = await apiClient.put(`/api/a/users-management/${userId}`, {
-      name: infoForm.name,
+    // Use user profile update API
+    const response = await apiClient.put('/api/u/users/profile', {
+      fullname: infoForm.name,
       phoneNumber: infoForm.phone,
       email: infoForm.email,
       address: infoForm.address,
