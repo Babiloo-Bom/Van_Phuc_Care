@@ -9,6 +9,13 @@
       <div class="course-badge" v-if="course.isFeatured">
         <span class="badge-text">Nổi bật</span>
       </div>
+      <div class="course-badge purchased-badge" v-if="course.isPurchased" style="top: auto; bottom: 12px; left: 12px; background: #e6f7ff; border: 1px solid #1a75bb;">
+        <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#1a75bb" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="margin-right: 4px;">
+          <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path>
+          <polyline points="22 4 12 14.01 9 11.01"></polyline>
+        </svg>
+        <span class="badge-text" style="color: #1a75bb;">Đã mua</span>
+      </div>
     </div>
 
     <div class="course-content">
@@ -133,22 +140,7 @@
         </button>
       </div>
 
-      <div v-else class="flex flex-col w-full gap-4">
-        <span class="w-full h-[1px] bg-[#D4D4D4]"></span>
-        <div class="w-full">
-          <div class="w-full flex items-center justify-between">
-            <span class="text-sm font-bold text-[#317BC4]">Tiến độ</span>
-            <span class="text-sm font-bold text-[#317BC4]"
-              >{{ progress }}%</span
-            >
-          </div>
-          <div class="relative w-full h-1 bg-[#dfdfdf] mt-2">
-            <div 
-              class="absolute top-0 bottom-0 left-0 bg-[#6DE380] rounded-sm transition-all duration-300" 
-              :style="{ width: `${Math.min(Math.max(progress ?? 0, 0), 100)}%` }"
-            ></div>
-          </div>
-        </div>
+      <div v-else class="flex-grow flex flex-col justify-end w-full gap-4">
         <div class="course-actions">
           <button class="btn-access" @click.stop="viewDetail">Học ngay</button>
         </div>
@@ -194,6 +186,7 @@ interface Course {
   quizCount: number;
   createdAt: string;
   updatedAt: string;
+  isPurchased?: boolean;
 }
 
 const props = defineProps<{
@@ -201,12 +194,6 @@ const props = defineProps<{
   isPurchased?: boolean;
   progress?: number;
 }>();
-
-// Debug log
-console.log(`🔍 CourseCard for ${props.course.title}:`, {
-  courseId: props.course._id,
-  isPurchased: props.isPurchased,
-});
 
 const emit = defineEmits<{
   addToCart: [course: Course];

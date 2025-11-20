@@ -11,9 +11,8 @@ export default defineNuxtPlugin(nuxtApp => {
         if (token) {
           options.headers = {
             ...options.headers as Record<string, string>,
-            Authorization: `Bearer ${token}`,
-          };
-          console.log('🔍 API Plugin: Adding token to request:', token.substring(0, 20) + '...');
+            Authorization: `Bearer ${token}`
+          }
         } else {
           console.log('🔍 API Plugin: No token found in localStorage');
         }
@@ -24,7 +23,6 @@ export default defineNuxtPlugin(nuxtApp => {
       // Handle errors globally
       if (response.status === 401) {
         // Unauthorized - redirect to login
-        console.log('🔍 API Plugin: 401 Unauthorized, clearing token and redirecting');
         if (process.client) {
           localStorage.removeItem('auth_token');
           localStorage.removeItem('user');

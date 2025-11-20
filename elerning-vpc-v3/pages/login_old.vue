@@ -172,7 +172,6 @@ const handleGoogleLogin = async () => {
     const authUrl = getGoogleLoginUrl()
     window.location.href = authUrl
   } catch (error: any) {
-    console.error('Google login error:', error)
     message.error(error.message || 'Lỗi đăng nhập Google')
   }
 }
@@ -194,7 +193,6 @@ const handleSubmit = async () => {
       message.error(result.error || 'Tên đăng nhập hoặc mật khẩu không chính xác')
     }
   } catch (error: any) {
-    console.error('Login error:', error)
     message.error('Tên đăng nhập hoặc mật khẩu không chính xác')
   } finally {
     loading.value = false

@@ -244,13 +244,10 @@ export default class UserController {
    */
   public static async getProfile(req: Request, res: Response) {
     try {
-      console.log("🔍 getProfile called");
       const user = (req as any).currentUser || (req as any).currentAdmin;
-      console.log("🔍 currentUser:", user ? "exists" : "null");
-
+      
       if (!user) {
-        console.log("❌ No user found");
-        return sendError(res, 404, "Không tìm thấy người dùng");
+        return sendError(res, 404, 'Không tìm thấy người dùng');
       }
 
       // Return user profile without sensitive data
@@ -284,11 +281,8 @@ export default class UserController {
    */
   public static async updateCourseRegister(req: Request, res: Response) {
     try {
-      console.log("🔍 updateCourseRegister called");
       const currentUser = (req as any).currentUser || (req as any).currentAdmin;
-      console.log("🔍 currentUser:", currentUser ? "exists" : "null");
       const { courseIds, action } = req.body;
-      console.log("🔍 Request body:", { courseIds, action });
 
       if (!currentUser) {
         return sendError(res, 404, "Không tìm thấy người dùng");
@@ -327,10 +321,8 @@ export default class UserController {
         );
       }
 
-      console.log("🔍 Before save - courseRegister:", user.courseRegister);
       user.updatedAt = new Date();
       await user.save();
-      console.log("✅ After save - courseRegister:", user.courseRegister);
 
       // Return updated user profile
       const userProfile = {

@@ -2,7 +2,8 @@
   <div class="">
     <!-- Hero Banner -->
     <div
-      class="h-[500px] py-10 sm:pt-20 sm:pb-20 md:pb-60 bg-cover bg-center bg-no-repeat bg-[url('https://cdn.synck.io.vn/vanphuccare/banner/main.webp')] relative z-[0] after:absolute after:content-[''] after:top-0 after:left-0 after:w-full after:h-full after:opacity-60 after:bg-prim-100"
+      class="h-auto md:mb-[5rem] sm:h-[500px] py-10 sm:pt-20 sm:pb-20 md:pb-60 bg-cover bg-center bg-no-repeat bg-[url('https://cdn.synck.io.vn/vanphuccare/banner/main.webp')]
+             relative z-[0] after:absolute after:content-[''] after:top-0 after:left-0 after:w-full after:h-full after:opacity-60 after:bg-prim-100"
     >
       <div class="absolute inset-0 bg-[#1A75BBB2]"></div>
       <div class="container mx-auto !px-0 sm:!px-auto">
@@ -153,7 +154,7 @@
 
     <!-- Courses Section -->
     <section class="pb-20 p-4 lg:pt-20 sm:pt-10 bg-[#f4f7f9]">
-      <div class="container mx-auto !px-0 md:!px-auto">
+      <div class="container mx-auto !px-0 md:!px-auto max-[639px]:!pt-[18rem]">
         <div
           v-if="googleError"
           class="flex justify-center items-center min-h-[300px]"
@@ -184,7 +185,7 @@
               <CourseCard
                 v-for="(course, index) in filteredCourses"
                 :key="index"
-                :course="course"
+                :course="course as any"
                 :is-purchased="isPurchased(course._id)"
                 @add-to-cart="handleAddToCart"
                 @buy-now="handleBuyNow"
@@ -240,7 +241,6 @@ import CourseCard from "~/components/courses/CourseCard.vue";
 import CartToast from "~/components/cart/Toast.vue";
 
 // SEO Configuration for SPA mode
-console.log("🔍 Setting up SEO for home page...");
 
 // Function to update SEO meta tags
 const updateSEOMetaTags = () => {
@@ -317,10 +317,9 @@ const updateSEOMetaTags = () => {
     canonical.setAttribute("rel", "canonical");
     document.head.appendChild(canonical);
   }
-  canonical.setAttribute("href", "https://vanphuccare.com");
-
-  console.log("✅ SEO meta tags updated for home page");
-};
+  canonical.setAttribute('href', 'https://vanphuccare.com')
+  
+}
 
 // Also use useHead as fallback
 useHead({
@@ -393,7 +392,6 @@ useHead({
   ],
 });
 
-console.log("✅ SEO configuration applied for home page");
 
 // Schema.org markup for Homepage (temporarily disabled for testing)
 // useSchemaOrg([
@@ -495,16 +493,7 @@ const categories = computed(() => {
 });
 
 const filteredCourses = computed(() => {
-  console.log(
-    "🔍 filteredCourses computed - local courses:",
-    courses.value.length
-  );
-  console.log(
-    "🔍 filteredCourses computed - store courses:",
-    coursesStore.courses.length
-  );
-  console.log("🔍 filteredCourses computed - searchKey:", searchKey.value);
-
+  
   // Use local state as primary source
   let sourceCourses =
     courses.value.length > 0 ? courses.value : coursesStore.courses;
@@ -578,10 +567,9 @@ const filteredCourses = computed(() => {
       });
       break;
   }
-
-  console.log("🔍 Filtered courses:", sourceCourses.length);
-  return sourceCourses;
-});
+  
+  return sourceCourses
+})
 
 // Methods
 const handleSearch = (e: Event) => {
@@ -603,33 +591,23 @@ const handleSortChange = (value: string) => {
 };
 
 const isPurchased = (courseId: string) => {
-  const purchased = authStore.user?.courseRegister?.includes(courseId) || false;
-  console.log(`🔍 isPurchased check for ${courseId}:`, {
-    user: authStore.user?.email,
-    courseRegister: authStore.user?.courseRegister,
-    courseRegisterLength: authStore.user?.courseRegister?.length,
-    courseRegisterContent: JSON.stringify(authStore.user?.courseRegister),
-    purchased,
-  });
-  return purchased;
-};
+  const purchased = authStore.user?.courseRegister?.includes(courseId) || false
+  return purchased
+}
 
 // Cart handlers
 const handleAddToCart = async (course: any) => {
-  console.log("🛒 Adding to cart:", course.title);
   try {
-    await cartStore.addToCart({ courseId: course._id, quantity: 1 });
-    console.log("✅ Added to cart successfully");
+    await cartStore.addToCart({ courseId: course._id, quantity: 1, userId: String(authStore.user?.id) || "" })
   } catch (error) {
     console.error("❌ Error adding to cart:", error);
   }
 };
 
 const handleBuyNow = async (course: any) => {
-  console.log("💳 Buy now:", course.title);
   try {
     // Add to cart first
-    await cartStore.addToCart({ courseId: course._id, quantity: 1 });
+    await cartStore.addToCart({ courseId: course._id, quantity: 1, userId: String(authStore.user?.id) || "" });
     // Navigate to checkout
     navigateTo("/checkout");
   } catch (error) {
@@ -638,7 +616,6 @@ const handleBuyNow = async (course: any) => {
 };
 
 const handleViewDetail = (course: any) => {
-  console.log("👁️ View detail:", course.title);
   try {
     // Navigate to course detail page
     navigateTo(`/courses/${course.slug}`);

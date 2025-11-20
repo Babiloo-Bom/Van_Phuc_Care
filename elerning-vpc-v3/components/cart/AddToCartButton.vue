@@ -124,7 +124,6 @@ const handleAddToCart = async () => {
     emit('added', props.course)
   } catch (err: any) {
     error.value = err.message || 'Không thể thêm vào giỏ hàng'
-    console.error('Error adding to cart:', err)
   } finally {
     isLoading.value = false
   }
@@ -141,7 +140,6 @@ const handleRemoveFromCart = async () => {
     emit('removed', props.course._id)
   } catch (err: any) {
     error.value = err.message || 'Không thể xóa khỏi giỏ hàng'
-    console.error('Error removing from cart:', err)
   } finally {
     isRemoving.value = false
   }
@@ -162,7 +160,6 @@ const incrementQuantity = async () => {
     emit('updated', props.course._id, newQuantity)
   } catch (err: any) {
     error.value = err.message || 'Không thể cập nhật số lượng'
-    console.error('Error updating quantity:', err)
   } finally {
     isUpdating.value = false
   }
@@ -188,7 +185,6 @@ const decrementQuantity = async () => {
     }
   } catch (err: any) {
     error.value = err.message || 'Không thể cập nhật số lượng'
-    console.error('Error updating quantity:', err)
   } finally {
     isUpdating.value = false
   }

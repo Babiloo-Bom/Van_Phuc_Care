@@ -18,7 +18,6 @@ export const useUserManagement = () => {
 
       return data.value!;
     } catch (error: any) {
-      console.error('❌ User creation failed:', error);
       return {
         success: false,
         error: error.message || 'Failed to create user',
@@ -36,7 +35,6 @@ export const useUserManagement = () => {
 
       return data.value!;
     } catch (error: any) {
-      console.error('❌ User lookup failed:', error);
       return {
         success: false,
         error: error.message || 'Failed to find user',
@@ -54,7 +52,6 @@ export const useUserManagement = () => {
 
       return data.value!;
     } catch (error: any) {
-      console.error('❌ Google user lookup failed:', error);
       return {
         success: false,
         error: error.message || 'Failed to find Google user',
@@ -92,7 +89,6 @@ export const useUserManagement = () => {
       });
 
     } catch (error: any) {
-      console.error('❌ Google user management failed:', error);
       return {
         success: false,
         error: error.message || 'Failed to manage Google user',
@@ -114,7 +110,6 @@ export const useUserManagement = () => {
 
       return data.value!;
     } catch (error: any) {
-      console.error('❌ Google user update failed:', error);
       return {
         success: false,
         error: error.message || 'Failed to update Google user',
@@ -137,7 +132,6 @@ export const useUserManagement = () => {
 
       return data.value!;
     } catch (error: any) {
-      console.error('❌ Google account linking failed:', error);
       return {
         success: false,
         error: error.message || 'Failed to link Google account',

@@ -58,8 +58,7 @@ export const useGoogleAuth = () => {
 
       return data.value!;
     } catch (error: any) {
-      console.error("❌ Google token exchange failed:", error);
-      throw new Error("Không thể xác thực với Google. Vui lòng thử lại.");
+      throw new Error('Không thể xác thực với Google. Vui lòng thử lại.')
     }
   };
 
@@ -81,8 +80,7 @@ export const useGoogleAuth = () => {
 
       return data.value!;
     } catch (error: any) {
-      console.error("❌ Google user profile fetch failed:", error);
-      throw new Error("Không thể lấy thông tin người dùng từ Google.");
+      throw new Error('Không thể lấy thông tin người dùng từ Google.')
     }
   };
 
@@ -91,28 +89,20 @@ export const useGoogleAuth = () => {
     request: GoogleLoginRequest
   ): Promise<GoogleLoginResponse> => {
     try {
-      console.log("🔄 Calling Google login API with request:", request);
+      
+      const response = await $fetch<GoogleLoginResponse>('/api/auth/google/login-backend', {
+        method: 'POST',
+        body: request
+      })
 
-      const response = await $fetch<GoogleLoginResponse>(
-        "/api/auth/google/login-backend",
-        {
-          method: "POST",
-          body: request,
-        }
-      );
-
-      console.log("🔍 Google login API response:", response);
 
       if (!response) {
-        console.error("❌ No data received from server");
-        throw new Error("Không nhận được phản hồi từ server");
+        throw new Error('Không nhận được phản hồi từ server')
       }
 
-      console.log("✅ Google login API success:", response);
-      return response;
+      return response
     } catch (error: any) {
-      console.error("❌ Google login API failed:", error);
-      throw new Error("Đăng nhập Google thất bại. Vui lòng thử lại.");
+      throw new Error('Đăng nhập Google thất bại. Vui lòng thử lại.')
     }
   };
 
@@ -131,8 +121,7 @@ export const useGoogleAuth = () => {
 
       return loginResponse;
     } catch (error: any) {
-      console.error("❌ Google login flow failed:", error);
-      throw error;
+      throw error
     }
   };
 

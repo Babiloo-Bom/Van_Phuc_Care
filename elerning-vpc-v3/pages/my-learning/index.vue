@@ -2,7 +2,8 @@
   <div class="">
     <!-- Hero Banner -->
     <div
-      class="h-[500px] py-10 sm:pt-20 sm:pb-20 md:pb-60 bg-cover bg-center bg-no-repeat bg-[url('https://cdn.synck.io.vn/vanphuccare/banner/main.webp')] relative z-[0] after:absolute after:content-[''] after:top-0 after:left-0 after:w-full after:h-full after:opacity-60 after:bg-prim-100"
+      class="h-auto md:mb-[5rem] sm:h-[400px] md:h-[500px] py-8 sm:py-10 sm:pt-16 sm:pb-20 md:pb-60 bg-cover bg-center bg-no-repeat bg-[url('https://cdn.synck.io.vn/vanphuccare/banner/main.webp')]
+             relative z-[0] after:absolute after:content-[''] after:top-0 after:left-0 after:w-full after:h-full after:opacity-60 after:bg-prim-100"
     >
       <div class="absolute inset-0 bg-[#1A75BBB2]"></div>
       <div class="container mx-auto !px-0 sm:!px-auto">
@@ -89,30 +90,30 @@
     </div>
 
     <!-- Courses Section -->
-    <section class="pb-20 p-4 lg:pt-20 sm:pt-10 bg-[#f4f7f9]">
-      <div class="container mx-auto px-4 md:px-0">
+    <section class="pb-10 sm:pb-20 pt-4 sm:pt-10 lg:pt-20 bg-[#f4f7f9] max-md:pt-[6rem]">
+      <div class="container mx-auto px-4 sm:px-4 md:px-0">
         <div v-if="!loading">
           <div
             v-if="filteredCourses.length"
-            class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 xl:grid-cols-4 gap-6 -mt-80 sm:-mt-64 md:-mt-40 lg:-mt-60"
+            class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 xl:grid-cols-4 gap-4 sm:gap-6 -mt-32 sm:-mt-48 md:-mt-40 lg:-mt-60"
           >
-            <CourseCard
+            <PurchasedCourseCard
               v-for="(course, index) in filteredCourses"
               :key="index"
-              :course="course"
+              :course="course as any"
               :is-purchased="true"
               :progress="getProgress(course._id)"
               @view-detail="handleViewDetail"
               class="transform transition hover:-translate-y-1 duration-150"
             />
           </div>
-          <div v-else class="">
+          <div v-else class="pt-20 sm:pt-0">
             <a-empty description="Bạn chưa có khóa học nào" />
           </div>
         </div>
         <div
           v-else
-          class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 xl:grid-cols-4 gap-6 -mt-80 sm:-mt-64 md:-mt-40 lg:-mt-60"
+          class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 xl:grid-cols-4 gap-4 sm:gap-6 -mt-32 sm:-mt-48 md:-mt-40 lg:-mt-60"
         >
           <div
             v-for="index in [1, 2, 3, 4]"
@@ -136,7 +137,7 @@
 <script setup lang="ts">
 import { ref, computed, onMounted } from "vue";
 import { useCoursesStore } from "~/stores/courses";
-import CourseCard from "~/components/courses/CourseCard.vue";
+import PurchasedCourseCard from "~/components/courses/PurchasedCourseCard.vue";
 
 // SEO
 useHead({
@@ -175,53 +176,28 @@ const handleSearch = (e: Event) => {
 };
 
 const getProgress = (courseId: string) => {
-  // TODO: Implement actual progress calculation
-  // For now, return 0
+  const course = coursesStore.myCourses.find((c: any) => c._id === courseId);
+  if (course && course.progress) {
+    return course.progress.progressPercentage || 0;
+  }
   return 0;
 };
 
 const handleViewDetail = (course: any) => {
-  console.log("🔍 Viewing course detail:", course);
-  console.log("🔍 Navigating to:", `/my-learning/${course.slug}`);
   // Navigate to the course learning page
   navigateTo(`/my-learning/${course.slug}`);
 };
 
 const fetchData = async () => {
   try {
-    loading.value = true;
-    console.log("🔍 Fetching my courses data...");
-
+    loading.value = true
+    
     // Get auth store
-    const authStore = useAuthStore();
-    console.log("🔍 Auth state:", {
-      isLoggedIn: authStore.isLoggedIn,
-      user: authStore.user,
-      courseRegister: authStore.user?.courseRegister,
-    });
-
+    const authStore = useAuthStore()
+    
     // Get all courses first
-    await coursesStore.fetchAll();
-    console.log("🔍 All courses loaded:", coursesStore.courses?.length);
-
-    // Filter courses that user has purchased
-    if (authStore.user?.courseRegister && coursesStore.courses) {
-      const purchasedCourseIds = authStore.user.courseRegister;
-      console.log("🔍 Purchased course IDs:", purchasedCourseIds);
-
-      const purchasedCourses = coursesStore.courses.filter((course) =>
-        purchasedCourseIds.includes(course._id)
-      );
-
-      console.log("🔍 Purchased courses found:", purchasedCourses.length);
-      console.log("🔍 Purchased courses data:", purchasedCourses);
-      coursesStore.myCourses = purchasedCourses;
-    } else {
-      console.log("⚠️ No courseRegister or courses found");
-      coursesStore.myCourses = [];
-    }
+    await coursesStore.fetchMyCourses()
   } catch (error) {
-    console.error("❌ Error fetching my courses:", error);
   } finally {
     loading.value = false;
   }

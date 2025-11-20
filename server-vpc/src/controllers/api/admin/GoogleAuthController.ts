@@ -24,12 +24,6 @@ export default class GoogleAuthController {
         const requestedRedirectUri = (req.query.redirect_uri as string) || process.env.GOOGLE_REDIRECT_URI || settings.google.redirectUri
         const requestedFrontendUrl = (req.query.frontend_url as string) || process.env.FRONTEND_URL
 
-        console.log('🔍 Google OAuth Configuration:')
-        console.log('  - Client ID:', clientId)
-        console.log('  - Redirect URI (requested):', requestedRedirectUri)
-        console.log('  - Redirect URI (encoded):', encodeURIComponent(requestedRedirectUri))
-        console.log('  - Frontend URL (requested):', requestedFrontendUrl)
-        
         if (!clientId || clientId === 'your_google_client_id_here') {
           return sendError(res, 500, 'Google Client ID not configured')
         }
@@ -51,7 +45,6 @@ export default class GoogleAuthController {
           `scope=openid%20email%20profile&` +
           `state=${state}`
         
-        console.log('🔍 Full Google OAuth URL:', googleAuthUrl)
         
         return res.redirect(googleAuthUrl)
       }
@@ -63,7 +56,6 @@ export default class GoogleAuthController {
 
       // If code is provided, exchange it for access token and get profile
       if (code) {
-        console.log('🔍 Google OAuth code exchange:', { code, redirectUri })
 
         // Exchange code for access token
         const tokenResponse = await fetch('https://oauth2.googleapis.com/token', {
@@ -81,10 +73,8 @@ export default class GoogleAuthController {
         })
         
         const tokenData = await tokenResponse.json()
-        console.log('🔍 Google token response:', tokenData)
         
         if (tokenData.error) {
-          console.error('❌ Google token error:', tokenData.error)
           return sendError(res, 400, tokenData.error_description || 'Failed to exchange code for token')
         }
         
@@ -98,7 +88,6 @@ export default class GoogleAuthController {
         })
         
         googleProfileData = await profileResponse.json()
-        console.log('🔍 Google profile:', googleProfileData)
       }
 
       // If googleProfile is provided directly, use it
@@ -110,7 +99,6 @@ export default class GoogleAuthController {
         return sendError(res, 400, 'Failed to get Google profile')
       }
 
-      console.log('🔐 Google Auth: Processing login for', googleProfileData.email)
 
       // Find or create user in admins collection
       let admin = await MongoDbAdmins.model.findOne({ 
@@ -119,7 +107,6 @@ export default class GoogleAuthController {
 
       if (admin) {
         // Update existing user
-        console.log('✅ Existing user found, updating...')
         
         admin.set({
           fullname: googleProfileData.name,
@@ -134,7 +121,6 @@ export default class GoogleAuthController {
         await admin.save()
       } else {
         // Create new user
-        console.log('✅ New user, creating...')
         
         admin = await MongoDbAdmins.model.create({
           email: googleProfileData.email,
@@ -161,7 +147,6 @@ export default class GoogleAuthController {
         { expiresIn: settings.jwt.ttl }
       )
 
-      console.log('✅ JWT token generated for', googleProfileData.email)
 
       sendSuccess(res, {
         user: {
@@ -179,7 +164,6 @@ export default class GoogleAuthController {
       })
 
     } catch (error: any) {
-      console.error('❌ Google auth error:', error)
       sendError(res, 500, InternalError, error)
     }
   }
@@ -287,7 +271,6 @@ export default class GoogleAuthController {
       return res.redirect(frontendUrl)
       
     } catch (error: any) {
-      console.error('❌ Google callback error:', error)
       const baseFrontend = (process.env.FRONTEND_URL || '').replace(/\/$/, '')
       const frontendUrl = baseFrontend ? `${baseFrontend}/login?google_error=true` : `/login?google_error=true`
       return res.redirect(frontendUrl)
