@@ -15,7 +15,7 @@ export const useTransactionsApi = () => {
      * Get transactions list
      */
     async getTransactions(params?: BaseQueryParams) {
-      return apiClient.get<PaginatedResponse<Transaction>>('/api/a/transactions', {
+      return apiClient.get<PaginatedResponse<Transaction>>("/api/a/transactions", {
         params,
         showError: false,
       });
@@ -32,8 +32,8 @@ export const useTransactionsApi = () => {
      * Create new transaction
      */
     async createTransaction(data: Partial<Transaction>) {
-      return apiClient.post<{ transaction: Transaction }>('/api/a/transactions', data, {
-        errorMessage: 'Không thể tạo giao dịch',
+      return apiClient.post<{ transaction: Transaction }>("/api/a/transactions", data, {
+        errorMessage: "Không thể tạo giao dịch",
       });
     },
 
@@ -42,7 +42,7 @@ export const useTransactionsApi = () => {
      */
     async updateTransaction(id: string, data: Partial<Transaction>) {
       return apiClient.patch<{ transaction: Transaction }>(`/api/a/transactions/${id}`, data, {
-        errorMessage: 'Không thể cập nhật giao dịch',
+        errorMessage: "Không thể cập nhật giao dịch",
       });
     },
 
@@ -51,7 +51,7 @@ export const useTransactionsApi = () => {
      */
     async deleteTransaction(id: string) {
       return apiClient.delete(`/api/a/transactions/${id}`, {
-        errorMessage: 'Không thể xóa giao dịch',
+        errorMessage: "Không thể xóa giao dịch",
       });
     },
 
@@ -59,7 +59,17 @@ export const useTransactionsApi = () => {
      * Get transaction statistics
      */
     async getTransactionStats(params?: { from?: string; to?: string }) {
-      return apiClient.get('/api/a/transactions/statistics', { params });
+      return apiClient.get("/api/a/transactions/statistics", { params });
+    },
+
+    /**
+     * Get transactions list for user
+     */
+    async getUserTransactions(params?: BaseQueryParams) {
+      return apiClient.get<{ data: { transactions: Transaction[] } }>("/api/u/transactions-list", {
+        params,
+        showError: false,
+      });
     },
   };
 };
