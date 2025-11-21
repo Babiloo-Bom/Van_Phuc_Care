@@ -399,10 +399,13 @@ export const useCartStore = defineStore('cart', {
     // Toggle course in cart (legacy compatibility)
     async toggleCourse(course: any) {
       const authStore = useAuthStore()
-      const existingItem = this.items.find(item => item.course._id === course._id)
+      const existingItem = this.items.find(item => 
+        item.course?._id === course._id
+      )
       
-      if (existingItem) {
-        await this.removeFromCart(existingItem._id)
+      if (existingItem && existingItem.course?._id) {
+        // Sử dụng course._id để xóa (không phải cart item _id)
+        await this.removeFromCart(existingItem.course._id)
       } else {
         await this.addToCart({ courseId: course._id, userId: String(authStore?.user?.id) } as AddToCartData)
       }

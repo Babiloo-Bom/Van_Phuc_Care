@@ -1025,31 +1025,52 @@ const addToCart = async () => {
   }
 };
 
-const toggleCourse = () => {
+const toggleCourse = async () => {
   if (!course.value) return;
 
-  cartStore.toggleCourse({
-    _id: course.value._id,
-    title: course.value.title,
-    description: course.value.description,
-    shortDescription: course.value.shortDescription,
-    thumbnail: course.value.thumbnail,
-    price: course.value.price,
-    priceSale: course.value.priceSale,
-    slug: course.value.slug,
-    rate: course.value.rate,
-    reviewsCount: course.value.reviewsCount,
-    videoCount: course.value.videoCount,
-    documentCount: course.value.documentCount,
-    examCount: course.value.examCount,
-  });
+  try {
+    // Nếu đã có trong cart thì xóa, nếu chưa thì thêm
+    if (isInCart.value) {
+      // Tìm cart item để lấy course._id
+      const cartItem = cartStore.items.find(item => 
+        item.course?._id === course.value?._id
+      );
+      
+      if (cartItem && cartItem.course?._id) {
+        // Sử dụng course._id để xóa
+        await cartStore.removeFromCart(cartItem.course._id);
+      }
+    } else {
+      // Thêm vào cart
+      await cartStore.addToCart({
+        courseId: course.value._id,
+        quantity: 1,
+        userId: String(authStore?.user?.id)
+      } as AddToCartData);
+    }
+  } catch (error) {
+    console.error("Error toggling course in cart:", error);
+  }
 };
 
-const redirectCheckout = () => {
-  if (!isInCart.value) {
-    addToCart();
+const redirectCheckout = async () => {
+  if (!course.value) return;
+  
+  try {
+    // Thêm vào cart nếu chưa có
+    if (!isInCart.value) {
+      await cartStore.addToCart({
+        courseId: course.value._id,
+        quantity: 1,
+        userId: String(authStore?.user?.id)
+      } as AddToCartData);
+    }
+    
+    // Đi tới màn cart (không phải checkout)
+    router.push("/cart");
+  } catch (error) {
+    console.error("Error adding to cart:", error);
   }
-  router.push("/checkout");
 };
 
 const goToLearning = () => {

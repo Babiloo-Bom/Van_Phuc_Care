@@ -111,7 +111,7 @@
 
       <p class="course-description">{{ course.shortDescription }}</p>
 
-      <div class="course-actions" v-if="!isPurchased">
+      <div class="course-actions" v-if="!course.isPurchased">
         <button class="btn-buy-now" @click.stop="buyNow">Mua ngay</button>
         <button class="btn-add-cart" @click.stop="addToCart">
           <svg
@@ -140,7 +140,7 @@
         </button>
       </div>
 
-      <div v-else class="flex-grow flex flex-col justify-end w-full gap-4">
+      <div  v-else class="flex-grow flex flex-col justify-end w-full gap-4">
         <div class="course-actions">
           <button class="btn-access" @click.stop="viewDetail">Học ngay</button>
         </div>
@@ -194,6 +194,7 @@ const props = defineProps<{
   isPurchased?: boolean;
   progress?: number;
 }>();
+console.log('isPurchased', props.isPurchased);
 
 const emit = defineEmits<{
   addToCart: [course: Course];

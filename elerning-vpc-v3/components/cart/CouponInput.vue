@@ -1,6 +1,6 @@
 <template>
   <div class="coupon-input">
-    <div v-if="!appliedCoupon">
+    <div>
       <div class="flex gap-3">
         <div class="flex-1">
           <a-input
@@ -35,77 +35,28 @@
         <span class="text-green-700 text-xs sm:text-sm">{{ successMessage }}</span>
       </div>
     </div>
-    
-    <!-- Applied coupon display - Hidden in cart page, shown in summary -->
-    <div v-if="appliedCoupon" class="applied-coupon hidden">
-      <div class="bg-green-50 border border-green-200 rounded-lg p-4">
-        <div class="flex items-center justify-between">
-          <div class="flex items-center gap-3">
-            <div class="w-8 h-8 bg-green-500 rounded-full flex items-center justify-center">
-              <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" class="fill-none stroke-white">
-                <path d="M21 12c0 4.97-4.03 9-9 9s-9-4.03-9-9 4.03-9 9-9c1.3 0 2.52.28 3.6.8" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
-                <path d="M9 12l2 2 4-4" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
-              </svg>
-            </div>
-            <div>
-              <h5 class="font-semibold text-green-800">{{ appliedCoupon.name }}</h5>
-              <p class="text-sm text-green-600">Mã: {{ appliedCoupon.code }}</p>
-            </div>
-          </div>
-          <div class="text-right">
-            <p class="text-lg font-bold text-green-800">
-              -{{ appliedCoupon.discountAmount?.toLocaleString('vi-VN') }}đ
-            </p>
-            <a-button
-              type="text"
-              size="small"
-              class="!text-red-500 hover:!text-red-700 !p-0"
-              @click="removeCoupon"
-            >
-              Xóa
-            </a-button>
-          </div>
-        </div>
-      </div>
-    </div>
   </div>
 </template>
 
 <script setup lang="ts">
-import { ref, computed, nextTick } from 'vue'
+import { ref, nextTick } from 'vue'
 import { useCartStore } from '~/stores/cart'
 import { useAuthStore } from '~/stores/auth'
-
-interface Coupon {
-  code: string
-  name: string
-  type: string
-  value: number
-  discountAmount: number
-}
 
 const cartStore = useCartStore()
 const authStore = useAuthStore()
 
-// Reactive data
 const couponCode = ref('')
 const isLoading = ref(false)
 const errorMessage = ref('')
 const successMessage = ref('')
 
-// Computed
-const appliedCoupon = computed(() => {
-  return cartStore.cart?.coupon || null
-})
-
-// Methods
 const clearMessages = () => {
   errorMessage.value = ''
   successMessage.value = ''
 }
 
 const applyCoupon = async () => {
-  // Clear messages first
   errorMessage.value = ''
   successMessage.value = ''
   
@@ -114,7 +65,7 @@ const applyCoupon = async () => {
     return
   }
   
-  if (!authStore.isLoggedIn || !authStore.user?.id) {
+  if (!authStore.isLoggedIn || !authStore.user?.id || !authStore.token) {
     errorMessage.value = 'Vui lòng đăng nhập để sử dụng mã giảm giá'
     return
   }
@@ -122,79 +73,33 @@ const applyCoupon = async () => {
   isLoading.value = true
   
   try {
-    const response: any = await $fetch('http://localhost:3000/api/a/coupons/apply', {
+    const response: any = await $fetch('http://localhost:3000/api/u/coupons/apply', {
       method: 'POST',
       headers: {
-        'Content-Type': 'application/json'
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${authStore.token}`
       },
       body: {
-        userId: authStore.user.id,
         couponCode: couponCode.value.trim()
       }
     })
     
-    
-    // Check if response is successful (status 200 and has data)
-    if (response && response.data && response.data.message === 'Coupon applied successfully') {
+    if (response && response.data) {
       
-      // Clear any existing error message immediately
       errorMessage.value = ''
-      
-      // Update cart store
       await cartStore.fetchCart()
-      
-      // Use nextTick to ensure error message is cleared before showing success
       await nextTick()
       
       successMessage.value = `Áp dụng mã "${cartStore.cart?.coupon?.name || couponCode.value}" thành công!`
       couponCode.value = ''
-      
-      // Clear success message after 3 seconds
       setTimeout(() => {
         successMessage.value = ''
       }, 3000)
     } else {
-      errorMessage.value = response.message || response.data?.message || 'Có lỗi xảy ra khi áp dụng mã giảm giá'
+      errorMessage.value = response.message || response.data?.message || response?.error || 'Có lỗi xảy ra khi áp dụng mã giảm giá'
     }
   } catch (error: any) {
-    errorMessage.value = error.data?.message || 'Có lỗi xảy ra khi áp dụng mã giảm giá'
-  } finally {
-    isLoading.value = false
-  }
-}
-
-const removeCoupon = async () => {
-  if (!authStore.isLoggedIn || !authStore.user?.id) {
-    return
-  }
-  
-  isLoading.value = true
-  errorMessage.value = ''
-  successMessage.value = ''
-  
-  try {
-    const response: any = await $fetch(`http://localhost:3000/api/a/coupons/cart/${authStore.user.id}`, {
-      method: 'DELETE'
-    })
-    
-    if (response && response.data && response.data.message) {
-      // Clear any existing error message
-      errorMessage.value = ''
-      
-      // Update cart store
-      await cartStore.fetchCart()
-      
-      successMessage.value = 'Đã xóa mã giảm giá'
-      
-      // Clear success message after 3 seconds
-      setTimeout(() => {
-        successMessage.value = ''
-      }, 3000)
-    } else {
-      errorMessage.value = response.message || 'Có lỗi xảy ra khi xóa mã giảm giá'
-    }
-  } catch (error: any) {
-    errorMessage.value = error.data?.message || 'Có lỗi xảy ra khi xóa mã giảm giá'
+    errorMessage.value = error.data?.message || error?.error || 'Có lỗi xảy ra khi áp dụng mã giảm giá'
   } finally {
     isLoading.value = false
   }
