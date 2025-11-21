@@ -1,10 +1,10 @@
 <template>
   <div>
-    <div class="flex justify-between items-center mb-8">
-      <h1 class="text-3xl font-bold text-primary-600">Chỉnh sửa thông tin</h1>
+    <div class="flex justify-between items-center mb-4 md:mb-8">
+      <h1 class="text-3xl font-bold text-[#1A75BB] w-full text-center md:text-left">Chỉnh sửa thông tin</h1>
     </div>
-    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-      <div class="profile-card bg-white rounded-xl p-8 flex flex-col items-center justify-center">
+    <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+      <div class="profile-card bg-white rounded-xl p-8 flex flex-col items-center justify-center md:col-span-1">
         <a-spin v-if="loading" />
         <template v-else>
           <img :src="userInfo?.avatar || '/images/avatar.png'" alt="Avatar" class="w-28 h-28 rounded-full mb-4" />
@@ -12,7 +12,7 @@
           <p class="text-gray-600">{{ userInfo?.email || 'Chưa có email' }}</p>
         </template>
       </div>
-      <div class="profile-form bg-white rounded-xl p-8">
+      <div class="profile-form bg-white rounded-xl p-8 md:col-span-2">
         <a-spin :spinning="loading">
           <a-tabs v-model:activeKey="activeTab" class="mb-6">
             <a-tab-pane key="info" tab="Thông tin tài khoản">
@@ -60,7 +60,7 @@
               <a-form-item label="Tệp đính kèm (Tuỳ chọn)" name="file">
                 <a-upload v-model:file-list="errorForm.fileList" :max-count="1" :show-upload-list="true">
                   <template #default>
-                    <a-button type="link">Thêm tệp hoặc thả tệp vào đây</a-button>
+                    <a-button class="w-full flex items-center justify-start gap-0.5" type="link">Thêm tệp <span class="text-black">hoặc thả tệp vào đây</span></a-button>
                   </template>
                 </a-upload>
               </a-form-item>
@@ -79,7 +79,6 @@
 <script setup lang="ts">
 import { ref, reactive, onMounted } from 'vue'
 import { message } from 'ant-design-vue'
-import { useUserManagement } from '~/composables/useUserManagement'
 import { useAuth } from '~/composables/useAuth'
 import { useApiClient } from '~/composables/useApiClient'
 import { useAuthStore } from '~/stores/auth'
@@ -264,7 +263,7 @@ async function handleErrorSubmit() {
 
 <style scoped>
 .profile-card {
-  min-height: 260px;
+  height: 260px;
   display: flex;
   flex-direction: column;
   align-items: center;

@@ -12,7 +12,7 @@
       <HeaderDesktop />
 
       <!-- Page Content - Scrollable -->
-      <main class="pt-16 lg:pt-[72px] p-4 lg:p-6 xl:p-8">
+      <main class="px-4 lg:px-6 xl:px-8 pt-24">
         <slot />
       </main>
     </div>

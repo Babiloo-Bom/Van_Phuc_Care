@@ -161,12 +161,12 @@ function goDetail(service: any) {
 
 /* Tabs */
 .tabs-wrapper {
-  @apply flex gap-3;
+  @apply flex rounded-full bg-[#EBEBEB];
 }
 
 .tab-button {
   @apply px-6 py-2 rounded-full font-semibold text-sm transition-all;
-  @apply bg-[#E5E5E5] text-[#999999];
+  @apply bg-transparent text-[#999999];
   font-family: 'SVN-Gilroy', sans-serif;
 }
 
@@ -181,13 +181,15 @@ function goDetail(service: any) {
 /* Grid */
 .services-grid {
   @apply grid grid-cols-1 gap-4 mb-8;
-  @apply md:grid-cols-2 md:gap-5;
+  @apply sm:grid-cols-2 sm:gap-5;
+  @apply lg:grid-cols-3 lg:gap-6;
+  @apply xl:grid-cols-4;
 }
 
 /* Card */
 .service-card {
-  @apply bg-white rounded-2xl overflow-hidden cursor-pointer;
-  @apply border border-gray-100 shadow-sm;
+  @apply bg-white rounded-2xl overflow-hidden cursor-pointer p-4;
+  @apply border border-[#D5D5D5] shadow-sm;
   @apply transition-all duration-300;
   @apply hover:shadow-md;
 }
@@ -197,7 +199,7 @@ function goDetail(service: any) {
 }
 
 .card-image {
-  @apply w-full h-full object-cover;
+  @apply w-full h-full object-cover rounded-lg;
 }
 
 .card-image-placeholder {
@@ -206,7 +208,7 @@ function goDetail(service: any) {
 }
 
 .card-content {
-  @apply p-4;
+  @apply mt-4;
 }
 
 .card-title {
@@ -262,7 +264,7 @@ function goDetail(service: any) {
   }
 
   .tab-button {
-    @apply px-5 py-1.5 text-xs;
+    @apply px-5 py-1.5 text-sm font-medium;
   }
 
   .services-grid {
