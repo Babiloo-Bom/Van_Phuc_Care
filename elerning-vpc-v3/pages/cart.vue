@@ -201,6 +201,11 @@
                       </span>
                     </div>
                     
+                    <div class="flex justify-between items-center">
+                      <span class="text-sm sm:text-base text-gray-600">VAT</span>
+                      <span class="text-sm sm:text-base font-semibold text-gray-900">{{ vatPrice.toLocaleString('vi-VN') }} Đ</span>
+                    </div>
+
                     <div class="flex justify-between items-center pt-3 border-t border-gray-200">
                       <span class="text-base sm:text-lg font-bold text-gray-900">Tổng số tiền</span>
                       <span class="text-lg sm:text-xl font-bold text-gray-900">{{ totalPrice.toLocaleString('vi-VN') }} Đ</span>
@@ -293,6 +298,10 @@ const subtotalPrice = computed(() => {
   }, 0)
 })
 
+const vatPrice = computed(() => {
+  return (subtotalPrice.value + discountAmount.value) * 0.08 
+})
+
 const appliedCoupon = computed(() => {
   return cartStore.cart?.coupon || null
 })
@@ -307,7 +316,7 @@ const finalPrice = computed(() => {
 })
 
 // Keep totalPrice for backward compatibility
-const totalPrice = computed(() => finalPrice.value)
+const totalPrice = computed(() => finalPrice.value + vatPrice.value)
 
 // Helper functions to get course counts
 // Similar to how [slug].vue handles it, but for cart items
