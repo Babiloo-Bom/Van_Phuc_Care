@@ -299,7 +299,7 @@ const subtotalPrice = computed(() => {
 })
 
 const vatPrice = computed(() => {
-  return (subtotalPrice.value + discountAmount.value) * 0.08 
+  return (subtotalPrice.value - discountAmount.value) * 0.08 
 })
 
 const appliedCoupon = computed(() => {
