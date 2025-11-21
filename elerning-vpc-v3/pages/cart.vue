@@ -196,8 +196,8 @@
                     
                     <div v-if="appliedCoupon" class="flex justify-between items-center">
                       <span class="text-sm sm:text-base text-gray-600">Mã ưu đãi</span>
-                      <span class="text-sm sm:text-base font-semibold text-green-600">
-                        {{ discountAmount.toLocaleString('vi-VN') }} Đ
+                      <span class="text-sm sm:text-base font-semibold text-gray-900">
+                        {{ discountAmount > 0 ? '-' + discountAmount.toLocaleString('vi-VN') : '0' }} Đ
                       </span>
                     </div>
                     
@@ -298,8 +298,8 @@ const appliedCoupon = computed(() => {
 })
 
 const discountAmount = computed(() => {
-  // Get discount amount from cart summary
-  return cartStore.cart?.discountAmount || 0
+  // Get discount amount from coupon or cart summary
+  return cartStore.cart?.coupon?.discountAmount || cartStore.cart?.discountAmount || 0
 })
 
 const finalPrice = computed(() => {

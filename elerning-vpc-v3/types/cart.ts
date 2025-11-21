@@ -28,16 +28,17 @@ export interface CartItem {
 }
 
 export interface CartCoupon {
-  _id: string
+  _id?: string
   code: string
   name: string
   type: 'percentage' | 'fixed'
   value: number
+  discountAmount?: number
   minOrderAmount?: number
   maxDiscountAmount?: number
-  isActive: boolean
-  validFrom: string
-  validTo: string
+  isActive?: boolean
+  validFrom?: string
+  validTo?: string
 }
 
 export interface Cart {
