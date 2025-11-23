@@ -18,11 +18,11 @@ export const useHealthBooksApi = () => {
 
   return {
     /**
-     * Get health books list with pagination
-     * GET /api/a/health-book/all
+     * Get user's health books list
+     * GET /api/u/healthbooks
      */
     async getHealthBooks(params?: HealthBookQueryParams) {
-      return apiClient.get<HealthBooksListResponse>('/api/a/health-book/all', {
+      return apiClient.get<HealthBooksListResponse>('/api/u/healthbooks', {
         params,
         showError: false,
       });
@@ -30,11 +30,11 @@ export const useHealthBooksApi = () => {
 
     /**
      * Get health book by ID
-     * GET /api/a/health-book/:id
+     * GET /api/u/healthbooks/:id
      */
-    async getHealthBook(id: string, date?: string) {
-      return apiClient.get<HealthBookResponse>(`/api/a/health-book/${id}`, {
-        params: date ? { date } : undefined,
+    async getHealthBook(id: string) {
+      return apiClient.get<HealthBookResponse>(`/api/u/healthbooks/${id}`, {
+        showError: false,
       });
     },
 
@@ -49,12 +49,27 @@ export const useHealthBooksApi = () => {
     },
 
     /**
-     * Get current user's health book (show endpoint)
-     * GET /api/a/health-book/show
+     * Get current user's health book
+     * GET /api/u/healthbooks/me
      */
-    async getCurrentHealthBook(date?: string) {
-      return apiClient.get<HealthBookResponse>('/api/a/health-book/show', {
-        params: date ? { date } : undefined,
+    async getCurrentHealthBook() {
+      return apiClient.get<HealthBookResponse>('/api/u/healthbooks/me', {
+        showError: false,
+      });
+    },
+
+    /**
+     * Create new health book for current user
+     * POST /api/u/healthbooks
+     */
+    async createHealthBook(data: { 
+      name: string;
+      dob: string;
+      gender: string;
+      avatar?: string;
+    }) {
+      return apiClient.post<HealthBookResponse>('/api/u/healthbooks', data, {
+        errorMessage: 'Không thể tạo hồ sơ sức khỏe',
       });
     },
 
@@ -69,10 +84,10 @@ export const useHealthBooksApi = () => {
     },
 
     /**
-     * Create new health book
+     * Create new health book (admin endpoint)
      * POST /api/a/health-book
      */
-    async createHealthBook(data: Partial<HealthBook> & { 
+    async createHealthBookAdmin(data: Partial<HealthBook> & { 
       customerEmail: string
       recordedAt: string 
     }) {

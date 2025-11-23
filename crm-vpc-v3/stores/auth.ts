@@ -84,13 +84,39 @@ export const useAuthStore = defineStore('auth', {
         this.isAuthenticated = true;
         this.rememberAccount = remindAccount;
 
-        // Create basic user object (will be enhanced later if needed)
-        this.user = {
-          id: response.id || 'temp-id',
-          email: username,
-          username: username,
-          fullname: response.fullname || username,
-        };
+        // Fetch full user profile data from API
+        try {
+          const profileResponse = (await authApi.getUserProfile()) as any;
+          console.log('📡 User profile response:', profileResponse);
+          
+          const userData = profileResponse?.data?.user || profileResponse?.data?.data || profileResponse?.data;
+          
+          this.user = {
+            id: userData?._id || userData?.id || 'temp-id',
+            email: userData?.email || username,
+            username: userData?.username || username,
+            fullname: userData?.fullname || userData?.name || username,
+            name: userData?.name || userData?.fullname,
+            phone: userData?.phoneNumber || userData?.phone,
+            avatar: userData?.avatar,
+            role: userData?.role || userData?.type,
+            verified: userData?.verified,
+            status: userData?.status,
+            courseRegister: userData?.courseRegister || [],
+            courseCompleted: userData?.courseCompleted || [],
+          };
+          
+          console.log('✅ User profile loaded:', this.user);
+        } catch (profileError) {
+          console.error('⚠️ Failed to fetch user profile, using basic data:', profileError);
+          // Fallback to basic user data if profile fetch fails
+          this.user = {
+            id: response.id || response._id || 'temp-id',
+            email: username,
+            username: username,
+            fullname: response.fullname || username,
+          };
+        }
 
         // Save to localStorage
         if (process.client) {

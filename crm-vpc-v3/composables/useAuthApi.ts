@@ -491,10 +491,10 @@ export const useAuthApi = () => {
           '🔍 JWT Token for getUserProfile:',
           token ? token.substring(0, 20) + '...' : 'null',
         );
-        console.log('🔍 API URL:', `${apiBase}/admins/profile`);
+        console.log('🔍 API URL:', `${apiBase}/users/profile`);
 
         return await withRetry(() =>
-          fetchWithTimeout(`${apiBase}/admins/profile`, {
+          fetchWithTimeout(`${apiBase}/users/profile`, {
             method: 'GET',
             headers: {
               Authorization: `Bearer ${token}`,

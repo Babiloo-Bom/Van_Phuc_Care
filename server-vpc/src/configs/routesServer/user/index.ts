@@ -14,6 +14,7 @@ import TransactionListRouter from "./TransactionList";
 import ServicesRouter from './Services';
 import ProcessingRouter from './Processings';
 import GoogleAuthRouter from './GoogleAuth';
+import HealthBooksRouter from './HealthBooks';
 
 const router = Router();
 
@@ -32,5 +33,6 @@ router.use("/service-registration", ServiceRegistrationRouter);
 router.use("/transactions-list", TransactionListRouter);
 router.use('/progress', ProcessingRouter);
 router.use('/auth/google', GoogleAuthRouter);
+router.use('/healthbooks', HealthBooksRouter);
 
 export default router;

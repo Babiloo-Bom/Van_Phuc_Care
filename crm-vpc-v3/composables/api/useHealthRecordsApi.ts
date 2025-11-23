@@ -1,28 +1,64 @@
-import { useApiClient } from '~/composables/useApiClient';
+import { useApiClient } from "~/composables/useApiClient";
 
 export const useHealthRecordsApi = () => {
   const apiClient = useApiClient();
 
   return {
     /**
-     * Create new health record
-     * POST /api/a/health-records
+     * Get health records for a specific healthbook
+     * GET /api/u/healthbooks/:id/records
      */
-    async createHealthRecord(data) {
-      return apiClient.post('/api/a/health-records', data, {
-        errorMessage: 'Không thể tạo phiếu sức khỏe',
+    async getHealthRecords(
+      healthBookId: string,
+      params?: {
+        startDate?: string;
+        endDate?: string;
+        page?: number;
+        limit?: number;
+      },
+    ) {
+      return apiClient.get(`/api/u/healthbooks/${healthBookId}/records`, {
+        params,
+        showError: false,
       });
     },
 
     /**
-     * Get health records list
-     * GET /api/a/health-records
+     * Get health record by specific date
+     * GET /api/u/healthbooks/:id/records?date=YYYY-MM-DD
      */
-    async getHealthRecords(params) {
-      return apiClient.get('/api/a/health-records', {
-        params,
+    async getHealthRecordByDate(healthBookId: string, date: string) {
+      return apiClient.get(`/api/u/healthbooks/${healthBookId}/records`, {
+        params: { date },
         showError: false,
       });
+    },
+
+    /**
+     * Create or update health record (upsert by date)
+     * POST /api/u/healthbooks/:id/records
+     */
+    async upsertHealthRecord(healthBookId: string, data: any) {
+      return apiClient.post(
+        `/api/u/healthbooks/${healthBookId}/records`,
+        data,
+        {
+          errorMessage: "Không thể lưu dữ liệu sức khỏe",
+        }
+      );
+    },
+
+    /**
+     * Delete health record
+     * DELETE /api/u/healthbooks/:id/records/:recordId
+     */
+    async deleteHealthRecord(healthBookId: string, recordId: string) {
+      return apiClient.delete(
+        `/api/u/healthbooks/${healthBookId}/records/${recordId}`,
+        {
+          errorMessage: "Không thể xóa bản ghi",
+        }
+      );
     },
   };
 };

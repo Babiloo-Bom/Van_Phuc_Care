@@ -132,13 +132,13 @@ async function fetchUserInfo() {
     
     console.log('📝 User data extracted:', u)
     
-    // API returns: fullname, phoneNumber, email, address
+    // API returns: fullname, phoneNumber, email, fullAddress
     // Use Object.assign to ensure reactivity
     Object.assign(infoForm, {
       name: u.name || u.fullname || '',
       phone: u.phone || u.phoneNumber || '',
       email: u.email || '',
-      address: u.address || ''
+      address: u.fullAddress || ''
     })
     
     console.log('📋 Form data filled:', { ...infoForm })
@@ -170,7 +170,7 @@ async function handleInfoSubmit() {
       fullname: infoForm.name,
       phoneNumber: infoForm.phone,
       email: infoForm.email,
-      address: infoForm.address,
+      fullAddress: infoForm.address,
     }, {
       showError: false, // Disable automatic error toast
     })
@@ -207,9 +207,10 @@ async function handlePasswordSubmit() {
   }
   
   try {
-    const response = await apiClient.post('/api/a/passwords/reset', {
-      currentPassword: passwordForm.currentPassword,
-      password: passwordForm.newPassword,
+    const response = await apiClient.patch('/api/u/sessions/change_password', {
+      oldPassword: passwordForm.currentPassword,
+      newPassword: passwordForm.newPassword,
+      confirmPassword: passwordForm.confirmPassword,
     }, {
       showError: false, // Disable automatic error toast
     })
@@ -236,13 +237,14 @@ async function handleErrorSubmit() {
   }
   
   try {
-    const formData = new FormData()
-    formData.append('content', errorForm.note)
-    if (errorForm.fileList.length > 0 && errorForm.fileList[0]?.originFileObj) {
-      formData.append('file', errorForm.fileList[0].originFileObj as File)
+    // Use user feedback API (POST /api/u/feedbacks)
+    const feedbackData: any = {
+      content: errorForm.note,
+      fullname: userInfo.value?.fullname || userInfo.value?.name || '',
+      email: userInfo.value?.email || '',
+      phoneNumber: userInfo.value?.phoneNumber || userInfo.value?.phone || '',
     }
-    
-    const response = await apiClient.post('/api/a/feedbacks', formData, {
+    const response = await apiClient.post('/api/u/feedbacks', feedbackData, {
       showError: false, // Disable automatic error toast
     })
     

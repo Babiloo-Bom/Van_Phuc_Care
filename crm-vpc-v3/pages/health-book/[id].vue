@@ -245,12 +245,15 @@ definePageMeta({
 const route = useRoute()
 const authStore = useAuthStore()
 
-// Get customerId from authenticated user
-const customerId = computed(() => authStore.user?.id?.toString() || '')
+// Get healthBookId from route, default to 'me' since 1 user = 1 healthbook
+const healthBookId = computed(() => (route.params.id as string) || 'me')
+
+// Get customerId from healthBook (needed for child components)
+const customerId = computed(() => healthBook.value?.customerId || '')
 
 // API composables
-const { getHealthRecords } = useHealthRecordsApi()
-const { getCurrentHealthBook } = useHealthBooksApi()
+const { getHealthRecordByDate, getHealthRecords } = useHealthRecordsApi()
+const { getHealthBook, getHealthBooks } = useHealthBooksApi()
 
 // State
 const healthBook = ref<HealthBook | null>(null)
@@ -279,9 +282,13 @@ const userGender = computed(() => profileInfo.value?.gender || healthBook.value?
 // Fetch profile info from health book
 const fetchProfileInfo = async () => {
   try {
-    const response = await getCurrentHealthBook()
-    if (response?.healthBook) {
-      const book = response.healthBook
+    // Use 'me' endpoint for current user's healthbook
+    const bookId = healthBookId.value
+    
+    const response = await getHealthBook(bookId)
+    const book: any = response?.data?.data || response?.data
+    
+    if (book) {
       profileInfo.value = {
         name: book.name || '',
         dob: book.dob || '',
@@ -320,43 +327,31 @@ const fetchHealthBook = async (date?: string) => {
     loading.value = true
     error.value = ''
 
-    if (!customerId.value) {
-      error.value = 'Không tìm thấy thông tin người dùng'
-      return
-    }
-
     // Format date to YYYY-MM-DD for API
     const selectedDateObj = date ? dayjs(date, 'DD/MM/YYYY') : dayjs()
     const formattedDate = selectedDateObj.format('YYYY-MM-DD')
 
-    // Get health records by customerId and date
-    const response = await getHealthRecords({
-      customerId: customerId.value,
-      date: formattedDate
-    })
+    // Get health record by date (healthBookId defaults to 'me')
+    const response = await getHealthRecordByDate(healthBookId.value, formattedDate)
 
-    // Response format: { status: true, data: { message: "", data: { records: [...] } } }
-    const records = response?.data?.data?.records || response?.data?.records || []
+    // Response format: { status: true, data: { data: record } }
+    const record = response?.data?.data || response?.data
     
     console.log('=== DEBUG HEALTH BOOK ===')
     console.log('Response:', response)
-    console.log('Records:', records)
-    console.log('Records is array:', Array.isArray(records))
-    console.log('Records length:', records?.length)
+    console.log('Record:', record)
     
-    if (Array.isArray(records) && records.length > 0) {
-      // Get the most recent record for the date
-      const record = records[0]
+    if (record && record._id) {
       console.log('Mapping record to healthBook:', record)
       
       // Map health record to health book format for display
       healthBook.value = {
         _id: record._id,
         customerId: record.customerId,
-        name: authStore.user?.fullname || authStore.user?.name || 'Chưa cập nhật',
-        dob: '', // Will be filled from user profile if available
-        gender: 'male',
-        avatar: authStore.user?.avatar || '',
+        name: profileInfo.value?.name || authStore.user?.fullname || authStore.user?.name || 'Chưa cập nhật',
+        dob: profileInfo.value?.dob || '',
+        gender: profileInfo.value?.gender || 'male',
+        avatar: profileInfo.value?.avatar || authStore.user?.avatar || '',
         weight: record.weight?.toString() || '',
         height: record.height?.toString() || '',
         temperature: record.temperature?.toString() || '',

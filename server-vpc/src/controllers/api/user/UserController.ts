@@ -35,6 +35,7 @@ class UserController {
         status: user.status,
         type: user.type,
         address: user.address,
+        fullAddress: user.fullAddress,
         courseRegister: user.courseRegister || [],
         courseCompleted: user.courseCompleted || [],
         createdAt: user.createdAt,
@@ -50,7 +51,7 @@ class UserController {
   public async updateProfile(req: Request, res: Response) {
     try {
       const currentUser = (req as any).currentUser;
-      const { fullname, phoneNumber, email, address, avatar, gender } = req.body;
+      const { fullname, phoneNumber, email, address, fullAddress, avatar, gender } = req.body;
 
       if (!currentUser) {
         return sendError(res, 404, 'Không tìm thấy người dùng');
@@ -68,6 +69,7 @@ class UserController {
       if (phoneNumber !== undefined) user.phoneNumber = phoneNumber;
       if (email !== undefined) user.email = email;
       if (address !== undefined) user.address = address;
+      if (fullAddress !== undefined) user.fullAddress = fullAddress;
       if (avatar !== undefined) user.avatar = avatar;
       if (gender !== undefined) user.gender = gender;
 
@@ -84,6 +86,7 @@ class UserController {
         status: user.status,
         type: user.type,
         address: user.address,
+        fullAddress: user.fullAddress,
         courseRegister: user.courseRegister || [],
         courseCompleted: user.courseCompleted || [],
         createdAt: user.createdAt,

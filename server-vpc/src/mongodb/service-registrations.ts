@@ -19,6 +19,21 @@ class ServiceRegistrationModels {
         type: String,
         required: true,
       },
+      customerName: {
+        type: String,
+      },
+      customerPhone: {
+        type: String,
+      },
+      customerEmail: {
+        type: String,
+      },
+      address: {
+        type: String,
+      },
+      notes: {
+        type: String,
+      },
       status: {
         type: String,
         default: 'registered',

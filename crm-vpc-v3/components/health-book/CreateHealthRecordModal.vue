@@ -547,6 +547,10 @@ const resetForm = () => {
 
 <style>
 /* Global modal styles */
+.create-health-record-modal.ant-modal {
+  top: 50px;
+}
+
 .create-health-record-modal .ant-modal-content {
   border-radius: 12px;
   padding: 24px;

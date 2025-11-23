@@ -1,0 +1,317 @@
+<template>
+  <a-modal
+    :visible="visible"
+    :title="null"
+    :footer="null"
+    :closable="false"
+    :width="800"
+    :bodyStyle="{ padding: 0 }"
+    @cancel="handleClose"
+    class="create-healthbook-modal"
+  >
+    <div class="modal-content">
+      <!-- Close Button -->
+      <button
+        @click="handleClose"
+        class="absolute top-4 right-4 text-gray-400 hover:text-gray-600 transition-colors z-10"
+      >
+        <CloseOutlined class="text-2xl" />
+      </button>
+
+      <!-- Modal Header -->
+      <div class="text-center pt-8 pb-6 px-6">
+        <h2 class="text-2xl lg:text-3xl font-bold text-blue-600 uppercase">
+          Tạo hồ sơ của bé
+        </h2>
+      </div>
+
+      <!-- Modal Body -->
+      <div class="px-6 lg:px-12 pb-8">
+        <a-form
+          :model="formState"
+          :rules="rules"
+          layout="vertical"
+          @finish="handleSubmit"
+          ref="formRef"
+        >
+          <!-- Họ và tên bé -->
+          <a-form-item
+            label="Họ và tên bé"
+            name="name"
+            :rules="[{ required: true, message: 'Vui lòng nhập họ và tên bé' }]"
+          >
+            <a-input
+              v-model:value="formState.name"
+              placeholder="Tèo"
+              size="large"
+              class="rounded-lg"
+            />
+          </a-form-item>
+
+          <!-- Ngày sinh & Giới tính -->
+          <div class="grid grid-cols-1 lg:grid-cols-2 gap-4">
+            <!-- Ngày sinh -->
+            <a-form-item
+              label="Ngày sinh"
+              name="dob"
+              :rules="[{ required: true, message: 'Vui lòng chọn ngày sinh' }]"
+            >
+              <a-date-picker
+                v-model:value="formState.dob"
+                placeholder="Tèo"
+                format="DD/MM/YYYY"
+                :locale="locale"
+                size="large"
+                class="w-full rounded-lg"
+              />
+            </a-form-item>
+
+            <!-- Giới tính -->
+            <a-form-item
+              label="Giới tính"
+              name="gender"
+              :rules="[{ required: true, message: 'Vui lòng chọn giới tính' }]"
+            >
+              <a-select
+                v-model:value="formState.gender"
+                placeholder="Chọn giới tính"
+                size="large"
+                class="w-full"
+              >
+                <a-select-option value="male">Nam</a-select-option>
+                <a-select-option value="female">Nữ</a-select-option>
+              </a-select>
+            </a-form-item>
+          </div>
+
+          <!-- Ảnh đại diện -->
+          <a-form-item label="Ảnh đại diện" name="avatar">
+            <div
+              class="border-2 border-dashed border-gray-300 rounded-lg p-6 text-center hover:border-blue-400 transition-colors cursor-pointer"
+              @click="handleUploadClick"
+            >
+              <div v-if="!avatarPreview">
+                <LinkOutlined class="text-3xl text-blue-500 mb-2" />
+                <p class="text-blue-500 font-medium">Thêm hình ảnh đại diện</p>
+              </div>
+              <div v-else class="relative inline-block">
+                <img
+                  :src="avatarPreview"
+                  alt="Avatar preview"
+                  class="w-32 h-32 object-cover rounded-full mx-auto"
+                />
+                <button
+                  @click.stop="handleRemoveAvatar"
+                  class="absolute -top-2 -right-2 bg-red-500 text-white rounded-full w-6 h-6 flex items-center justify-center hover:bg-red-600"
+                >
+                  <CloseOutlined class="text-xs" />
+                </button>
+              </div>
+              <input
+                type="file"
+                ref="fileInput"
+                @change="handleFileChange"
+                accept="image/*"
+                class="hidden"
+              />
+            </div>
+          </a-form-item>
+
+          <!-- Submit Button -->
+          <a-form-item class="mb-0 mt-6">
+            <a-button
+              type="primary"
+              html-type="submit"
+              size="large"
+              block
+              :loading="loading"
+              class="h-12 text-base font-medium rounded-lg"
+            >
+              Khởi tạo hồ sơ
+            </a-button>
+          </a-form-item>
+        </a-form>
+      </div>
+    </div>
+  </a-modal>
+</template>
+
+<script setup lang="ts">
+import { ref, reactive, watch } from "vue";
+import { CloseOutlined, LinkOutlined } from "@ant-design/icons-vue";
+import type { FormInstance } from "ant-design-vue";
+import dayjs, { Dayjs } from "dayjs";
+import locale from "ant-design-vue/es/date-picker/locale/vi_VN";
+import { message } from "ant-design-vue";
+import { useHealthBooksApi } from "~/composables/api/useHealthBooksApi";
+
+interface Props {
+  visible: boolean;
+}
+
+interface Emits {
+  (e: "update:visible", value: boolean): void;
+  (e: "success", data: any): void;
+}
+
+const props = defineProps<Props>();
+const emit = defineEmits<Emits>();
+
+// Form state
+const formRef = ref<FormInstance>();
+const loading = ref(false);
+const fileInput = ref<HTMLInputElement>();
+const avatarPreview = ref<string>("");
+const avatarFile = ref<File | null>(null);
+
+const formState = reactive({
+  name: "",
+  dob: null as Dayjs | null,
+  gender: undefined as string | undefined,
+  avatar: "",
+});
+
+const rules = {
+  name: [{ required: true, message: "Vui lòng nhập họ và tên bé" }],
+  dob: [{ required: true, message: "Vui lòng chọn ngày sinh" }],
+  gender: [{ required: true, message: "Vui lòng chọn giới tính" }],
+};
+
+// Handle file upload
+const handleUploadClick = () => {
+  fileInput.value?.click();
+};
+
+const handleFileChange = (event: Event) => {
+  const target = event.target as HTMLInputElement;
+  const file = target.files?.[0];
+
+  if (file) {
+    // Validate file type
+    if (!file.type.startsWith("image/")) {
+      message.error("Vui lòng chọn file ảnh");
+      return;
+    }
+
+    // Validate file size (max 5MB)
+    if (file.size > 5 * 1024 * 1024) {
+      message.error("Kích thước ảnh không được vượt quá 5MB");
+      return;
+    }
+
+    avatarFile.value = file;
+
+    // Create preview
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      avatarPreview.value = e.target?.result as string;
+    };
+    reader.readAsDataURL(file);
+  }
+};
+
+const handleRemoveAvatar = () => {
+  avatarPreview.value = "";
+  avatarFile.value = null;
+  formState.avatar = "";
+  if (fileInput.value) {
+    fileInput.value.value = "";
+  }
+};
+
+// Handle submit
+const handleSubmit = async () => {
+  try {
+    loading.value = true;
+
+    const { createHealthBook } = useHealthBooksApi();
+
+    const healthbookData = {
+      name: formState.name,
+      dob: formState.dob?.format("YYYY-MM-DD") || "",
+      gender: formState.gender || "",
+      avatar: avatarPreview.value,
+    };
+
+    const response = await createHealthBook(healthbookData);
+
+    if (response?.data?.data) {
+      message.success("Tạo hồ sơ thành công!");
+      emit("success", response.data.data);
+      handleClose();
+    }
+    // Error is already handled by API client, no need to show duplicate message
+  } catch (error: any) {
+    console.error("Error creating healthbook:", error);
+    // Don't show error message here - API client already shows it
+  } finally {
+    loading.value = false;
+  }
+};
+
+// Handle close
+const handleClose = () => {
+  emit("update:visible", false);
+};
+
+// Reset form when modal closes
+watch(
+  () => props.visible,
+  (newVal) => {
+    if (!newVal) {
+      formRef.value?.resetFields();
+      handleRemoveAvatar();
+    } else {
+      // Reset file input when modal opens to ensure change event fires
+      if (fileInput.value) {
+        fileInput.value.value = "";
+      }
+    }
+  }
+);
+</script>
+
+<style>
+/* Global styles for teleported modal */
+.create-healthbook-modal.ant-modal {
+  top: 50px;
+}
+
+.create-healthbook-modal .ant-modal-content {
+  border-radius: 16px;
+  overflow: hidden;
+}
+
+.create-healthbook-modal .ant-form-item-label > label {
+  font-weight: 500;
+  color: #374151;
+}
+
+.create-healthbook-modal .ant-input,
+.create-healthbook-modal .ant-picker,
+.create-healthbook-modal .ant-select-selector {
+  border-radius: 8px;
+}
+
+.create-healthbook-modal .ant-btn-primary {
+  background-color: #1890ff;
+  border-color: #1890ff;
+}
+
+.create-healthbook-modal .ant-btn-primary:hover {
+  background-color: #40a9ff;
+  border-color: #40a9ff;
+}
+
+/* Mobile responsive */
+@media (max-width: 768px) {
+  .create-healthbook-modal.ant-modal {
+    max-width: calc(100vw - 32px);
+    margin: 16px auto;
+  }
+
+  .create-healthbook-modal .ant-modal-content {
+    border-radius: 12px;
+  }
+}
+</style>

@@ -2,6 +2,8 @@ import mongoose from 'mongoose';
 import type { Document, Model } from 'mongoose';
 
 export interface IHealthRecord extends Document {
+  userId: string;
+  healthBookId: mongoose.Types.ObjectId | string;
   customerId: mongoose.Types.ObjectId | string;
   date: Date;
   temperature?: number;
@@ -27,6 +29,17 @@ export interface IHealthRecord extends Document {
 }
 
 const HealthRecordSchema = new mongoose.Schema<IHealthRecord>({
+  userId: {
+    type: String,
+    required: true,
+    index: true,
+  },
+  healthBookId: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'health-books',
+    required: true,
+    index: true,
+  },
   customerId: {
     type: mongoose.Schema.Types.ObjectId,
     ref: 'customers',
@@ -63,6 +76,10 @@ const HealthRecordSchema = new mongoose.Schema<IHealthRecord>({
   timestamps: true,
   collection: 'health_records',
 });
+
+// Ensure one record per customer per day
+HealthRecordSchema.index({ customerId: 1, date: 1 }, { unique: true });
+HealthRecordSchema.index({ healthBookId: 1, date: 1 });
 
 const HealthRecordModel: Model<IHealthRecord> = mongoose.model<IHealthRecord>('health_records', HealthRecordSchema);
 
