@@ -5,6 +5,7 @@
 
 export const useQuizApi = () => {
   const apiBase = 'http://localhost:3000/api/a'
+  const apiBaseUser = 'http://localhost:3000/api/u'
 
   /**
    * Get quiz detail by id
@@ -21,15 +22,17 @@ export const useQuizApi = () => {
   /**
    * Submit quiz answers
    */
-  const submitQuiz = async (courseId: string, chapterId: string, lessonId: string, answers: any) => {
+  const submitQuiz = async (quizId: string, courseId: string, chapterId: string, lessonId: string, answers: any, timeSpent: number) => {
     try {
-      const response = await $fetch(`${apiBase}/quizzes/submit`, {
+      const response = await $fetch(`${apiBaseUser}/quizzes/submit`, {
         method: 'POST',
         body: {
+          quizId,
           courseId,
           chapterId,
           lessonId,
-          answers
+          answers,
+          timeSpent
         }
       })
       return response

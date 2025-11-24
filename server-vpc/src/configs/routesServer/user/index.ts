@@ -12,6 +12,7 @@ import TicketRouter from './Tickets';
 import ProcessingRouter from './Processings';
 import GoogleAuthRouter from './GoogleAuth';
 import CouponsRouter from './Coupons';
+import QuizzesRouter from './Quizzes';
 
 const router = Router();
 
@@ -28,4 +29,6 @@ router.use('/tickets', TicketRouter);
 router.use('/progress', ProcessingRouter);
 router.use('/auth/google', GoogleAuthRouter);
 router.use('/coupons', CouponsRouter);
+router.use('/quizzes', QuizzesRouter); // Quiz routes
+
 export default router;

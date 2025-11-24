@@ -1,7 +1,7 @@
 <template>
   <div class="my-learning-detail">
     <!-- Header Bar (màu xanh) -->
-    <div class="bg-[#1A75BB] py-3 md:py-4 lg:py-6">
+    <div class="my-learning-detail-head">
       <div class="container mx-auto px-4">
         <div
           class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 sm:gap-4"
@@ -15,7 +15,9 @@
               <span>Trắc nghiệm</span>
             </div>
             <h2
-              class="md:text-white text-[#4D4D4D] text-sm md:text-xl md:font-semibold truncate mb-0"
+              :class="['md:text-white text-[#4D4D4D] text-sm md:text-xl md:font-semibold truncate mb-0', {'text-left text-xl text-[#1A75BB]': !isQuiz }, {
+                'hidden md:block': course?.progress?.isCompleted === true 
+              }]"
             >
               {{ currentChapter?.title || "Chưa có chủ đề" }}
             </h2>
@@ -41,8 +43,7 @@
     <!-- Main Content Area -->
     <div class="container mx-auto px-4 py-4 md:py-6">
       <div class="flex flex-col lg:flex-row gap-4 lg:gap-6">
-        <!-- Left: Main Content -->
-        <div class="flex-1 lg:w-[65%] bg-white rounded-lg shadow-lg p-4 md:p-8">
+        <div v-if="!isQuiz && !course?.progress?.isCompleted" class="flex-1 lg:w-[65%] bg-white rounded-lg shadow-lg p-4 md:p-8">
           <!-- Lesson Title -->
           <h1
             class="text-xl md:text-2xl lg:text-3xl font-bold text-gray-800 mb-4"
@@ -261,7 +262,7 @@
 
                 <!-- NavCourse Component -->
                 <div class="bg-white rounded-lg shadow-sm">
-                  <NavCourse :chapters="(course?.chapters || []) as any" />
+                  <NavCourse :chapters="((course?.chapters || []) as any)" />
                 </div>
               </a-tab-pane>
 
@@ -277,10 +278,25 @@
             </a-tabs>
           </div>
         </div>
+        <div v-if="isQuiz && !course?.progress?.isCompleted" class="flex-1">
+          <QuizzesComponent
+            v-if="currentLesson?._id"
+            :course-id="course?._id || ''"
+            :chapter-id="currentChapter?._id || ''"
+            :lesson-id="currentLesson?._id || ''"
+            :quiz-complete="currentLesson?.isCompleted || false"
+            @completed="(quizResult) => handleFinishQuiz(quizResult)"
+          />
+        </div>
+        <div v-if="course?.progress?.isCompleted === true" class="flex-1">
+          <CourseCertificateComponent
+            :course="course"
+          />
+        </div>
 
         <!-- Right: Sidebar Navigation (Desktop only) -->
         <div
-          class="hidden lg:block lg:w-[35%] lg:sticky lg:top-6 lg:self-start"
+          :class="['hidden lg:block lg:w-[35%] lg:sticky lg:top-6 lg:self-start', isQuiz && !currentLesson?.isCompleted ? '!hidden' : '']"
         >
           <NavCourse :chapters="((course?.chapters || []) as any)" />
         </div>
@@ -296,6 +312,7 @@ import { useCoursesStore } from "~/stores/courses";
 import NavCourse from "~/components/courses/NavCourse.vue";
 import DocumentsComponent from "~/components/lessons/DocumentsComponent.vue";
 import QuizzesComponent from "~/components/lessons/QuizzesComponent.vue";
+import CourseCertificateComponent from "~/components/lessons/CourseCertificateComponent.vue";
 import ProgressBar from "~/components/common/ProgressBar.vue";
 import type { Course, Chapter, Lesson } from "~/stores/courses";
 import { useProgressTracking } from "~/composables/useProgressTracking";
@@ -320,7 +337,7 @@ const markingCompleted = ref(false);
 // Computed
 const course = computed<Course | null>(() => coursesStore.course);
 const slug = computed(() => route.params.slug as string);
-
+console.log("Course in my-learning/[slug]:", course);
 const currentChapter = computed<Chapter | null>(() => {
   if (!course.value?.chapters || course.value.chapters.length === 0)
     return null;
@@ -341,6 +358,8 @@ const currentLesson = computed<Lesson | null>(() => {
     currentChapter.value.lessons[0];
   return lesson || null;
 });
+console.log("Current Lesson:", currentLesson.value);
+console.log("Current Lesson:currentLessonIndex.value", currentLessonIndex.value);
 
 // Get video URL from lesson (could be from videoUrl or videos array)
 const currentVideoUrl = computed(() => {
@@ -547,6 +566,15 @@ const fetchCourseDetail = async () => {
   }
 };
 
+const handleFinishQuiz = async (quizResult: any) => {
+    const chapterParam = route.query.chapter;
+    const lessonParam = route.query.lesson;
+    navigateTo(
+      `/my-learning/${slug.value}?chapter=${chapterParam || 0}&lesson=${lessonParam || 0}`
+    );
+    fetchCourseDetail();
+  }
+
 watch(
   currentLesson,
   async (lesson) => {
@@ -623,7 +651,16 @@ onMounted(async () => {
   min-height: 100vh;
   background-color: #f4f7f9;
 }
-
+.my-learning-detail-head {
+  background: #1a75bb;
+  padding: 16px 0px ;
+}
+@media screen and (max-width: 768px) {
+  .my-learning-detail-head {
+    padding: 12px 0px 12px 0;
+    background: transparent;
+  }
+}
 /* Custom styles for video component */
 :deep(.video-container) {
   border-radius: 0.5rem;

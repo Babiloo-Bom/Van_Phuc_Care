@@ -1,5 +1,5 @@
 <template>
-  <header class="bg-prim-100 text-white shadow-lg">
+  <header :class="['bg-prim-100 text-white shadow-lg', props.className]">
     <div class="container mx-auto px-4">
       <div class="flex items-center justify-between h-16">
         <!-- Logo -->
@@ -298,9 +298,13 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, watch } from "vue";
+import { ref, computed, watch, defineProps } from "vue";
 import { useCartStore } from "~/stores/cart";
 import { useAuthStore } from "~/stores/auth";
+
+const props = defineProps<{
+  className: string
+}>()
 
 const cartStore = useCartStore();
 const authStore = useAuthStore();

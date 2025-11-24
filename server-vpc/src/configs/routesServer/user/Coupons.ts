@@ -10,6 +10,9 @@ router.post('/validate', userPassport.authenticate('jwt', { session: false }), U
 // Apply coupon to cart (requires authentication)
 router.post('/apply', userPassport.authenticate('jwt', { session: false }), UserCouponController.applyCoupon);
 
+// Get list of user's coupons (requires authentication)
+router.get('/list', userPassport.authenticate('jwt', { session: false }), UserCouponController.getUserCoupons);
+
 // Remove coupon from cart (requires authentication)
 router.delete('/cart', userPassport.authenticate('jwt', { session: false }), UserCouponController.removeCoupon);
 

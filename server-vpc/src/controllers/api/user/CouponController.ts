@@ -200,6 +200,26 @@ class UserCouponController {
       sendError(res, 500, error.message, error as Error);
     }
   }
+  /**
+   * Get list of user's coupons
+   * GET /api/u/coupons/list
+   */
+  public static async getUserCoupons(req: Request, res: Response) {
+    try {
+      const user = req.user as any;
+      if (!user || !user._id) {
+        return sendError(res, 401, 'Unauthorized');
+      }
+
+      const coupons = await Coupon.find({ userId: user._id, isActive: true  }).limit(2);
+      sendSuccess(res, {
+        message: 'Danh sách mã giảm giá của bạn',
+        coupons
+      });
+    } catch (error: any) {
+      sendError(res, 500, error.message, error as Error);
+    }
+  }
 
   /**
    * Apply coupon to cart
