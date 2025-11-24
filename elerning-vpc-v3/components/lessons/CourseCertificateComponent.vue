@@ -19,26 +19,26 @@
             Tải xuống <span class="uppercase">Chứng nhận hoàn thành khóa học</span>
       </div>
       <div class="w-full border-dashed border-b h-[1px] border-[#798894] my-8"></div>
-      <div class="flex flex-col gap-2 mb-10" v-if="coupons.length > 0">
-        <div class="text-2xl font-bold text-[#1A75BB]">Quà tặng</div>
+      <div class="flex flex-col gap-2 mb-10" v-if="coupon !== null">
+        <div class="text-xl md:text-2xl font-bold text-[#1A75BB]">Quà tặng</div>
         <div class="text-sm text-[#798894] leading-5 mb-3">
           Sau khi hoàn thành khóa học, bạn sẽ nhận được những quà tặng sau từ Van Phuc Care:
         </div>
         <div class="flex flex-wrap gap-4">
-          <div class="w-[298px] h-[67px] border border-[#D8D8D8] rounded-md flex items-center bg-white" v-for="(coupon, index) in coupons" :key="index">
+          <div class="w-[298px] h-[67px] border border-[#D8D8D8] rounded-md flex items-center bg-white">
             <div class="flex flex-col items-center justify-center h-full px-[18px] border-r border-r-dashed border-l-[6px] border-l-[#1A75BB] rounded-l-md  border-gray-300">
               <img src="/images/logo.png" alt="Logo" class="w-[30px] object-contain">
             </div>
             <div class="flex-1 relative pl-6 h-full flex flex-col justify-center">
               <div class="text-[13px] font-semibold text-[#020618] mb-[6px]">
-                {{ coupon.coupon.name }}
+                {{ coupon.name }}
               </div>
               <div class="text-[10px] text-[#62748E] flex gap-4">
                 <span>
-                  Mã Voucher <span class="text-[#2E90E5] font-semibold">{{ coupon.coupon.code }}</span>
+                  Mã Voucher <span class="text-[#2E90E5] font-semibold">{{ coupon.code }}</span>
                 </span>
                 <span>
-                  HSD <span class="text-[#2E90E5] font-semibold">{{ coupon.coupon.expirationDate || '15/05/2027' }}</span>
+                  HSD <span class="text-[#2E90E5] font-semibold">{{ (new Date(coupon.validTo)).toLocaleDateString('en-GB') }}</span>
                 </span>
               </div>
               <div class="w-[7px] h-[7px] rounded-full border-b border-[#D9D9D9] bg-white absolute left-[-4px] top-[-3px]"></div>
@@ -48,7 +48,7 @@
         </div>
       </div>
       <div class="mb-[60px] flex flex-col gap-[14px]" v-if="filteredCourses.length > 0">
-        <div class="text-2xl font-bold text-[#1A75BB]">Khóa học liên quan</div>
+        <div class="text-xl md:text-2xl font-bold text-[#1A75BB]">Khóa học liên quan</div>
         <div class="related-courses-carousel">
           <swiper
             :slides-per-view="1"
@@ -115,13 +115,9 @@ import CourseCard from "~/components/courses/CourseCard.vue";
 
 interface ICoupon {
   _id: string;
-  userId: string;
-  coupon: {
-    code: string;
-    name: string;
-    discountAmount: number;
-    expirationDate: string;
-  }
+  name: string;
+  code: string;
+  validTo: string;
 }
 
 const props = defineProps<{
@@ -133,7 +129,7 @@ const courseStore = useCoursesStore();
 const authStore = useAuthStore();
 const cartStore = useCartStore();
 
-const coupons = ref<ICoupon[]>([])
+const coupon = ref<ICoupon | null>(null)
 
 const user = authStore.currentUser
 
@@ -156,9 +152,9 @@ const fetchCoupons = async () => {
   try {
     loading.value = true;
     const couponApi = useCouponApi();
-    const response = await couponApi.getUserCoupons();
+    const response = await couponApi.getCouponValid(props?.course?._id as string);
     if (response && response.data) {
-      coupons.value = (response.data?.coupons || []) as ICoupon[];
+      coupon.value = response.data?.coupon as ICoupon;
     }
   } catch (error) {
     console.error("Error fetching coupons:", error);

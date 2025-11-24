@@ -202,19 +202,26 @@ class UserCouponController {
   }
   /**
    * Get list of user's coupons
-   * GET /api/u/coupons/list
+   * GET /api/u/coupons/valid
    */
-  public static async getUserCoupons(req: Request, res: Response) {
+  public static async getValidCoupons(req: Request, res: Response) {
     try {
       const user = req.user as any;
       if (!user || !user._id) {
         return sendError(res, 401, 'Unauthorized');
       }
 
-      const coupons = await Coupon.find({ userId: user._id, isActive: true  }).limit(2);
+      const courseId = req.query.courseId as string | undefined;
+
+      const coupon = await Coupon.findOne({
+        validFrom: { $lte: new Date() },
+        validTo: { $gte: new Date() },
+        isActive: true,
+        applicableCourses: { $in: [mongoose.Types.ObjectId(courseId)] }
+      });
       sendSuccess(res, {
-        message: 'Danh sách mã giảm giá của bạn',
-        coupons
+        message: 'mã giảm giá của bạn',
+        coupon
       });
     } catch (error: any) {
       sendError(res, 500, error.message, error as Error);

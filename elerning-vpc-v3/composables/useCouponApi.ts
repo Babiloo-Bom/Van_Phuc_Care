@@ -6,10 +6,13 @@
 export const useCouponApi = () => {
   const apiUserBase = 'http://localhost:3000/api/u'
 
-  const getUserCoupons = async () => {
+  const getCouponValid = async (courseId: string) => {
     try {
-      const response = await $fetch(`${apiUserBase}/coupons/list`, {
-        method: 'GET'
+      const response = await $fetch(`${apiUserBase}/coupons/valid`, {
+        method: 'POST',
+        params: {
+          courseId
+        }
       })
       return response
     } catch (error: any) {
@@ -19,6 +22,6 @@ export const useCouponApi = () => {
 
   
   return {
-    getUserCoupons
+    getCouponValid
   };
 };
