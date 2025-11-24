@@ -1,4 +1,5 @@
 import { useApiClient } from "~/composables/useApiClient";
+import type { HealthRecordResponse } from "~/types/api";
 
 export const useHealthRecordsApi = () => {
   const apiClient = useApiClient();
@@ -15,7 +16,7 @@ export const useHealthRecordsApi = () => {
         endDate?: string;
         page?: number;
         limit?: number;
-      },
+      }
     ) {
       return apiClient.get(`/api/u/healthbooks/${healthBookId}/records`, {
         params,
@@ -28,7 +29,7 @@ export const useHealthRecordsApi = () => {
      * GET /api/u/healthbooks/:id/records?date=YYYY-MM-DD
      */
     async getHealthRecordByDate(healthBookId: string, date: string) {
-      return apiClient.get(`/api/u/healthbooks/${healthBookId}/records`, {
+      return apiClient.get<HealthRecordResponse>(`/api/u/healthbooks/${healthBookId}/records`, {
         params: { date },
         showError: false,
       });
@@ -39,13 +40,9 @@ export const useHealthRecordsApi = () => {
      * POST /api/u/healthbooks/:id/records
      */
     async upsertHealthRecord(healthBookId: string, data: any) {
-      return apiClient.post(
-        `/api/u/healthbooks/${healthBookId}/records`,
-        data,
-        {
-          errorMessage: "Không thể lưu dữ liệu sức khỏe",
-        }
-      );
+      return apiClient.post(`/api/u/healthbooks/${healthBookId}/records`, data, {
+        errorMessage: "Không thể lưu dữ liệu sức khỏe",
+      });
     },
 
     /**
@@ -53,12 +50,9 @@ export const useHealthRecordsApi = () => {
      * DELETE /api/u/healthbooks/:id/records/:recordId
      */
     async deleteHealthRecord(healthBookId: string, recordId: string) {
-      return apiClient.delete(
-        `/api/u/healthbooks/${healthBookId}/records/${recordId}`,
-        {
-          errorMessage: "Không thể xóa bản ghi",
-        }
-      );
+      return apiClient.delete(`/api/u/healthbooks/${healthBookId}/records/${recordId}`, {
+        errorMessage: "Không thể xóa bản ghi",
+      });
     },
   };
 };

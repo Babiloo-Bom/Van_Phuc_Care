@@ -18,7 +18,9 @@
           <h5 class="font-semibold text-gray-800 text-sm mb-1">
             Tần suất đại tiện:
           </h5>
-          <div v-if="healthBook.frequencyOfDefecation" class="text-sm text-gray-600" v-html="healthBook.frequencyOfDefecation" />
+          <div v-if="healthBook.frequencyOfDefecation" class="text-sm text-gray-600">
+            {{ getHealthRecordOptionLabel(healthBook.frequencyOfDefecation, stoolFrequencyOptions) }}
+          </div>
           <p v-else class="text-sm text-gray-500">Đang cập nhật</p>
         </div>
       </div>
@@ -36,7 +38,9 @@
           <h5 class="font-semibold text-gray-800 text-sm mb-1">
             Tình trạng phân:
           </h5>
-          <div v-if="healthBook.fecalCondition" class="text-sm text-gray-600" v-html="healthBook.fecalCondition" />
+          <div v-if="healthBook.fecalCondition" class="text-sm text-gray-600">
+            {{ getHealthRecordOptionLabel(healthBook.fecalCondition, stoolConditionOptions) }}
+          </div>
           <p v-else class="text-sm text-gray-500">Đang cập nhật</p>
         </div>
       </div>
@@ -54,7 +58,9 @@
           <h5 class="font-semibold text-gray-800 text-sm mb-1">
             Vấn đề tiêu hóa:
           </h5>
-          <div v-if="healthBook.digestiveProblems" class="text-sm text-gray-600" v-html="healthBook.digestiveProblems" />
+          <div v-if="healthBook.digestiveProblems" class="text-sm text-gray-600">
+            {{ getHealthRecordOptionLabel(healthBook.digestiveProblems, digestiveIssuesOptions) }}
+          </div>
           <p v-else class="text-sm text-gray-500">Đang cập nhật</p>
         </div>
       </div>
@@ -64,6 +70,13 @@
 
 <script setup lang="ts">
 import type { HealthBook } from '~/types/api'
+
+import {
+  stoolFrequencyOptions,
+  stoolConditionOptions,
+  digestiveIssuesOptions,
+} from '~/constants/healthRecordOptions'
+import { getHealthRecordOptionLabel } from '~/utils/healthbook'
 
 interface Props {
   healthBook: HealthBook

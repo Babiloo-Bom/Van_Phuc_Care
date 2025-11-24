@@ -6,15 +6,10 @@
     </div>
 
     <!-- Error State -->
-    <div
-      v-else-if="error"
-      class="flex flex-col items-center justify-center min-h-screen px-4"
-    >
+    <div v-else-if="error" class="flex flex-col items-center justify-center min-h-screen px-4">
       <a-result status="error" title="Không thể tải dữ liệu" :sub-title="error">
         <template #extra>
-          <a-button type="primary" @click="navigateTo('/customers')">
-            Quay lại danh sách khách hàng
-          </a-button>
+          <a-button type="primary" @click="navigateTo('/customers')"> Quay lại danh sách khách hàng </a-button>
         </template>
       </a-result>
     </div>
@@ -23,9 +18,7 @@
     <div v-else-if="!hasHealthBook" class="container mx-auto px-4 py-6">
       <!-- Page Title -->
       <div class="mb-6">
-        <h1 class="text-xl lg:text-2xl font-bold text-blue-600 text-center lg:text-left">
-          Sổ sức khỏe điện tử
-        </h1>
+        <h1 class="text-xl lg:text-2xl font-bold text-blue-600 text-center lg:text-left">Sổ sức khỏe điện tử</h1>
       </div>
 
       <!-- Profile Header Section - Empty State -->
@@ -36,17 +29,13 @@
           <div class="flex flex-col items-center">
             <!-- Avatar - Van Phuc Mascot -->
             <div class="relative mb-3">
-              <div
-                class="w-24 h-24 rounded-full bg-blue-100 flex items-center justify-center border-4 border-blue-200"
-              >
+              <div class="w-24 h-24 rounded-full bg-blue-100 flex items-center justify-center border-4 border-blue-200">
                 <UserOutlined class="text-4xl text-blue-500" />
               </div>
             </div>
 
             <!-- Name -->
-            <h2 class="text-2xl font-bold text-blue-600 mb-1 text-center">
-              N/A
-            </h2>
+            <h2 class="text-2xl font-bold text-blue-600 mb-1 text-center">N/A</h2>
 
             <!-- Date of Birth & Age -->
             <div class="text-gray-600 text-sm mb-3">
@@ -63,9 +52,7 @@
           <div class="flex items-center gap-4">
             <!-- Avatar - Van Phuc Mascot -->
             <div class="relative">
-              <div
-                class="w-32 h-32 rounded-full bg-blue-100 flex items-center justify-center border-4 border-blue-200"
-              >
+              <div class="w-32 h-32 rounded-full bg-blue-100 flex items-center justify-center border-4 border-blue-200">
                 <UserOutlined class="text-5xl text-blue-500" />
               </div>
             </div>
@@ -92,11 +79,7 @@
               <div class="text-center max-w-2xl">
                 <!-- Van Phuc Care Mascot Illustration -->
                 <div class="mb-8">
-                  <img
-                    src="/images/empty-healthbook.png"
-                    alt="Vạn Phúc Care"
-                    class="w-auto h-52 md:h-72 mx-auto"
-                  />
+                  <img src="/images/empty-healthbook.png" alt="Vạn Phúc Care" class="w-auto h-52 md:h-72 mx-auto" />
                 </div>
 
                 <!-- Message -->
@@ -121,12 +104,8 @@
           <!-- Vaccination Schedule Tab -->
           <a-tab-pane key="vaccination" tab="Lịch tiêm">
             <div class="flex flex-col items-center justify-center min-h-[50vh] px-4">
-              <a-empty
-                description="Chưa có thông tin lịch tiêm. Vui lòng tạo hồ sơ trước."
-              >
-                <a-button type="primary" @click="showCreateHealthBookModal = true">
-                  Tạo hồ sơ của bé
-                </a-button>
+              <a-empty description="Chưa có thông tin lịch tiêm. Vui lòng tạo hồ sơ trước.">
+                <a-button type="primary" @click="showCreateHealthBookModal = true"> Tạo hồ sơ của bé </a-button>
               </a-empty>
             </div>
           </a-tab-pane>
@@ -134,12 +113,8 @@
           <!-- Support Request Tab -->
           <a-tab-pane key="support" tab="Yêu cầu hỗ trợ">
             <div class="flex flex-col items-center justify-center min-h-[50vh] px-4">
-              <a-empty
-                description="Chưa có yêu cầu hỗ trợ. Vui lòng tạo hồ sơ trước."
-              >
-                <a-button type="primary" @click="showCreateHealthBookModal = true">
-                  Tạo hồ sơ của bé 3
-                </a-button>
+              <a-empty description="Chưa có yêu cầu hỗ trợ. Vui lòng tạo hồ sơ trước.">
+                <a-button type="primary" @click="showCreateHealthBookModal = true"> Tạo hồ sơ của bé 3 </a-button>
               </a-empty>
             </div>
           </a-tab-pane>
@@ -151,9 +126,7 @@
     <div v-else class="container mx-auto px-4 py-6">
       <!-- Page Title -->
       <div class="mb-6">
-        <h1 class="text-xl lg:text-2xl font-bold text-blue-600 text-center lg:text-left">
-          Sổ sức khỏe điện tử
-        </h1>
+        <h1 class="text-xl lg:text-2xl font-bold text-blue-600 text-center lg:text-left">Sổ sức khỏe điện tử</h1>
       </div>
 
       <!-- Profile Header Section - Always visible -->
@@ -177,17 +150,11 @@
             <!-- Avatar -->
             <div class="relative mb-3">
               <img
-                v-if="userAvatar"
-                :src="userAvatar"
-                :alt="userName"
+                :src="healthBook?.avatar || '/images/baby-default.png'"
+                :alt="healthBook?.name"
                 class="w-24 h-24 rounded-full object-cover border-4 border-blue-100"
+                @error="(e) => { const t = e.target as HTMLImageElement; if (t) t.src = '/images/baby-default.png' }"
               />
-              <div
-                v-else
-                class="w-24 h-24 rounded-full bg-blue-100 flex items-center justify-center border-4 border-blue-200"
-              >
-                <UserOutlined class="text-4xl text-blue-500" />
-              </div>
               <CameraOutlined
                 class="absolute bottom-0 right-0 bg-white rounded-full p-1 text-gray-500 text-sm shadow"
               />
@@ -195,32 +162,20 @@
 
             <!-- Name -->
             <h2 class="text-2xl font-bold text-blue-600 mb-1 text-center">
-              {{ userName }}
+              {{ healthBook?.name }}
             </h2>
 
             <!-- Date of Birth & Age -->
-            <div v-if="userDob" class="text-gray-600 text-sm mb-3">
-              <span>Ngày sinh: {{ formatDate(userDob) }}</span>
+            <div v-if="healthBook?.dob" class="text-gray-600 text-sm mb-3">
+              <span>Ngày sinh: {{ formatDate(healthBook.dob) }}</span>
               <span class="mx-2">—</span>
-              <span>{{ calculateAge(userDob) }}</span>
+              <span>{{ calculateAge(healthBook.dob) }}</span>
             </div>
 
             <!-- Action Buttons (Mobile) -->
             <div class="flex gap-2 w-full px-4 mt-2">
-              <a-button
-                type="default"
-                size="large"
-                block
-                class="rounded-lg"
-              >
-                Quản lý hồ sơ bé
-              </a-button>
-              <a-button
-                type="primary"
-                size="large"
-                @click="showCreateRecordModal = true"
-                class="rounded-lg"
-              >
+              <a-button type="default" size="large" block class="rounded-lg"> Quản lý hồ sơ bé </a-button>
+              <a-button type="primary" size="large" @click="showCreateRecordModal = true" class="rounded-lg">
                 <template #icon>
                   <EditOutlined />
                 </template>
@@ -237,17 +192,11 @@
             <!-- Avatar -->
             <div class="relative">
               <img
-                v-if="userAvatar"
-                :src="userAvatar"
-                :alt="userName"
+                :src="healthBook?.avatar ?? '/images/baby-default.png'"
+                :alt="healthBook?.name"
                 class="w-32 h-32 rounded-full object-cover border-4 border-blue-100"
+                @error="(e) => { const t = e.target as HTMLImageElement; if (t) t.src = '/images/baby-default.png' }"
               />
-              <div
-                v-else
-                class="w-32 h-32 rounded-full bg-blue-100 flex items-center justify-center border-4 border-blue-200"
-              >
-                <UserOutlined class="text-5xl text-blue-500" />
-              </div>
               <CameraOutlined
                 class="absolute bottom-1 right-1 bg-white rounded-full p-2 text-gray-500 shadow cursor-pointer hover:bg-gray-50"
               />
@@ -256,12 +205,12 @@
             <!-- Info -->
             <div>
               <h2 class="text-3xl font-bold text-blue-600 mb-2">
-                {{ userName }}
+                {{ healthBook?.name }}
               </h2>
-              <div v-if="userDob" class="text-gray-600 flex items-center gap-2">
-                <span>Ngày sinh: {{ formatDate(userDob) }}</span>
+              <div v-if="healthBook?.dob" class="text-gray-600 flex items-center gap-2">
+                <span>Ngày sinh: {{ formatDate(healthBook.dob) }}</span>
                 <span>—</span>
-                <span>{{ calculateAge(userDob) }}</span>
+                <span>{{ calculateAge(healthBook.dob) }}</span>
               </div>
             </div>
           </div>
@@ -283,11 +232,7 @@
             </a-date-picker>
 
             <!-- Create Button -->
-            <a-button
-              type="primary"
-              @click="showCreateRecordModal = true"
-              size="large"
-            >
+            <a-button type="primary" @click="showCreateRecordModal = true" size="large">
               <template #icon>
                 <EditOutlined />
               </template>
@@ -301,22 +246,8 @@
       <div class="mb-6">
         <a-tabs v-model:activeKey="activeTab" class="health-book-tabs">
           <a-tab-pane key="overview" tab="Tổng quan">
-            <!-- DEBUG: Check if this renders -->
-            <div
-              v-if="healthBook"
-              class="p-4 mb-4 bg-green-100 border border-green-500"
-            >
-              <h3 class="font-bold">DEBUG: Health Book Data Found!</h3>
-              <p>ID: {{ healthBook._id }}</p>
-              <p>Weight: {{ healthBook.weight }}</p>
-              <p>Height: {{ healthBook.height }}</p>
-            </div>
-
             <!-- Overview Content -->
-            <div
-              v-if="healthBook"
-              class="grid grid-cols-1 lg:grid-cols-12 gap-6"
-            >
+            <div v-if="healthBook" class="grid grid-cols-1 lg:grid-cols-12 gap-6">
               <!-- Left Column: Health Metrics -->
               <div class="lg:col-span-4 space-y-6">
                 <!-- Health Metrics Card -->
@@ -332,7 +263,7 @@
                 <DigestiveHealthCard :health-book="healthBook" />
 
                 <!-- Temperature Chart -->
-                <TemperatureChartCard :health-book="healthBook" />
+                <TemperatureChartCard :health-book="healthBook" :temperature-history="temperatureHistory" />
 
                 <!-- Health Status & Vaccination -->
                 <HealthStatusCard :health-book="healthBook" />
@@ -343,18 +274,11 @@
             </div>
 
             <!-- Empty State when no health book data in Overview tab -->
-            <div
-              v-else
-              class="flex flex-col items-center justify-center min-h-[50vh] px-4"
-            >
+            <div v-else class="flex flex-col items-center justify-center min-h-[50vh] px-4">
               <a-empty description="Không có dữ liệu sổ sức khỏe cho ngày này">
-                <a-button
-                  type="primary"
-                  size="large"
-                  @click="showCreateRecordModal = true"
-                >
+                <a-button type="primary" size="large" @click="showCreateRecordModal = true">
                   <template #icon>
-                    <PlusOutlined />
+                    <EditOutlined />
                   </template>
                   Tạo bản ghi
                 </a-button>
@@ -376,15 +300,12 @@
     </div>
 
     <!-- Create HealthBook Modal -->
-    <CreateHealthBookModal
-      v-model:visible="showCreateHealthBookModal"
-      @success="handleHealthBookCreated"
-    />
+    <CreateHealthBookModal v-model:visible="showCreateHealthBookModal" @success="handleHealthBookCreated" />
 
     <!-- Create Health Record Modal -->
     <CreateHealthRecordModal
       v-model:visible="showCreateRecordModal"
-      :customer-id="customerId"
+      :healthBookId="healthBook?._id"
       :selected-date="selectedDate"
       @success="handleRecordCreated"
     />
@@ -392,13 +313,7 @@
 </template>
 
 <script setup lang="ts">
-import {
-  UserOutlined,
-  CalendarOutlined,
-  CameraOutlined,
-  EditOutlined,
-  PlusOutlined,
-} from "@ant-design/icons-vue";
+import { UserOutlined, CalendarOutlined, CameraOutlined, EditOutlined, PlusOutlined } from "@ant-design/icons-vue";
 import dayjs, { Dayjs } from "dayjs";
 import type { HealthBook } from "~/types/api";
 import { useHealthRecordsApi } from "~/composables/api/useHealthRecordsApi";
@@ -421,23 +336,19 @@ definePageMeta({
   middleware: ["auth"],
 });
 
-// Get route params
-const route = useRoute();
 const authStore = useAuthStore();
-
-// Always use 'me' endpoint since 1 user = 1 healthbook
-const healthBookId = "me";
-
 // Get customerId from healthBook (needed for child components)
 const customerId = computed(() => healthBook.value?.customerId || "");
 
 // API composables
 const { getHealthRecordByDate, getHealthRecords } = useHealthRecordsApi();
-const { getHealthBook, getHealthBooks } = useHealthBooksApi();
+const { getHealthBook, getHealthBooks, getCurrentHealthBook } = useHealthBooksApi();
 
 // State
 const healthBook = ref<HealthBook | null>(null);
-const hasHealthBook = ref(false); // Track if user has created healthbook
+const temperatureHistory = ref();
+const hasHealthBook = ref(false);
+const hasHealthBookRecord = ref(false);
 const loading = ref(true);
 const error = ref("");
 const selectedDate = ref<Dayjs>(dayjs());
@@ -451,50 +362,19 @@ const profileInfo = ref<{
   avatar?: string;
 }>({});
 
-// Baby profile info - from health book
-const userName = computed(() => {
-  // Prioritize: profile info -> health book -> user name
-  return (
-    profileInfo.value?.name ||
-    healthBook.value?.name ||
-    authStore.user?.fullname ||
-    authStore.user?.name ||
-    "Chưa cập nhật"
-  );
-});
-const userAvatar = computed(() => {
-  // Get avatar from profile info or user
-  return profileInfo.value?.avatar || authStore.user?.avatar || "";
-});
-const userDob = computed(() => {
-  // Get dob from profile info or health book
-  return profileInfo.value?.dob || healthBook.value?.dob || "";
-});
-const userGender = computed(
-  () => profileInfo.value?.gender || healthBook.value?.gender || "male"
-);
-
 // Fetch healthbook profile (bé's profile info)
 const fetchHealthBookProfile = async () => {
   try {
     loading.value = true;
     error.value = "";
-    
+
     // Use 'me' endpoint for current user's healthbook
-    const response = await getHealthBook("me");
-    
+    const response = await getCurrentHealthBook();
     // Handle nested data structure: response.data.data
-    const book: any = response?.data?.data;
-    
-    console.log('=== DEBUG HEALTHBOOK PROFILE ===');
-    console.log("Response:", response);
-    console.log("Book data:", book);
-    console.log("Book is null?", book === null);
-    
+    const book: any = response?.data?.data?.data;
     if (book && book._id) {
       // User has created healthbook (check for _id to ensure it's a valid healthbook object)
       hasHealthBook.value = true;
-      
       // Store healthbook info for profile display
       profileInfo.value = {
         name: book.name || "",
@@ -502,7 +382,7 @@ const fetchHealthBookProfile = async () => {
         gender: book.gender || "male",
         avatar: book.avatar || "",
       };
-      
+
       // Also store the healthbook ID for fetching records
       healthBook.value = {
         _id: book._id,
@@ -533,13 +413,12 @@ const fetchHealthBookProfile = async () => {
         createdAt: book.createdAt || "",
         updatedAt: book.updatedAt || "",
       } as HealthBook;
-      
+
       console.log("Healthbook exists, fetching today's record...");
       // After getting healthbook, fetch today's health record
       await fetchHealthRecordByDate();
     } else {
       // User hasn't created healthbook yet - show empty state
-      console.log("No healthbook found, showing empty state");
       hasHealthBook.value = false;
       healthBook.value = null;
       loading.value = false;
@@ -549,7 +428,7 @@ const fetchHealthBookProfile = async () => {
     hasHealthBook.value = false;
     healthBook.value = null;
     loading.value = false;
-    
+
     // Only show error if it's a real error (not just null data)
     if (err?.response?.status && err.response.status !== 404) {
       error.value = err.message || "Không thể tải thông tin sổ sức khỏe";
@@ -570,18 +449,18 @@ const calculateAge = (dob: string) => {
   const remainingMonths = months % 12;
 
   if (years > 0) {
-    return remainingMonths > 0
-      ? `${years} tuổi ${remainingMonths} tháng`
-      : `${years} tuổi`;
+    return remainingMonths > 0 ? `${years} tuổi ${remainingMonths} tháng` : `${years} tuổi`;
   }
   return `${months} tháng tuổi`;
 };
 
 // Fetch health record by date (only called if healthbook exists)
 const fetchHealthRecordByDate = async (date?: string) => {
+  console.log("--------------------------------");
   // Don't fetch records if user doesn't have a healthbook
   if (!hasHealthBook.value) {
     loading.value = false;
+    hasHealthBookRecord.value = false;
     return;
   }
 
@@ -592,22 +471,15 @@ const fetchHealthRecordByDate = async (date?: string) => {
     // Format date to YYYY-MM-DD for API
     const selectedDateObj = date ? dayjs(date, "DD/MM/YYYY") : dayjs();
     const formattedDate = selectedDateObj.format("YYYY-MM-DD");
-
-    console.log("=== DEBUG HEALTH RECORD ===");
-    console.log("Fetching record for date:", formattedDate);
-
     // Get health record by date using 'me' endpoint
     const response = await getHealthRecordByDate("me", formattedDate);
-    const record = response?.data?.data || response?.data;
+    const record = response?.data?.data?.data;
+    temperatureHistory.value = response?.data?.data?.temperatureHistory;
 
-    console.log("Record response:", record);
-
-    if (record && record._id) {
+    if (record) {
       // Merge health record data with existing healthbook profile info
       healthBook.value = {
         ...healthBook.value,
-        _id: record._id,
-        customerId: record.customerId || healthBook.value?.customerId || "",
         weight: record.weight?.toString() || "",
         height: record.height?.toString() || "",
         temperature: record.temperature?.toString() || "",
@@ -629,10 +501,8 @@ const fetchHealthRecordByDate = async (date?: string) => {
         digestiveProblems: record.digestiveIssues || "",
         healthCondition: record.healthStatus || "",
         vaccination: record.vaccination?.dose || "",
-        vaccinationDate: record.vaccination?.date
-          ? dayjs(record.vaccination.date).format("DD/MM/YYYY")
-          : "",
-        vaccinationContent: record.vaccination?.content || "",
+        vaccinationDate: record.vaccination?.date ? dayjs(record.vaccination.date).format("DD/MM/YYYY") : "",
+        vaccinationContent: record.vaccination?.dose || "",
         method: {
           status: record.method || "",
           descriptions: "",
@@ -641,49 +511,24 @@ const fetchHealthRecordByDate = async (date?: string) => {
         note: record.notes || "",
         recordedAt: formattedDate,
       } as HealthBook;
-
-      console.log("Merged healthBook with record:", healthBook.value);
+      hasHealthBookRecord.value = true;
     } else {
-      // No record found for this date - keep healthbook profile but clear record data
-      console.log("No record found for this date");
-      if (healthBook.value) {
-        // Keep profile info but clear record-specific data
-        healthBook.value = {
-          ...healthBook.value,
-          weight: "",
-          height: "",
-          temperature: "",
-          skinConditions: "",
-          tooth: { count: "", descriptions: "" },
-          nutrition: { count: "", descriptions: "" },
-          sleep: { time: "", descriptions: "" },
-          frequencyOfDefecation: "",
-          fecalCondition: "",
-          digestiveProblems: "",
-          healthCondition: "",
-          vaccination: "",
-          vaccinationDate: "",
-          vaccinationContent: "",
-          method: { status: "", descriptions: "" },
-          exerciseAndSkills: "",
-          note: "",
-        } as HealthBook;
-      }
+      // No record found for this date (data null): set healthBook.value = null to show empty state UI
+      healthBook.value = null;
+      hasHealthBookRecord.value = false;
+      temperatureHistory.value = undefined;
     }
   } catch (err: any) {
     console.error("Error fetching health record:", err);
     // Don't treat missing record as error, just set to null
     healthBook.value = null;
-    
+
     // Only show error for real API errors
     if (err?.response?.status && err.response.status >= 500) {
       error.value = "Không thể tải dữ liệu bản ghi sức khỏe";
     }
   } finally {
     loading.value = false;
-    console.log("=== FINAL STATE ===");
-    console.log("hasHealthBook:", hasHealthBook.value);
-    console.log("healthBook:", healthBook.value);
   }
 };
 
@@ -705,7 +550,7 @@ const handleHealthBookCreated = async () => {
 // Handle record created
 const handleRecordCreated = async () => {
   showCreateRecordModal.value = false;
-  
+
   // If this was the first record created, refresh healthbook profile
   if (!hasHealthBook.value) {
     await fetchHealthBookProfile();

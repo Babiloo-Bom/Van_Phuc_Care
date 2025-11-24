@@ -1,3 +1,71 @@
+// Vaccination Schedule API types
+export interface VaccinationScheduleItem {
+  _id: string;
+  name: string;
+  description?: string;
+  age?: string;
+  order?: number;
+  status?: string;
+  [key: string]: any;
+}
+
+export interface VaccinationScheduleResponse {
+  scheduleVaccin: VaccinationScheduleItem[];
+  pagination?: PaginationMeta;
+  [key: string]: any;
+}
+// Lịch sử nhiệt độ trong tháng cho Bar Chart
+export interface HealthBookTemperatureHistoryItem {
+  date: string; // yyyy-MM-dd
+  temperature: number;
+}
+
+export interface HealthBookTemperatureHistory {
+  month: string; // yyyy-MM
+  data: HealthBookTemperatureHistoryItem[];
+}
+// ============================================
+// Health Record Types
+// ============================================
+
+export interface HealthRecordVaccination {
+  date: string;
+  dose: string;
+  _id?: string;
+}
+
+export interface HealthRecord {
+  _id: string;
+  date: string;
+  healthBookId: string;
+  userId?: string;
+  temperature?: number;
+  height?: number;
+  weight?: number;
+  skinCondition?: string;
+  oralHealth?: string;
+  nutrition?: string;
+  sleep?: string;
+  stoolFrequency?: string;
+  stoolCondition?: string;
+  digestiveIssues?: string;
+  method?: string;
+  motorSkills?: string;
+  vaccination?: HealthRecordVaccination | null;
+  notes?: string;
+  healthStatus?: string;
+  createdAt?: string;
+  updatedAt?: string;
+  __v?: number;
+}
+
+export interface HealthRecordResponse {
+  message?: string;
+  data: {
+    data: HealthRecord | Record<string, never>;
+    temperatureHistory?: HealthBookTemperatureHistoryItem[];
+  };
+}
 /**
  * ====================================
  * API Types & Interfaces
@@ -10,28 +78,28 @@
 // ============================================
 
 export interface ApiResponse<T = unknown> {
-  status: boolean
-  data?: T
-  message?: string
-  errors?: ApiError[]
+  status: boolean;
+  data?: T;
+  message?: string;
+  errors?: ApiError[];
 }
 
 export interface ApiError {
-  field?: string
-  message: string
-  code?: string
+  field?: string;
+  message: string;
+  code?: string;
 }
 
 export interface PaginationMeta {
-  total: number
-  page: number
-  limit: number
-  totalPages: number
+  total: number;
+  page: number;
+  limit: number;
+  totalPages: number;
 }
 
 export interface PaginatedResponse<T = unknown> {
-  data: T[]
-  pagination: PaginationMeta
+  data: T[];
+  pagination: PaginationMeta;
 }
 
 // ============================================
@@ -40,38 +108,42 @@ export interface PaginatedResponse<T = unknown> {
 
 export interface ApiRequestOptions {
   // Query parameters
-  params?: Record<string, string | number | boolean | undefined>
-  
+  params?: Record<string, string | number | boolean | undefined>;
+
   // Request body
-  body?: Record<string, unknown>
-  
+  body?: Record<string, unknown>;
+
   // Custom headers
-  headers?: Record<string, string>
-  
+  headers?: Record<string, string>;
+
   // Timeout in milliseconds
-  timeout?: number
-  
+  timeout?: number;
+
   // Retry configuration
-  retry?: number | {
-    limit: number
-    delay: number
-    statusCodes?: number[]
-  }
-  
+  retry?:
+    | number
+    | {
+        limit: number;
+        delay: number;
+        statusCodes?: number[];
+      };
+
   // Show loading indicator
-  showLoading?: boolean
-  
+  showLoading?: boolean;
+
   // Show error message
-  showError?: boolean
-  
+  showError?: boolean;
+
   // Custom error message
-  errorMessage?: string
-  
+  errorMessage?: string;
+
   // Cache response
-  cache?: boolean | {
-    key: string
-    ttl: number
-  }
+  cache?:
+    | boolean
+    | {
+        key: string;
+        ttl: number;
+      };
 }
 
 // ============================================
@@ -79,207 +151,209 @@ export interface ApiRequestOptions {
 // ============================================
 
 export interface Customer {
-  _id: string
-  email: string
-  firstname: string
-  lastname: string
-  phone?: string
-  address?: string
-  city?: string
-  dob?: string
-  gender?: 'male' | 'female' | 'other'
-  status: 'active' | 'inactive'
-  totalOrders?: number
-  totalSpent?: number
-  createdAt: string
-  updatedAt?: string
+  _id: string;
+  email: string;
+  firstname: string;
+  lastname: string;
+  phone?: string;
+  address?: string;
+  city?: string;
+  dob?: string;
+  gender?: "male" | "female" | "other";
+  status: "active" | "inactive";
+  totalOrders?: number;
+  totalSpent?: number;
+  createdAt: string;
+  updatedAt?: string;
 }
 
 export interface Product {
-  _id: string
-  name: string
-  slug: string
-  price: number
-  priceDiscount?: number
-  discount?: number
-  typeDiscount?: 'percentage' | 'fixed'
-  thumbnail?: string
-  images?: string[]
-  description?: string
-  shortDescription?: string
-  category?: Category[]
-  quantityInStock: number
-  quantitySelled?: number
-  isOutOfStock: boolean
-  showHome?: boolean
-  status: 'active' | 'inactive'
-  gtin?: string
-  createdAt: string
+  _id: string;
+  name: string;
+  slug: string;
+  price: number;
+  priceDiscount?: number;
+  discount?: number;
+  typeDiscount?: "percentage" | "fixed";
+  thumbnail?: string;
+  images?: string[];
+  description?: string;
+  shortDescription?: string;
+  category?: Category[];
+  quantityInStock: number;
+  quantitySelled?: number;
+  isOutOfStock: boolean;
+  showHome?: boolean;
+  status: "active" | "inactive";
+  gtin?: string;
+  createdAt: string;
 }
 
 export interface Category {
-  _id: string
-  title: string
-  slug: string
-  thumbnail?: string
-  type: 'product' | 'blog'
-  postCount?: number
-  status: 'active' | 'inactive'
-  createdAt: string
+  _id: string;
+  title: string;
+  slug: string;
+  thumbnail?: string;
+  type: "product" | "blog";
+  postCount?: number;
+  status: "active" | "inactive";
+  createdAt: string;
 }
 
 export interface Order {
-  _id: string
-  orderNumber: string
-  customerId: string
-  items: OrderItem[]
-  total: number
-  subtotal: number
-  discount?: number
-  tax?: number
-  shippingFee?: number
-  status: 'pending' | 'processing' | 'completed' | 'cancelled'
-  paymentStatus: 'unpaid' | 'paid' | 'refunded'
-  shippingAddress?: Address
-  notes?: string
-  createdAt: string
-  updatedAt?: string
+  _id: string;
+  orderNumber: string;
+  customerId: string;
+  items: OrderItem[];
+  total: number;
+  subtotal: number;
+  discount?: number;
+  tax?: number;
+  shippingFee?: number;
+  status: "pending" | "processing" | "completed" | "cancelled";
+  paymentStatus: "unpaid" | "paid" | "refunded";
+  shippingAddress?: Address;
+  notes?: string;
+  createdAt: string;
+  updatedAt?: string;
 }
 
 export interface OrderItem {
-  productId: string
-  productName: string
-  quantity: number
-  price: number
-  total: number
+  productId: string;
+  productName: string;
+  quantity: number;
+  price: number;
+  total: number;
 }
 
 export interface Address {
-  street: string
-  city: string
-  state?: string
-  zipCode?: string
-  country: string
+  street: string;
+  city: string;
+  state?: string;
+  zipCode?: string;
+  country: string;
 }
 
 export interface Course {
-  _id: string
-  code: string
-  name: string
-  thumbnail?: string
-  shortDescription?: string
-  description?: string
-  order?: number
-  status: 'active' | 'inactive'
-  notes?: string
-  createdAt: string
+  _id: string;
+  code: string;
+  name: string;
+  thumbnail?: string;
+  shortDescription?: string;
+  description?: string;
+  order?: number;
+  status: "active" | "inactive";
+  notes?: string;
+  createdAt: string;
 }
 
 export interface HealthBook {
-  _id: string
-  customerId: string
-  customerEmail?: string
-  name: string
-  dob: string
-  avatar?: string
-  gender: 'male' | 'female'
-  weight?: string
-  height?: string
-  skinConditions?: string
+  _id: string;
+  customerId: string;
+  customerEmail?: string;
+  name: string;
+  dob: string;
+  avatar?: string;
+  gender: "male" | "female";
+  weight?: string;
+  height?: string;
+  skinConditions?: string;
   tooth?: {
-    count: string
-    descriptions: string
-  }
+    count: string;
+    descriptions: string;
+  };
   nutrition?: {
-    count: string
-    descriptions: string
-  }
+    count: string;
+    descriptions: string;
+  };
   sleep?: {
-    time: string
-    descriptions: string
-  }
-  frequencyOfDefecation?: string
-  fecalCondition?: string
-  digestiveProblems?: string
-  healthCondition?: string
-  vaccination?: string
-  vaccinationDate?: string
-  vaccinationContent?: string
-  exerciseAndSkills?: string
+    time: string;
+    descriptions: string;
+  };
+  frequencyOfDefecation?: string;
+  fecalCondition?: string;
+  digestiveProblems?: string;
+  healthCondition?: string;
+  vaccination?: string;
+  vaccinationDate?: string;
+  vaccinationContent?: string;
+  exerciseAndSkills?: string;
   method?: {
-    status: string
-    descriptions: string
-  }
-  note?: string
-  temperature?: string
-  recordedAt?: string
-  isAcceptedHealthBook?: boolean
+    status: string;
+    descriptions: string;
+  };
+  note?: string;
+  temperature?: string;
+  recordedAt?: string;
+  isAcceptedHealthBook?: boolean;
   createdBy?: {
-    name: string
-  }
-  domain: string
-  origin?: string
-  createdAt: string
-  updatedAt: string
+    name: string;
+  };
+  domain: string;
+  origin?: string;
+  createdAt: string;
+  updatedAt: string;
 }
 
 // Temperature History Item from aggregate query
 export interface TemperatureRecord {
-  _id: string
-  temperature: string
-  recordedAt: string
-  createdAt: string
+  _id: string;
+  temperature: string;
+  recordedAt: string;
+  createdAt: string;
 }
 
 // Health Book API Responses
 export interface HealthBookResponse {
-  message?: string
-  data: HealthBook | Record<string, never> // Can be empty object {}
+  message?: string;
+  data: {
+    data: HealthBook | Record<string, never>;
+  };
 }
 
 export interface HealthBooksListResponse {
-  message?: string
+  message?: string;
   data: {
-    pagination: PaginationMeta
-    healthBooks: HealthBook[]
-  }
+    pagination: PaginationMeta;
+    healthBooks: HealthBook[];
+  };
 }
 
 export interface TemperatureHistoryResponse {
-  message?: string
-  data: TemperatureRecord[]
+  message?: string;
+  data: TemperatureRecord[];
 }
 
 export interface Transaction {
-  _id: string
-  origin: string
-  type: 'payment' | 'refund' | 'deposit'
-  title: string
-  total: number
-  status: 'pending' | 'success' | 'denied'
-  createdAt: string
+  _id: string;
+  origin: string;
+  type: "payment" | "refund" | "deposit";
+  title: string;
+  total: number;
+  status: "pending" | "success" | "denied";
+  createdAt: string;
 }
 
 export interface FAQ {
-  _id: string
-  title: string
-  content: string
-  slug: string
-  status: 'active' | 'inactive'
-  createdAt: string
+  _id: string;
+  title: string;
+  content: string;
+  slug: string;
+  status: "active" | "inactive";
+  createdAt: string;
 }
 
 export interface Feedback {
-  _id: string
-  fullname: string
-  email?: string
-  phoneNumber?: string
-  avatar?: string
-  position?: string
-  content: string
-  createdBy: 'admin' | 'customer'
-  status: 'active' | 'inactive'
-  createdAt: string
+  _id: string;
+  fullname: string;
+  email?: string;
+  phoneNumber?: string;
+  avatar?: string;
+  position?: string;
+  content: string;
+  createdBy: "admin" | "customer";
+  status: "active" | "inactive";
+  createdAt: string;
 }
 
 // ============================================
@@ -287,35 +361,35 @@ export interface Feedback {
 // ============================================
 
 export interface BaseQueryParams {
-  page?: number
-  limit?: number
-  searchKey?: string
-  status?: string
-  [key: string]: string | number | boolean | undefined
+  page?: number;
+  limit?: number;
+  searchKey?: string;
+  status?: string;
+  [key: string]: string | number | boolean | undefined;
 }
 
 export interface CustomerQueryParams extends BaseQueryParams {
-  city?: string
-  gender?: string
+  city?: string;
+  gender?: string;
 }
 
 export interface HealthBookQueryParams extends BaseQueryParams {
-  category?: string
-  date?: string
+  category?: string;
+  date?: string;
 }
 
 export interface ProductQueryParams extends BaseQueryParams {
-  categoryId?: string
-  priceMin?: number
-  priceMax?: number
+  categoryId?: string;
+  priceMin?: number;
+  priceMax?: number;
 }
 
 export interface OrderQueryParams extends BaseQueryParams {
-  customerId?: string
-  status?: string
-  paymentStatus?: string
-  from?: string
-  to?: string
+  customerId?: string;
+  status?: string;
+  paymentStatus?: string;
+  from?: string;
+  to?: string;
 }
 
 // ============================================
@@ -323,13 +397,12 @@ export interface OrderQueryParams extends BaseQueryParams {
 // ============================================
 
 export interface UploadResponse {
-  url: string
-  urls?: string[]
+  url: string;
+  urls?: string[];
 }
 
 export interface FileUploadOptions {
-  maxSize?: number // in MB
-  allowedTypes?: string[]
-  folder?: string
+  maxSize?: number; // in MB
+  allowedTypes?: string[];
+  folder?: string;
 }
-

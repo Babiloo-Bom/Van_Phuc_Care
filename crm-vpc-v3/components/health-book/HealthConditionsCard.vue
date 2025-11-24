@@ -8,7 +8,7 @@
             Tình trạng da:
           </h4>
           <span class="font-semibold text-gray-800 text-sm text-right ml-4">
-            {{ healthBook.skinConditions || 'Đang cập nhật' }}
+            {{ getHealthRecordOptionLabel(healthBook.skinConditions || '', skinConditionOptions) || 'Đang cập nhật' }}
           </span>
         </div>
       </li>
@@ -23,7 +23,9 @@
             {{ healthBook.tooth?.count ? `${healthBook.tooth.count} răng` : 'Đang cập nhật' }}
           </span>
         </div>
-        <div v-if="healthBook.tooth?.descriptions" class="text-xs text-gray-500 mt-1" v-html="healthBook.tooth.descriptions" />
+        <div v-if="healthBook.tooth?.descriptions" class="text-xs text-gray-500 mt-1">
+          {{ getHealthRecordOptionLabel(healthBook.tooth.descriptions || '', oralHealthOptions) }}
+        </div>
       </li>
 
       <!-- Nutrition -->
@@ -36,7 +38,9 @@
             {{ healthBook.nutrition?.count ? `${healthBook.nutrition.count} cữ ăn` : 'Đang cập nhật' }}
           </span>
         </div>
-        <div v-if="healthBook.nutrition?.descriptions" class="text-xs text-gray-500 mt-1" v-html="healthBook.nutrition.descriptions" />
+        <div v-if="healthBook.nutrition?.descriptions" class="text-xs text-gray-500 mt-1">
+          {{ getHealthRecordOptionLabel(healthBook.nutrition.descriptions || '', nutritionOptions) }}
+        </div>
       </li>
 
       <!-- Sleep -->
@@ -49,7 +53,9 @@
             {{ healthBook.sleep?.time || 'Đang cập nhật' }}
           </span>
         </div>
-        <div v-if="healthBook.sleep?.descriptions" class="text-xs text-gray-500 mt-1" v-html="healthBook.sleep.descriptions" />
+        <div v-if="healthBook.sleep?.descriptions" class="text-xs text-gray-500 mt-1">
+          {{ getHealthRecordOptionLabel(healthBook.sleep.descriptions || '', sleepOptions) }}
+        </div>
       </li>
     </ul>
   </div>
@@ -57,6 +63,14 @@
 
 <script setup lang="ts">
 import type { HealthBook } from '~/types/api'
+
+import {
+  skinConditionOptions,
+  oralHealthOptions,
+  nutritionOptions,
+  sleepOptions,
+} from '~/constants/healthRecordOptions'
+import { getHealthRecordOptionLabel } from '~/utils/healthbook'
 
 interface Props {
   healthBook: HealthBook

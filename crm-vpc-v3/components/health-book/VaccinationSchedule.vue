@@ -12,7 +12,7 @@
         class="w-48"
         @change="handleAgeChange"
       >
-        <a-select-option value="newborn">Sa sinh</a-select-option>
+        <a-select-option value="newborn">Sơ sinh</a-select-option>
         <a-select-option value="1">1 tháng tuổi</a-select-option>
         <a-select-option value="2">2 tháng tuổi</a-select-option>
         <a-select-option value="3">3 tháng tuổi</a-select-option>
@@ -30,7 +30,7 @@
     <div class="space-y-4">
       <VaccinationCard
         v-for="vaccine in filteredVaccines"
-        :key="vaccine.id"
+        :key="vaccine._id || vaccine.id"
         :vaccine="vaccine"
       />
     </div>
@@ -43,80 +43,43 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed } from 'vue'
+import { ref, computed, onMounted, watch } from 'vue'
+import { useVaccinationsApi } from '~/composables/api/useVaccinationsApi'
 
-interface Vaccine {
-  id: string
-  name: string
-  ageRecommended: string
-  dosage: number
-  scheduledDate?: string
-  injectedDate?: string
-  status: 'completed' | 'pending'
-  description?: string
-  image?: string
-}
-
-interface Props {
-  customerId: string
-}
-
-const props = defineProps<Props>()
+const props = defineProps<{ schedule?: any[] }>()
 
 const selectedAge = ref<string>('newborn')
+const vaccinations = ref<any[]>([])
+const { loading, error, getVaccinationSchedule } = useVaccinationsApi()
 
-// Mock vaccination data - Replace with API call
-const vaccinations = ref<Vaccine[]>([
-  {
-    id: '1',
-    name: 'BCG – Vắc xin Lao liều sơ sinh',
-    ageRecommended: 'Khi trẻ sinh ra (trước 1 tháng tuổi)',
-    dosage: 1,
-    scheduledDate: '15/04/2024',
-    injectedDate: '15/04/2024',
-    status: 'completed',
-    description: 'Lorem ipsum dolor sit amet consectetur. Amet tellus diam morbi vehicula vitae placerat nunc in lorem. Scelerisque arcu quam iaculat ante phasellus.',
-    image: '/images/vaccines/bcg.png',
-  },
-  {
-    id: '2',
-    name: 'Heberbiovac, Gene-HBvax, Euvax B – Vắc xin Viêm gan B liều sơ sinh',
-    ageRecommended: 'Khi trẻ sinh ra',
-    dosage: 2,
-    scheduledDate: '15/04/2024',
-    status: 'pending',
-    description: 'Lorem ipsum dolor sit amet consectetur. Amet tellus diam morbi vehicula vitae placerat nunc in lorem. Scelerisque arcu quam iaculat ante phasellus.',
-    image: '/images/vaccines/hepatitis-b.png',
-  },
-  {
-    id: '3',
-    name: 'Heberbiovac, Gene-HBvax, Euvax B – Vắc xin Viêm gan B liều sơ sinh',
-    ageRecommended: 'Khi trẻ sinh ra',
-    dosage: 2,
-    scheduledDate: '15/04/2024',
-    status: 'pending',
-    description: 'Lorem ipsum dolor sit amet consectetur. Amet tellus diam morbi vehicula vitae placerat nunc in lorem. Scelerisque arcu quam iaculat ante phasellus.',
-    image: '/images/vaccines/hepatitis-b.png',
-  },
-])
+const fetchVaccinations = async () => {
+  const data = await getVaccinationSchedule()
+  vaccinations.value = data
+}
+
+onMounted(() => {
+  if (props.schedule && Array.isArray(props.schedule)) {
+    vaccinations.value = props.schedule
+  } else {
+    fetchVaccinations()
+  }
+})
+
+watch(() => props.schedule, (val) => {
+  if (val && Array.isArray(val)) {
+    vaccinations.value = val
+  }
+})
 
 const filteredVaccines = computed(() => {
-  // Filter by selected age
-  // TODO: Implement proper filtering based on age
+  // TODO: Implement proper filtering based on selectedAge
   return vaccinations.value
 })
 
 const handleAgeChange = (value: string) => {
-  console.log('Age changed:', value)
-  // TODO: Fetch vaccinations for selected age
+  selectedAge.value = value
+  // TODO: Filter vaccinations by age
 }
-
-// TODO: Fetch vaccination data from API
-// const fetchVaccinations = async () => {
-//   const { getVaccinations } = useVaccinationsApi()
-//   const response = await getVaccinations(props.customerId)
-//   vaccinations.value = response.data
-// }
 </script>
 
 <style scoped>

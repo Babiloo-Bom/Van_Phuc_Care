@@ -1,11 +1,16 @@
+import {
+  skinConditionOptions,
+  oralHealthOptions,
+  nutritionOptions,
+  sleepOptions,
+  stoolFrequencyOptions,
+  stoolConditionOptions,
+  digestiveIssuesOptions,
+  methodOptions,
+  motorSkillsOptions,
+} from "~/constants/healthRecordOptions";
 <template>
-  <a-modal
-    v-model:open="isVisible"
-    :footer="null"
-    :width="700"
-    :closable="true"
-    class="create-health-record-modal"
-  >
+  <a-modal v-model:open="isVisible" :footer="null" :width="700" :closable="true" class="create-health-record-modal">
     <!-- Header -->
     <div class="modal-header">
       <h2 class="modal-title">Nhập thông tin</h2>
@@ -21,15 +26,9 @@
       @finish="handleSubmit"
     >
       <!-- Mã khách hàng -->
-      <a-form-item label="Mã khách hàng" name="customerId">
-        <a-input
-          v-model:value="formState.customerId"
-          placeholder="NCY7HU"
-          size="large"
-          disabled
-        />
+      <a-form-item label="Mã khách hàng">
+        <a-input :value="healthBookId" placeholder="HealthBook ID" size="large" disabled />
       </a-form-item>
-
       <!-- Ngày -->
       <a-form-item label="Ngày" name="date" :required="true">
         <a-date-picker
@@ -83,139 +82,64 @@
 
       <!-- Tình trạng da -->
       <a-form-item label="Tình trạng da" name="skinCondition">
-        <a-select
-          v-model:value="formState.skinCondition"
-          placeholder="Da bé bình thường"
-          size="large"
-        >
-          <a-select-option value="normal">Da bé bình thường</a-select-option>
-          <a-select-option value="dry">Da khô</a-select-option>
-          <a-select-option value="rash">Nổi mẩn đỏ</a-select-option>
-          <a-select-option value="eczema">Chàm sữa</a-select-option>
-          <a-select-option value="other">Khác</a-select-option>
+        <a-select v-model:value="formState.skinCondition" placeholder="Da bé bình thường" size="large">
+          <a-select-option v-for="opt in skinConditionOptions" :key="opt.value" :value="opt.value">{{ opt.label }}</a-select-option>
         </a-select>
       </a-form-item>
 
       <!-- Sức khỏe răng miệng -->
       <a-form-item label="Sức khỏe răng miệng" name="oralHealth">
-        <a-select
-          v-model:value="formState.oralHealth"
-          placeholder="Da bé bình thường"
-          size="large"
-        >
-          <a-select-option value="normal">Bình thường</a-select-option>
-          <a-select-option value="teething">Đang mọc răng</a-select-option>
-          <a-select-option value="cavity">Sâu răng</a-select-option>
-          <a-select-option value="gum_issue">Vấn đề về nướu</a-select-option>
-          <a-select-option value="other">Khác</a-select-option>
+        <a-select v-model:value="formState.oralHealth" placeholder="Da bé bình thường" size="large">
+          <a-select-option v-for="opt in oralHealthOptions" :key="opt.value" :value="opt.value">{{ opt.label }}</a-select-option>
         </a-select>
       </a-form-item>
 
       <!-- Dinh dưỡng -->
       <a-form-item label="Dinh dưỡng" name="nutrition">
-        <a-select
-          v-model:value="formState.nutrition"
-          placeholder="Da bé bình thường"
-          size="large"
-        >
-          <a-select-option value="normal">Bình thường</a-select-option>
-          <a-select-option value="good">Tốt</a-select-option>
-          <a-select-option value="poor">Kém</a-select-option>
-          <a-select-option value="malnutrition">Suy dinh dưỡng</a-select-option>
-          <a-select-option value="overweight">Thừa cân</a-select-option>
+        <a-select v-model:value="formState.nutrition" placeholder="Da bé bình thường" size="large">
+          <a-select-option v-for="opt in nutritionOptions" :key="opt.value" :value="opt.value">{{ opt.label }}</a-select-option>
         </a-select>
       </a-form-item>
 
       <!-- Giấc ngủ -->
       <a-form-item label="Giấc ngủ" name="sleep">
-        <a-select
-          v-model:value="formState.sleep"
-          placeholder="Mất ngủ"
-          size="large"
-        >
-          <a-select-option value="good">Ngủ ngon</a-select-option>
-          <a-select-option value="normal">Bình thường</a-select-option>
-          <a-select-option value="restless">Ngủ không yên</a-select-option>
-          <a-select-option value="insomnia">Mất ngủ</a-select-option>
-          <a-select-option value="frequent_waking">Thức giấc nhiều lần</a-select-option>
+        <a-select v-model:value="formState.sleep" placeholder="Mất ngủ" size="large">
+          <a-select-option v-for="opt in sleepOptions" :key="opt.value" :value="opt.value">{{ opt.label }}</a-select-option>
         </a-select>
       </a-form-item>
 
       <!-- Tần suất đại tiện -->
       <a-form-item label="Tần suất đại tiện" name="stoolFrequency">
-        <a-select
-          v-model:value="formState.stoolFrequency"
-          placeholder="1 lần / ngày"
-          size="large"
-        >
-          <a-select-option value="1_per_day">1 lần / ngày</a-select-option>
-          <a-select-option value="2_per_day">2 lần / ngày</a-select-option>
-          <a-select-option value="3_per_day">3+ lần / ngày</a-select-option>
-          <a-select-option value="every_2_days">2 ngày / lần</a-select-option>
-          <a-select-option value="irregular">Không đều</a-select-option>
+        <a-select v-model:value="formState.stoolFrequency" placeholder="1 lần / ngày" size="large">
+          <a-select-option v-for="opt in stoolFrequencyOptions" :key="opt.value" :value="opt.value">{{ opt.label }}</a-select-option>
         </a-select>
       </a-form-item>
 
       <!-- Tình trạng phân -->
       <a-form-item label="Tình trạng phân" name="stoolCondition">
-        <a-select
-          v-model:value="formState.stoolCondition"
-          placeholder="Cứng, đặc"
-          size="large"
-        >
-          <a-select-option value="normal">Bình thường</a-select-option>
-          <a-select-option value="hard">Cứng, đặc</a-select-option>
-          <a-select-option value="soft">Mềm</a-select-option>
-          <a-select-option value="loose">Lỏng</a-select-option>
-          <a-select-option value="diarrhea">Tiêu chảy</a-select-option>
-          <a-select-option value="constipation">Táo bón</a-select-option>
+        <a-select v-model:value="formState.stoolCondition" placeholder="Cứng, đặc" size="large">
+          <a-select-option v-for="opt in stoolConditionOptions" :key="opt.value" :value="opt.value">{{ opt.label }}</a-select-option>
         </a-select>
       </a-form-item>
 
       <!-- Vấn đề tiêu hóa -->
       <a-form-item label="Vấn đề tiêu hóa" name="digestiveIssues">
-        <a-select
-          v-model:value="formState.digestiveIssues"
-          placeholder="Bị táo bón nhẹ"
-          size="large"
-        >
-          <a-select-option value="none">Không có</a-select-option>
-          <a-select-option value="constipation">Táo bón</a-select-option>
-          <a-select-option value="diarrhea">Tiêu chảy</a-select-option>
-          <a-select-option value="reflux">Trào ngược</a-select-option>
-          <a-select-option value="bloating">Đầy hơi</a-select-option>
-          <a-select-option value="other">Khác</a-select-option>
+        <a-select v-model:value="formState.digestiveIssues" placeholder="Bị táo bón nhẹ" size="large">
+          <a-select-option v-for="opt in digestiveIssuesOptions" :key="opt.value" :value="opt.value">{{ opt.label }}</a-select-option>
         </a-select>
       </a-form-item>
 
       <!-- Phương pháp -->
       <a-form-item label="Phương pháp" name="method">
-        <a-select
-          v-model:value="formState.method"
-          placeholder="EASY 2-3-4"
-          size="large"
-        >
-          <a-select-option value="easy_2_3_4">EASY 2-3-4</a-select-option>
-          <a-select-option value="baby_led_weaning">Baby-led Weaning</a-select-option>
-          <a-select-option value="traditional">Truyền thống</a-select-option>
-          <a-select-option value="mixed">Kết hợp</a-select-option>
-          <a-select-option value="other">Khác</a-select-option>
+        <a-select v-model:value="formState.method" placeholder="EASY 2-3-4" size="large">
+          <a-select-option v-for="opt in methodOptions" :key="opt.value" :value="opt.value">{{ opt.label }}</a-select-option>
         </a-select>
       </a-form-item>
 
       <!-- Tập vận động và kỹ năng -->
       <a-form-item label="Tập vận động và kỹ năng" name="motorSkills">
-        <a-select
-          v-model:value="formState.motorSkills"
-          placeholder="Bé bò, ngồi, vỗ, dũng"
-          size="large"
-        >
-          <a-select-option value="crawling_sitting">Bé bò, ngồi, vỗ, dũng</a-select-option>
-          <a-select-option value="walking">Đi được</a-select-option>
-          <a-select-option value="running">Chạy được</a-select-option>
-          <a-select-option value="climbing">Leo trèo được</a-select-option>
-          <a-select-option value="delayed">Chậm phát triển</a-select-option>
-          <a-select-option value="other">Khác</a-select-option>
+        <a-select v-model:value="formState.motorSkills" placeholder="Bé bò, ngồi, vỗ, dũng" size="large">
+          <a-select-option v-for="opt in motorSkillsOptions" :key="opt.value" :value="opt.value">{{ opt.label }}</a-select-option>
         </a-select>
       </a-form-item>
 
@@ -230,32 +154,17 @@
       <!-- Vaccination details (shown only if hasVaccination is true) -->
       <div v-if="formState.hasVaccination" class="grid grid-cols-2 gap-4">
         <a-form-item label="Ngày tiêm" name="vaccinationDate">
-          <a-date-picker
-            v-model:value="formState.vaccinationDate"
-            format="DD/MM/YYYY"
-            size="large"
-            class="w-full"
-          />
+          <a-date-picker v-model:value="formState.vaccinationDate" format="DD/MM/YYYY" size="large" class="w-full" />
         </a-form-item>
 
         <a-form-item label="Mũi tiêm" name="vaccinationDose">
-          <a-input
-            v-model:value="formState.vaccinationDose"
-            placeholder="Mũi tiêm"
-            size="large"
-          />
+          <a-input v-model:value="formState.vaccinationDose" placeholder="Mũi tiêm" size="large" />
         </a-form-item>
       </div>
 
       <!-- Ghi chú -->
       <a-form-item label="Ghi chú" name="notes">
-        <a-textarea
-          v-model:value="formState.notes"
-          :rows="4"
-          placeholder="Bé bị sốt"
-          :maxlength="500"
-          show-count
-        />
+        <a-textarea v-model:value="formState.notes" :rows="4" placeholder="Bé bị sốt" :maxlength="500" show-count />
       </a-form-item>
 
       <!-- Tình trạng sức khỏe -->
@@ -271,134 +180,117 @@
 
       <!-- Submit Button -->
       <a-form-item class="submit-button-wrapper">
-        <a-button
-          type="primary"
-          html-type="submit"
-          size="large"
-          block
-          :loading="loading"
-        >
-          Gửi thông tin
-        </a-button>
+        <a-button type="primary" html-type="submit" size="large" block :loading="loading"> Gửi thông tin </a-button>
       </a-form-item>
     </a-form>
   </a-modal>
 </template>
 
 <script setup lang="ts">
-import { ref, reactive, watch } from 'vue'
-import { useHealthRecordsApi } from '~/composables/api/useHealthRecordsApi'
-import { message } from 'ant-design-vue'
-import type { FormInstance } from 'ant-design-vue'
-import type { Rule } from 'ant-design-vue/es/form'
-import type { Dayjs } from 'dayjs'
-import dayjs from 'dayjs'
+import { ref, reactive, watch } from "vue";
+import { useHealthRecordsApi } from "~/composables/api/useHealthRecordsApi";
+import { message } from "ant-design-vue";
+import type { FormInstance } from "ant-design-vue";
+import type { Rule } from "ant-design-vue/es/form";
+import type { Dayjs } from "dayjs";
+import dayjs from "dayjs";
+import { digestiveIssuesOptions, methodOptions, motorSkillsOptions, nutritionOptions, oralHealthOptions, skinConditionOptions, sleepOptions, stoolConditionOptions, stoolFrequencyOptions } from "~/constants/healthRecordOptions";
 
 interface Props {
-  visible?: boolean
-  customerId?: string
+  visible?: boolean;
+  healthBookId?: string;
 }
 
 interface FormState {
-  customerId: string
-  date: Dayjs | null
-  temperature: number | null
-  height: number | null
-  weight: number | null
-  skinCondition: string
-  oralHealth: string
-  nutrition: string
-  sleep: string
-  stoolFrequency: string
-  stoolCondition: string
-  digestiveIssues: string
-  method: string
-  motorSkills: string
-  hasVaccination: boolean
-  vaccinationDate: Dayjs | null
-  vaccinationDose: string
-  notes: string
-  healthStatus: string
+  date: Dayjs | null;
+  temperature: number | null;
+  height: number | null;
+  weight: number | null;
+  skinCondition: string;
+  oralHealth: string;
+  nutrition: string;
+  sleep: string;
+  stoolFrequency: string;
+  stoolCondition: string;
+  digestiveIssues: string;
+  method: string;
+  motorSkills: string;
+  hasVaccination: boolean;
+  vaccinationDate: Dayjs | null;
+  vaccinationDose: string;
+  notes: string;
+  healthStatus: string;
 }
 
 const props = withDefaults(defineProps<Props>(), {
   visible: false,
-  customerId: '',
-})
+});
 
 const emit = defineEmits<{
-  'update:visible': [value: boolean]
-  success: []
-}>()
+  "update:visible": [value: boolean];
+  success: [];
+}>();
 
 // State
-const isVisible = ref(props.visible)
-const formRef = ref<FormInstance>()
-const loading = ref(false)
+const isVisible = ref(props.visible);
+const formRef = ref<FormInstance>();
+const loading = ref(false);
+const healthBookId = computed(() => props.healthBookId);
 
 const formState = reactive<FormState>({
-  customerId: props.customerId,
   date: dayjs(),
   temperature: null,
   height: null,
   weight: null,
-  skinCondition: '',
-  oralHealth: '',
-  nutrition: '',
-  sleep: '',
-  stoolFrequency: '',
-  stoolCondition: '',
-  digestiveIssues: '',
-  method: '',
-  motorSkills: '',
+  skinCondition: "",
+  oralHealth: "",
+  nutrition: "",
+  sleep: "",
+  stoolFrequency: "",
+  stoolCondition: "",
+  digestiveIssues: "",
+  method: "",
+  motorSkills: "",
   hasVaccination: false,
   vaccinationDate: null,
-  vaccinationDose: '',
-  notes: '',
-  healthStatus: '',
-})
+  vaccinationDose: "",
+  notes: "",
+  healthStatus: "",
+});
 
 // Validation rules
 const rules: Record<string, Rule[]> = {
-  date: [{ required: true, message: 'Vui lòng chọn ngày', trigger: 'change' }],
-}
+  date: [{ required: true, message: "Vui lòng chọn ngày", trigger: "change" }],
+};
 
 // Watch props
 watch(
   () => props.visible,
   (newVal) => {
-    isVisible.value = newVal
-  },
-)
+    isVisible.value = newVal;
+  }
+);
 
 watch(isVisible, (newVal) => {
   if (!newVal) {
-    emit('update:visible', false)
+    emit("update:visible", false);
   }
-})
-
-watch(
-  () => props.customerId,
-  (newId) => {
-    formState.customerId = newId
-  },
-)
+});
 
 // Disabled future dates
 const disabledDate = (current: Dayjs) => {
-  return current && current > dayjs().endOf('day')
-}
+  return current && current > dayjs().endOf("day");
+};
 
 // Form handlers
-const { createHealthRecord } = useHealthRecordsApi()
+const { upsertHealthRecord } = useHealthRecordsApi();
 
 const handleSubmit = async () => {
   try {
-    loading.value = true
+    loading.value = true;
     // Prepare data
     const healthRecordData = {
-      customerId: formState.customerId,
-      date: formState.date?.format('YYYY-MM-DD'),
+      date: formState.date?.format("YYYY-MM-DD"),
       temperature: formState.temperature,
       height: formState.height,
       weight: formState.weight,
@@ -413,41 +305,41 @@ const handleSubmit = async () => {
       motorSkills: formState.motorSkills,
       vaccination: formState.hasVaccination
         ? {
-            date: formState.vaccinationDate?.format('YYYY-MM-DD'),
+            date: formState.vaccinationDate?.format("YYYY-MM-DD"),
             dose: formState.vaccinationDose,
           }
         : null,
       notes: formState.notes,
       healthStatus: formState.healthStatus,
-    }
+    };
     // Gọi API tạo phiếu sức khỏe
-    await createHealthRecord(healthRecordData)
-    message.success('Đã lưu thông tin sức khỏe thành công!')
-    emit('success')
-    handleClose()
+    await upsertHealthRecord(healthBookId.value as string, healthRecordData);
+    message.success("Đã lưu thông tin sức khỏe thành công!");
+    emit("success");
+    handleClose();
   } catch (error) {
-    console.error('Error creating health record:', error)
-    message.error('Có lỗi xảy ra khi lưu thông tin!')
+    console.error("Error creating health record:", error);
+    message.error("Có lỗi xảy ra khi lưu thông tin!");
   } finally {
-    loading.value = false
+    loading.value = false;
   }
-}
+};
 
 const handleClose = () => {
-  isVisible.value = false
-  resetForm()
-}
+  isVisible.value = false;
+  resetForm();
+};
 
 const resetForm = () => {
-  formRef.value?.resetFields()
-  formState.date = dayjs()
-  formState.temperature = null
-  formState.height = null
-  formState.weight = null
-  formState.hasVaccination = false
-  formState.vaccinationDate = null
-  formState.vaccinationDose = ''
-}
+  formRef.value?.resetFields();
+  formState.date = dayjs();
+  formState.temperature = null;
+  formState.height = null;
+  formState.weight = null;
+  formState.hasVaccination = false;
+  formState.vaccinationDate = null;
+  formState.vaccinationDose = "";
+};
 </script>
 
 <style scoped>
