@@ -8,7 +8,7 @@
       
       <a-select
         v-model:value="selectedAge"
-        placeholder="Sa sinh"
+        placeholder="Sơ sinh"
         class="w-48"
         @change="handleAgeChange"
       >
@@ -46,14 +46,18 @@
 import { ref, computed, onMounted, watch } from 'vue'
 import { useVaccinationsApi } from '~/composables/api/useVaccinationsApi'
 
-const props = defineProps<{ schedule?: any[] }>()
+const props = defineProps<{ 
+  schedule?: any[]
+  customerId?: string 
+}>()
 
 const selectedAge = ref<string>('newborn')
 const vaccinations = ref<any[]>([])
 const { loading, error, getVaccinationSchedule } = useVaccinationsApi()
 
 const fetchVaccinations = async () => {
-  const data = await getVaccinationSchedule()
+  // Pass customerId to get merged schedule + records
+  const data = await getVaccinationSchedule(props.customerId)
   vaccinations.value = data
 }
 
@@ -68,6 +72,13 @@ onMounted(() => {
 watch(() => props.schedule, (val) => {
   if (val && Array.isArray(val)) {
     vaccinations.value = val
+  }
+})
+
+// Refetch when customerId changes
+watch(() => props.customerId, () => {
+  if (props.customerId) {
+    fetchVaccinations()
   }
 })
 

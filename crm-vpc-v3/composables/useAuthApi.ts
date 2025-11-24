@@ -401,8 +401,8 @@ export const useAuthApi = () => {
     async logout() {
       try {
         return await withRetry(() =>
-          fetchWithTimeout(`${apiBase}/active-logs/logout`, {
-            method: 'PATCH',
+          fetchWithTimeout(`${apiBase}/sessions/logout`, {
+            method: 'POST',
           }),
         );
       } catch (error: any) {

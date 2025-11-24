@@ -4,13 +4,54 @@ export interface VaccinationScheduleItem {
   name: string;
   description?: string;
   age?: string;
+  ageInMonths?: number;
   order?: number;
   status?: string;
+  thumbnail?: string;
+  numberOfInjections?: string;
+  category?: string;
+  // Merged fields from vaccination records (if customerId is provided)
+  vaccinationRecord?: VaccinationRecord | null;
+  injectionStatus?: 'completed' | 'pending' | 'scheduled' | 'skipped';
+  injectionDate?: string | null;
+  scheduledDate?: string | null;
+  location?: string | null;
+  notes?: string | null;
   [key: string]: any;
 }
 
 export interface VaccinationScheduleResponse {
   scheduleVaccin: VaccinationScheduleItem[];
+  pagination?: PaginationMeta;
+  [key: string]: any;
+}
+
+// Vaccination Record API types
+export interface VaccinationRecord {
+  _id: string;
+  customerId: string;
+  healthBookId: string;
+  vaccineId: string;
+  scheduledDate?: string;
+  injectionDate?: string;
+  status: 'completed' | 'pending' | 'scheduled' | 'skipped';
+  location?: string;
+  notes?: string;
+  injectionNumber?: number;
+  sideEffects?: string;
+  nextDoseDate?: string;
+  createdAt: string;
+  updatedAt: string;
+  [key: string]: any;
+}
+
+export interface VaccinationRecordResponse {
+  vaccinationRecord: VaccinationRecord;
+  message?: string;
+}
+
+export interface VaccinationRecordsListResponse {
+  vaccinationRecords: VaccinationRecord[];
   pagination?: PaginationMeta;
   [key: string]: any;
 }

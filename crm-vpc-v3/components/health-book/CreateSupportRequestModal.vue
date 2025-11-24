@@ -1,6 +1,6 @@
 <template>
   <a-modal
-    v-model:open="isVisible"
+    v-model:visible="isVisible"
     :footer="null"
     :width="700"
     :closable="false"
@@ -161,11 +161,13 @@ const rules: Record<string, Rule[]> = {
 
 // Watch props.visible
 watch(() => props.visible, (newVal) => {
+  console.log('CreateSupportRequestModal: props.visible changed to:', newVal)
   isVisible.value = newVal
 })
 
 // Watch isVisible to emit update
 watch(isVisible, (newVal) => {
+  console.log('CreateSupportRequestModal: isVisible changed to:', newVal)
   if (!newVal) {
     emit('update:visible', false)
   }

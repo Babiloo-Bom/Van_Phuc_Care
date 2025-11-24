@@ -98,7 +98,8 @@
       class="relative overflow-hidden rounded-xl"
     >
       <div class="register-modal">
-        <div class="modal-content-wrapper">
+        <!-- Registration Form -->
+        <div v-if="!isRegistrationSuccess" class="modal-content-wrapper">
           <!-- Left Side: Form -->
           <div class="modal-form-section">
             <h2 class="modal-title">Đăng ký dịch vụ</h2>
@@ -164,6 +165,36 @@
           </div>
           <img src="/images/service/service-register.png" alt="Register" class="modal-image" />
         </div>
+
+        <!-- Success Screen -->
+        <div v-else class="success-screen">
+          <div class="success-content">
+            <!-- Mascot Image -->
+            <div class="success-mascot">
+              <img src="/images/service/service-register.png" alt="Register" class="modal-image-success" />
+              <img src="/images/service/service-register-success.png" alt="Success" class="mascot-image" />
+            </div>
+
+            <!-- Success Title -->
+            <h2 class="success-title">Đăng ký thành công</h2>
+
+            <!-- Success Message -->
+            <p class="success-message">
+              Cảm ơn bạn đã tin tưởng và đăng ký dịch vụ của Vạn Phúc Care. Bộ phận dịch vụ khách hàng sẽ liên hệ lại trong thời gian sớm nhất.
+            </p>
+
+            <!-- Action Button -->
+            <a-button 
+              type="primary" 
+              size="large" 
+              block
+              @click="goToHome"
+              class="success-btn"
+            >
+              Về trang chủ
+            </a-button>
+          </div>
+        </div>
       </div>
     </a-modal>
   </div>
@@ -190,6 +221,7 @@ const isRegisterModalOpen = ref(false)
 const isSubmitting = ref(false)
 const selectedService = ref<any>(null)
 const isMobile = ref(false)
+const isRegistrationSuccess = ref(false)
 
 const registerForm = ref({
   fullname: '',
@@ -249,7 +281,6 @@ function openRegisterModal(service: any) {
   
   // Pre-fill form with user info if available
   if (user.value) {
-    console.log('User info-----------:', user.value)
     registerForm.value.fullname = user.value.fullname || user.value.name || ''
     registerForm.value.phone = user.value.phone || user.value.phoneNumber || ''
     registerForm.value.email = user.value.email || ''
@@ -261,6 +292,7 @@ function openRegisterModal(service: any) {
 
 function closeRegisterModal() {
   isRegisterModalOpen.value = false
+  isRegistrationSuccess.value = false
   selectedService.value = null
   // Reset form
   registerForm.value = {
@@ -271,6 +303,11 @@ function closeRegisterModal() {
   }
 }
 
+function goToHome() {
+  closeRegisterModal()
+  // router.push('/')
+}
+
 async function handleRegisterSubmit() {
   if (!selectedService.value) return
   
@@ -279,15 +316,12 @@ async function handleRegisterSubmit() {
     
     const response = await registerService({
       serviceId: selectedService.value._id,
-      customerName: registerForm.value.fullname,
-      customerPhone: registerForm.value.phone,
-      customerEmail: registerForm.value.email,
-      address: registerForm.value.address,
+      notes: `Họ tên: ${registerForm.value.fullname}\nSĐT: ${registerForm.value.phone}\nEmail: ${registerForm.value.email}\nĐịa chỉ: ${registerForm.value.address}`,
     })
     
     if (response.status) {
-      message.success('Đăng ký dịch vụ thành công!')
-      closeRegisterModal()
+      // Show success screen instead of closing modal
+      isRegistrationSuccess.value = true
       // Refresh services list
       await fetchServices()
     } else {
@@ -434,6 +468,48 @@ async function handleRegisterSubmit() {
   font-family: 'SVN-Gilroy', sans-serif;
 }
 
+/* Success Screen */
+.success-screen {
+  @apply flex items-center justify-center p-8;
+  @apply md:p-16;
+  min-height: 500px;
+}
+
+.success-content {
+  @apply text-center max-w-md mx-auto;
+}
+
+.modal-image-success {
+  @apply h-60 w-auto object-contain;
+}
+
+.success-mascot {
+  @apply flex justify-center mb-2 relative;
+}
+
+.mascot-image {
+  @apply w-16 h-16 object-contain absolute left-1/2 top-[55%];
+}
+
+.success-title {
+  @apply text-2xl font-bold text-[#317BC4] mb-2;
+  @apply md:text-3xl md:mb-3;
+  font-family: 'SVN-Gilroy', sans-serif;
+}
+
+.success-message {
+  @apply text-sm text-gray-600 leading-relaxed mb-2;
+  @apply md:text-base md:mb-4;
+  font-family: 'SVN-Gilroy', sans-serif;
+}
+
+.success-btn {
+  @apply bg-[#317BC4] hover:bg-[#2563a8] border-none;
+  @apply h-12 text-base font-semibold rounded-lg;
+  @apply md:h-14 md:text-lg;
+  font-family: 'SVN-Gilroy', sans-serif;
+}
+
 /* Mobile specific */
 @media (max-width: 767px) {
   .services-container {
@@ -482,6 +558,23 @@ async function handleRegisterSubmit() {
 
   .modal-form-section {
     @apply p-4;
+  }
+
+  .success-screen {
+    @apply p-6;
+    min-height: 400px;
+  }
+
+  .success-title {
+    @apply text-xl mb-3;
+  }
+
+  .success-message {
+    @apply text-sm mb-6;
+  }
+
+  .success-btn {
+    @apply h-12 text-base;
   }
 }
 

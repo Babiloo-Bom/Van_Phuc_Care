@@ -133,25 +133,13 @@
       <div class="bg-white rounded-lg shadow-sm p-4 lg:p-6 mb-6">
         <!-- Mobile Layout -->
         <div class="lg:hidden">
-          <!-- Date Picker (Mobile - Top) -->
-          <div class="flex justify-center mb-4">
-            <a-date-picker
-              v-model:value="selectedDate"
-              format="DD/MM/YYYY"
-              placeholder="Chọn ngày"
-              @change="handleDateChange"
-              class="w-full max-w-xs"
-              size="large"
-            />
-          </div>
-
           <!-- Profile Info (Mobile) -->
           <div class="flex flex-col items-center">
             <!-- Avatar -->
             <div class="relative mb-3">
               <img
-                :src="healthBook?.avatar || '/images/baby-default.png'"
-                :alt="healthBook?.name"
+                :src="profileInfo.avatar || healthBook?.avatar || '/images/baby-default.png'"
+                :alt="profileInfo.name || healthBook?.name"
                 class="w-24 h-24 rounded-full object-cover border-4 border-blue-100"
                 @error="(e) => { const t = e.target as HTMLImageElement; if (t) t.src = '/images/baby-default.png' }"
               />
@@ -162,20 +150,34 @@
 
             <!-- Name -->
             <h2 class="text-2xl font-bold text-blue-600 mb-1 text-center">
-              {{ healthBook?.name }}
+              {{ profileInfo.name || healthBook?.name }}
             </h2>
 
             <!-- Date of Birth & Age -->
-            <div v-if="healthBook?.dob" class="text-gray-600 text-sm mb-3">
-              <span>Ngày sinh: {{ formatDate(healthBook.dob) }}</span>
+            <div v-if="profileInfo.dob || healthBook?.dob" class="text-gray-600 text-sm mb-3">
+              <span>Ngày sinh: {{ formatDate(profileInfo.dob || healthBook?.dob || '') }}</span>
               <span class="mx-2">—</span>
-              <span>{{ calculateAge(healthBook.dob) }}</span>
+              <span>{{ calculateAge(profileInfo.dob || healthBook?.dob || '') }}</span>
             </div>
 
             <!-- Action Buttons (Mobile) -->
-            <div class="flex gap-2 w-full px-4 mt-2">
-              <a-button type="default" size="large" block class="rounded-lg"> Quản lý hồ sơ bé </a-button>
-              <a-button type="primary" size="large" @click="showCreateRecordModal = true" class="rounded-lg">
+            <div class="flex flex-col gap-3 w-full px-4 mt-4">
+              <!-- Date Picker Mobile -->
+              <a-date-picker
+                v-model:value="selectedDate"
+                format="DD/MM/YYYY"
+                placeholder="Chọn ngày"
+                @change="handleDateChange"
+                class="custom-date-picker-mobile w-full"
+                size="large"
+              >
+                <template #suffixIcon>
+                  <CalendarOutlined class="text-blue-500" />
+                </template>
+              </a-date-picker>
+              
+              <!-- Create Button Mobile -->
+              <a-button type="primary" size="large" @click="showCreateRecordModal = true" class="custom-create-button-mobile w-full">
                 <template #icon>
                   <EditOutlined />
                 </template>
@@ -192,8 +194,8 @@
             <!-- Avatar -->
             <div class="relative">
               <img
-                :src="healthBook?.avatar ?? '/images/baby-default.png'"
-                :alt="healthBook?.name"
+                :src="profileInfo.avatar || healthBook?.avatar || '/images/baby-default.png'"
+                :alt="profileInfo.name || healthBook?.name"
                 class="w-32 h-32 rounded-full object-cover border-4 border-blue-100"
                 @error="(e) => { const t = e.target as HTMLImageElement; if (t) t.src = '/images/baby-default.png' }"
               />
@@ -205,12 +207,12 @@
             <!-- Info -->
             <div>
               <h2 class="text-3xl font-bold text-blue-600 mb-2">
-                {{ healthBook?.name }}
+                {{ profileInfo.name || healthBook?.name }}
               </h2>
-              <div v-if="healthBook?.dob" class="text-gray-600 flex items-center gap-2">
-                <span>Ngày sinh: {{ formatDate(healthBook.dob) }}</span>
+              <div v-if="profileInfo.dob || healthBook?.dob" class="text-gray-600 flex items-center gap-2">
+                <span>Ngày sinh: {{ formatDate(profileInfo.dob || healthBook?.dob || '') }}</span>
                 <span>—</span>
-                <span>{{ calculateAge(healthBook.dob) }}</span>
+                <span>{{ calculateAge(profileInfo.dob || healthBook?.dob || '') }}</span>
               </div>
             </div>
           </div>
@@ -223,7 +225,7 @@
               format="DD/MM/YYYY"
               placeholder="Chọn ngày"
               @change="handleDateChange"
-              class="w-48"
+              class="custom-date-picker"
               size="large"
             >
               <template #suffixIcon>
@@ -232,7 +234,7 @@
             </a-date-picker>
 
             <!-- Create Button -->
-            <a-button type="primary" @click="showCreateRecordModal = true" size="large">
+            <a-button type="primary" @click="showCreateRecordModal = true" size="large" class="custom-create-button">
               <template #icon>
                 <EditOutlined />
               </template>
@@ -247,7 +249,7 @@
         <a-tabs v-model:activeKey="activeTab" class="health-book-tabs">
           <a-tab-pane key="overview" tab="Tổng quan">
             <!-- Overview Content -->
-            <div v-if="healthBook" class="grid grid-cols-1 lg:grid-cols-12 gap-6">
+            <div v-if="healthBook && hasHealthBookRecord" class="grid grid-cols-1 lg:grid-cols-12 gap-6">
               <!-- Left Column: Health Metrics -->
               <div class="lg:col-span-4 space-y-6">
                 <!-- Health Metrics Card -->
@@ -513,10 +515,32 @@ const fetchHealthRecordByDate = async (date?: string) => {
       } as HealthBook;
       hasHealthBookRecord.value = true;
     } else {
-      // No record found for this date (data null): set healthBook.value = null to show empty state UI
-      healthBook.value = null;
+      // No record found for this date - keep profile info but clear record data
       hasHealthBookRecord.value = false;
       temperatureHistory.value = undefined;
+      // Keep the profile info from profileInfo, don't set to null
+      if (healthBook.value) {
+        healthBook.value = {
+          ...healthBook.value,
+          weight: "",
+          height: "",
+          temperature: "",
+          skinConditions: "",
+          tooth: { count: "", descriptions: "" },
+          nutrition: { count: "", descriptions: "" },
+          sleep: { time: "", descriptions: "" },
+          frequencyOfDefecation: "",
+          fecalCondition: "",
+          digestiveProblems: "",
+          healthCondition: "",
+          vaccination: "",
+          vaccinationDate: "",
+          vaccinationContent: "",
+          method: { status: "", descriptions: "" },
+          exerciseAndSkills: "",
+          note: "",
+        } as HealthBook;
+      }
     }
   } catch (err: any) {
     console.error("Error fetching health record:", err);
@@ -619,5 +643,60 @@ onMounted(async () => {
   transform: scale(1.1);
   box-shadow: 0 6px 16px rgba(24, 144, 255, 0.5);
   transition: all 0.3s ease;
+}
+
+/* Custom Date Picker Desktop */
+:deep(.custom-date-picker) {
+  border-radius: 24px !important;
+  border: 2px solid #1890ff !important;
+  padding: 8px 20px !important;
+  width: 128px;
+}
+
+:deep(.custom-date-picker .ant-picker-input input) {
+  color: #1890ff !important;
+  font-weight: 500;
+  font-size: 16px;
+}
+
+:deep(.custom-date-picker .ant-picker-suffix) {
+  color: #1890ff;
+}
+
+/* Custom Create Button Desktop */
+.custom-create-button {
+  border-radius: 24px !important;
+  padding: 8px 24px !important;
+  height: 48px !important;
+  font-weight: 500;
+  font-size: 16px;
+}
+
+/* Custom Date Picker Mobile */
+:deep(.custom-date-picker-mobile) {
+  border-radius: 24px !important;
+  border: 2px solid #1890ff !important;
+  padding: 8px 20px !important;
+  height: 48px !important;
+}
+
+:deep(.custom-date-picker-mobile .ant-picker-input input) {
+  color: #1890ff !important;
+  font-weight: 500;
+  font-size: 16px;
+  text-align: center;
+}
+
+:deep(.custom-date-picker-mobile .ant-picker-suffix) {
+  color: #1890ff;
+}
+
+/* Custom Create Button Mobile */
+.custom-create-button-mobile {
+  border-radius: 24px !important;
+  padding: 8px 24px !important;
+  height: 48px !important;
+  font-weight: 500;
+  font-size: 16px;
 }
 </style>

@@ -4,8 +4,8 @@
       <!-- Vaccine Image -->
       <div class="flex-shrink-0">
         <img
-          v-if="vaccine.image"
-          :src="vaccine.image"
+          v-if="vaccine.thumbnail"
+          :src="vaccine.thumbnail"
           :alt="vaccine.name"
           class="w-24 h-24 object-cover rounded"
           @error="handleImageError"
@@ -17,27 +17,44 @@
 
       <!-- Vaccine Info -->
       <div class="flex-1">
-        <h3 class="text-base font-semibold text-blue-600 mb-2">
+        <!-- Vaccine Name -->
+        <h3 class="text-base font-semibold text-blue-600 mb-1">
           {{ vaccine.name }}
         </h3>
-        <div class="text-sm text-gray-600 mb-2">
-          {{ vaccine.age || '' }}
+
+        <!-- Category -->
+        <div v-if="vaccine.category" class="text-xs text-gray-500 mb-2">
+          ({{ vaccine.category }})
         </div>
+
+        <!-- Description -->
         <div v-if="vaccine.description" class="text-sm text-gray-500 mb-3 line-clamp-2">
           {{ vaccine.description }}
         </div>
-        <div class="flex items-center justify-between">
-          <!-- Scheduled/Injected Date (not available in schedule) -->
-          <div class="flex items-center gap-2 text-sm text-gray-600">
-            <CalendarOutlined />
-            <span>
-              Thời gian: --
-            </span>
+
+        <!-- Bottom Info Row -->
+        <div class="flex items-center justify-between flex-wrap gap-2">
+          <!-- Left: Date + Số mũi -->
+          <div class="flex items-center gap-4 text-sm text-gray-600">
+            <!-- Injection Date -->
+            <div class="flex items-center gap-1">
+              <CalendarOutlined />
+              <span>Thời gian: {{ formattedDate }}</span>
+            </div>
+
+            <!-- Number of Injections -->
+            <div v-if="vaccine.numberOfInjections">
+              Số mũi tiêm: {{ vaccine.numberOfInjections }}
+            </div>
           </div>
-          <!-- Status: always pending for schedule -->
+
+          <!-- Right: Status -->
           <div class="flex items-center gap-2">
-            <a-tag color="default" class="font-medium text-gray-600">
-              CHƯA TIÊM PHÒNG
+            <a-tag 
+              :color="statusColor" 
+              class="font-medium"
+            >
+              {{ statusText }}
             </a-tag>
           </div>
         </div>
@@ -47,23 +64,66 @@
 </template>
 
 <script setup lang="ts">
+import { computed } from 'vue'
 import { 
   CalendarOutlined, 
   MedicineBoxOutlined,
 } from '@ant-design/icons-vue'
-
+import dayjs from 'dayjs'
 import type { VaccinationScheduleItem } from '~/types/api'
 
 interface Props {
   vaccine: VaccinationScheduleItem
 }
 
-defineProps<Props>()
+const props = defineProps<Props>()
 
 const handleImageError = (e: Event) => {
   const target = e.target as HTMLImageElement
   target.style.display = 'none'
 }
+
+// Format injection date
+const formattedDate = computed(() => {
+  if (props.vaccine.injectionDate) {
+    return dayjs(props.vaccine.injectionDate).format('DD/MM/YYYY')
+  }
+  if (props.vaccine.scheduledDate) {
+    return dayjs(props.vaccine.scheduledDate).format('DD/MM/YYYY')
+  }
+  return '--'
+})
+
+// Status text and color
+const statusText = computed(() => {
+  const status = props.vaccine.injectionStatus || 'pending'
+  switch (status) {
+    case 'completed':
+      return 'ĐÃ TIÊM PHÒNG'
+    case 'scheduled':
+      return 'ĐÃ ĐẶT LỊCH'
+    case 'skipped':
+      return 'BỎ QUA'
+    case 'pending':
+    default:
+      return 'CHƯA TIÊM PHÒNG'
+  }
+})
+
+const statusColor = computed(() => {
+  const status = props.vaccine.injectionStatus || 'pending'
+  switch (status) {
+    case 'completed':
+      return 'success'
+    case 'scheduled':
+      return 'processing'
+    case 'skipped':
+      return 'warning'
+    case 'pending':
+    default:
+      return 'default'
+  }
+})
 </script>
 
 <style scoped>

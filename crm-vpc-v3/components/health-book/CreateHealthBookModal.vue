@@ -18,15 +18,36 @@
         <CloseOutlined class="text-2xl" />
       </button>
 
-      <!-- Modal Header -->
-      <div class="text-center pt-8 pb-6 px-6">
-        <h2 class="text-2xl lg:text-3xl font-bold text-blue-600 uppercase">
-          Tạo hồ sơ của bé
-        </h2>
+      <!-- Success Screen -->
+      <div v-if="isCreateSuccess" class="success-content">
+        <!-- Mascot Image -->
+        <div class="success-mascot">
+          <img src="/images/doctor.png" alt="Van Phuc Mascot" class="mascot-image" />
+        </div>
+
+        <!-- Success Title -->
+        <h2 class="success-title">KHỞI TẠO HỒ SƠ THÀNH CÔNG</h2>
+
+        <!-- Success Message -->
+        <p class="success-message">
+          Chúc mừng bạn đã khởi tạo hồ sơ thành công. Quay lại trang để tiếp tục sử dụng Sổ sức khỏe Điện tử.
+        </p>
+
+        <!-- Action Button -->
+        <a-button type="primary" size="large" block class="success-button" @click="handleGoHome"> Về trang chủ </a-button>
       </div>
 
-      <!-- Modal Body -->
-      <div class="px-6 lg:px-12 pb-8">
+      <!-- Registration Form -->
+      <div v-else>
+        <!-- Modal Header -->
+        <div class="text-center pt-8 pb-6 px-6">
+          <h2 class="text-2xl lg:text-3xl font-bold text-blue-600 uppercase">
+            Tạo hồ sơ của bé
+          </h2>
+        </div>
+
+        <!-- Modal Body -->
+        <div class="px-6 lg:px-12 pb-8">
         <a-form
           :model="formState"
           :rules="rules"
@@ -112,7 +133,7 @@
                 ref="fileInput"
                 @change="handleFileChange"
                 accept="image/*"
-                class="hidden"
+                class="!hidden"
               />
             </div>
           </a-form-item>
@@ -131,6 +152,7 @@
             </a-button>
           </a-form-item>
         </a-form>
+      </div>
       </div>
     </div>
   </a-modal>
@@ -163,6 +185,7 @@ const loading = ref(false);
 const fileInput = ref<HTMLInputElement>();
 const avatarPreview = ref<string>("");
 const avatarFile = ref<File | null>(null);
+const isCreateSuccess = ref(false);
 
 const formState = reactive({
   name: "",
@@ -236,9 +259,9 @@ const handleSubmit = async () => {
     const response = await createHealthBook(healthbookData);
 
     if (response?.data?.data) {
-      message.success("Tạo hồ sơ thành công!");
+      // Show success screen instead of closing modal
+      isCreateSuccess.value = true;
       emit("success", response.data.data);
-      handleClose();
     }
     // Error is already handled by API client, no need to show duplicate message
   } catch (error: any) {
@@ -254,6 +277,12 @@ const handleClose = () => {
   emit("update:visible", false);
 };
 
+// Handle go to home page
+const handleGoHome = () => {
+  emit("update:visible", false);
+  // navigateTo("/");
+};
+
 // Reset form when modal closes
 watch(
   () => props.visible,
@@ -261,6 +290,7 @@ watch(
     if (!newVal) {
       formRef.value?.resetFields();
       handleRemoveAvatar();
+      isCreateSuccess.value = false;
     } else {
       // Reset file input when modal opens to ensure change event fires
       if (fileInput.value) {
@@ -303,6 +333,51 @@ watch(
   border-color: #40a9ff;
 }
 
+/* Success Screen Styles */
+.create-healthbook-modal .success-content {
+  padding: 60px 40px;
+  text-align: center;
+  min-height: 500px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+}
+
+.create-healthbook-modal .success-mascot {
+  margin-bottom: -20px;
+}
+
+.create-healthbook-modal .mascot-image {
+  width: auto;
+  height: 280px;
+  object-fit: contain;
+}
+
+.create-healthbook-modal .success-title {
+  font-size: 24px;
+  font-weight: bold;
+  color: #1890ff;
+  margin-bottom: 8px;
+  text-transform: uppercase;
+}
+
+.create-healthbook-modal .success-message {
+  font-size: 16px;
+  color: #595959;
+  line-height: 1.6;
+  margin-bottom: 12px;
+  max-width: 500px;
+}
+
+.create-healthbook-modal .success-button {
+  max-width: 400px;
+  height: 48px;
+  font-size: 16px;
+  font-weight: 500;
+  border-radius: 8px;
+}
+
 /* Mobile responsive */
 @media (max-width: 768px) {
   .create-healthbook-modal.ant-modal {
@@ -312,6 +387,29 @@ watch(
 
   .create-healthbook-modal .ant-modal-content {
     border-radius: 12px;
+  }
+
+  .create-healthbook-modal .success-content {
+    padding: 40px 24px;
+    min-height: 400px;
+  }
+
+  .create-healthbook-modal .mascot-image {
+    height: 200px;
+  }
+
+  .create-healthbook-modal .success-title {
+    font-size: 18px;
+  }
+
+  .create-healthbook-modal .success-message {
+    font-size: 14px;
+    margin-bottom: 12px;
+  }
+
+  .create-healthbook-modal .success-button {
+    height: 44px;
+    font-size: 15px;
   }
 }
 </style>

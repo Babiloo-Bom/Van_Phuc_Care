@@ -24,7 +24,7 @@
     <div v-else-if="requests.length === 0" class="empty-state">
       <div class="mascot-container">
         <img 
-          src="/images/dragon_banner.png" 
+          src="/images/tickets/register.png" 
           alt="Van Phuc Mascot"
           class="mascot"
         />
@@ -78,6 +78,8 @@ import { PlusOutlined } from '@ant-design/icons-vue'
 import { message } from 'ant-design-vue'
 import { useSupportRequestsApi } from '~/composables/api/useSupportRequestsApi'
 import type { SupportRequest } from '~/composables/api/useSupportRequestsApi'
+import CreateSupportRequestModal from '~/components/health-book/CreateSupportRequestModal.vue'
+import SupportRequestCard from '~/components/health-book/SupportRequestCard.vue'
 
 // Props
 interface Props {
@@ -126,7 +128,9 @@ const fetchRequests = async () => {
 
 // Handlers
 const handleCreateRequest = () => {
+  console.log('handleCreateRequest clicked, showCreateModal before:', showCreateModal.value)
   showCreateModal.value = true
+  console.log('handleCreateRequest clicked, showCreateModal after:', showCreateModal.value)
 }
 
 const handleRequestCreated = async () => {
@@ -182,12 +186,12 @@ watch(() => props.customerId, (newId) => {
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  padding: 60px 20px;
+  padding: 0 20px 60px;
   text-align: center;
 }
 
 .mascot-container {
-  margin-bottom: 32px;
+  margin-bottom: -16px;
 }
 
 .mascot {
@@ -200,7 +204,7 @@ watch(() => props.customerId, (newId) => {
   font-size: 16px;
   line-height: 1.6;
   color: #333;
-  margin: 0 0 32px;
+  margin: 0 0 12px;
   max-width: 600px;
 }
 
