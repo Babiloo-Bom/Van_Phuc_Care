@@ -185,16 +185,16 @@ class HealthBookController {
       const { date } = req.query;
 
       if (!userId) {
-        return sendError(res, 401, 'Unauthorized');
+        return sendError(res, 401, "Unauthorized");
       }
 
       if (!date) {
-        return sendError(res, 400, 'Date parameter is required');
+        return sendError(res, 400, "Date parameter is required");
       }
 
       // Handle 'me' parameter for healthbook ID
       let healthBook;
-      if (id === 'me') {
+      if (id === "me") {
         healthBook = await MongoDbHealthBooks.model.findOne({
           userId: userId.toString(),
         });
@@ -206,20 +206,45 @@ class HealthBookController {
       }
 
       if (!healthBook) {
-        return sendError(res, 404, 'HealthBook not found');
+        return sendError(res, 404, "HealthBook not found");
       }
 
       // Parse date (format: YYYY-MM-DD)
-      const recordDate = moment(date as string, 'YYYY-MM-DD').startOf('day').toDate();
+      const recordDate = moment(date as string, "YYYY-MM-DD")
+        .startOf("day")
+        .toDate();
 
-      const record = await MongoDbHealthRecords.model
-        .findOne({
+      // Get the month range for temperature history
+      const startOfMonth = moment(date as string, "YYYY-MM-DD")
+        .startOf("month")
+        .toDate();
+      const endOfMonth = moment(date as string, "YYYY-MM-DD")
+        .endOf("month")
+        .toDate();
+
+      // Find all records in the month for this healthBook
+      const monthRecords = await MongoDbHealthRecords.model
+        .find({
           healthBookId: healthBook._id,
-          date: recordDate,
+          date: { $gte: startOfMonth, $lte: endOfMonth },
         })
         .lean();
 
-      return sendSuccess(res, { data: record || null });
+      // Map to array of { date, temperature }
+      const temperatureHistory = monthRecords
+        .filter((r) => typeof r.temperature === "number")
+        .map((r) => ({
+          date: moment(r.date).format("YYYY-MM-DD"),
+          temperature: r.temperature,
+        }));
+
+      // Get the record for the requested date
+      const record = monthRecords.find((r) => moment(r.date).isSame(recordDate, "day")) || null;
+
+      return sendSuccess(res, {
+        data: record,
+        temperatureHistory,
+      });
     } catch (error: any) {
       console.error('Error fetching health record:', error);
       return sendError(res, 500, error.message);

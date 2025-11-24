@@ -15,6 +15,7 @@ import ServicesRouter from './Services';
 import ProcessingRouter from './Processings';
 import GoogleAuthRouter from './GoogleAuth';
 import HealthBooksRouter from './HealthBooks';
+import ScheduleVaccinsRouter from "./ScheduleVaccins";
 
 const router = Router();
 
@@ -31,8 +32,10 @@ router.use("/tickets", TicketRouter);
 router.use("/services", ServicesRouter);
 router.use("/service-registration", ServiceRegistrationRouter);
 router.use("/transactions-list", TransactionListRouter);
-router.use('/progress', ProcessingRouter);
-router.use('/auth/google', GoogleAuthRouter);
+router.use("/progress", ProcessingRouter);
+router.use("/auth/google", GoogleAuthRouter);
+
+router.use("/schedule-vaccins", ScheduleVaccinsRouter);
 router.use('/healthbooks', HealthBooksRouter);
 
 export default router;
