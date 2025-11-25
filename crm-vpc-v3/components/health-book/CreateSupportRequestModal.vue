@@ -234,16 +234,11 @@ const generateTitle = (category: SupportRequestCategory): string => {
 }
 
 const handleSubmit = async () => {
-  if (!props.customerId) {
-    message.error('Không tìm thấy thông tin khách hàng!')
-    return
-  }
-
   if (!formState.category) {
     message.error('Vui lòng chọn danh mục!')
     return
   }
-
+console.log('++++++++++++++++++++')
   try {
     loading.value = true
 
@@ -261,16 +256,17 @@ const handleSubmit = async () => {
       .filter(item => item.url) || []
 
     // Create support request via API
+    // Note: customerId is not needed, user API auto-sets userId from logged-in user
     await createSupportRequest({
       title: generateTitle(formState.category),
       description: formState.description,
-      customerId: props.customerId,
+      customerId: props.customerId || '', // Optional, not used by user API
       category: formState.category,
       attachments,
       priority: 'medium'
     })
 
-    message.success('Tạo yêu cầu hỗ trợ thành công!')
+    // Emit success event - parent component handles the success message and refresh
     emit('success')
     handleClose()
   } catch (error: any) {

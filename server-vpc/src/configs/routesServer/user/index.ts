@@ -16,6 +16,7 @@ import ProcessingRouter from './Processings';
 import GoogleAuthRouter from './GoogleAuth';
 import HealthBooksRouter from './HealthBooks';
 import ScheduleVaccinsRouter from "./ScheduleVaccins";
+import VaccinationRecordsRouter from "./VaccinationRecords";
 
 const router = Router();
 
@@ -37,5 +38,6 @@ router.use("/auth/google", GoogleAuthRouter);
 
 router.use("/schedule-vaccins", ScheduleVaccinsRouter);
 router.use('/healthbooks', HealthBooksRouter);
+router.use('/vaccination-records', VaccinationRecordsRouter);
 
 export default router;

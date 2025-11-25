@@ -191,5 +191,15 @@ class SessionController {
       sendError(res, 500, error.message, error as Error);
     }
   }
+
+  public async logout (req: Request, res: Response) {
+    try {
+      // In a stateless JWT system, logout is handled client-side by removing the token
+      // This endpoint exists for consistency and future session management if needed
+      sendSuccess(res, { message: 'Logout successful' });
+    } catch (error: any) {
+      sendError(res, 500, error.message, error as Error);
+    }
+  }
 }
 export default new SessionController();

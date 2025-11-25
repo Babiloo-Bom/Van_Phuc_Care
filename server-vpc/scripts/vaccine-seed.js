@@ -7,7 +7,7 @@ const BASE_URL = process.env.SEED_API_URL || 'http://localhost:3000';
 
 async function seed() {
   try {
-    const res = await fetch(`${BASE_URL}/api/seed/schedule-vaccins`, {
+    const res = await fetch(`${BASE_URL}/api/u/schedule-vaccins/seed`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
     });

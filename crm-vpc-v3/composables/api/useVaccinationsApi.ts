@@ -22,7 +22,7 @@ export function useVaccinationsApi() {
         params,
         showError: false 
       });
-      return res?.data?.scheduleVaccin || [];
+      return res?.data?.data?.scheduleVaccin || [];
     } catch (err: any) {
       error.value = err?.message || 'Không thể tải lịch tiêm';
       return [];

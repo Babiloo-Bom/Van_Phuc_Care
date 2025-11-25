@@ -6,7 +6,7 @@ const router = Router();
 // GET /api/u/schedule-vaccins
 router.get('/', UserScheduleVaccinsController.index);
 
-// POST /api/seed/schedule-vaccins
-router.post('/schedule-vaccins', UserScheduleVaccinsController.seed);
+// POST /api/u/schedule-vaccins/seed
+router.post('/seed', UserScheduleVaccinsController.seed);
 
 export default router;

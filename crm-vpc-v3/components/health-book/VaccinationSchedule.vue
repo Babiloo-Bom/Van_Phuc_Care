@@ -45,6 +45,7 @@
 <script setup lang="ts">
 import { ref, computed, onMounted, watch } from 'vue'
 import { useVaccinationsApi } from '~/composables/api/useVaccinationsApi'
+import VaccinationCard from './VaccinationCard.vue'
 
 const props = defineProps<{ 
   schedule?: any[]
@@ -58,6 +59,7 @@ const { loading, error, getVaccinationSchedule } = useVaccinationsApi()
 const fetchVaccinations = async () => {
   // Pass customerId to get merged schedule + records
   const data = await getVaccinationSchedule(props.customerId)
+  console.log('Fetched vaccination schedule:', data)
   vaccinations.value = data
 }
 
@@ -83,13 +85,23 @@ watch(() => props.customerId, () => {
 })
 
 const filteredVaccines = computed(() => {
-  // TODO: Implement proper filtering based on selectedAge
-  return vaccinations.value
+  if (!vaccinations.value || vaccinations.value.length === 0) {
+    return []
+  }
+
+  // Convert selectedAge to number for comparison
+  const ageInMonths = selectedAge.value === 'newborn' ? 0 : Number(selectedAge.value)
+
+  // Filter vaccines where ageInMonths matches the selected age
+  return vaccinations.value.filter((vaccine: any) => {
+    const vaccineAge = vaccine.ageInMonths ?? 0
+    return vaccineAge === ageInMonths
+  })
 })
 
 const handleAgeChange = (value: string) => {
   selectedAge.value = value
-  // TODO: Filter vaccinations by age
+  // Filtering is handled reactively by filteredVaccines computed
 }
 </script>
 

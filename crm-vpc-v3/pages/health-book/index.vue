@@ -6,10 +6,15 @@
     </div>
 
     <!-- Error State -->
-    <div v-else-if="error" class="flex flex-col items-center justify-center min-h-screen px-4">
+    <div
+      v-else-if="error"
+      class="flex flex-col items-center justify-center min-h-screen px-4"
+    >
       <a-result status="error" title="Không thể tải dữ liệu" :sub-title="error">
         <template #extra>
-          <a-button type="primary" @click="navigateTo('/customers')"> Quay lại danh sách khách hàng </a-button>
+          <a-button type="primary" @click="navigateTo('/customers')">
+            Quay lại danh sách khách hàng
+          </a-button>
         </template>
       </a-result>
     </div>
@@ -18,10 +23,14 @@
     <div v-else-if="!hasHealthBook" class="container mx-auto">
       <!-- Page Title -->
       <div class="mb-6">
-        <h1 class="text-xl lg:text-2xl font-bold text-blue-600 text-center lg:text-left">Sổ sức khỏe điện tử</h1>
+        <h1
+          class="text-xl lg:text-2xl font-bold text-blue-600 text-center lg:text-left"
+        >
+          Sổ sức khỏe điện tử
+        </h1>
       </div>
 
-      <div class="w-full bg-white rounded-xl p-3 md:mt-20">
+      <div class="w-full bg-white rounded-xl p-3 mt-20">
         <!-- Profile Header Section - Empty State -->
         <div class="bg-white rounded-lg mb-6">
           <!-- Mobile Layout -->
@@ -38,7 +47,9 @@
               </div>
 
               <!-- Name -->
-              <h2 class="text-2xl font-bold text-blue-600 mb-1 text-center">N/A</h2>
+              <h2 class="text-2xl font-bold text-blue-600 mb-1 text-center">
+                N/A
+              </h2>
 
               <!-- Date of Birth & Age -->
               <div class="text-gray-600 text-sm mb-3">
@@ -54,7 +65,9 @@
             <!-- Left: Profile Info -->
             <div class="flex items-center gap-4">
               <!-- Avatar - Van Phuc Mascot -->
-              <div class="absolute -top-20 left-5 border-4 border-white rounded-full">
+              <div
+                class="absolute -top-20 left-5 border-4 border-white rounded-full"
+              >
                 <div
                   class="w-32 h-32 rounded-full bg-blue-100 flex items-center justify-center border-4 border-blue-200"
                 >
@@ -80,11 +93,17 @@
           <a-tabs v-model:activeKey="activeTab" class="health-book-tabs">
             <a-tab-pane key="overview" tab="Tổng quan">
               <!-- Empty State Content -->
-              <div class="flex flex-col items-center justify-center min-h-[60vh] px-4">
+              <div
+                class="flex flex-col items-center justify-center min-h-[60vh] px-4"
+              >
                 <div class="text-center max-w-2xl">
                   <!-- Van Phuc Care Mascot Illustration -->
                   <div class="mb-8">
-                    <img src="/images/empty-healthbook.png" alt="Vạn Phúc Care" class="w-auto h-52 md:h-72 mx-auto" />
+                    <img
+                      src="/images/empty-healthbook.png"
+                      alt="Vạn Phúc Care"
+                      class="w-auto h-52 md:h-72 mx-auto"
+                    />
                   </div>
 
                   <!-- Message -->
@@ -108,18 +127,36 @@
 
             <!-- Vaccination Schedule Tab -->
             <a-tab-pane key="vaccination" tab="Lịch tiêm">
-              <div class="flex flex-col items-center justify-center min-h-[50vh] px-4">
-                <a-empty description="Chưa có thông tin lịch tiêm. Vui lòng tạo hồ sơ trước.">
-                  <a-button type="primary" @click="showCreateHealthBookModal = true"> Tạo hồ sơ của bé </a-button>
+              <div
+                class="flex flex-col items-center justify-center min-h-[50vh] px-4"
+              >
+                <a-empty
+                  description="Chưa có thông tin lịch tiêm. Vui lòng tạo hồ sơ trước."
+                >
+                  <a-button
+                    type="primary"
+                    @click="showCreateHealthBookModal = true"
+                  >
+                    Tạo hồ sơ của bé
+                  </a-button>
                 </a-empty>
               </div>
             </a-tab-pane>
 
             <!-- Support Request Tab -->
             <a-tab-pane key="support" tab="Yêu cầu hỗ trợ">
-              <div class="flex flex-col items-center justify-center min-h-[50vh] px-4">
-                <a-empty description="Chưa có yêu cầu hỗ trợ. Vui lòng tạo hồ sơ trước.">
-                  <a-button type="primary" @click="showCreateHealthBookModal = true"> Tạo hồ sơ của bé 3 </a-button>
+              <div
+                class="flex flex-col items-center justify-center min-h-[50vh] px-4"
+              >
+                <a-empty
+                  description="Chưa có yêu cầu hỗ trợ. Vui lòng tạo hồ sơ trước."
+                >
+                  <a-button
+                    type="primary"
+                    @click="showCreateHealthBookModal = true"
+                  >
+                    Tạo hồ sơ của bé 3
+                  </a-button>
                 </a-empty>
               </div>
             </a-tab-pane>
@@ -132,9 +169,15 @@
     <div v-else class="container mx-auto">
       <!-- Page Title -->
       <div class="mb-6">
-        <h1 class="text-xl lg:text-2xl font-bold text-blue-600 text-center lg:text-left">Sổ sức khỏe điện tử</h1>
+        <h1
+          class="text-xl lg:text-2xl font-bold text-blue-600 text-center lg:text-left"
+        >
+          Sổ sức khỏe điện tử
+        </h1>
         <!-- Action Buttons (Mobile) -->
-        <div class="flex flex-col gap-3 w-full mt-4 justify-center items-center lg:hidden">
+        <div
+          class="flex flex-col gap-3 w-full mt-4 justify-center items-center lg:hidden"
+        >
           <!-- Date Picker Mobile -->
           <a-date-picker
             v-model:value="selectedDate"
@@ -164,7 +207,7 @@
         </div>
       </div>
 
-      <div class="w-full bg-white rounded-xl p-3 md:mt-20">
+      <div class="w-full bg-white rounded-xl p-3 mt-20">
         <!-- Profile Header Section - Always visible -->
         <div class="bg-white rounded-lg mb-6">
           <!-- Mobile Layout -->
@@ -172,9 +215,15 @@
             <!-- Profile Info (Mobile) -->
             <div class="flex flex-col items-center relative pt-16">
               <!-- Avatar -->
-              <div class="absolute -top-14 mb-3 border-4 border-white rounded-full">
+              <div
+                class="absolute -top-14 mb-3 border-4 border-white rounded-full"
+              >
                 <img
-                  :src="profileInfo.avatar || healthBook?.avatar || '/images/baby-default.png'"
+                  :src="
+                    profileInfo.avatar ||
+                    healthBook?.avatar ||
+                    '/images/baby-default.png'
+                  "
                   :alt="profileInfo.name || healthBook?.name"
                   class="w-24 h-24 rounded-full object-cover"
                   @error="(e) => { const t = e.target as HTMLImageElement; if (t) t.src = '/images/baby-default.png' }"
@@ -190,10 +239,20 @@
               </h2>
 
               <!-- Date of Birth & Age -->
-              <div v-if="profileInfo.dob || healthBook?.dob" class="text-gray-600 text-sm mb-3">
-                <span>Ngày sinh: {{ formatDate(profileInfo.dob || healthBook?.dob || "") }}</span>
+              <div
+                v-if="profileInfo.dob || healthBook?.dob"
+                class="text-gray-600 text-sm mb-3"
+              >
+                <span
+                  >Ngày sinh:
+                  {{
+                    formatDate(profileInfo.dob || healthBook?.dob || "")
+                  }}</span
+                >
                 <span class="mx-2">—</span>
-                <span>{{ calculateAge(profileInfo.dob || healthBook?.dob || "") }}</span>
+                <span>{{
+                  calculateAge(profileInfo.dob || healthBook?.dob || "")
+                }}</span>
               </div>
             </div>
           </div>
@@ -203,9 +262,15 @@
             <!-- Left: Profile Info -->
             <div class="flex items-center gap-4">
               <!-- Avatar -->
-              <div class="absolute -top-20 left-5 border-4 border-white rounded-full">
+              <div
+                class="absolute -top-20 left-5 border-4 border-white rounded-full"
+              >
                 <img
-                  :src="profileInfo.avatar || healthBook?.avatar || '/images/baby-default.png'"
+                  :src="
+                    profileInfo.avatar ||
+                    healthBook?.avatar ||
+                    '/images/baby-default.png'
+                  "
                   :alt="profileInfo.name || healthBook?.name"
                   class="w-32 h-32 rounded-full object-cover border-4 border-blue-100"
                   @error="(e) => { const t = e.target as HTMLImageElement; if (t) t.src = '/images/baby-default.png' }"
@@ -220,10 +285,20 @@
                 <h2 class="text-3xl font-bold text-blue-600 mb-2">
                   {{ profileInfo.name || healthBook?.name }}
                 </h2>
-                <div v-if="profileInfo.dob || healthBook?.dob" class="text-gray-600 flex items-center gap-2">
-                  <span>Ngày sinh: {{ formatDate(profileInfo.dob || healthBook?.dob || "") }}</span>
+                <div
+                  v-if="profileInfo.dob || healthBook?.dob"
+                  class="text-gray-600 flex items-center gap-2"
+                >
+                  <span
+                    >Ngày sinh:
+                    {{
+                      formatDate(profileInfo.dob || healthBook?.dob || "")
+                    }}</span
+                  >
                   <span>—</span>
-                  <span>{{ calculateAge(profileInfo.dob || healthBook?.dob || "") }}</span>
+                  <span>{{
+                    calculateAge(profileInfo.dob || healthBook?.dob || "")
+                  }}</span>
                 </div>
               </div>
             </div>
@@ -245,7 +320,12 @@
               </a-date-picker>
 
               <!-- Create Button -->
-              <a-button type="primary" @click="showCreateRecordModal = true" size="large" class="custom-create-button">
+              <a-button
+                type="primary"
+                @click="showCreateRecordModal = true"
+                size="large"
+                class="custom-create-button"
+              >
                 <template #icon>
                   <EditOutlined />
                 </template>
@@ -260,7 +340,10 @@
           <a-tabs v-model:activeKey="activeTab" class="health-book-tabs">
             <a-tab-pane key="overview" tab="Tổng quan">
               <!-- Overview Content -->
-              <div v-if="healthBook && hasHealthBookRecord" class="grid grid-cols-1 lg:grid-cols-12 gap-6">
+              <div
+                v-if="healthBook && hasHealthBookRecord"
+                class="grid grid-cols-1 lg:grid-cols-12 gap-6"
+              >
                 <!-- Left Column: Health Metrics -->
                 <div class="lg:col-span-4 space-y-6">
                   <!-- Health Metrics Card -->
@@ -276,7 +359,10 @@
                   <DigestiveHealthCard :health-book="healthBook" />
 
                   <!-- Temperature Chart -->
-                  <TemperatureChartCard :health-book="healthBook" :temperature-history="temperatureHistory" />
+                  <TemperatureChartCard
+                    :health-book="healthBook"
+                    :temperature-history="temperatureHistory"
+                  />
 
                   <!-- Health Status & Vaccination -->
                   <HealthStatusCard :health-book="healthBook" />
@@ -287,8 +373,14 @@
               </div>
 
               <!-- Empty State when no health book data in Overview tab -->
-              <div v-else class="flex flex-col items-center justify-center min-h-[50vh] px-4">
-                <a-empty description="Không có dữ liệu sổ sức khỏe cho ngày này" class="healthbook-empty">
+              <div
+                v-else
+                class="flex flex-col items-center justify-center min-h-[50vh] px-4"
+              >
+                <a-empty
+                  description="Không có dữ liệu sổ sức khỏe cho ngày này"
+                  class="healthbook-empty"
+                >
                   <a-button
                     type="primary"
                     size="large"
@@ -319,7 +411,10 @@
     </div>
 
     <!-- Create HealthBook Modal -->
-    <CreateHealthBookModal v-model:visible="showCreateHealthBookModal" @success="handleHealthBookCreated" />
+    <CreateHealthBookModal
+      v-model:visible="showCreateHealthBookModal"
+      @success="handleHealthBookCreated"
+    />
 
     <!-- Create Health Record Modal -->
     <CreateHealthRecordModal
@@ -332,7 +427,13 @@
 </template>
 
 <script setup lang="ts">
-import { UserOutlined, CalendarOutlined, CameraOutlined, EditOutlined, PlusOutlined } from "@ant-design/icons-vue";
+import {
+  UserOutlined,
+  CalendarOutlined,
+  CameraOutlined,
+  EditOutlined,
+  PlusOutlined,
+} from "@ant-design/icons-vue";
 import dayjs, { Dayjs } from "dayjs";
 import type { HealthBook } from "~/types/api";
 import { useHealthRecordsApi } from "~/composables/api/useHealthRecordsApi";
@@ -361,7 +462,8 @@ const customerId = computed(() => healthBook.value?.customerId || "");
 
 // API composables
 const { getHealthRecordByDate, getHealthRecords } = useHealthRecordsApi();
-const { getHealthBook, getHealthBooks, getCurrentHealthBook } = useHealthBooksApi();
+const { getHealthBook, getHealthBooks, getCurrentHealthBook } =
+  useHealthBooksApi();
 
 // State
 const healthBook = ref<HealthBook | null>(null);
@@ -468,7 +570,9 @@ const calculateAge = (dob: string) => {
   const remainingMonths = months % 12;
 
   if (years > 0) {
-    return remainingMonths > 0 ? `${years} tuổi ${remainingMonths} tháng` : `${years} tuổi`;
+    return remainingMonths > 0
+      ? `${years} tuổi ${remainingMonths} tháng`
+      : `${years} tuổi`;
   }
   return `${months} tháng tuổi`;
 };
@@ -520,7 +624,9 @@ const fetchHealthRecordByDate = async (date?: string) => {
         digestiveProblems: record.digestiveIssues || "",
         healthCondition: record.healthStatus || "",
         vaccination: record.vaccination?.dose || "",
-        vaccinationDate: record.vaccination?.date ? dayjs(record.vaccination.date).format("DD/MM/YYYY") : "",
+        vaccinationDate: record.vaccination?.date
+          ? dayjs(record.vaccination.date).format("DD/MM/YYYY")
+          : "",
         vaccinationContent: record.vaccination?.dose || "",
         method: {
           status: record.method || "",
@@ -615,7 +721,6 @@ onMounted(async () => {
   align-items: center;
   justify-content: center;
 }
-
 /* Tabs styling */
 :deep(.health-book-tabs .ant-tabs-nav) {
   margin-bottom: 24px;
@@ -642,6 +747,11 @@ onMounted(async () => {
 
 /* Mobile responsive */
 @media (max-width: 768px) {
+  :deep(.health-book-tabs.ant-tabs) {
+    align-items: center;
+    justify-content: center;
+  }
+
   :deep(.health-book-tabs .ant-tabs-nav::before) {
     border: none;
   }

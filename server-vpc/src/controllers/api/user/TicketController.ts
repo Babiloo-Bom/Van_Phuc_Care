@@ -13,7 +13,7 @@ class UserTicketController {
    */
   async index(req: Request, res: Response) {
     try {
-      const user = req.user as any;
+      const user = req.currentUser as any;
       if (!user || !user._id) {
         return sendError(res, 401, 'Unauthorized');
       }
@@ -97,7 +97,7 @@ class UserTicketController {
    */
   async show(req: Request, res: Response) {
     try {
-      const user = req.user as any;
+      const user = req.currentUser as any;
       if (!user || !user._id) {
         return sendError(res, 401, 'Unauthorized');
       }
@@ -127,7 +127,7 @@ class UserTicketController {
    */
   async create(req: Request, res: Response) {
     try {
-      const user = req.user as any;
+      const user = req.currentUser as any;
       if (!user || !user._id) {
         return sendError(res, 401, 'Unauthorized');
       }
@@ -167,7 +167,7 @@ class UserTicketController {
    */
   async update(req: Request, res: Response) {
     try {
-      const user = req.user as any;
+      const user = req.currentUser as any;
       if (!user || !user._id) {
         return sendError(res, 401, 'Unauthorized');
       }
@@ -214,7 +214,7 @@ class UserTicketController {
    */
   async destroy(req: Request, res: Response) {
     try {
-      const user = req.user as any;
+      const user = req.currentUser as any;
       if (!user || !user._id) {
         return sendError(res, 401, 'Unauthorized');
       }
