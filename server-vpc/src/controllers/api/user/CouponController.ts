@@ -217,7 +217,7 @@ class UserCouponController {
         validFrom: { $lte: new Date() },
         validTo: { $gte: new Date() },
         isActive: true,
-        applicableCourses: { $in: [mongoose.Types.ObjectId(courseId)] }
+        applicableCourses: { $in: [ new mongoose.Types.ObjectId(courseId)] }
       });
       sendSuccess(res, {
         message: 'mã giảm giá của bạn',
