@@ -13,6 +13,10 @@ export const sendSuccess = (res: Response, data: { [key: string]: any }, message
   res.status(200).json({ message, data });
 };
 
+export const sendFailed = (res: Response, message: string = '', data: { [key: string]: any } = {}) => {
+  res.status(400).json({ message, data });
+};
+
 export const sendError = (res: Response, code: number, error: any, errorSubject: Error = new Error()) => {
   if (errorSubject) errorLogger.error(errorSubject);
   // if (errorSubject instanceof ValidationError) {

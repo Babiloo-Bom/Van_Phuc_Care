@@ -71,7 +71,6 @@ const couponSchema = new mongoose.Schema({
   timestamps: true
 });
 
-// Create model if it doesn't exist
 const Coupon = mongoose.models.Coupon || mongoose.model('Coupon', couponSchema);
 
 class CouponController {
