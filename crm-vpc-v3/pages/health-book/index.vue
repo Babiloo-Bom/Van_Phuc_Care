@@ -398,7 +398,10 @@
 
             <!-- Vaccination Schedule Tab -->
             <a-tab-pane key="vaccination" tab="Lịch tiêm">
-              <VaccinationSchedule :customer-id="customerId" />
+              <VaccinationSchedule 
+                :customer-id="customerId"
+                :health-book-id="healthBook?._id"
+              />
             </a-tab-pane>
 
             <!-- Support Request Tab -->

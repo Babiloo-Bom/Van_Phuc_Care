@@ -3,6 +3,9 @@ import UserVaccinationRecordsController from '@controllers/api/user/UserVaccinat
 
 const router = Router();
 
+// POST /api/u/vaccination-records/seed - Seed vaccination records cho healthbook
+router.post('/seed', UserVaccinationRecordsController.seed);
+
 // GET /api/u/vaccination-records/:customerId
 router.get('/:customerId', UserVaccinationRecordsController.getByCustomer);
 

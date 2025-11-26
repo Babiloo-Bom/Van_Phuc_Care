@@ -146,7 +146,7 @@
         </div>
 
         <!-- Preview uploaded files -->
-        <div v-if="replyFileList.length > 0" class="uploaded-preview">
+        <div v-if="replyFileList?.length" class="uploaded-preview">
           <div
             v-for="file in replyFileList"
             :key="file.uid"
@@ -273,26 +273,6 @@ const fetchRequest = async () => {
     const data = await getSupportRequestById(requestId.value)
     if (data) {
       request.value = data
-      // Mock responses for demo - replace with actual API call
-      responses.value = [
-        {
-          content: 'Với trẻ sơ sinh dưới 6 tuổi với nhu cầu ngủ nhiều vào cả ban ngày và ban đêm, việc thức liên 5 tiếng chắc chắn là tình trạng bất thường. Cha mẹ cần sớm tìm ra nguyên nhân vì nếu tình trạng này lặp lại thường xuyên sẽ ảnh hưởng không nhỏ đến sự phát triển của trẻ. Ngược lại, nếu trẻ đã trên 6 tháng tuổi và có thể ngủ liên mạch những giấc dài ban đêm, thời gian ngủ ban ngày của trẻ rút ngắn và thời gian thức ban ngày tăng lên là bình thường.',
-          isAdmin: true,
-          name: 'Admin',
-          avatar: '/images/admin-avatar.png',
-          createdAt: new Date().toISOString(),
-        },
-        {
-          content: 'Ngay cả khi trẻ trên 6 tháng tuổi đã có thể thức liên 5 tiếng, thì việc trẻ thức ban đêm vẫn là bất thường. Nếu trong độ tuổi này, trẻ thức liên 5 tiếng vào ban ngày không quá đáng ngại.',
-          isAdmin: false,
-          name: 'Nguyễn Văn A',
-          avatar: '/images/user-avatar.png',
-          attachments: [
-            { url: '/images/sample-food.jpg', filename: 'food.jpg' },
-          ],
-          createdAt: new Date().toISOString(),
-        },
-      ]
     } else {
       error.value = 'Không tìm thấy yêu cầu hỗ trợ'
     }

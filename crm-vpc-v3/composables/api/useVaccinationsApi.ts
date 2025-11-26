@@ -12,14 +12,24 @@ export function useVaccinationsApi() {
   const error = ref('')
   const apiClient = useApiClient()
 
-  // Lấy danh sách vaccine schedule (có thể merge với records của customer)
-  const getVaccinationSchedule = async (customerId?: string): Promise<VaccinationScheduleItem[]> => {
+  // Lấy danh sách vaccine schedule (có thể merge với records của healthBook)
+  const getVaccinationSchedule = async (params?: {
+    healthBookId?: string
+    customerId?: string
+  }): Promise<VaccinationScheduleItem[]> => {
     loading.value = true;
     error.value = '';
     try {
-      const params = customerId ? { customerId } : {};
+      const queryParams: Record<string, string> = {};
+      if (params?.healthBookId) {
+        queryParams.healthBookId = params.healthBookId;
+      }
+      if (params?.customerId) {
+        queryParams.customerId = params.customerId;
+      }
+      
       const res = await apiClient.get<VaccinationScheduleResponse>('/api/u/schedule-vaccins', { 
-        params,
+        params: queryParams,
         showError: false 
       });
       return res?.data?.data?.scheduleVaccin || [];

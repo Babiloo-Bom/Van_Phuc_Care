@@ -180,7 +180,7 @@ import {
 
       <!-- Submit Button -->
       <a-form-item class="submit-button-wrapper">
-        <a-button type="primary" html-type="submit" size="large" block :loading="loading"> Gửi thông tin </a-button>
+        <a-button class="bg-[#317BC4]" type="primary" html-type="submit" size="large" block :loading="loading"> Gửi thông tin </a-button>
       </a-form-item>
     </a-form>
   </a-modal>

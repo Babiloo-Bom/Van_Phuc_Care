@@ -5,12 +5,16 @@ import VaccinationRecords from "@mongodb/vanphuccare/vaccination-record";
 
 class UserScheduleVaccinsController {
   /**
-   * Lấy danh sách lịch tiêm cho user (public hoặc có customerId)
-   * GET /api/u/schedule-vaccins hoặc /api/u/schedule-vaccins?customerId=xxx
+   * Lấy danh sách lịch tiêm cho user
+   * GET /api/u/schedule-vaccins
+   * Query params:
+   *   - healthBookId: ID của sổ sức khỏe (bắt buộc nếu muốn lấy lịch tiêm cụ thể của bé)
+   *   - customerId: ID của customer (optional, dùng để backup)
+   *   - ageInMonths: Lọc theo độ tuổi
    */
   public async index(req: Request, res: Response) {
     try {
-      const { page = 1, limit = 50, customerId, ageInMonths } = req.query;
+      const { page = 1, limit = 50, customerId, healthBookId, ageInMonths } = req.query;
       const skip = (Number(page) - 1) * Number(limit);
       const query: any = { status: "active" };
 
@@ -24,10 +28,19 @@ class UserScheduleVaccinsController {
         ScheduleVaccins.model.countDocuments(query),
       ]);
 
-      // If customerId is provided, merge with vaccination records
-      if (customerId) {
+      // If healthBookId or customerId is provided, merge with vaccination records
+      if (healthBookId || customerId) {
+        const recordQuery: any = {};
+        
+        // Prefer healthBookId over customerId for more specific filtering
+        if (healthBookId) {
+          recordQuery.healthBookId = String(healthBookId);
+        } else if (customerId) {
+          recordQuery.customerId = String(customerId);
+        }
+
         const vaccinationRecords = await VaccinationRecords.model
-          .find({ customerId: String(customerId) })
+          .find(recordQuery)
           .lean();
 
         // Create a map of vaccineId -> record

@@ -1,5 +1,5 @@
 <template>
-  <div class="vaccination-schedule bg-white rounded-lg shadow-sm p-6">
+  <div class="vaccination-schedule bg-white rounded-lg">
     <!-- Header with Age Filter -->
     <div class="flex items-center justify-between mb-6">
       <h2 class="text-xl font-bold text-blue-600">
@@ -49,7 +49,8 @@ import VaccinationCard from './VaccinationCard.vue'
 
 const props = defineProps<{ 
   schedule?: any[]
-  customerId?: string 
+  customerId?: string
+  healthBookId?: string 
 }>()
 
 const selectedAge = ref<string>('newborn')
@@ -57,8 +58,11 @@ const vaccinations = ref<any[]>([])
 const { loading, error, getVaccinationSchedule } = useVaccinationsApi()
 
 const fetchVaccinations = async () => {
-  // Pass customerId to get merged schedule + records
-  const data = await getVaccinationSchedule(props.customerId)
+  // Pass healthBookId (preferred) or customerId to get merged schedule + records
+  const data = await getVaccinationSchedule({
+    healthBookId: props.healthBookId,
+    customerId: props.customerId
+  })
   console.log('Fetched vaccination schedule:', data)
   vaccinations.value = data
 }
@@ -77,9 +81,9 @@ watch(() => props.schedule, (val) => {
   }
 })
 
-// Refetch when customerId changes
-watch(() => props.customerId, () => {
-  if (props.customerId) {
+// Refetch when healthBookId or customerId changes
+watch([() => props.healthBookId, () => props.customerId], () => {
+  if (props.healthBookId || props.customerId) {
     fetchVaccinations()
   }
 })
