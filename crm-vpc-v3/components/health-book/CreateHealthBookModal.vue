@@ -324,8 +324,8 @@ watch(
 }
 
 .create-healthbook-modal .ant-btn-primary {
-  background-color: #1890ff;
-  border-color: #1890ff;
+  background-color: #317BC4;
+  border-color: #317BC4;
 }
 
 .create-healthbook-modal .ant-btn-primary:hover {
@@ -357,7 +357,7 @@ watch(
 .create-healthbook-modal .success-title {
   font-size: 24px;
   font-weight: bold;
-  color: #1890ff;
+  color: #317BC4;
   margin-bottom: 8px;
   text-transform: uppercase;
 }

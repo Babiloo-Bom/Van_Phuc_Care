@@ -352,7 +352,7 @@ const resetForm = () => {
 .modal-title {
   font-size: 24px;
   font-weight: 700;
-  color: #1890ff;
+  color: #317BC4;
   margin: 0;
   text-align: center;
 }

@@ -422,7 +422,7 @@ onMounted(() => {
 }
 
 .detail-link {
-  color: #1890ff;
+  color: #317BC4;
   cursor: pointer;
   text-decoration: underline;
 }
@@ -454,7 +454,7 @@ onMounted(() => {
 .mobile-title {
   font-size: 18px;
   font-weight: 700;
-  color: #1890ff;
+  color: #317BC4;
   text-align: center;
   margin: 0 0 16px;
   letter-spacing: 0.5px;
@@ -464,8 +464,8 @@ onMounted(() => {
   margin-bottom: 20px;
   height: 44px;
   border-radius: 20px;
-  border: 1px solid #1890ff;
-  color: #1890ff;
+  border: 1px solid #317BC4;
+  color: #317BC4;
   font-weight: 500;
 }
 
@@ -493,7 +493,7 @@ onMounted(() => {
 .card-title {
   font-size: 15px;
   font-weight: 600;
-  color: #1890ff;
+  color: #317BC4;
   margin: 0;
   flex: 1;
   line-height: 1.4;

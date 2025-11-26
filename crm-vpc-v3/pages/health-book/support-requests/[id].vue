@@ -456,7 +456,7 @@ definePageMeta({
 .page-title {
   font-size: 24px;
   font-weight: 700;
-  color: #1890ff;
+  color: #317BC4;
   margin: 0;
 }
 
@@ -464,7 +464,7 @@ definePageMeta({
   display: flex;
   align-items: center;
   gap: 6px;
-  color: #1890ff;
+  color: #317BC4;
   font-weight: 500;
 }
 
@@ -484,7 +484,7 @@ definePageMeta({
 .category-label {
   font-size: 16px;
   font-weight: 600;
-  color: #1890ff;
+  color: #317BC4;
   margin-bottom: 12px;
 }
 
@@ -521,7 +521,7 @@ definePageMeta({
 }
 
 .attachment-item:hover {
-  border-color: #1890ff;
+  border-color: #317BC4;
 }
 
 /* Responses Section */
@@ -532,7 +532,7 @@ definePageMeta({
 .section-title {
   font-size: 18px;
   font-weight: 600;
-  color: #1890ff;
+  color: #317BC4;
   margin: 0 0 16px;
 }
 
@@ -658,7 +658,7 @@ definePageMeta({
 }
 
 .reply-textarea:focus {
-  border-color: #1890ff !important;
+  border-color: #317BC4 !important;
   box-shadow: none !important;
 }
 
@@ -667,7 +667,7 @@ definePageMeta({
 }
 
 .add-attachment-btn {
-  color: #1890ff;
+  color: #317BC4;
   padding: 0;
   height: auto;
 }

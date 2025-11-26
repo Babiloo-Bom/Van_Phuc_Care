@@ -469,7 +469,7 @@ onMounted(() => {
 .request-title {
   font-size: 18px;
   font-weight: 600;
-  color: #1890ff;
+  color: #317BC4;
   margin-bottom: 16px;
 }
 
@@ -522,7 +522,7 @@ onMounted(() => {
 .section-title {
   font-size: 18px;
   font-weight: 600;
-  color: #1890ff;
+  color: #317BC4;
   margin-bottom: 24px;
 }
 
@@ -570,7 +570,7 @@ onMounted(() => {
 }
 
 .staff-comment .comment-bubble {
-  background-color: #1890ff;
+  background-color: #317BC4;
   color: white;
   border-bottom-left-radius: 4px;
 }

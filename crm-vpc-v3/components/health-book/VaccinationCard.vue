@@ -1,8 +1,8 @@
 <template>
   <div class="vaccination-card border border-gray-200 rounded-lg p-4 hover:shadow-md transition-shadow">
-    <div class="flex gap-4">
+    <div class="flex gap-4 flex-col sm:flex-row items-start sm:items-center">
       <!-- Vaccine Image -->
-      <div class="flex-shrink-0">
+      <div class="flex-shrink-0 self-center sm:self-auto">
         <img
           v-if="vaccine.thumbnail"
           :src="vaccine.thumbnail"
@@ -16,45 +16,46 @@
       </div>
 
       <!-- Vaccine Info -->
-      <div class="flex-1">
-        <!-- Vaccine Name -->
-        <h3 class="text-base font-semibold text-blue-600 mb-1">
-          {{ vaccine.name }}
-        </h3>
-
-        <!-- Category -->
-        <div v-if="vaccine.category" class="text-xs text-gray-500 mb-2">
-          ({{ vaccine.category }})
+      <div class="flex-1 w-full">
+        <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between w-full">
+          <!-- Name + Category -->
+          <div>
+            <h3 class="text-base sm:text-lg font-semibold text-blue-600 mb-1 sm:mb-0">
+              {{ vaccine.name }}
+              <span v-if="vaccine.category" class="text-xs text-gray-500 font-normal ml-2">({{ vaccine.category }})</span>
+            </h3>
+            <div v-if="vaccine.description" class="text-sm text-gray-500 mb-2 sm:mb-0 line-clamp-2">
+              {{ vaccine.description }}
+            </div>
+          </div>
+          <!-- Status (desktop right, mobile below date) -->
+          <div class="hidden sm:flex items-center gap-2">
+            <a-tag :color="statusColor" class="font-medium text-base">
+              {{ statusText }}
+              <template v-if="statusColor === 'success'">
+                <span class="ml-1">✔️</span>
+              </template>
+            </a-tag>
+          </div>
         </div>
-
-        <!-- Description -->
-        <div v-if="vaccine.description" class="text-sm text-gray-500 mb-3 line-clamp-2">
-          {{ vaccine.description }}
-        </div>
-
-        <!-- Bottom Info Row -->
-        <div class="flex items-center justify-between flex-wrap gap-2">
-          <!-- Left: Date + Số mũi -->
-          <div class="flex items-center gap-4 text-sm text-gray-600">
-            <!-- Injection Date -->
+        <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between mt-2">
+          <!-- Date + Số mũi -->
+          <div class="flex items-center gap-4 text-sm text-gray-600 mb-2 sm:mb-0">
             <div class="flex items-center gap-1">
               <CalendarOutlined />
               <span>Thời gian: {{ formattedDate }}</span>
             </div>
-
-            <!-- Number of Injections -->
             <div v-if="vaccine.numberOfInjections">
               Số mũi tiêm: {{ vaccine.numberOfInjections }}
             </div>
           </div>
-
-          <!-- Right: Status -->
-          <div class="flex items-center gap-2">
-            <a-tag 
-              :color="statusColor" 
-              class="font-medium"
-            >
+          <!-- Status (mobile only) -->
+          <div class="flex sm:hidden items-center gap-2 mt-1">
+            <a-tag :color="statusColor" class="font-medium text-base">
               {{ statusText }}
+              <template v-if="statusColor === 'success'">
+                <span class="ml-1">✔️</span>
+              </template>
             </a-tag>
           </div>
         </div>
@@ -136,6 +137,26 @@ const statusColor = computed(() => {
 }
 
 .vaccination-card:hover {
-  border-color: #1890ff;
+  border-color: #317BC4;
+}
+
+@media (max-width: 640px) {
+  .vaccination-card {
+    padding: 12px !important;
+  }
+  .vaccination-card h3 {
+    font-size: 1rem !important;
+    margin-bottom: 0.25rem !important;
+  }
+  .vaccination-card .ant-tag {
+    font-size: 1rem !important;
+    padding: 0 8px !important;
+    height: 28px !important;
+    display: flex;
+    align-items: center;
+  }
+  .vaccination-card .anticon {
+    font-size: 1.1rem !important;
+  }
 }
 </style>

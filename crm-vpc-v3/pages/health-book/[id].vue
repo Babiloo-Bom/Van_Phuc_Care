@@ -449,11 +449,11 @@ onMounted(async () => {
 }
 
 :deep(.health-book-tabs .ant-tabs-tab-active) {
-  color: #1890ff;
+  color: #317BC4;
 }
 
 :deep(.health-book-tabs .ant-tabs-ink-bar) {
-  background-color: #1890ff;
+  background-color: #317BC4;
   height: 3px;
 }
 

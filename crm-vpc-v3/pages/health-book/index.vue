@@ -737,11 +737,11 @@ onMounted(async () => {
 }
 
 :deep(.health-book-tabs .ant-tabs-tab-active) {
-  color: #1890ff;
+  color: #317BC4;
 }
 
 :deep(.health-book-tabs .ant-tabs-ink-bar) {
-  background-color: #1890ff;
+  background-color: #317BC4;
   height: 3px;
 }
 
@@ -805,19 +805,19 @@ onMounted(async () => {
 /* Custom Date Picker Desktop */
 :deep(.custom-date-picker) {
   border-radius: 24px !important;
-  border: 2px solid #1890ff !important;
+  border: 2px solid #317BC4 !important;
   padding: 8px 20px !important;
   width: 150px;
 }
 
 :deep(.custom-date-picker .ant-picker-input input) {
-  color: #1890ff !important;
+  color: #317BC4 !important;
   font-weight: 500;
   font-size: 16px;
 }
 
 :deep(.custom-date-picker .ant-picker-suffix) {
-  color: #1890ff;
+  color: #317BC4;
 }
 
 /* Custom Create Button Desktop */
@@ -830,32 +830,34 @@ onMounted(async () => {
   display: flex !important;
   align-items: center !important;
   justify-content: center !important;
-  background-color: #fff;
+  background-color: #fff !important;
   box-shadow: none;
-  border: 2px solid #1890ff !important;
-  color: #1890ff !important;
+  border: 2px solid #317BC4 !important;
+  color: #317BC4 !important;
 }
 .custom-create-button:hover {
   color: #fff !important;
+  background-color: #317BC4 !important;
+  opacity: 1 !important;
 }
 
 /* Custom Date Picker Mobile */
 :deep(.custom-date-picker-mobile) {
   border-radius: 24px !important;
-  border: 2px solid #1890ff !important;
+  border: 2px solid #317BC4 !important;
   padding: 8px 20px !important;
   height: 48px !important;
 }
 
 :deep(.custom-date-picker-mobile .ant-picker-input input) {
-  color: #1890ff !important;
+  color: #317BC4 !important;
   font-weight: 500;
   font-size: 16px;
   text-align: center;
 }
 
 :deep(.custom-date-picker-mobile .ant-picker-suffix) {
-  color: #1890ff;
+  color: #317BC4;
 }
 
 /* Custom Create Button Mobile */
@@ -868,9 +870,17 @@ onMounted(async () => {
   display: flex !important;
   align-items: center !important;
   justify-content: center !important;
-  background-color: #fff;
+  background-color: #fff !important;
   box-shadow: none;
-  border: 2px solid #1890ff !important;
-  color: #1890ff !important;
+  border: 2px solid #317BC4 !important;
+  color: #317BC4 !important;
+}
+
+:deep(.ant-btn.ant-btn-primary) {
+  background-color: #317BC4;
+}
+
+:deep(.ant-btn.ant-btn-primary:hover) {
+  opacity: 0.8;
 }
 </style>

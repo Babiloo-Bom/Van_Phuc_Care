@@ -92,7 +92,7 @@ const handleViewDetail = () => {
 }
 
 .support-request-card:hover {
-  border-color: #1890ff;
+  border-color: #317BC4;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
 }
 
@@ -107,7 +107,7 @@ const handleViewDetail = () => {
 .card-title {
   font-size: 16px;
   font-weight: 600;
-  color: #1890ff;
+  color: #317BC4;
   margin: 0;
   flex: 1;
   line-height: 1.5;
@@ -156,7 +156,7 @@ const handleViewDetail = () => {
 
 .detail-link {
   font-size: 14px;
-  color: #1890ff;
+  color: #317BC4;
   font-weight: 500;
   cursor: pointer;
   text-decoration: none;
