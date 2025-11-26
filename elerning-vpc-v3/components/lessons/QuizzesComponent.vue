@@ -50,7 +50,7 @@
           <div class="text-center mt-6">
             <a-button
               type="primary"
-              :loading="submitting"
+              :loading="submitLoading"
               :disabled="Object.keys(answers).length < quiz.questions.length"
               @click="submitQuiz"
               class="bg-[#317BC4] border-none hover:bg-blue-600 rounded-[62px] h-10 font-semibold px-8 text-white"
@@ -94,41 +94,7 @@
 <script setup lang="ts">
 import { ref, computed, onMounted, onUnmounted } from 'vue'
 import { message } from 'ant-design-vue'
-
-interface QuizQuestion {
-  id: string
-  question: string
-  type: 'multiple-choice' | 'true-false' | 'fill-in-blank'
-  options?: Array<{
-    id: string
-    text: string
-    isCorrect: boolean
-  }>
-  correctAnswer: string
-  explanation: string
-  points: number
-}
-
-interface Quiz {
-  _id: string
-  courseId: string
-  chapterId: string
-  lessonId: string
-  title: string
-  description: string
-  questions: QuizQuestion[]
-  passingScore: number
-  timeLimit: number
-  attempts: number
-}
-
-interface QuizResult {
-  passed: boolean
-  score: number
-  percentage: number
-  timeSpent: number
-  attemptsLeft: number
-}
+import { useQuizStore, type IQuiz, type IQuizResult } from '~/stores/quiz';
 
 const props = defineProps<{
   courseId: string
@@ -136,52 +102,38 @@ const props = defineProps<{
   lessonId: string
   quizComplete: boolean
 }>()
+const quizStore = useQuizStore(); 
 
 const emit = defineEmits<{
   close: []
-  completed: [result: QuizResult]
+  completed: [result: IQuizResult]
 }>()
 
-// State
-const quiz = ref<Quiz | null>(null)
-const loading = ref(false)
-const submitting = ref(false)
-const quizCompleted = ref(false)
+const quiz = computed<IQuiz | null>(() => quizStore.currentQuiz);
+const loading = computed<Boolean>(() => quizStore.loading || false);
+const submitLoading = computed<Boolean>(() => quizStore.submitLoading || false);
 
-const quizResult = ref<QuizResult | null>(null)
+const quizResult = computed<IQuizResult | null>(() => quizStore.quizResult);
 
-// Quiz state
-const answers = ref<Record<string, string>>({})
+const answers = computed<Record<string, string>>(() => quizStore.answers);
+
+
 const startTime = ref<Date | null>(null)
 const timeLeft = ref(0)
-const timer = ref<NodeJS.Timeout | null>(null)
+const timer = ref<any>(null)
 
 // Methods
-const fetchQuiz = async () => {
-  try {
-    loading.value = true
-    const quizApi = useQuizApi()
-    const response = await quizApi.getQuizz(props.courseId, props.chapterId, props.lessonId)
-    console.log('Quiz fetch response:', response)
-
-    if (response.data && response.data.quiz) {
-      quiz.value = response.data.quiz
-      startTime.value = new Date()
-      
-      // Start timer if time limit exists
-      if (quiz.value.timeLimit > 0) {
-        timeLeft.value = quiz.value.timeLimit
-        startTimer()
-      }
-    }
-  } catch (error) {
-    console.error('Error fetching quiz:', error)
-  } finally {
-    loading.value = false
-  }
+const init = async () => {
+  quizStore.resetState()
+  await quizStore.fetchQuiz({
+    courseId: props.courseId,
+    chapterId: props.chapterId,
+    lessonId: props.lessonId,
+  })
 }
+
 const handleChoose = (questionId: string, answerId: string) => {
-  answers.value[questionId] = answerId
+  quizStore.setAnwsers(questionId, answerId)
 }
 const startTimer = () => {
   timer.value = setInterval(() => {
@@ -200,35 +152,20 @@ const stopTimer = () => {
 }
 
 const submitQuiz = async () => {
-  try {
-    submitting.value = true
-    stopTimer()
-    const quizApi = useQuizApi()
-    const timeSpent = startTime.value ? Math.floor((new Date().getTime() - startTime.value.getTime()) / 1000) : 0
-    // Submit to backend
-    const response = await quizApi.submitQuiz(
-      quiz.value!._id,
-      props.courseId,
-      props.chapterId,
-      props.lessonId,
-      Object.entries(answers.value).map(([questionId, answer]) => ({
-        questionId,
-        answer
-      })),
-      timeSpent
-    )
-    
-    if (response.data) {
-      console.log(response.data)
-      quizResult.value = {
-        passed: response.data.quizAttempt?.passed,
-        score: response.data.quizAttempt?.score,
-        percentage: response.data.quizAttempt?.percentage,
-        timeSpent,
-        attemptsLeft: quiz.value!.attempts - (response.data.quizAttempt?.attemptNumber || 1)
-      }
-      console.log(quizResult.value)
-      quizCompleted.value = true
+  stopTimer()
+  const timeSpent = startTime.value ? Math.floor((new Date().getTime() - startTime.value.getTime()) / 1000) : 0
+  await quizStore.submitQuiz({
+    courseId: props.courseId,
+    chapterId: props.chapterId,
+    lessonId: props.lessonId,
+    answers,
+    timeSpent
+  })
+}
+watch(quizResult,
+  (value: IQuizResult | null) => {
+    if(!value) return;
+    if (value.quizCompleted) {
       if (quizResult.value.passed) {
         message.success('Bạn đã vượt qua bài kiểm tra!')
       } else {
@@ -236,16 +173,30 @@ const submitQuiz = async () => {
       }
       emit('completed', quizResult.value)
     }
-  } catch (error) {
-    message.error(error.message || 'Có lỗi xảy ra khi nộp bài')
-  } finally {
-    submitting.value = false
-  }
-}
+  } 
+)
+watch(
+  quiz,
+  (cQuiz: any) => {
+    if (
+      !cQuiz ||
+      !cQuiz._id ||
+      timer.value !== null
+    )
+      return;
+
+    startTime.value = new Date()
+    if (quiz.value.timeLimit > 0) {
+      timeLeft.value = quiz.value.timeLimit
+      startTimer()
+    }
+  },
+  { immediate: false }
+);
 
 // Lifecycle
 onMounted(() => {
-  fetchQuiz()
+  init()
 })
 
 onUnmounted(() => {

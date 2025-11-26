@@ -337,7 +337,6 @@ const markingCompleted = ref(false);
 // Computed
 const course = computed<Course | null>(() => coursesStore.course);
 const slug = computed(() => route.params.slug as string);
-console.log("Course in my-learning/[slug]:", course);
 const currentChapter = computed<Chapter | null>(() => {
   if (!course.value?.chapters || course.value.chapters.length === 0)
     return null;

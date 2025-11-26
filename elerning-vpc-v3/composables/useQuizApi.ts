@@ -10,7 +10,11 @@ export const useQuizApi = () => {
   /**
    * Get quiz detail by id
    */
-  const getQuizz = async (courseId: string, chapterId: string, lessonId: string) => {
+  const getQuizz = async ({
+    courseId,
+    chapterId,
+    lessonId
+  }: {courseId: string, chapterId: string, lessonId: string}) => {
     try {
       const response = await $fetch(`${apiBase}/quizzes/course/${courseId}/chapter/${chapterId}/lesson/${lessonId}`)
       return response
@@ -22,7 +26,14 @@ export const useQuizApi = () => {
   /**
    * Submit quiz answers
    */
-  const submitQuiz = async (quizId: string, courseId: string, chapterId: string, lessonId: string, answers: any, timeSpent: number) => {
+  const submitQuiz = async ({
+    quizId,
+    courseId,
+    chapterId,
+    lessonId,
+    answers,
+    timeSpent
+  }: {quizId: string, courseId: string, chapterId: string, lessonId: string, answers: any, timeSpent: number}) => {
     try {
       const response = await $fetch(`${apiBaseUser}/quizzes/submit`, {
         method: 'POST',
