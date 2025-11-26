@@ -1,6 +1,8 @@
 import type { Request, Response } from 'express';
 import { sendError, sendSuccess } from '@libs/response';
 import { MongoDbTickets } from '@mongodb/tickets';
+import { MongoDbTicketComments } from '@mongodb/ticket-comments';
+import MinioService from '@services/minio';
 
 /**
  * User Ticket Controller
@@ -124,6 +126,7 @@ class UserTicketController {
   /**
    * POST /api/u/tickets
    * Create new ticket for current user
+   * Supports multipart/form-data with file uploads
    */
   async create(req: Request, res: Response) {
     try {
@@ -143,6 +146,32 @@ class UserTicketController {
       }
       if (!params.priority) {
         params.priority = 'medium';
+      }
+
+      // Handle file uploads if present
+      const files = req.files as Express.Multer.File[] | undefined;
+      if (files && files.length > 0) {
+        const attachments: Array<{ filename: string; url: string; uploadedAt: string }> = [];
+        
+        for (const file of files) {
+          try {
+            // Upload to MinIO - returns the file path like "/bucket/folder/filename"
+            const folder = 'tickets';
+            const filePath = await MinioService.uploadFile(file.buffer, file.originalname, file.mimetype, folder);
+            // Get public URL from the file path
+            const url = MinioService.getPublicUrl(filePath);
+            
+            attachments.push({
+              filename: file.originalname,
+              url: url,
+              uploadedAt: new Date().toISOString(),
+            });
+          } catch (uploadError) {
+            console.error('Error uploading file:', file.originalname, uploadError);
+          }
+        }
+        
+        params.attachments = attachments;
       }
 
       // Create ticket
@@ -186,7 +215,7 @@ class UserTicketController {
       }
 
       // Users can only update certain fields
-      const allowedFields = ['title', 'description', 'category', 'priority'];
+      const allowedFields = ['title', 'description', 'category', 'priority', 'status'];
       const updateData: any = {};
       allowedFields.forEach(field => {
         if (params[field] !== undefined) {
@@ -238,6 +267,147 @@ class UserTicketController {
       await MongoDbTickets.model.findByIdAndDelete(id);
 
       sendSuccess(res, null, 'Ticket deleted successfully');
+    } catch (error: any) {
+      sendError(res, 500, error.message, error as Error);
+    }
+  }
+
+  /**
+   * GET /api/u/tickets/:id/comments
+   * Get comments for a ticket
+   */
+  async getComments(req: Request, res: Response) {
+    try {
+      const user = req.currentUser as any;
+      if (!user || !user._id) {
+        return sendError(res, 401, 'Unauthorized');
+      }
+
+      const { id } = req.params;
+
+      // Check if ticket exists and belongs to user
+      const ticket = await MongoDbTickets.model.findOne({
+        _id: id,
+        userId: user._id,
+      });
+
+      if (!ticket) {
+        return sendError(res, 404, 'Ticket not found or access denied');
+      }
+
+      // Get comments
+      const comments = await MongoDbTicketComments.model
+        .find({ ticketId: id })
+        .populate('userId', 'fullname email avatar')
+        .populate('adminId', 'fullname email avatar')
+        .sort({ createdAt: 1 })
+        .lean();
+
+      // Format comments for frontend
+      const formattedComments = comments.map((comment: any) => ({
+        _id: comment._id,
+        content: comment.content,
+        isAdmin: comment.isAdmin,
+        name: comment.isAdmin 
+          ? (comment.adminId?.fullname || 'Admin')
+          : (comment.userId?.fullname || 'Bạn'),
+        avatar: comment.isAdmin 
+          ? comment.adminId?.avatar 
+          : comment.userId?.avatar,
+        attachments: comment.attachments || [],
+        createdAt: comment.createdAt,
+      }));
+
+      sendSuccess(res, { comments: formattedComments });
+    } catch (error: any) {
+      sendError(res, 500, error.message, error as Error);
+    }
+  }
+
+  /**
+   * POST /api/u/tickets/:id/comments
+   * Add a comment to a ticket
+   * Supports multipart/form-data with file uploads
+   */
+  async addComment(req: Request, res: Response) {
+    try {
+      const user = req.currentUser as any;
+      if (!user || !user._id) {
+        return sendError(res, 401, 'Unauthorized');
+      }
+
+      const { id } = req.params;
+      const { content } = req.body;
+
+      if (!content || !content.trim()) {
+        return sendError(res, 400, 'Content is required');
+      }
+
+      // Check if ticket exists and belongs to user
+      const ticket = await MongoDbTickets.model.findOne({
+        _id: id,
+        userId: user._id,
+      });
+
+      if (!ticket) {
+        return sendError(res, 404, 'Ticket not found or access denied');
+      }
+
+      // Handle file uploads if present
+      let attachments: Array<{ filename: string; url: string; uploadedAt: string }> = [];
+      const files = req.files as Express.Multer.File[] | undefined;
+      
+      if (files && files.length > 0) {
+        for (const file of files) {
+          try {
+            // Upload to MinIO
+            const folder = 'ticket-comments';
+            const filePath = await MinioService.uploadFile(file.buffer, file.originalname, file.mimetype, folder);
+            const url = MinioService.getPublicUrl(filePath);
+            
+            attachments.push({
+              filename: file.originalname,
+              url: url,
+              uploadedAt: new Date().toISOString(),
+            });
+          } catch (uploadError) {
+            console.error('Error uploading file:', file.originalname, uploadError);
+          }
+        }
+      }
+
+      // Create comment
+      const comment = await MongoDbTicketComments.model.create({
+        ticketId: id,
+        userId: user._id,
+        content: content.trim(),
+        isAdmin: false,
+        attachments: attachments,
+      });
+
+      // Populate user info
+      const populatedComment = await MongoDbTicketComments.model
+        .findById(comment._id)
+        .populate('userId', 'fullname email avatar')
+        .lean() as any;
+
+      // Format for frontend
+      const formattedComment = {
+        _id: populatedComment._id,
+        content: populatedComment.content,
+        isAdmin: false,
+        name: populatedComment.userId?.fullname || 'Bạn',
+        avatar: populatedComment.userId?.avatar,
+        attachments: populatedComment.attachments || [],
+        createdAt: populatedComment.createdAt,
+      };
+
+      // Update ticket status to pending if it was open (user responded)
+      if (ticket.status === 'open') {
+        await MongoDbTickets.model.findByIdAndUpdate(id, { status: 'pending' });
+      }
+
+      sendSuccess(res, { comment: formattedComment }, 'Comment added successfully');
     } catch (error: any) {
       sendError(res, 500, error.message, error as Error);
     }

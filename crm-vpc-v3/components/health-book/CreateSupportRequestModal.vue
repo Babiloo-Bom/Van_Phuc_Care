@@ -50,13 +50,24 @@
 
       <!-- Attachments -->
       <a-form-item label="Tệp đính kèm (Tùy chọn)" name="attachments">
+        <!-- Preview selected images -->
+        <div v-if="fileList && fileList.length > 0" class="selected-images">
+          <div v-for="file in fileList" :key="file.uid" class="image-preview-item">
+            <img :src="getFilePreviewUrl(file)" :alt="file.name" />
+            <button type="button" class="remove-btn" @click="removeFile(file)">
+              <CloseOutlined />
+            </button>
+          </div>
+        </div>
+        
+        <!-- Upload button -->
         <a-upload
           v-model:file-list="fileList"
           :before-upload="beforeUpload"
-          :custom-request="handleUpload"
-          list-type="picture-card"
+          :show-upload-list="false"
           :max-count="5"
           accept="image/*,video/*"
+          :multiple="true"
           class="upload-area"
         >
           <div v-if="(fileList?.length ?? 0) < 5" class="upload-button">
@@ -108,7 +119,7 @@ const emit = defineEmits<{
 }>();
 
 // API
-const { createSupportRequest } = useSupportRequestsApi();
+const { createSupportRequestWithFiles } = useSupportRequestsApi();
 
 // State
 const isVisible = ref(props.visible);
@@ -149,7 +160,7 @@ watch(isVisible, (newVal) => {
   }
 });
 
-// Upload handlers
+// Upload handlers - return false to prevent auto upload
 const beforeUpload: UploadProps["beforeUpload"] = (file) => {
   const isImage = file.type.startsWith("image/");
   const isVideo = file.type.startsWith("video/");
@@ -165,21 +176,26 @@ const beforeUpload: UploadProps["beforeUpload"] = (file) => {
     return false;
   }
 
-  return true;
+  // Return false to prevent auto upload - files will be uploaded on form submit
+  return false;
 };
 
-const handleUpload: UploadProps["customRequest"] = (options) => {
-  // TODO: Implement actual upload to server using UploadersController
-  const { file, onSuccess, onError } = options;
+// Get preview URL for file
+const getFilePreviewUrl = (file: any): string => {
+  if (file.thumbUrl) return file.thumbUrl;
+  if (file.url) return file.url;
+  if (file.originFileObj) {
+    return URL.createObjectURL(file.originFileObj);
+  }
+  return '';
+};
 
-  setTimeout(() => {
-    // Simulate upload success
-    if (onSuccess) {
-      onSuccess({
-        url: URL.createObjectURL(file as File),
-      });
-    }
-  }, 1000);
+// Remove file from list
+const removeFile = (file: any) => {
+  const index = fileList.value?.findIndex((f) => f.uid === file.uid);
+  if (index !== undefined && index > -1) {
+    fileList.value?.splice(index, 1);
+  }
 };
 
 // Form handlers
@@ -217,28 +233,24 @@ const handleSubmit = async () => {
   try {
     loading.value = true;
 
-    // Get uploaded file URLs
-    const attachments =
-      fileList.value
-        ?.filter((file) => file.status === "done")
-        .map((file) => {
-          const response = file.response as { url?: string } | undefined;
-          return {
-            filename: file.name,
-            url: response?.url || (file as any).url || "",
-            uploadedAt: new Date().toISOString(),
-          };
-        })
-        .filter((item) => item.url) || [];
+    // Collect files from fileList
+    const files: File[] = [];
+    if (fileList.value && fileList.value.length > 0) {
+      for (const file of fileList.value) {
+        const fileToUpload = file.originFileObj || file;
+        if (fileToUpload instanceof File) {
+          files.push(fileToUpload);
+        }
+      }
+    }
 
-    // Create support request via API
-    // Note: customerId is not needed, user API auto-sets userId from logged-in user
-    await createSupportRequest({
+    // Create support request with files via single API call
+    // Server will handle uploading files to MinIO
+    await createSupportRequestWithFiles({
       title: generateTitle(formState.category),
       description: formState.description,
-      customerId: props.customerId || "", // Optional, not used by user API
       category: formState.category,
-      attachments,
+      files,
       priority: "medium",
     });
 
@@ -336,14 +348,16 @@ const handleSubmit = async () => {
 .upload-button {
   display: flex;
   align-items: center;
+  justify-content: center;
   gap: 8px;
   color: #317BC4;
   font-size: 14px;
   cursor: pointer;
-  padding: 32px 16px;
+  padding: 24px 16px;
   border-radius: 6px;
   transition: all 0.3s ease;
   width: 100%;
+  border: 1px solid #1A75BB;
 }
 
 .upload-button:hover {
@@ -391,6 +405,10 @@ const handleSubmit = async () => {
     font-size: 12px;
   }
 
+  .upload-button {
+    padding: 8px;
+  }
+
   :deep(.ant-modal) {
     max-width: calc(100vw - 32px);
     margin: 16px;
@@ -417,18 +435,56 @@ const handleSubmit = async () => {
   padding: 0;
 }
 
-.upload-area {
-  padding: 0;
-  width: 100%;
-  height: 72px;
+/* Selected images preview */
+.selected-images {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  margin-bottom: 12px;
 }
-.upload-area .ant-upload-list {
+
+.image-preview-item {
+  position: relative;
+  width: 104px;
+  height: 104px;
+  border-radius: 8px;
+  overflow: hidden;
+  border: 1px solid #d9d9d9;
+}
+
+.image-preview-item img {
   width: 100%;
   height: 100%;
+  object-fit: cover;
 }
-.upload-area .ant-upload-list .ant-upload-select {
-  width: 100% !important;
-  height: 100% !important;
+
+.image-preview-item .remove-btn {
+  position: absolute;
+  top: 4px;
+  right: 4px;
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  background: rgba(0, 0, 0, 0.5);
+  color: #fff;
+  border: none;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 12px;
+}
+
+.image-preview-item .remove-btn:hover {
+  background: rgba(0, 0, 0, 0.7);
+}
+
+.upload-area {
+  width: 100%;
+}
+
+.upload-area .ant-upload {
+  width: 100%;
 }
 
 @media (max-width: 768px) {
@@ -439,8 +495,9 @@ const handleSubmit = async () => {
     top: 12px;
     right: 12px;
   }
-  .upload-area {
-    height: 40px;
+  .image-preview-item {
+    width: 80px;
+    height: 80px;
   }
 }
 </style>

@@ -135,6 +135,13 @@ class MinioService {
   }
 
   /**
+   * Get bucket name
+   */
+  public getBucketName(): string {
+    return this.bucketName;
+  }
+
+  /**
    * Get file URL - prefer presigned URL, fallback to public URL
    * @param objectName - Object name without bucket prefix
    * @param usePublic - If true, return public URL instead of presigned

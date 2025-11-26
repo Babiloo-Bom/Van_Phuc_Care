@@ -14,12 +14,8 @@
       :sub-title="error"
     >
       <template #extra>
-        <a-button type="primary" @click="fetchRequest">
-          Thử lại
-        </a-button>
-        <a-button @click="goBack">
-          Quay lại
-        </a-button>
+        <a-button type="primary" @click="fetchRequest"> Thử lại </a-button>
+        <a-button @click="goBack"> Quay lại </a-button>
       </template>
     </a-result>
 
@@ -42,9 +38,12 @@
           [{{ getCategoryLabel(request.category) }}] {{ request.title }}
         </div>
         <p class="description">{{ request.description }}</p>
-        
+
         <!-- Attachments -->
-        <div v-if="request.attachments && request.attachments.length > 0" class="attachments">
+        <div
+          v-if="request.attachments && request.attachments.length > 0"
+          class="attachments"
+        >
           <div class="attachment-list">
             <div
               v-for="(attachment, index) in request.attachments"
@@ -61,18 +60,24 @@
       <!-- Responses Section -->
       <div class="responses-section">
         <h2 class="section-title">Phản hồi</h2>
-        
+
         <div class="responses-list">
           <!-- Response Messages -->
           <div
             v-for="(response, index) in responses"
-            :key="index"
-            :class="['response-item', response.isAdmin ? 'admin-response' : 'user-response']"
+            :key="response._id || index"
+            :class="[
+              'response-item',
+              response.isAdmin ? 'admin-response' : 'user-response',
+            ]"
           >
             <div class="response-bubble">
               <p class="response-text">{{ response.content }}</p>
               <!-- Response Attachments -->
-              <div v-if="response.attachments && response.attachments.length > 0" class="response-attachments">
+              <div
+                v-if="response.attachments && response.attachments.length > 0"
+                class="response-attachments"
+              >
                 <div
                   v-for="(img, imgIndex) in response.attachments"
                   :key="imgIndex"
@@ -85,7 +90,7 @@
             </div>
             <div class="response-avatar">
               <a-avatar :src="response.avatar" :size="32">
-                {{ response.name?.charAt(0) || 'U' }}
+                {{ response.name?.charAt(0) || "U" }}
               </a-avatar>
             </div>
           </div>
@@ -120,6 +125,33 @@
             <button class="toolbar-btn" title="Unordered List">
               <UnorderedListOutlined />
             </button>
+            <div class="toolbar-divider"></div>
+            <a-upload
+              v-model:file-list="replyFileList"
+              :before-upload="beforeUpload"
+              :show-upload-list="false"
+              accept="image/*,video/*"
+              :multiple="true"
+            >
+              <button class="toolbar-btn" title="Thêm ảnh hoặc video">
+                <PictureOutlined />
+              </button>
+            </a-upload>
+          </div>
+          <!-- Mobile: Add attachment button -->
+          <div class="mobile-attachment-btn">
+            <a-upload
+              v-model:file-list="replyFileList"
+              :before-upload="beforeUpload"
+              :show-upload-list="false"
+              accept="image/*,video/*"
+              :multiple="true"
+            >
+              <a-button type="link" class="add-attachment-btn">
+                <LinkOutlined />
+                Thêm ảnh hoặc video mô tả
+              </a-button>
+            </a-upload>
           </div>
           <a-textarea
             v-model:value="replyContent"
@@ -129,22 +161,6 @@
           />
         </div>
 
-        <!-- Mobile: Add attachment button -->
-        <div class="mobile-attachment-btn">
-          <a-upload
-            v-model:file-list="replyFileList"
-            :before-upload="beforeUpload"
-            :custom-request="handleUpload"
-            :show-upload-list="false"
-            accept="image/*,video/*"
-          >
-            <a-button type="link" class="add-attachment-btn">
-              <LinkOutlined />
-              Thêm ảnh hoặc video mô tả
-            </a-button>
-          </a-upload>
-        </div>
-
         <!-- Preview uploaded files -->
         <div v-if="replyFileList?.length" class="uploaded-preview">
           <div
@@ -152,7 +168,11 @@
             :key="file.uid"
             class="preview-item"
           >
-            <img v-if="file.thumbUrl || file.url" :src="file.thumbUrl || file.url" alt="preview" />
+            <img
+              v-if="getFilePreviewUrl(file)"
+              :src="getFilePreviewUrl(file)"
+              alt="preview"
+            />
             <span class="file-name">{{ file.name }}</span>
             <a-button type="text" size="small" @click="removeFile(file)">
               <CloseOutlined />
@@ -199,7 +219,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted } from 'vue'
+import { ref, onMounted } from "vue";
 import {
   LeftOutlined,
   LinkOutlined,
@@ -210,196 +230,217 @@ import {
   StrikethroughOutlined,
   OrderedListOutlined,
   UnorderedListOutlined,
-} from '@ant-design/icons-vue'
-import { message } from 'ant-design-vue'
-import type { UploadProps } from 'ant-design-vue'
-import { useSupportRequestsApi } from '~/composables/api/useSupportRequestsApi'
-import type { SupportRequest, SupportRequestCategory } from '~/composables/api/useSupportRequestsApi'
+  PictureOutlined,
+} from "@ant-design/icons-vue";
+import { message } from "ant-design-vue";
+import type { UploadProps } from "ant-design-vue";
+import { useSupportRequestsApi } from "~/composables/api/useSupportRequestsApi";
+import type {
+  SupportRequest,
+  SupportRequestCategory,
+} from "~/composables/api/useSupportRequestsApi";
 
 // Route
-const route = useRoute()
-const router = useRouter()
-const requestId = computed(() => route.params.id as string)
+const route = useRoute();
+const router = useRouter();
+const requestId = computed(() => route.params.id as string);
 
 // API
-const { getSupportRequestById, updateSupportRequest } = useSupportRequestsApi()
+const { getSupportRequestById, updateSupportRequest, getComments, addCommentWithFiles } =
+  useSupportRequestsApi();
 
 // State
-const loading = ref(true)
-const error = ref<string | null>(null)
-const request = ref<SupportRequest | null>(null)
-const responses = ref<Array<{
-  content: string
-  isAdmin: boolean
-  name: string
-  avatar?: string
-  attachments?: Array<{ url: string; filename: string }>
-  createdAt: string
-}>>([])
+const loading = ref(true);
+const error = ref<string | null>(null);
+const request = ref<SupportRequest | null>(null);
+const responses = ref<
+  Array<{
+    _id?: string;
+    content: string;
+    isAdmin: boolean;
+    name: string;
+    avatar?: string;
+    attachments?: Array<{ url: string; filename: string }>;
+    createdAt: string;
+  }>
+>([]);
 
 // Reply state
-const replyContent = ref('')
-const replyFileList = ref<UploadProps['fileList']>([])
-const sending = ref(false)
-const completing = ref(false)
+const replyContent = ref("");
+const replyFileList = ref<UploadProps["fileList"]>([]);
+const sending = ref(false);
+const completing = ref(false);
 
 // Preview state
-const previewVisible = ref(false)
-const previewImageUrl = ref('')
+const previewVisible = ref(false);
+const previewImageUrl = ref("");
 
 // Helpers
 const formatTicketNumber = (ticketNumber: string): string => {
-  const num = ticketNumber?.replace(/\D/g, '') || '00000'
-  return num.slice(-6).padStart(6, '0')
-}
+  const num = ticketNumber?.replace(/\D/g, "") || "00000";
+  return num.slice(-6).padStart(6, "0");
+};
 
 const getCategoryLabel = (category: SupportRequestCategory): string => {
   const labels: Record<SupportRequestCategory, string> = {
-    parent_support: 'Hỗ trợ cha mẹ',
-    health_issue: 'Vấn đề sức khỏe',
-    service: 'Dịch vụ',
-    course: 'Khóa học',
-    other: 'Khác',
-  }
-  return labels[category] || 'Tên danh mục'
-}
+    parent_support: "Hỗ trợ cha mẹ",
+    health_issue: "Vấn đề sức khỏe",
+    service: "Dịch vụ",
+    course: "Khóa học",
+    other: "Khác",
+  };
+  return labels[category] || "Tên danh mục";
+};
 
-// Fetch request details
+// Fetch request details and comments
 const fetchRequest = async () => {
-  loading.value = true
-  error.value = null
+  loading.value = true;
+  error.value = null;
 
   try {
-    const data = await getSupportRequestById(requestId.value)
+    const data = await getSupportRequestById(requestId.value);
     if (data) {
-      request.value = data
+      request.value = data;
+      // Fetch comments
+      await fetchComments();
     } else {
-      error.value = 'Không tìm thấy yêu cầu hỗ trợ'
+      error.value = "Không tìm thấy yêu cầu hỗ trợ";
     }
   } catch (err: any) {
-    console.error('Error fetching support request:', err)
-    error.value = err.message || 'Không thể tải thông tin yêu cầu hỗ trợ'
+    console.error("Error fetching support request:", err);
+    error.value = err.message || "Không thể tải thông tin yêu cầu hỗ trợ";
   } finally {
-    loading.value = false
+    loading.value = false;
   }
-}
+};
+
+// Fetch comments
+const fetchComments = async () => {
+  try {
+    const comments = await getComments(requestId.value);
+    responses.value = comments;
+  } catch (err: any) {
+    console.error("Error fetching comments:", err);
+  }
+};
 
 // Navigation
 const goBack = () => {
-  router.back()
-}
+  router.back();
+};
 
 // Image preview
 const previewImage = (url: string) => {
-  previewImageUrl.value = url
-  previewVisible.value = true
-}
+  previewImageUrl.value = url;
+  previewVisible.value = true;
+};
 
-// Upload handlers
-const beforeUpload: UploadProps['beforeUpload'] = (file) => {
-  const isImage = file.type.startsWith('image/')
-  const isVideo = file.type.startsWith('video/')
+// Upload handlers - return false to prevent auto upload
+const beforeUpload: UploadProps["beforeUpload"] = (file) => {
+  const isImage = file.type.startsWith("image/");
+  const isVideo = file.type.startsWith("video/");
 
   if (!isImage && !isVideo) {
-    message.error('Chỉ có thể tải lên hình ảnh hoặc video!')
-    return false
+    message.error("Chỉ có thể tải lên hình ảnh hoặc video!");
+    return false;
   }
 
-  const isLt10M = file.size / 1024 / 1024 < 10
+  const isLt10M = file.size / 1024 / 1024 < 10;
   if (!isLt10M) {
-    message.error('Dung lượng file không được vượt quá 10MB!')
-    return false
+    message.error("Dung lượng file không được vượt quá 10MB!");
+    return false;
   }
 
-  return true
-}
+  // Return false to prevent auto upload - files will be sent with comment API
+  return false;
+};
 
-const handleUpload: UploadProps['customRequest'] = (options) => {
-  const { file, onSuccess } = options
-
-  setTimeout(() => {
-    if (onSuccess) {
-      onSuccess({
-        url: URL.createObjectURL(file as File),
-      })
-    }
-  }, 500)
-}
+// Get preview URL for file
+const getFilePreviewUrl = (file: any): string => {
+  if (file.thumbUrl) return file.thumbUrl;
+  if (file.url) return file.url;
+  if (file.originFileObj) {
+    return URL.createObjectURL(file.originFileObj);
+  }
+  return '';
+};
 
 const removeFile = (file: any) => {
-  const index = replyFileList.value?.findIndex((f) => f.uid === file.uid)
+  const index = replyFileList.value?.findIndex((f) => f.uid === file.uid);
   if (index !== undefined && index > -1) {
-    replyFileList.value?.splice(index, 1)
+    replyFileList.value?.splice(index, 1);
   }
-}
+};
 
 // Actions
 const handleSendReply = async () => {
   if (!replyContent.value.trim()) {
-    message.warning('Vui lòng nhập nội dung phản hồi')
-    return
+    message.warning("Vui lòng nhập nội dung phản hồi");
+    return;
   }
 
-  sending.value = true
+  sending.value = true;
 
   try {
-    // TODO: Call API to send reply
-    // For now, add to local list
-    const attachments = replyFileList.value
-      ?.filter((file) => file.status === 'done')
-      .map((file) => {
-        const response = file.response as { url?: string } | undefined
-        return {
-          url: response?.url || (file as any).url || '',
-          filename: file.name || 'attachment',
+    // Collect files from fileList
+    const files: File[] = [];
+    if (replyFileList.value && replyFileList.value.length > 0) {
+      for (const file of replyFileList.value) {
+        const fileToUpload = file.originFileObj || file;
+        if (fileToUpload instanceof File) {
+          files.push(fileToUpload);
         }
-      })
-      .filter((item) => item.url) || []
+      }
+    }
 
-    responses.value.push({
-      content: replyContent.value,
-      isAdmin: false,
-      name: 'Bạn',
-      attachments,
-      createdAt: new Date().toISOString(),
-    })
+    // Call API to add comment with files
+    // Server will handle uploading files to MinIO
+    const newComment = await addCommentWithFiles(
+      requestId.value,
+      replyContent.value,
+      files
+    );
 
-    replyContent.value = ''
-    replyFileList.value = []
-    message.success('Gửi phản hồi thành công!')
+    if (newComment) {
+      // Add to local list
+      responses.value.push(newComment);
+      replyContent.value = "";
+      replyFileList.value = [];
+      message.success("Gửi phản hồi thành công!");
+    }
   } catch (err: any) {
-    message.error('Không thể gửi phản hồi')
+    message.error(err.message || "Không thể gửi phản hồi");
   } finally {
-    sending.value = false
+    sending.value = false;
   }
-}
+};
 
 const handleMarkComplete = async () => {
-  completing.value = true
+  completing.value = true;
 
   try {
-    await updateSupportRequest(requestId.value, { status: 'completed' })
+    await updateSupportRequest(requestId.value, { status: "completed" });
     if (request.value) {
-      request.value.status = 'completed'
+      request.value.status = "completed";
     }
-    message.success('Đã đánh dấu hoàn tất!')
+    message.success("Đã đánh dấu hoàn tất!");
   } catch (err: any) {
-    message.error('Không thể cập nhật trạng thái')
+    message.error("Không thể cập nhật trạng thái");
   } finally {
-    completing.value = false
+    completing.value = false;
   }
-}
+};
 
 // Lifecycle
 onMounted(() => {
-  fetchRequest()
-})
+  fetchRequest();
+});
 
 // Page meta
 definePageMeta({
-  layout: 'default',
-  middleware: ['auth'],
-})
+  layout: "default",
+  middleware: ["auth"],
+});
 </script>
 
 <style scoped>
@@ -436,7 +477,7 @@ definePageMeta({
 .page-title {
   font-size: 24px;
   font-weight: 700;
-  color: #317BC4;
+  color: #317bc4;
   margin: 0;
 }
 
@@ -444,7 +485,7 @@ definePageMeta({
   display: flex;
   align-items: center;
   gap: 6px;
-  color: #317BC4;
+  color: #317bc4;
   font-weight: 500;
 }
 
@@ -464,7 +505,7 @@ definePageMeta({
 .category-label {
   font-size: 16px;
   font-weight: 600;
-  color: #317BC4;
+  color: #317bc4;
   margin-bottom: 12px;
 }
 
@@ -501,7 +542,7 @@ definePageMeta({
 }
 
 .attachment-item:hover {
-  border-color: #317BC4;
+  border-color: #317bc4;
 }
 
 /* Responses Section */
@@ -512,7 +553,7 @@ definePageMeta({
 .section-title {
   font-size: 18px;
   font-weight: 600;
-  color: #317BC4;
+  color: #317bc4;
   margin: 0 0 16px;
 }
 
@@ -608,7 +649,7 @@ definePageMeta({
   display: flex;
   gap: 4px;
   padding: 8px;
-  border: 1px solid #d9d9d9;
+  border: 1px solid #1A75BB;
   border-bottom: none;
   border-radius: 8px 8px 0 0;
   background: #fafafa;
@@ -632,13 +673,20 @@ definePageMeta({
   color: #333;
 }
 
+.toolbar-divider {
+  width: 1px;
+  height: 20px;
+  background: #d9d9d9;
+  margin: 6px 4px;
+}
+
 .reply-textarea {
   border-radius: 0 0 8px 8px !important;
   resize: none;
 }
 
 .reply-textarea:focus {
-  border-color: #317BC4 !important;
+  border-color: #317bc4 !important;
   box-shadow: none !important;
 }
 
@@ -647,9 +695,13 @@ definePageMeta({
 }
 
 .add-attachment-btn {
-  color: #317BC4;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  color: #317bc4;
   padding: 0;
   height: auto;
+  font-size: 14px;
 }
 
 .uploaded-preview {
@@ -691,8 +743,9 @@ definePageMeta({
 }
 
 .complete-btn {
-  border-color: #ff7875;
-  color: #ff7875;
+  background: #ff6b6b;
+  border-color: #ff6b6b;
+  color: #fff;
   border-radius: 8px;
   height: 44px;
   padding: 0 24px;
@@ -700,8 +753,9 @@ definePageMeta({
 }
 
 .complete-btn:hover {
-  border-color: #ff4d4f;
-  color: #ff4d4f;
+  background: #ff5252;
+  border-color: #ff5252;
+  color: #fff;
 }
 
 .send-btn {
@@ -719,6 +773,10 @@ definePageMeta({
 .preview-image {
   width: 100%;
   height: auto;
+}
+
+:deep(.ant-input.reply-textarea) {
+  border-color: #1A75BB;
 }
 
 /* Mobile Responsive */
@@ -779,30 +837,47 @@ definePageMeta({
   }
 
   .reply-textarea {
-    border-radius: 8px !important;
+    border-radius: 0 0 8px 8px !important;
+    border: 1px solid #1A75BB;
   }
 
   .mobile-attachment-btn {
-    display: block;
-    text-align: center;
-    margin-bottom: 16px;
-    padding: 12px;
-    background: #f5f5f5;
-    border-radius: 8px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    padding: 14px 16px;
+    background: #fff;
+    border: 1px solid #1A75BB;
+    border-bottom: none;
+    border-radius: 8px 8px 0 0;
   }
 
   .action-buttons {
     flex-direction: column;
+    gap: 12px;
   }
 
   .send-btn,
   .complete-btn {
     width: 100%;
     height: 48px;
+    font-size: 16px;
   }
 
   .send-btn {
     order: -1;
+  }
+
+  .complete-btn {
+    background: #ff6b6b;
+    border-color: #ff6b6b;
+    color: #fff;
+  }
+
+  .complete-btn:hover {
+    background: #ff5252;
+    border-color: #ff5252;
+    color: #fff;
   }
 }
 </style>

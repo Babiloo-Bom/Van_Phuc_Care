@@ -84,6 +84,14 @@ export interface CreateSupportRequestPayload {
   priority?: TicketPriority;
 }
 
+export interface CreateSupportRequestWithFilesPayload {
+  title: string;
+  description: string;
+  category: SupportRequestCategory;
+  files?: File[];
+  priority?: TicketPriority;
+}
+
 export interface UpdateSupportRequestPayload {
   title?: string;
   description?: string;
@@ -254,6 +262,44 @@ export const useSupportRequestsApi = () => {
     return transformTicketToSupportRequest(response.data.data.ticket);
   };
 
+  /**
+   * Create support request with file uploads using FormData
+   * Files are uploaded together with form data in a single request
+   */
+  const createSupportRequestWithFiles = async (
+    payload: CreateSupportRequestWithFilesPayload
+  ): Promise<SupportRequest | null> => {
+    const formData = new FormData();
+    
+    formData.append('title', payload.title);
+    formData.append('description', payload.description);
+    formData.append('category', mapCategoryToBackend(payload.category));
+    formData.append('priority', payload.priority || 'medium');
+    
+    // Append files
+    if (payload.files && payload.files.length > 0) {
+      payload.files.forEach((file) => {
+        formData.append('files', file);
+      });
+    }
+
+    const response = await apiClient.post<{ data: { ticket: BackendTicket } }>(
+      "/api/u/tickets",
+      formData,
+      {
+        headers: {
+          'Content-Type': 'multipart/form-data',
+        },
+      }
+    );
+
+    if (!response.status || !response.data?.data?.ticket) {
+      throw new Error(response.message || "Không thể tạo yêu cầu hỗ trợ");
+    }
+
+    return transformTicketToSupportRequest(response.data.data.ticket);
+  };
+
   const updateSupportRequest = async (
     id: string,
     payload: UpdateSupportRequestPayload
@@ -288,12 +334,94 @@ export const useSupportRequestsApi = () => {
     return response.data;
   };
 
+  // ==================== Comments API ====================
+
+  interface TicketComment {
+    _id: string;
+    content: string;
+    isAdmin: boolean;
+    name: string;
+    avatar?: string;
+    attachments?: Attachment[];
+    createdAt: string;
+  }
+
+  const getComments = async (ticketId: string): Promise<TicketComment[]> => {
+    const response = await apiClient.get<{ data: { comments: TicketComment[] } }>(
+      `/api/u/tickets/${ticketId}/comments`,
+      { showError: false }
+    );
+
+    if (!response.status || !response.data?.data?.comments) {
+      return [];
+    }
+
+    return response.data.data.comments;
+  };
+
+  const addComment = async (
+    ticketId: string,
+    content: string,
+    attachments?: Attachment[]
+  ): Promise<TicketComment | null> => {
+    const response = await apiClient.post<{ data: { comment: TicketComment } }>(
+      `/api/u/tickets/${ticketId}/comments`,
+      { content, attachments }
+    );
+
+    if (!response.status || !response.data?.data?.comment) {
+      throw new Error(response.message || "Không thể gửi phản hồi");
+    }
+
+    return response.data.data.comment;
+  };
+
+  /**
+   * Add comment with file uploads using FormData
+   * Files are uploaded together with comment in a single request
+   */
+  const addCommentWithFiles = async (
+    ticketId: string,
+    content: string,
+    files?: File[]
+  ): Promise<TicketComment | null> => {
+    const formData = new FormData();
+    formData.append('content', content);
+    
+    // Append files
+    if (files && files.length > 0) {
+      files.forEach((file) => {
+        formData.append('files', file);
+      });
+    }
+
+    const response = await apiClient.post<{ data: { comment: TicketComment } }>(
+      `/api/u/tickets/${ticketId}/comments`,
+      formData,
+      {
+        headers: {
+          'Content-Type': 'multipart/form-data',
+        },
+      }
+    );
+
+    if (!response.status || !response.data?.data?.comment) {
+      throw new Error(response.message || "Không thể gửi phản hồi");
+    }
+
+    return response.data.data.comment;
+  };
+
   return {
     getSupportRequests,
     getSupportRequestById,
     createSupportRequest,
+    createSupportRequestWithFiles,
     updateSupportRequest,
     deleteSupportRequest,
     getSupportRequestStatistics,
+    getComments,
+    addComment,
+    addCommentWithFiles,
   };
 };
