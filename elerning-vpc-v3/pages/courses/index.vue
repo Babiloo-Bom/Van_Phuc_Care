@@ -253,7 +253,7 @@ const handleAddToCart = async (course: any) => {
 const handleBuyNow = async (course: any) => {
   try {
     await cartStore.addToCart({ courseId: course._id, quantity: 1, userId: String(authStore.user?.id) || "" })
-    navigateTo('/checkout')
+    navigateTo('/cart')
   } catch (error) {
     console.error("❌ Error buying now:", error);
   }
