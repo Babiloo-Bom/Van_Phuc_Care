@@ -133,7 +133,7 @@ const init = async () => {
 }
 
 const handleChoose = (questionId: string, answerId: string) => {
-  quizStore.setAnwsers(questionId, answerId)
+  quizStore.setAnswers(questionId, answerId)
 }
 const startTimer = () => {
   timer.value = setInterval(() => {
@@ -158,20 +158,20 @@ const submitQuiz = async () => {
     courseId: props.courseId,
     chapterId: props.chapterId,
     lessonId: props.lessonId,
-    answers,
+    answers: answers.value,
     timeSpent
   })
 }
 watch(quizResult,
-  (value: IQuizResult | null) => {
+  (value) => {
     if(!value) return;
     if (value.quizCompleted) {
-      if (quizResult.value.passed) {
+      if (value.passed) {
         message.success('Bạn đã vượt qua bài kiểm tra!')
       } else {
         message.error('Bạn chưa vượt qua bài kiểm tra.')
       }
-      emit('completed', quizResult.value)
+      emit('completed', value)
     }
   } 
 )
@@ -186,7 +186,7 @@ watch(
       return;
 
     startTime.value = new Date()
-    if (quiz.value.timeLimit > 0) {
+    if (quiz?.value && quiz?.value?.timeLimit > 0) {
       timeLeft.value = quiz.value.timeLimit
       startTimer()
     }

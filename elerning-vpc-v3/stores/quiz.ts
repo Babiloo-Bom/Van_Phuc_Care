@@ -37,7 +37,7 @@ export interface IQuizResult {
 
 export const useQuizStore = defineStore('quiz', {
   state: () => ({
-    anwsers: {} as Record<string, string>, 
+    answers: {} as Record<string, string>, 
     
     currentQuiz: null as IQuiz | null,
     // Loading states
@@ -47,22 +47,22 @@ export const useQuizStore = defineStore('quiz', {
   }),
 
   getters: {
-    currentQuiz: state => state.currentQuiz,
+    getCurrentQuiz: state => state.currentQuiz,
 
-    loading: state => state.loading,
+    getLoading: state => state.loading,
 
-    submitLoading: state => state.submitLoading,
+    getSubmitLoading: state => state.submitLoading,
 
-    quizResult: state => state.quizResult,
+    getQuizResult: state => state.quizResult,
 
-    anwsers: state => state.anwsers,
+    getAnswers: state => state.answers,
   },
 
   actions: {
     setCurrentQuiz(quiz: IQuiz) {
       this.currentQuiz = quiz;
     },
-    setAnwsers(questionId: string, answerId: string){
+    setAnswers(questionId: string, answerId: string){
       this.answers[questionId] = answerId;
     },
     async fetchQuiz(params?: any) {
@@ -71,7 +71,7 @@ export const useQuizStore = defineStore('quiz', {
         const quizApi = useQuizApi()
         const response: any = await quizApi.getQuizz(params)
         if (response.data && response.data.quiz) {
-          this.currentQuiz = response.data.quiz ||  null
+          this.currentQuiz = response.data.quiz
         }
       } catch (error) {
         this.currentQuiz = null
@@ -83,10 +83,15 @@ export const useQuizStore = defineStore('quiz', {
     async submitQuiz(params?: any) {
       this.submitLoading = true;
       try {
+        if (!this.currentQuiz?._id) return
         const quizApi = useQuizApi()
         const response: any = await quizApi.submitQuiz({
           quizId: this.currentQuiz._id,
-          ...params
+          ...params,
+          answers: Object.entries(params?.answers).map(([questionId, answer]) => ({
+            questionId,
+            answer
+          }))
         })
         if (response.data) {
           this.quizResult = {
@@ -109,7 +114,7 @@ export const useQuizStore = defineStore('quiz', {
       this.submitLoading = false;
       this.loading = false;
       this.currentQuiz = null;
-      this.anwsers = {}
+      this.answers = {}
       this.quizResult = null;
     },
   },

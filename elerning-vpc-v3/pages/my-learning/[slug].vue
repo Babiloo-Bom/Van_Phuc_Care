@@ -357,8 +357,7 @@ const currentLesson = computed<Lesson | null>(() => {
     currentChapter.value.lessons[0];
   return lesson || null;
 });
-console.log("Current Lesson:", currentLesson.value);
-console.log("Current Lesson:currentLessonIndex.value", currentLessonIndex.value);
+
 
 // Get video URL from lesson (could be from videoUrl or videos array)
 const currentVideoUrl = computed(() => {
