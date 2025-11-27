@@ -64,6 +64,7 @@ class MinioService {
 
   /**
    * Upload file to MinIO
+   * @returns Object name (without bucket prefix) for use with getPublicUrl
    */
   public async uploadFile(
     fileBuffer: Buffer,
@@ -85,9 +86,9 @@ class MinioService {
         }
       );
 
-      const fileUrl = `/${this.bucketName}/${objectName}`;
-      
-      return fileUrl;
+      // Return only the object name (without bucket prefix)
+      // getPublicUrl will add the bucket name
+      return objectName;
     } catch (error) {
       console.error('❌ Upload file error:', error);
       throw error;
@@ -124,14 +125,25 @@ class MinioService {
 
   /**
    * Get public URL for file access (requires public bucket policy)
-   * @param objectName - Object name without bucket prefix
+   * @param objectName - Object name without bucket prefix (e.g., "tickets/123-file.jpg")
    * @returns Public URL
    */
   public getPublicUrl(objectName: string): string {
+    // Remove leading slash if present
+    const cleanObjectName = objectName.startsWith('/') ? objectName.slice(1) : objectName;
+    
+    // Remove bucket name prefix if accidentally included
+    const bucketPrefix = `${this.bucketName}/`;
+    const finalObjectName = cleanObjectName.startsWith(bucketPrefix) 
+      ? cleanObjectName.slice(bucketPrefix.length) 
+      : cleanObjectName;
+    
+    // Use MINIO_PUBLIC_URL for external access (important for Docker environments)
+    // This should be set to the externally accessible URL (e.g., http://localhost:9000)
     const publicBaseUrl = process.env.MINIO_PUBLIC_URL || 
       `${process.env.MINIO_USE_SSL === 'true' ? 'https' : 'http'}://${process.env.MINIO_ENDPOINT || 'localhost'}:${process.env.MINIO_PORT || '9000'}`;
     
-    return `${publicBaseUrl}/${this.bucketName}/${objectName}`;
+    return `${publicBaseUrl}/${this.bucketName}/${finalObjectName}`;
   }
 
   /**
