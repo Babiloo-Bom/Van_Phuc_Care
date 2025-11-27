@@ -39,11 +39,19 @@ export const coursesData = [
               isPreview: true,
               videos: [{
                 title: 'Giới thiệu React',
-                videoUrl: 'https://example.com/videos/react-intro.mp4',
+                videoUrl: 'https://videos.pexels.com/video-files/5752729/5752729-uhd_2560_1440_30fps.mp4',
                 thumbnail: '/images/thumbnails/react-intro.jpg',
                 duration: 600,
                 fileSize: 50000000,
                 quality: '720',
+                index: 0
+              }],
+              documents: [{
+                title: 'Tài liệu React',
+                fileUrl: 'https://www.adobe.com/support/products/enterprise/knowledgecenter/media/c4611_sample_explain.pdf',
+                fileName: 'c4611_sample_explain.pdf',
+                fileSize: 1024000,
+                fileType: 'application/pdf',
                 index: 0
               }],
               duration: 600
@@ -56,7 +64,7 @@ export const coursesData = [
               isPreview: false,
               videos: [{
                 title: 'Cài đặt React',
-                videoUrl: 'https://example.com/videos/react-setup.mp4',
+                videoUrl: 'https://videos.pexels.com/video-files/5752729/5752729-uhd_2560_1440_30fps.mp4',
                 thumbnail: '/images/thumbnails/react-setup.jpg',
                 duration: 900,
                 fileSize: 75000000,
@@ -134,11 +142,19 @@ export const coursesData = [
               isPreview: false,
               videos: [{
                 title: 'Tạo Component',
-                videoUrl: 'https://example.com/videos/react-component.mp4',
+                videoUrl: 'https://videos.pexels.com/video-files/5752729/5752729-uhd_2560_1440_30fps.mp4',
                 thumbnail: '/images/thumbnails/react-component.jpg',
                 duration: 1200,
                 fileSize: 100000000,
                 quality: '720',
+                index: 0
+              }],
+              documents: [{
+                title: 'Tài liệu Component',
+                fileUrl: 'https://www.adobe.com/support/products/enterprise/knowledgecenter/media/c4611_sample_explain.pdf',
+                fileName: 'c4611_sample_explain.pdf',
+                fileSize: 1024000,
+                fileType: 'application/pdf',
                 index: 0
               }],
               duration: 1200
@@ -151,11 +167,19 @@ export const coursesData = [
               isPreview: false,
               videos: [{
                 title: 'Props trong React',
-                videoUrl: 'https://example.com/videos/react-props.mp4',
+                videoUrl: 'https://videos.pexels.com/video-files/5752729/5752729-uhd_2560_1440_30fps.mp4',
                 thumbnail: '/images/thumbnails/react-props.jpg',
                 duration: 1100,
                 fileSize: 95000000,
                 quality: '720',
+                index: 0
+              }],
+              documents: [{
+                title: 'Tài liệu Props trong React',
+                fileUrl: 'https://www.adobe.com/support/products/enterprise/knowledgecenter/media/c4611_sample_explain.pdf',
+                fileName: 'c4611_sample_explain.pdf',
+                fileSize: 1024000,
+                fileType: 'application/pdf',
                 index: 0
               }],
               duration: 1100
@@ -219,11 +243,19 @@ export const coursesData = [
               isPreview: true,
               videos: [{
                 title: 'Giới thiệu Figma',
-                videoUrl: 'https://example.com/videos/figma-intro.mp4',
+                videoUrl: 'https://videos.pexels.com/video-files/5752729/5752729-uhd_2560_1440_30fps.mp4',
                 thumbnail: '/images/thumbnails/figma-intro.jpg',
                 duration: 500,
                 fileSize: 40000000,
                 quality: '720',
+                index: 0
+              }],
+              documents: [{
+                title: 'Tài liệu Figma',
+                fileUrl: 'https://www.adobe.com/support/products/enterprise/knowledgecenter/media/c4611_sample_explain.pdf',
+                fileName: 'c4611_sample_explain.pdf',
+                fileSize: 1024000,
+                fileType: 'application/pdf',
                 index: 0
               }],
               duration: 500
@@ -313,11 +345,19 @@ export const coursesData = [
               isPreview: true,
               videos: [{
                 title: 'Cài đặt Python',
-                videoUrl: 'https://example.com/videos/python-setup.mp4',
+                videoUrl: 'https://videos.pexels.com/video-files/5752729/5752729-uhd_2560_1440_30fps.mp4',
                 thumbnail: '/images/thumbnails/python-setup.jpg',
                 duration: 700,
                 fileSize: 60000000,
                 quality: '720',
+                index: 0
+              }],
+              documents: [{
+                title: 'Tài liệu Python',
+                fileUrl: 'https://www.adobe.com/support/products/enterprise/knowledgecenter/media/c4611_sample_explain.pdf',
+                fileName: 'c4611_sample_explain.pdf',
+                fileSize: 1024000,
+                fileType: 'application/pdf',
                 index: 0
               }],
               duration: 700
@@ -406,9 +446,17 @@ export const coursesData = [
               content: '<p>Marketing digital là hình thức marketing sử dụng internet và công nghệ số...</p>',
               type: 'video',
               isPreview: true,
+              documents: [{
+                title: 'Tài liệu Marketing Digital',
+                fileUrl: 'https://www.adobe.com/support/products/enterprise/knowledgecenter/media/c4611_sample_explain.pdf',
+                fileName: 'c4611_sample_explain.pdf',
+                fileSize: 1024000,
+                fileType: 'application/pdf',
+                index: 0
+              }],
               videos: [{
                 title: 'Giới thiệu Marketing Digital',
-                videoUrl: 'https://example.com/videos/marketing-intro.mp4',
+                videoUrl: 'https://videos.pexels.com/video-files/5752729/5752729-uhd_2560_1440_30fps.mp4',
                 thumbnail: '/images/thumbnails/marketing-intro.jpg',
                 duration: 600,
                 fileSize: 50000000,
@@ -503,11 +551,19 @@ export const coursesData = [
               isPreview: true,
               videos: [{
                 title: 'Giới thiệu Node.js',
-                videoUrl: 'https://example.com/videos/nodejs-intro.mp4',
+                videoUrl: 'https://videos.pexels.com/video-files/5752729/5752729-uhd_2560_1440_30fps.mp4',
                 thumbnail: '/images/thumbnails/nodejs-intro.jpg',
                 duration: 550,
                 fileSize: 45000000,
                 quality: '720',
+                index: 0
+              }],
+              documents: [{
+                title: 'Tài liệu NodeJS',
+                fileUrl: 'https://www.adobe.com/support/products/enterprise/knowledgecenter/media/c4611_sample_explain.pdf',
+                fileName: 'c4611_sample_explain.pdf',
+                fileSize: 1024000,
+                fileType: 'application/pdf',
                 index: 0
               }],
               duration: 550
