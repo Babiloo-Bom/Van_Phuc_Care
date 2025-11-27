@@ -147,14 +147,12 @@ const rules: Record<string, Rule[]> = {
 watch(
   () => props.visible,
   (newVal) => {
-    console.log("CreateSupportRequestModal: props.visible changed to:", newVal);
     isVisible.value = newVal;
   }
 );
 
 // Watch isVisible to emit update
 watch(isVisible, (newVal) => {
-  console.log("CreateSupportRequestModal: isVisible changed to:", newVal);
   if (!newVal) {
     emit("update:visible", false);
   }

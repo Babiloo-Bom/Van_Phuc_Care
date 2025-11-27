@@ -91,8 +91,6 @@ export const useGoogleAuth = () => {
     request: GoogleLoginRequest,
   ): Promise<GoogleLoginResponse> => {
     try {
-      console.log('🔄 Calling Google login API with request:', request);
-
       const response = await $fetch<GoogleLoginResponse>(
         '/api/auth/google/login-backend',
         {
@@ -101,14 +99,11 @@ export const useGoogleAuth = () => {
         },
       );
 
-      console.log('🔍 Google login API response:', response);
-
       if (!response) {
         console.error('❌ No data received from server');
         throw new Error('Không nhận được phản hồi từ server');
       }
 
-      console.log('✅ Google login API success:', response);
       return response;
     } catch (error: any) {
       console.error('❌ Google login API failed:', error);

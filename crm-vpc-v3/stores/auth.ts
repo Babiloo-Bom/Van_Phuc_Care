@@ -72,12 +72,6 @@ export const useAuthStore = defineStore('auth', {
 
         // Calculate token expiry time (default 7 days if not provided)
         this.token = token;
-        console.log(
-          '🔍 tokenExpireAt from API:',
-          tokenExpireAt,
-          'type:',
-          typeof tokenExpireAt,
-        );
         this.tokenExpireAt = tokenExpireAt
           ? this.calculateExpireTime(tokenExpireAt)
           : this.calculateExpireTime('7d');
@@ -87,8 +81,6 @@ export const useAuthStore = defineStore('auth', {
         // Fetch full user profile data from API
         try {
           const profileResponse = (await authApi.getUserProfile()) as any;
-          console.log('📡 User profile response:', profileResponse);
-          
           const userData = profileResponse?.data?.user || profileResponse?.data?.data || profileResponse?.data;
           
           this.user = {
@@ -106,7 +98,6 @@ export const useAuthStore = defineStore('auth', {
             courseCompleted: userData?.courseCompleted || [],
           };
           
-          console.log('✅ User profile loaded:', this.user);
         } catch (profileError) {
           console.error('⚠️ Failed to fetch user profile, using basic data:', profileError);
           // Fallback to basic user data if profile fetch fails
@@ -143,7 +134,6 @@ export const useAuthStore = defineStore('auth', {
           error?.name === 'AbortError' ||
           error?.message?.includes('aborted')
         ) {
-          console.log('[Auth] Login cancelled (navigation/reload)');
           return { success: false, error: 'Request cancelled' };
         }
         console.error('Login error:', error);
@@ -167,46 +157,20 @@ export const useAuthStore = defineStore('auth', {
       action: 'add' | 'remove' = 'add',
     ) {
       if (!this.user || !this.token) {
-        console.log('⚠️ No user or token to update course register');
         return false;
       }
 
       try {
-        console.log('🔄 Updating course register via API...', {
-          courseIds,
-          action,
-        });
-        console.log(
-          '📚 Current courseRegister before API call:',
-          this.user?.courseRegister,
-        );
-        console.log(
-          '📚 Current courseRegister length before API call:',
-          this.user?.courseRegister?.length,
-        );
-        console.log('📚 Current courseRegister values before API call:', [
-          ...(this.user?.courseRegister || []),
-        ]);
-
         const authApi = useAuthApi();
         const response = (await authApi.updateCourseRegister(
           courseIds,
           action,
         )) as any;
 
-        console.log('📡 API response:', response);
-
         if (response.data?.user) {
           // Update local user data
           this.user.courseRegister = response.data.user.courseRegister;
           this.saveAuth();
-          console.log('✅ Course register updated:', {
-            courseRegister: this.user.courseRegister,
-            courseRegisterLength: this.user.courseRegister?.length,
-            courseRegisterArray: Array.from(this.user.courseRegister || []),
-            courseRegisterValues: [...(this.user.courseRegister || [])],
-            courseIds,
-          });
           return true;
         }
         return false;
@@ -221,13 +185,10 @@ export const useAuthStore = defineStore('auth', {
      */
     async refreshUserData() {
       if (!this.user || !this.token) {
-        console.log('⚠️ No user or token to refresh');
         return;
       }
 
       try {
-        console.log('🔄 Refreshing user data from backend...');
-
         const authApi = useAuthApi();
         const response = (await authApi.getUserProfile()) as any;
 
@@ -235,19 +196,6 @@ export const useAuthStore = defineStore('auth', {
           // Update user data with fresh data from backend
           this.user = response.data.user;
           this.saveAuth();
-          console.log('✅ User data refreshed:', {
-            courseRegister: this.user?.courseRegister,
-            courseCompleted: this.user?.courseCompleted,
-            courseRegisterLength: this.user?.courseRegister?.length,
-            courseRegisterContent: JSON.stringify(this.user?.courseRegister),
-            responseData: response.data?.user,
-            responseDataCourseRegister: response.data?.user?.courseRegister,
-            responseDataCourseRegisterLength:
-              response.data?.user?.courseRegister?.length,
-            responseDataCourseRegisterContent: JSON.stringify(
-              response.data?.user?.courseRegister,
-            ),
-          });
         }
       } catch (error) {
         console.error('❌ Error refreshing user data:', error);
@@ -473,7 +421,6 @@ export const useAuthStore = defineStore('auth', {
             rememberAccount: this.rememberAccount,
           };
           localStorage.setItem('authData', JSON.stringify(authData));
-          console.log('✅ Auth data saved to localStorage');
         } catch (error) {
           console.error('❌ Error saving auth data:', error);
         }
@@ -491,26 +438,13 @@ export const useAuthStore = defineStore('auth', {
         const userStr = localStorage.getItem('user');
         const authDataStr = localStorage.getItem('auth_data');
 
-        console.log('🔍 initAuth - localStorage data:', {
-          token: token ? 'exists' : 'null',
-          tokenExpireAt,
-          userStr: userStr ? 'exists' : 'null',
-          authDataStr: authDataStr ? 'exists' : 'null',
-        });
-
-        // Debug: Show actual values
-        if (token) console.log('🔍 Token:', token.substring(0, 20) + '...');
-        if (userStr) console.log('🔍 User:', JSON.parse(userStr));
-        if (tokenExpireAt) console.log('🔍 Token Expire At:', tokenExpireAt);
-
         // Try to restore from authData first (new format), then fallback to old format
         let authData = null;
         if (authDataStr) {
           try {
             authData = JSON.parse(authDataStr);
-            console.log('🔍 Found authData in localStorage:', authData);
           } catch (e) {
-            console.log('⚠️ Failed to parse authData:', e);
+            console.error('⚠️ Failed to parse authData:', e);
           }
         }
 
@@ -521,17 +455,7 @@ export const useAuthStore = defineStore('auth', {
             if (authData.tokenExpireAt) {
               const expireTime = new Date(authData.tokenExpireAt).getTime();
               const now = Date.now();
-
-              console.log('🔍 [initAuth authData] Token expiry check:', {
-                tokenExpireAt: authData.tokenExpireAt,
-                expireTime: new Date(expireTime).toISOString(),
-                now: new Date(now).toISOString(),
-                isNaN: isNaN(expireTime),
-                isExpired: now >= expireTime,
-              });
-
               if (!isNaN(expireTime) && now >= expireTime) {
-                console.log('⚠️ Token expired, clearing data');
                 // Token expired, clear data
                 this.logout();
                 return;
@@ -542,12 +466,6 @@ export const useAuthStore = defineStore('auth', {
             this.tokenExpireAt = authData.tokenExpireAt;
             this.user = authData.user;
             this.isAuthenticated = true;
-
-            console.log('✅ Auth restored from authData:', {
-              isAuthenticated: this.isAuthenticated,
-              user: this.user,
-              token: this.token ? 'exists' : 'null',
-            });
           } catch (e) {
             console.error('❌ Error restoring from authData:', e);
             this.logout();
@@ -561,16 +479,7 @@ export const useAuthStore = defineStore('auth', {
               const expireTime = new Date(tokenExpireAt).getTime();
               const now = Date.now();
 
-              console.log('🔍 [initAuth localStorage] Token expiry check:', {
-                tokenExpireAt,
-                expireTime: new Date(expireTime).toISOString(),
-                now: new Date(now).toISOString(),
-                isNaN: isNaN(expireTime),
-                isExpired: now >= expireTime,
-              });
-
               if (!isNaN(expireTime) && now >= expireTime) {
-                console.log('⚠️ Token expired, clearing data');
                 // Token expired, clear data
                 this.logout();
                 return;
@@ -581,13 +490,6 @@ export const useAuthStore = defineStore('auth', {
             this.tokenExpireAt = tokenExpireAt;
             this.user = JSON.parse(userStr);
             this.isAuthenticated = true;
-
-            console.log('✅ Auth restored from localStorage:', {
-              isAuthenticated: this.isAuthenticated,
-              user: this.user,
-              token: this.token ? 'exists' : 'null',
-              courseRegister: this.user?.courseRegister,
-            });
 
             // Check for remember account
             if (authDataStr) {
@@ -612,30 +514,20 @@ export const useAuthStore = defineStore('auth', {
      * Calculate token expiry time from TTL string (e.g., '7d', '24h', '1y')
      */
     calculateExpireTime(ttl: string | Date | number): string {
-      console.log(
-        '🔍 calculateExpireTime called with:',
-        ttl,
-        'type:',
-        typeof ttl,
-      );
       const now = new Date();
 
       // If ttl is already a Date object, return it
       if (ttl instanceof Date) {
-        console.log('🔍 ttl is Date object');
         return ttl.toISOString();
       }
 
       // If ttl is a number (timestamp), convert to Date
       if (typeof ttl === 'number') {
-        console.log('🔍 ttl is number');
-
         return new Date(ttl + new Date().getTime()).toISOString();
       }
 
       // If ttl is a string, parse it
       if (typeof ttl !== 'string') {
-        console.log('🔍 ttl is not string, using default');
         // Default to 7 days if format is invalid
         return new Date(now.getTime() + 7 * 24 * 60 * 60 * 1000).toISOString();
       }
@@ -678,6 +570,7 @@ export const useAuthStore = defineStore('auth', {
     /**
      * Complete Google Login
      * Store token and user data from Google OAuth
+     * If userData is not provided, will fetch from API
      */
     async completeGoogleLogin(
       accessToken: string,
@@ -686,6 +579,11 @@ export const useAuthStore = defineStore('auth', {
     ) {
       try {
         this.token = accessToken;
+
+        // Save token to localStorage first (needed for API calls)
+        if (process.client) {
+          localStorage.setItem('auth_token', accessToken);
+        }
 
         // Handle tokenExpireAt properly
         if (typeof tokenExpireAt === 'number') {
@@ -699,32 +597,44 @@ export const useAuthStore = defineStore('auth', {
           ).toISOString();
         }
 
+        // If userData is not provided, fetch from API
+        if (!userData) {
+          const authApi = useAuthApi();
+          const profileResponse = (await authApi.getUserProfile()) as any;
+          const fetchedUserData = profileResponse?.data?.user || profileResponse?.data?.data || profileResponse?.data;
+          
+          userData = {
+            id: fetchedUserData?._id || fetchedUserData?.id || 'temp-id',
+            email: fetchedUserData?.email || '',
+            username: fetchedUserData?.username || fetchedUserData?.email,
+            fullname: fetchedUserData?.fullname || fetchedUserData?.name || '',
+            name: fetchedUserData?.name || fetchedUserData?.fullname,
+            phone: fetchedUserData?.phoneNumber || fetchedUserData?.phone,
+            role: fetchedUserData?.role || 'user',
+            avatar: fetchedUserData?.avatar,
+            verified: fetchedUserData?.verified,
+            status: fetchedUserData?.status,
+          };
+        }
+
         this.user = userData;
         this.isAuthenticated = true;
 
-        console.log('🔐 Google login completed:', {
-          token: accessToken ? 'exists' : 'null',
-          user: userData,
-          expireAt: this.tokenExpireAt,
-          isAuthenticated: this.isAuthenticated,
-        });
-
         // Save to localStorage
         if (process.client) {
-          localStorage.setItem('auth_token', accessToken);
           localStorage.setItem('token_expire_at', this.tokenExpireAt);
           localStorage.setItem('user', JSON.stringify(userData));
-
-          console.log('💾 Auth data saved to localStorage:', {
-            token: accessToken ? 'exists' : 'null',
-            user: userData,
-            expireAt: this.tokenExpireAt,
-          });
         }
 
         return { success: true };
       } catch (error: any) {
         console.error('Complete Google login error:', error);
+        // Cleanup on error
+        if (process.client) {
+          localStorage.removeItem('auth_token');
+        }
+        this.token = null;
+        this.isAuthenticated = false;
         return { success: false, error: error.message };
       }
     },

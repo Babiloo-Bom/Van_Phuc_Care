@@ -63,7 +63,6 @@ const fetchVaccinations = async () => {
     healthBookId: props.healthBookId,
     customerId: props.customerId
   })
-  console.log('Fetched vaccination schedule:', data)
   vaccinations.value = data
 }
 

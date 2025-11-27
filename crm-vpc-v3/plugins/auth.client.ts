@@ -4,6 +4,9 @@
  * Migrated from @nuxtjs/auth-next
  */
 
+// Flag to prevent infinite logout loop
+let isLoggingOut = false;
+
 export default defineNuxtPlugin(nuxtApp => {
   const authStore = useAuthStore();
 
@@ -44,8 +47,37 @@ export default defineNuxtPlugin(nuxtApp => {
     onResponseError({ request, response }) {
       // Handle 401 - unauthorized
       if (response.status === 401) {
-        console.warn('Unauthorized, logging out...');
-        authStore.logout();
+        // Check if this is a logout request - don't trigger logout again
+        const requestUrl = typeof request === 'string' ? request : request?.url || '';
+        const isLogoutRequest = requestUrl.includes('/logout') || requestUrl.includes('/auth/logout');
+        
+        // Prevent infinite loop: don't logout if already logging out or if this is logout request
+        if (isLoggingOut || isLogoutRequest) {
+          return;
+        }
+        
+        console.warn('[Auth] Unauthorized (401), logging out...');
+        isLoggingOut = true;
+        
+        // Clear auth state directly without calling logout API
+        authStore.user = null;
+        authStore.token = null;
+        authStore.isAuthenticated = false;
+        
+        // Clear localStorage
+        if (typeof localStorage !== 'undefined') {
+          localStorage.removeItem('auth_token');
+          localStorage.removeItem('user');
+          localStorage.removeItem('token_expire_at');
+        }
+        
+        // Redirect to login
+        navigateTo('/login');
+        
+        // Reset flag after a delay
+        setTimeout(() => {
+          isLoggingOut = false;
+        }, 1000);
       }
     },
   });

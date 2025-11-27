@@ -25,10 +25,6 @@ export const useAuthApi = () => {
   // Hardcode for testing - should be http://localhost:3000/api/a
   let apiBase = config.public.apiBase || 'http://localhost:3000/api/u';
 
-  // Debug: Log API base URL
-  console.log('🔍 API Base URL:', apiBase);
-  console.log('🔍 Config public.apiBase:', config.public.apiBase);
-
   // Check if it's absolute path (http://...) or relative path
   const isAbsolutePath =
     apiBase.startsWith('http://') || apiBase.startsWith('https://');
@@ -95,8 +91,6 @@ export const useAuthApi = () => {
   apiBase = apiBase.replace(/\/api\/api+/g, '/api');
   // apiBase = 'http://localhost:3000/api/a'
   // Debug: Log final API base URL
-  console.log('🔍 Final API Base URL:', apiBase);
-
   /**
    * Exponential backoff delay
    */
@@ -232,14 +226,6 @@ export const useAuthApi = () => {
       phone?: string,
     ) {
       try {
-        console.log('🔍 Register API call:', {
-          url: `${apiBase}/sessions`,
-          email,
-          fullname: fullname || email.split('@')[0],
-          domain: 'vanphuccare.gensi.vn',
-          origin: 'vanphuccare.gensi.vn',
-        });
-
         const result = await withRetry(() =>
           fetchWithTimeout(`${apiBase}/sessions`, {
             method: 'POST',
@@ -255,7 +241,6 @@ export const useAuthApi = () => {
           }),
         );
 
-        console.log('🔍 Register API response:', result);
         return result;
       } catch (error: any) {
         console.error('🔍 Register API error:', error);
@@ -487,12 +472,6 @@ export const useAuthApi = () => {
         const authStore = useAuthStore();
         const token = authStore.token;
 
-        console.log(
-          '🔍 JWT Token for getUserProfile:',
-          token ? token.substring(0, 20) + '...' : 'null',
-        );
-        console.log('🔍 API URL:', `${apiBase}/users/profile`);
-
         return await withRetry(() =>
           fetchWithTimeout(`${apiBase}/users/profile`, {
             method: 'GET',
@@ -517,13 +496,6 @@ export const useAuthApi = () => {
       try {
         const authStore = useAuthStore();
         const token = authStore.token;
-
-        console.log(
-          '🔍 JWT Token for updateCourseRegister:',
-          token ? token.substring(0, 20) + '...' : 'null',
-        );
-        console.log('🔍 API URL:', `${apiBase}/admins/course-register`);
-        console.log('🔍 Request body:', { courseIds, action });
 
         return await withRetry(() =>
           fetchWithTimeout(`${apiBase}/admins/course-register`, {

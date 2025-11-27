@@ -5,6 +5,7 @@
 
 import { Request, Response } from 'express'
 import MongoDbAdmins from '@mongodb/admins'
+import MongoDbUsers from '@mongodb/users'
 import { sendSuccess, sendError } from '@libs/response'
 import { InternalError } from '@libs/errors'
 import jwt from 'jsonwebtoken'
@@ -136,28 +137,58 @@ export default class GoogleAuthController {
         })
       }
 
-      // Generate JWT token
+      // Also create/update user in users collection for CRM access
+      let user = await MongoDbUsers.model.findOne({ 
+        email: googleProfileData.email 
+      })
+
+      if (user) {
+        // Update existing user
+        user.set({
+          fullname: googleProfileData.name,
+          avatar: googleProfileData.picture,
+          provider: 'google',
+          googleId: googleProfileData.id,
+          status: MongoDbUsers.STATUS_ENUM.ACTIVE,
+          updatedAt: new Date()
+        })
+        await user.save()
+      } else {
+        // Create new user in users collection
+        user = await MongoDbUsers.model.create({
+          email: googleProfileData.email,
+          fullname: googleProfileData.name,
+          avatar: googleProfileData.picture,
+          phoneNumber: `google-${Date.now()}`, // Required field
+          provider: 'google',
+          googleId: googleProfileData.id,
+          status: MongoDbUsers.STATUS_ENUM.ACTIVE,
+          type: 'normal'
+        })
+      }
+
+      // Generate JWT token using user._id (from users collection) for CRM compatibility
       const accessToken = jwt.sign(
         { 
-          id: admin._id,
-          email: admin.get('email'),
-          role: admin.get('role') || 'user'
+          id: user._id,
+          email: user.get('email'),
+          role: 'user'
         },
-        settings.jwt.adminSecret,
+        settings.jwt.userSecret,
         { expiresIn: settings.jwt.ttl }
       )
 
 
       sendSuccess(res, {
         user: {
-          _id: admin._id,
-          email: admin.get('email'),
-          fullname: admin.get('fullname'),
-          avatar: admin.get('avatar'),
-          role: admin.get('role') || 'user',
+          _id: user._id,
+          email: user.get('email'),
+          fullname: user.get('fullname'),
+          avatar: user.get('avatar'),
+          role: 'user',
           permissions: admin.get('permissions') || [],
           provider: 'google',
-          googleId: admin.get('googleId')
+          googleId: user.get('googleId')
         },
         accessToken,
         tokenExpireAt: settings.jwt.ttl
@@ -220,7 +251,7 @@ export default class GoogleAuthController {
       
       const profile = await profileResponse.json()
       
-      // Find or create user
+      // Find or create user in admins collection
       let admin = await MongoDbAdmins.model.findOne({ 
         email: profile.email 
       })
@@ -254,20 +285,50 @@ export default class GoogleAuthController {
         })
       }
 
-      // Generate JWT token
+      // Also create/update user in users collection for CRM access
+      let user = await MongoDbUsers.model.findOne({ 
+        email: profile.email 
+      })
+
+      if (user) {
+        // Update existing user
+        user.set({
+          fullname: profile.name,
+          avatar: profile.picture,
+          provider: 'google',
+          googleId: profile.id,
+          status: MongoDbUsers.STATUS_ENUM.ACTIVE,
+          updatedAt: new Date()
+        })
+        await user.save()
+      } else {
+        // Create new user in users collection
+        user = await MongoDbUsers.model.create({
+          email: profile.email,
+          fullname: profile.name,
+          avatar: profile.picture,
+          phoneNumber: `google-${Date.now()}`, // Required field
+          provider: 'google',
+          googleId: profile.id,
+          status: MongoDbUsers.STATUS_ENUM.ACTIVE,
+          type: 'normal'
+        })
+      }
+
+      // Generate JWT token using user._id (from users collection) for CRM compatibility
       const accessToken = jwt.sign(
         { 
-          id: admin._id,
-          email: admin.get('email'),
-          role: admin.get('role') || 'user'
+          id: user._id,
+          email: user.get('email'),
+          role: 'user'
         },
-        settings.jwt.adminSecret,
+        settings.jwt.userSecret,
         { expiresIn: settings.jwt.ttl }
       )
 
       // Redirect to frontend with token
       const baseFrontend = (stateFrontendUrl || process.env.FRONTEND_URL || '').replace(/\/$/, '')
-      const frontendUrl = baseFrontend ? `${baseFrontend}/login?google_success=true&token=${accessToken}` : `/login?google_success=true&token=${accessToken}`
+      const frontendUrl = baseFrontend ? `${baseFrontend}?google_success=true&token=${accessToken}` : `/?google_success=true&token=${accessToken}`
       return res.redirect(frontendUrl)
       
     } catch (error: any) {

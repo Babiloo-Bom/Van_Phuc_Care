@@ -237,16 +237,13 @@ const fetchServices = async () => {
     if (activeTab.value === 'used') {
       // Get user's registered services
       const res = await getMyServices({})
-      console.log('My services response:', res)
       services.value = res.data?.data?.data || res.data?.data || []
     } else {
       // Get all services
       const res = await getServices({})
-      console.log('All services response:', res)
       services.value = res.data?.data?.data || res.data?.data || []
     }
     
-    console.log('Services loaded:', services.value)
   } catch (e) {
     console.error('Error fetching services:', e)
     services.value = []

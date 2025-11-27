@@ -63,7 +63,7 @@
           >
             <a-input
               v-model:value="formState.name"
-              placeholder="Tèo"
+              placeholder="Nhập tên bé"
               size="large"
               class="rounded-lg"
             />
@@ -79,7 +79,7 @@
             >
               <a-date-picker
                 v-model:value="formState.dob"
-                placeholder="Tèo"
+                placeholder="Chọn ngày sinh"
                 format="DD/MM/YYYY"
                 :locale="locale"
                 size="large"

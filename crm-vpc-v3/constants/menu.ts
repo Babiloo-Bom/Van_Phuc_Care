@@ -6,7 +6,7 @@ export interface MenuItem {
 
 export const MENU_ITEMS: MenuItem[] = [
   {
-    path: '/health-book',
+    path: '/',
     label: 'Sổ sức khỏe điện tử',
     icon: `<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 16 16" fill="none" class="flex-shrink-0">
       <g clip-path="url(#clip0_244_8859)">

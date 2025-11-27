@@ -111,26 +111,14 @@ const apiClient = useApiClient()
 async function fetchUserInfo() {
   try {
     loading.value = true
-    console.log('🔍 Fetching user profile...')
-    
     const res = await apiClient.get('/api/u/users/profile', {
       showError: false, // Disable automatic error toast
     })
-    
-    console.log('✅ Profile response:', res)
-    console.log('✅ Response structure check:', {
-      'res.data': res.data,
-      'res.data.user': res.data?.user,
-      'res.data.data': res.data?.data,
-    })
-    
     // Try different response structures
     // Backend might return: {status: true, data: {user: {...}}}
     // Or: {data: {user: {...}}}
     const u = res.data?.data?.user || res.data?.user || res.data?.data || {}
     userInfo.value = u
-    
-    console.log('📝 User data extracted:', u)
     
     // API returns: fullname, phoneNumber, email, fullAddress
     // Use Object.assign to ensure reactivity
@@ -139,14 +127,6 @@ async function fetchUserInfo() {
       phone: u.phone || u.phoneNumber || '',
       email: u.email || '',
       address: u.fullAddress || ''
-    })
-    
-    console.log('📋 Form data filled:', { ...infoForm })
-    console.log('📋 Check each field:', {
-      name: infoForm.name,
-      phone: infoForm.phone,
-      email: infoForm.email,
-      address: infoForm.address
     })
   } catch (e) {
     console.error('❌ Failed to fetch user info:', e)
@@ -157,9 +137,6 @@ async function fetchUserInfo() {
 }
 
 onMounted(() => {
-  console.log('🚀 Profile page mounted')
-  console.log('👤 Current user from auth:', user.value)
-  console.log('👤 Current user from authStore:', authStore.user)
   fetchUserInfo()
 })
 
