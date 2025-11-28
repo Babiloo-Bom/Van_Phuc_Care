@@ -200,6 +200,33 @@ class UserCouponController {
       sendError(res, 500, error.message, error as Error);
     }
   }
+  /**
+   * Get list of user's coupons
+   * GET /api/u/coupons/valid
+   */
+  public static async getValidCoupons(req: Request, res: Response) {
+    try {
+      const user = req.user as any;
+      if (!user || !user._id) {
+        return sendError(res, 401, 'Unauthorized');
+      }
+
+      const courseId = req.query.courseId as string | undefined;
+
+      const coupon = await Coupon.findOne({
+        validFrom: { $lte: new Date() },
+        validTo: { $gte: new Date() },
+        isActive: true,
+        applicableCourses: { $in: [ new mongoose.Types.ObjectId(courseId)] }
+      });
+      sendSuccess(res, {
+        message: 'mã giảm giá của bạn',
+        coupon
+      });
+    } catch (error: any) {
+      sendError(res, 500, error.message, error as Error);
+    }
+  }
 
   /**
    * Apply coupon to cart

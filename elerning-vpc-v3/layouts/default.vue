@@ -1,7 +1,7 @@
 <template>
   <div class="min-h-screen bg-gray-50">
     <!-- Header -->
-    <TheHeader v-if="!checkPath" />
+    <TheHeader :class-name="checkPath ? 'md:hidden' : ''" />
 
     <!-- Main Content -->
     <main>

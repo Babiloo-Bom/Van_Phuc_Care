@@ -18,6 +18,7 @@ import HealthBooksRouter from './HealthBooks';
 import ScheduleVaccinsRouter from "./ScheduleVaccins";
 import VaccinationRecordsRouter from "./VaccinationRecords";
 import CouponsRouter from './Coupons';
+import QuizzesRouter from './Quizzes';
 
 const router = Router();
 
@@ -40,5 +41,6 @@ router.use("/schedule-vaccins", ScheduleVaccinsRouter);
 router.use('/healthbooks', HealthBooksRouter);
 router.use('/vaccination-records', VaccinationRecordsRouter);
 router.use('/coupons', CouponsRouter);
+router.use('/quizzes', QuizzesRouter); // Quiz routes
 
 export default router;

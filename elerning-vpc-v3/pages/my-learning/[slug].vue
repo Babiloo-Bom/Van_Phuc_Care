@@ -1,15 +1,23 @@
 <template>
   <div class="my-learning-detail">
     <!-- Header Bar (màu xanh) -->
-    <div class="bg-[#1A75BB] py-3 md:py-4 lg:py-6">
+    <div class="my-learning-detail-head">
       <div class="container mx-auto px-4">
         <div
           class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 sm:gap-4"
         >
           <!-- Course Topic (bên trái) -->
-          <div class="flex-1 min-w-0">
+          <div class="flex-1 min-w-0 flex flex-col md:flex-row  items-center md:gap-3">
+            <div v-if="isQuiz==true" class="bg-transparent md:border flex gap-1 md:border-white rounded-lg px-3 py-1 md:py-[7px] text-[#1A75BB] text-xl font-semibold md:text-white md:text-base md:font-medium whitespace-nowrap">
+              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" class="hidden md:inline-block">
+                <path d="M12 15.5C11.7374 15.5005 11.4772 15.449 11.2346 15.3486C10.9919 15.2483 10.7715 15.1009 10.586 14.915L5.29297 9.62103L6.70697 8.20703L12 13.5L17.293 8.20703L18.707 9.62103L13.414 14.914C13.2285 15.1001 13.0081 15.2476 12.7655 15.3482C12.5228 15.4488 12.2626 15.5004 12 15.5Z" fill="white"/>
+              </svg>
+              <span>Trắc nghiệm</span>
+            </div>
             <h2
-              class="text-white text-base sm:text-lg md:text-xl font-semibold truncate"
+              :class="['md:text-white text-[#4D4D4D] text-sm md:text-xl md:font-semibold truncate mb-0', {'text-left text-xl text-[#1A75BB]': !isQuiz }, {
+                'hidden md:block': course?.progress?.isCompleted === true 
+              }]"
             >
               {{ currentChapter?.title || "Chưa có chủ đề" }}
             </h2>
@@ -17,7 +25,7 @@
 
           <!-- Nút Trang chủ khóa học (bên phải) -->
           <button
-            class="flex items-center justify-center sm:justify-start gap-2 bg-[#F48283] border-0 rounded-lg px-3 py-2 sm:px-4 text-[#FFFFFF] hover:bg-[#e06d6e] transition-colors font-medium text-xs sm:text-sm md:text-base whitespace-nowrap flex-shrink-0"
+            class="hidden md:flex items-center justify-center sm:justify-start gap-2 bg-[#F48283] border-0 rounded-lg px-3 py-2 sm:px-4 text-[#FFFFFF] hover:bg-[#e06d6e] transition-colors font-medium text-xs sm:text-sm md:text-base whitespace-nowrap flex-shrink-0"
             @click="goToCourseHome"
           >
             <img
@@ -35,8 +43,7 @@
     <!-- Main Content Area -->
     <div class="container mx-auto px-4 py-4 md:py-6">
       <div class="flex flex-col lg:flex-row gap-4 lg:gap-6">
-        <!-- Left: Main Content -->
-        <div class="flex-1 lg:w-[65%] bg-white rounded-lg shadow-lg p-4 md:p-8">
+        <div v-if="!isQuiz && !course?.progress?.isCompleted" class="flex-1 lg:w-[65%] bg-white rounded-lg shadow-lg p-4 md:p-8">
           <!-- Lesson Title -->
           <h1
             class="text-xl md:text-2xl lg:text-3xl font-bold text-gray-800 mb-4"
@@ -255,7 +262,7 @@
 
                 <!-- NavCourse Component -->
                 <div class="bg-white rounded-lg shadow-sm">
-                  <NavCourse :chapters="(course?.chapters || []) as any" />
+                  <NavCourse :chapters="((course?.chapters || []) as any)" />
                 </div>
               </a-tab-pane>
 
@@ -271,12 +278,27 @@
             </a-tabs>
           </div>
         </div>
+        <div v-if="isQuiz && !course?.progress?.isCompleted" class="flex-1">
+          <QuizzesComponent
+            v-if="currentLesson?._id"
+            :course-id="course?._id || ''"
+            :chapter-id="currentChapter?._id || ''"
+            :lesson-id="currentLesson?._id || ''"
+            :quiz-complete="currentLesson?.isCompleted || false"
+            @completed="(quizResult) => handleFinishQuiz(quizResult)"
+          />
+        </div>
+        <div v-if="course?.progress?.isCompleted === true" class="flex-1">
+          <CourseCertificateComponent
+            :course="course"
+          />
+        </div>
 
         <!-- Right: Sidebar Navigation (Desktop only) -->
         <div
-          class="hidden lg:block lg:w-[35%] lg:sticky lg:top-6 lg:self-start"
+          :class="['hidden lg:block lg:w-[35%] lg:sticky lg:top-6 lg:self-start', isQuiz && !currentLesson?.isCompleted ? '!hidden' : '']"
         >
-          <NavCourse :chapters="(course?.chapters || []) as any" />
+          <NavCourse :chapters="((course?.chapters || []) as any)" />
         </div>
       </div>
     </div>
@@ -289,6 +311,8 @@ import { useRoute } from "vue-router";
 import { useCoursesStore } from "~/stores/courses";
 import NavCourse from "~/components/courses/NavCourse.vue";
 import DocumentsComponent from "~/components/lessons/DocumentsComponent.vue";
+import QuizzesComponent from "~/components/lessons/QuizzesComponent.vue";
+import CourseCertificateComponent from "~/components/lessons/CourseCertificateComponent.vue";
 import ProgressBar from "~/components/common/ProgressBar.vue";
 import type { Course, Chapter, Lesson } from "~/stores/courses";
 import { useProgressTracking } from "~/composables/useProgressTracking";
@@ -305,6 +329,7 @@ const progressTracking = useProgressTracking();
 const loading = ref(false);
 const currentChapterIndex = ref(0);
 const currentLessonIndex = ref(0);
+const isQuiz = ref(false);
 const videoRef = ref<HTMLVideoElement | null>(null);
 const activeTab = ref("modules"); // Default to "Học phần" tab
 const markingCompleted = ref(false);
@@ -312,7 +337,6 @@ const markingCompleted = ref(false);
 // Computed
 const course = computed<Course | null>(() => coursesStore.course);
 const slug = computed(() => route.params.slug as string);
-
 const currentChapter = computed<Chapter | null>(() => {
   if (!course.value?.chapters || course.value.chapters.length === 0)
     return null;
@@ -333,6 +357,7 @@ const currentLesson = computed<Lesson | null>(() => {
     currentChapter.value.lessons[0];
   return lesson || null;
 });
+
 
 // Get video URL from lesson (could be from videoUrl or videos array)
 const currentVideoUrl = computed(() => {
@@ -539,6 +564,15 @@ const fetchCourseDetail = async () => {
   }
 };
 
+const handleFinishQuiz = async (quizResult: any) => {
+    const chapterParam = route.query.chapter;
+    const lessonParam = route.query.lesson;
+    navigateTo(
+      `/my-learning/${slug.value}?chapter=${chapterParam || 0}&lesson=${lessonParam || 0}`
+    );
+    fetchCourseDetail();
+  }
+
 watch(
   currentLesson,
   async (lesson) => {
@@ -599,6 +633,7 @@ watch(
     if (query.lesson !== undefined) {
       currentLessonIndex.value = parseInt(query.lesson as string) || 0;
     }
+    isQuiz.value = query.quiz === 'true' ? true : false;
   },
   { immediate: true }
 );
@@ -614,7 +649,16 @@ onMounted(async () => {
   min-height: 100vh;
   background-color: #f4f7f9;
 }
-
+.my-learning-detail-head {
+  background: #1a75bb;
+  padding: 16px 0px ;
+}
+@media screen and (max-width: 768px) {
+  .my-learning-detail-head {
+    padding: 12px 0px 12px 0;
+    background: transparent;
+  }
+}
 /* Custom styles for video component */
 :deep(.video-container) {
   border-radius: 0.5rem;

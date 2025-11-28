@@ -16,18 +16,19 @@
       </div>
       
       <p class="text-gray-600">
-        Tải xuống các tài liệu hỗ trợ cho bài học này
+        Xem và tải xuống các tài liệu hỗ trợ cho bài học này
       </p>
     </div>
 
     <!-- Documents List -->
-    <div v-if="documents.length > 0" class="documents-list space-y-4">
+    <div v-if="documents.length > 0" class="documents-list space-y-6">
       <div 
         v-for="(document, index) in documents" 
         :key="`${document.fileName}-${index}`"
-        class="document-item bg-white rounded-lg shadow-sm border border-gray-200 hover:shadow-md transition-shadow"
+        class="document-item bg-white rounded-lg shadow-sm border border-gray-200"
       >
-        <div class="p-6">
+        <!-- Document Header -->
+        <div class="p-6 border-b border-gray-200">
           <div class="flex items-start gap-4">
             <!-- Document Icon -->
             <div class="flex-shrink-0">
@@ -103,8 +104,19 @@
                   </div>
                 </div>
 
-                <!-- Download Button -->
-                <div class="flex-shrink-0 ml-4">
+                <!-- Action Buttons -->
+                <div class="flex-shrink-0 ml-4 flex gap-2">
+                  <a-button 
+                    @click="viewDocument(document, index)"
+                    class="!flex items-center gap-2"
+                  >
+                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" class="fill-none stroke-current">
+                      <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+                      <circle cx="12" cy="12" r="3" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+                    </svg>
+                    Xem
+                  </a-button>
+                  
                   <a-button 
                     type="primary"
                     @click="downloadDocument(document, index)"
@@ -121,6 +133,42 @@
                 </div>
               </div>
             </div>
+          </div>
+        </div>
+
+        <!-- Document Viewer (Expandable) -->
+        <div v-if="expandedDoc === `${document.fileName}-${index}`" class="document-viewer border-t border-gray-200">
+          <!-- PDF Viewer -->
+          <div v-if="isPDF(document.fileType)" class="pdf-viewer bg-gray-50">
+            <iframe 
+              :src="`https://docs.google.com/viewer?url=${encodeURIComponent(document.fileUrl)}&embedded=true`"
+              class="w-full h-[600px]"
+              frameborder="0"
+            ></iframe>
+          </div>
+
+          <!-- Google Docs Viewer for Office files -->
+          <div v-else-if="isOfficeFile(document.fileType)" class="office-viewer bg-gray-50">
+            <iframe 
+              :src="`https://view.officeapps.live.com/op/embed.aspx?src=${encodeURIComponent(document.fileUrl)}`"
+              class="w-full h-[600px]"
+              frameborder="0"
+            ></iframe>
+          </div>
+
+          <!-- Text file viewer -->
+          <div v-else-if="isTextFile(document.fileType)" class="text-viewer bg-gray-50 p-6">
+            <pre class="whitespace-pre-wrap text-sm">{{ textContent[`${document.fileName}-${index}`] || 'Đang tải...' }}</pre>
+          </div>
+
+          <!-- Image viewer -->
+          <div v-else-if="isImage(document.fileType)" class="image-viewer bg-gray-50 p-6 flex justify-center">
+            <img :src="document.fileUrl" :alt="document.title" class="max-w-full h-auto" />
+          </div>
+
+          <!-- Other files - show download message -->
+          <div v-else class="p-6 text-center bg-gray-50">
+            <p class="text-gray-600">Không thể xem trực tiếp file này. Vui lòng tải xuống để xem.</p>
           </div>
         </div>
       </div>
@@ -174,6 +222,8 @@ const coursesStore = useCoursesStore()
 const documents = ref<Document[]>([])
 const loading = ref(false)
 const downloading = ref<Record<string, boolean>>({})
+const expandedDoc = ref<string | null>(null)
+const textContent = ref<Record<string, string>>({})
 
 // Get documents from lesson data
 const loadDocuments = () => {
@@ -209,6 +259,29 @@ onMounted(() => {
   loadDocuments()
 })
 
+const viewDocument = async (doc: Document, index: number) => {
+  const docKey = `${doc.fileName}-${index}`
+  
+  // Toggle expanded state
+  if (expandedDoc.value === docKey) {
+    expandedDoc.value = null
+  } else {
+    expandedDoc.value = docKey
+    
+    // Load text content if it's a text file
+    if (isTextFile(doc.fileType) && !textContent.value[docKey]) {
+      try {
+        const response = await fetch(doc.fileUrl)
+        const text = await response.text()
+        textContent.value[docKey] = text
+      } catch (error) {
+        console.error('Error loading text file:', error)
+        textContent.value[docKey] = 'Không thể tải nội dung file.'
+      }
+    }
+  }
+}
+
 const downloadDocument = async (doc: Document, index: number) => {
   if (typeof window === 'undefined') return
   
@@ -233,6 +306,29 @@ const downloadDocument = async (doc: Document, index: number) => {
     const docKey = `${doc.fileName}-${index}`
     downloading.value[docKey] = false
   }
+}
+
+// Check file types
+const isPDF = (fileType: string): boolean => {
+  const ext = getFileExtension(fileType)
+  return ext === 'pdf' || fileType.includes('pdf')
+}
+
+const isOfficeFile = (fileType: string): boolean => {
+  const ext = getFileExtension(fileType)
+  return ['doc', 'docx', 'ppt', 'pptx', 'xls', 'xlsx'].includes(ext)
+}
+
+const isTextFile = (fileType: string): boolean => {
+  const ext = getFileExtension(fileType)
+  return ['txt', 'py', 'js', 'ts', 'json', 'xml', 'html', 'css', 'md'].includes(ext) || 
+         fileType.includes('text')
+}
+
+const isImage = (fileType: string): boolean => {
+  const ext = getFileExtension(fileType)
+  return ['jpg', 'jpeg', 'png', 'gif', 'webp', 'svg'].includes(ext) ||
+         fileType.includes('image')
 }
 
 // Extract file extension from fileType (could be mime type or extension)
@@ -293,7 +389,16 @@ const formatFileSize = (bytes?: number) => {
 
 <style scoped>
 .documents-container {
-  max-width: 800px;
-  margin: 0 auto;
+  width: 100%;
+  margin: 0;
+}
+
+.document-item {
+  width: 100%;
+}
+
+.pdf-viewer iframe,
+.office-viewer iframe {
+  width: 100%;
 }
 </style>

@@ -164,9 +164,25 @@ const searchKey = ref("");
 const filteredCourses = computed(() => {
   if (!searchKey.value) return coursesStore.myCourses;
 
-  return coursesStore.myCourses.filter((course) =>
+  const myCourses = coursesStore.myCourses.filter((course) =>
     course.title.toLowerCase().includes(searchKey.value.toLowerCase())
   );
+  // Return filtered courses sort
+  myCourses.sort((a: any, b: any) => {
+    const pa = getProgress(a._id);
+    const pb = getProgress(b._id);
+    const priorityA =
+      pa > 0 && pa < 100 ? 1 : pa === 0 ? 2 : 3;
+
+    const priorityB =
+      pb > 0 && pb < 100 ? 1 : pb === 0 ? 2 : 3;
+
+    if (priorityA !== priorityB) {
+      return priorityA - priorityB; 
+    }
+    return pb - pa;
+  });
+  return myCourses;
 });
 
 // Methods
