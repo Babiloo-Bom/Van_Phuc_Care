@@ -1,6 +1,6 @@
 <template>
-  <div class="bg-blue-50 rounded-none lg:rounded-lg p-6 border-b border-gray-200 lg:border-0">
-    <div class="grid grid-cols-3 gap-4">
+  <div class="bg-blue-50 rounded-lg p-4 border-b border-gray-200 lg:border-0">
+    <div class="grid grid-cols-3 gap-2 md:gap-4">
       <!-- Weight -->
       <div class="flex flex-col items-center justify-center">
         <h4 class="text-blue-600 font-semibold mb-2 text-sm">Cân nặng</h4>

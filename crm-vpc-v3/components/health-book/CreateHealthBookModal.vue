@@ -22,7 +22,11 @@
       <div v-if="isCreateSuccess" class="success-content">
         <!-- Mascot Image -->
         <div class="success-mascot">
-          <img src="/images/doctor.png" alt="Van Phuc Mascot" class="mascot-image" />
+          <img
+            src="/images/doctor.png"
+            alt="Van Phuc Mascot"
+            class="mascot-image"
+          />
         </div>
 
         <!-- Success Title -->
@@ -30,11 +34,20 @@
 
         <!-- Success Message -->
         <p class="success-message">
-          Chúc mừng bạn đã khởi tạo hồ sơ thành công. Quay lại trang để tiếp tục sử dụng Sổ sức khỏe Điện tử.
+          Chúc mừng bạn đã khởi tạo hồ sơ thành công. Quay lại trang để tiếp tục
+          sử dụng Sổ sức khỏe Điện tử.
         </p>
 
         <!-- Action Button -->
-        <a-button type="primary" size="large" block class="success-button" @click="handleGoHome"> Về trang chủ </a-button>
+        <a-button
+          type="primary"
+          size="large"
+          block
+          class="success-button"
+          @click="handleGoHome"
+        >
+          Về trang chủ
+        </a-button>
       </div>
 
       <!-- Registration Form -->
@@ -47,112 +60,125 @@
         </div>
 
         <!-- Modal Body -->
-        <div class="px-6 lg:px-12 pb-8">
-        <a-form
-          :model="formState"
-          :rules="rules"
-          layout="vertical"
-          @finish="handleSubmit"
-          ref="formRef"
-        >
-          <!-- Họ và tên bé -->
-          <a-form-item
-            label="Họ và tên bé"
-            name="name"
-            :rules="[{ required: true, message: 'Vui lòng nhập họ và tên bé' }]"
+        <div class="pb-8">
+          <a-form
+            :model="formState"
+            :rules="rules"
+            layout="vertical"
+            @finish="handleSubmit"
+            ref="formRef"
           >
-            <a-input
-              v-model:value="formState.name"
-              placeholder="Nhập tên bé"
-              size="large"
-              class="rounded-lg"
-            />
-          </a-form-item>
-
-          <!-- Ngày sinh & Giới tính -->
-          <div class="grid grid-cols-1 lg:grid-cols-2 gap-4">
-            <!-- Ngày sinh -->
+            <!-- Họ và tên bé -->
             <a-form-item
-              label="Ngày sinh"
-              name="dob"
-              :rules="[{ required: true, message: 'Vui lòng chọn ngày sinh' }]"
+              label="Họ và tên bé"
+              name="name"
+              :rules="[
+                { required: true, message: 'Vui lòng nhập họ và tên bé' },
+              ]"
             >
-              <a-date-picker
-                v-model:value="formState.dob"
-                placeholder="Chọn ngày sinh"
-                format="DD/MM/YYYY"
-                :locale="locale"
+              <a-input
+                v-model:value="formState.name"
+                placeholder="Nhập tên bé"
                 size="large"
-                class="w-full rounded-lg"
+                class="rounded-lg"
               />
             </a-form-item>
 
-            <!-- Giới tính -->
-            <a-form-item
-              label="Giới tính"
-              name="gender"
-              :rules="[{ required: true, message: 'Vui lòng chọn giới tính' }]"
-            >
-              <a-select
-                v-model:value="formState.gender"
-                placeholder="Chọn giới tính"
-                size="large"
-                class="w-full"
+            <!-- Ngày sinh & Giới tính -->
+            <div class="grid grid-cols-1 md:grid-cols-2 md:gap-4">
+              <!-- Ngày sinh -->
+              <a-form-item
+                label="Ngày sinh"
+                name="dob"
+                :rules="[
+                  { required: true, message: 'Vui lòng chọn ngày sinh' },
+                ]"
               >
-                <a-select-option value="male">Nam</a-select-option>
-                <a-select-option value="female">Nữ</a-select-option>
-              </a-select>
-            </a-form-item>
-          </div>
-
-          <!-- Ảnh đại diện -->
-          <a-form-item label="Ảnh đại diện" name="avatar">
-            <div
-              class="border-2 border-dashed border-gray-300 rounded-lg p-6 text-center hover:border-blue-400 transition-colors cursor-pointer"
-              @click="handleUploadClick"
-            >
-              <div v-if="!avatarPreview">
-                <LinkOutlined class="text-3xl text-blue-500 mb-2" />
-                <p class="text-blue-500 font-medium">Thêm hình ảnh đại diện</p>
-              </div>
-              <div v-else class="relative inline-block">
-                <img
-                  :src="avatarPreview"
-                  alt="Avatar preview"
-                  class="w-32 h-32 object-cover rounded-full mx-auto"
+                <a-date-picker
+                  v-model:value="formState.dob"
+                  placeholder="Chọn ngày sinh"
+                  format="DD/MM/YYYY"
+                  :locale="locale"
+                  size="large"
+                  class="w-full rounded-lg"
                 />
-                <button
-                  @click.stop="handleRemoveAvatar"
-                  class="absolute -top-2 -right-2 bg-red-500 text-white rounded-full w-6 h-6 flex items-center justify-center hover:bg-red-600"
-                >
-                  <CloseOutlined class="text-xs" />
-                </button>
-              </div>
-              <input
-                type="file"
-                ref="fileInput"
-                @change="handleFileChange"
-                accept="image/*"
-                class="!hidden"
-              />
-            </div>
-          </a-form-item>
+              </a-form-item>
 
-          <!-- Submit Button -->
-          <a-form-item class="mb-0 mt-6">
-            <a-button
-              type="primary"
-              html-type="submit"
-              size="large"
-              block
-              :loading="loading"
-              class="h-12 text-base font-medium rounded-lg"
-            >
-              Khởi tạo hồ sơ
-            </a-button>
-          </a-form-item>
-        </a-form>
-      </div>
+              <!-- Giới tính -->
+              <a-form-item
+                label="Giới tính"
+                name="gender"
+                :rules="[
+                  { required: true, message: 'Vui lòng chọn giới tính' },
+                ]"
+              >
+                <a-select
+                  v-model:value="formState.gender"
+                  placeholder="Chọn giới tính"
+                  size="large"
+                  class="w-full"
+                >
+                  <a-select-option value="male">Nam</a-select-option>
+                  <a-select-option value="female">Nữ</a-select-option>
+                </a-select>
+              </a-form-item>
+            </div>
+
+            <!-- Ảnh đại diện -->
+            <a-form-item label="Ảnh đại diện" name="avatar">
+              <div
+                class="border-2 border-dashed border-gray-300 rounded-lg text-center hover:border-blue-400 transition-colors cursor-pointer"
+                @click="handleUploadClick"
+              >
+                <div
+                  v-if="!avatarPreview"
+                  class="flex items-center justify-center"
+                >
+                  <LinkOutlined class="text-xl text-blue-500" />
+                  <p class="text-blue-500 font-medium mb-0 ml-2 leading-10">
+                    Thêm hình ảnh đại diện
+                  </p>
+                </div>
+                <div v-else class="relative inline-block">
+                  <img
+                    :src="avatarPreview"
+                    alt="Avatar preview"
+                    class="size-20 lg:size-32 object-cover rounded-full mx-auto my-4"
+                  />
+                  <button
+                    @click.stop="handleRemoveAvatar"
+                    class="absolute top-2 right-0 bg-red-500 text-white rounded-full w-6 h-6 flex items-center justify-center hover:bg-red-600"
+                  >
+                    <CloseOutlined
+                      class="text-xs flex items-center justify-center"
+                    />
+                  </button>
+                </div>
+                <input
+                  type="file"
+                  ref="fileInput"
+                  @change="handleFileChange"
+                  accept="image/*"
+                  class="!hidden"
+                />
+              </div>
+            </a-form-item>
+
+            <!-- Submit Button -->
+            <a-form-item class="mb-0 mt-6 submit-button">
+              <a-button
+                type="primary"
+                html-type="submit"
+                size="large"
+                block
+                :loading="loading"
+                class="h-12 text-base font-medium rounded-lg md:max-w-[275px]"
+              >
+                Khởi tạo hồ sơ
+              </a-button>
+            </a-form-item>
+          </a-form>
+        </div>
       </div>
     </div>
   </a-modal>
@@ -317,6 +343,25 @@ watch(
   color: #374151;
 }
 
+/* Move required asterisk to after the label */
+.create-healthbook-modal
+  .ant-form-item-label
+  > label.ant-form-item-required::before {
+  display: none !important;
+}
+
+.create-healthbook-modal
+  .ant-form-item-label
+  > label.ant-form-item-required::after {
+  display: inline-block !important;
+  margin-inline-start: 4px;
+  color: #ff4d4f;
+  font-size: 14px;
+  font-family: SimSun, sans-serif;
+  line-height: 1;
+  content: "*" !important;
+}
+
 .create-healthbook-modal .ant-input,
 .create-healthbook-modal .ant-picker,
 .create-healthbook-modal .ant-select-selector {
@@ -324,8 +369,8 @@ watch(
 }
 
 .create-healthbook-modal .ant-btn-primary {
-  background-color: #317BC4;
-  border-color: #317BC4;
+  background-color: #317bc4;
+  border-color: #317bc4;
 }
 
 .create-healthbook-modal .ant-btn-primary:hover {
@@ -357,7 +402,7 @@ watch(
 .create-healthbook-modal .success-title {
   font-size: 24px;
   font-weight: bold;
-  color: #317BC4;
+  color: #317bc4;
   margin-bottom: 8px;
   text-transform: uppercase;
 }
@@ -376,6 +421,10 @@ watch(
   font-size: 16px;
   font-weight: 500;
   border-radius: 8px;
+}
+
+.submit-button .ant-form-item-control-input-content {
+  @apply text-center;
 }
 
 /* Mobile responsive */

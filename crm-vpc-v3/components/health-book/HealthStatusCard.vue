@@ -1,21 +1,21 @@
 <template>
-  <div class="bg-white rounded-none lg:rounded-lg shadow-none lg:shadow-sm p-6 border-b border-gray-200 lg:border-0">
+  <div class="bg-white rounded-none lg:rounded-lg shadow-none lg:shadow-sm py-6">
     <!-- Health Condition -->
-    <div v-if="healthBook.healthCondition" class="mb-6">
+    <div v-if="healthBook.healthCondition" class="mb-2">
       <div class="flex items-start justify-between">
-        <h4 class="font-medium text-gray-600 text-sm">
+        <h4 class="font-bold text-[#1A75BB] text-sm mb-0">
           Tình trạng sức khỏe:
         </h4>
-        <span class="font-semibold text-gray-800 text-sm text-right ml-4">
+        <span class="font-bold text-gray-800 text-base text-left">
           {{ healthBook.healthCondition }}
         </span>
       </div>
     </div>
 
     <!-- Vaccination -->
-    <div v-if="healthBook.vaccination" class="mb-6 pb-6 border-b border-gray-200 last:border-0">
+    <div v-if="healthBook.vaccination" class="pb-2">
       <div class="flex items-start justify-between mb-3">
-        <h4 class="font-medium text-gray-600 text-sm">
+        <h4 class="font-bold text-[#1A75BB] text-sm">
           Tiêm chủng:
         </h4>
         <span class="font-semibold text-gray-800 text-sm text-right ml-4">
@@ -27,7 +27,7 @@
         <div class="flex items-center justify-between">
           <span class="text-gray-500">Ngày tiêm:</span>
           <span class="font-medium text-gray-800">
-            {{ healthBook.vaccinationDate ? formatDate(healthBook.vaccinationDate) : '--' }}
+            {{ healthBook.vaccinationDate ?? '--' }}
           </span>
         </div>
         <div class="flex items-center justify-between">
@@ -40,8 +40,8 @@
     </div>
 
     <!-- Note -->
-    <div v-if="healthBook.note" class="bg-blue-50 rounded-lg p-4">
-      <h4 class="font-semibold text-gray-700 text-sm mb-2">
+    <div v-if="healthBook.note" class="block lg:hidden bg-blue-50 rounded-lg p-4 mt-2">
+      <h4 class="font-bold text-[#1A75BB] text-sm mb-2">
         Lưu ý:
       </h4>
       <div class="text-sm text-gray-600 leading-relaxed" v-html="healthBook.note" />

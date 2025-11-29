@@ -1,5 +1,5 @@
 <template>
-  <div class="bg-white rounded-none lg:rounded-lg p-6 lg:bg-blue-50 border-b border-gray-200 lg:border-0">
+  <div class="bg-blue-50 rounded-lg p-6 border-b border-gray-200 lg:border-0">
     <ul class="space-y-4">
       <!-- Skin Condition -->
       <li class="border-b border-gray-200 pb-3 last:border-0">

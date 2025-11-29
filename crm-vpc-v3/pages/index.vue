@@ -1,7 +1,10 @@
 <template>
   <div class="health-book-page min-h-screen">
     <!-- Auth Checking / Google OAuth Processing State -->
-    <div v-if="isCheckingAuth" class="fixed top-0 left-0 right-0 bottom-0 bg-white/95 flex items-center justify-center z-[9999]">
+    <div
+      v-if="isCheckingAuth"
+      class="fixed top-0 left-0 right-0 bottom-0 bg-white/95 flex items-center justify-center z-[9999]"
+    >
       <div class="text-center p-8">
         <a-spin size="large" />
         <p class="mt-4 text-gray-600">Đang xác thực...</p>
@@ -9,7 +12,10 @@
     </div>
 
     <!-- Loading State -->
-    <div v-else-if="loading" class="flex items-center justify-center min-h-screen">
+    <div
+      v-else-if="loading"
+      class="flex items-center justify-center min-h-screen"
+    >
       <a-spin size="large" tip="Đang tải dữ liệu sổ sức khỏe..." />
     </div>
 
@@ -38,7 +44,7 @@
         </h1>
       </div>
 
-      <div class="w-full bg-white rounded-xl p-3 mt-20">
+      <div class="w-full bg-white rounded-xl p-3 pt-0 mt-20">
         <!-- Profile Header Section - Empty State -->
         <div class="bg-white rounded-lg mb-6">
           <!-- Mobile Layout -->
@@ -74,7 +80,7 @@
             <div class="flex items-center gap-4">
               <!-- Avatar - Van Phuc Mascot -->
               <div
-                class="absolute -top-20 left-5 border-4 border-white rounded-full"
+                class="absolute -top-20 left-5 border-5 lg:border-8 border-white rounded-full"
               >
                 <div
                   class="w-32 h-32 rounded-full bg-blue-100 flex items-center justify-center border-4 border-blue-200"
@@ -82,11 +88,11 @@
                   <UserOutlined class="text-5xl text-blue-500" />
                 </div>
               </div>
-              <div class="w-36 h-20"></div>
+              <div class="w-40 h-20"></div>
               <!-- Info -->
               <div>
-                <h2 class="text-3xl font-bold text-blue-600 mb-2">N/A</h2>
-                <div class="text-gray-600 flex items-center gap-2">
+                <h2 class="text-3xl font-bold text-[#1A75BB] mb-2">N/A</h2>
+                <div class="text-gray-600 flex items-center gap-2 font-bold">
                   <span>Ngày sinh: ???</span>
                   <span>—</span>
                   <span>? tháng tuổi</span>
@@ -99,7 +105,7 @@
         <!-- Tabs -->
         <div class="mb-6">
           <a-tabs v-model:activeKey="activeTab" class="health-book-tabs">
-            <a-tab-pane key="overview" tab="Tổng quan">
+            <a-tab-pane key="overview" :tab="overviewTabLabel">
               <!-- Empty State Content -->
               <div
                 class="flex flex-col items-center justify-center min-h-[60vh] px-4"
@@ -182,8 +188,9 @@
         >
           Sổ sức khỏe điện tử
         </h1>
-        <!-- Action Buttons (Mobile) -->
+        <!-- Action Buttons (Mobile) - Only show on overview tab -->
         <div
+          v-if="activeTab === 'overview'"
           class="flex flex-col gap-3 w-full mt-4 justify-center items-center lg:hidden"
         >
           <!-- Date Picker Mobile -->
@@ -215,7 +222,7 @@
         </div>
       </div>
 
-      <div class="w-full bg-white rounded-xl p-3 mt-20">
+      <div class="w-full bg-white rounded-xl p-3 pt-0 mt-20">
         <!-- Profile Header Section - Always visible -->
         <div class="bg-white rounded-lg mb-6">
           <!-- Mobile Layout -->
@@ -224,7 +231,7 @@
             <div class="flex flex-col items-center relative pt-16">
               <!-- Avatar -->
               <div
-                class="absolute -top-14 mb-3 border-4 border-white rounded-full"
+                class="absolute -top-14 mb-3 border-5 lg:border-8 border-white rounded-full"
               >
                 <img
                   :src="
@@ -271,7 +278,7 @@
             <div class="flex items-center gap-4">
               <!-- Avatar -->
               <div
-                class="absolute -top-20 left-5 border-4 border-white rounded-full"
+                class="absolute -top-20 left-5 border-5 lg:border-8 border-white rounded-full"
               >
                 <img
                   :src="
@@ -280,22 +287,22 @@
                     '/images/baby-default.png'
                   "
                   :alt="profileInfo.name || healthBook?.name"
-                  class="w-32 h-32 rounded-full object-cover border-4 border-blue-100"
+                  class="w-32 h-32 rounded-full object-cover border-5 lg:border-8 border-blue-100"
                   @error="(e) => { const t = e.target as HTMLImageElement; if (t) t.src = '/images/baby-default.png' }"
                 />
                 <CameraOutlined
                   class="absolute bottom-1 right-1 bg-white rounded-full p-2 text-gray-500 shadow cursor-pointer hover:bg-gray-50"
                 />
               </div>
-              <div class="w-36 h-20"></div>
+              <div class="w-40 h-20"></div>
               <!-- Info -->
               <div>
-                <h2 class="text-3xl font-bold text-blue-600 mb-2">
+                <h2 class="text-3xl font-bold text-[#1A75BB] mb-2 capitalize">
                   {{ profileInfo.name || healthBook?.name }}
                 </h2>
                 <div
                   v-if="profileInfo.dob || healthBook?.dob"
-                  class="text-gray-600 flex items-center gap-2"
+                  class="text-gray-600 flex items-center gap-2 font-bold"
                 >
                   <span
                     >Ngày sinh:
@@ -311,8 +318,11 @@
               </div>
             </div>
 
-            <!-- Right: Actions -->
-            <div class="flex items-center gap-3">
+            <!-- Right: Actions - Only show on overview tab -->
+            <div
+              v-if="activeTab === 'overview'"
+              class="flex items-center gap-3"
+            >
               <!-- Date Picker -->
               <a-date-picker
                 v-model:value="selectedDate"
@@ -346,7 +356,7 @@
         <!-- Tabs - Always visible -->
         <div class="mb-6">
           <a-tabs v-model:activeKey="activeTab" class="health-book-tabs">
-            <a-tab-pane key="overview" tab="Tổng quan">
+            <a-tab-pane key="overview" :tab="overviewTabLabel">
               <!-- Overview Content -->
               <div
                 v-if="healthBook && hasHealthBookRecord"
@@ -362,18 +372,19 @@
                 </div>
 
                 <!-- Right Column: Charts + Additional Info -->
-                <div class="lg:col-span-8 space-y-6">
-                  <!-- Digestive Health -->
-                  <DigestiveHealthCard :health-book="healthBook" />
-
+                <div class="lg:col-span-8 space-y-1">
                   <!-- Temperature Chart -->
                   <TemperatureChartCard
                     :health-book="healthBook"
                     :temperature-history="temperatureHistory"
+                    :selected-date="selectedDate"
                   />
 
                   <!-- Health Status & Vaccination -->
                   <HealthStatusCard :health-book="healthBook" />
+
+                  <!-- Digestive Health -->
+                  <DigestiveHealthCard :health-book="healthBook" />
 
                   <!-- Exercise & Method -->
                   <ExerciseMethodCard :health-book="healthBook" />
@@ -406,7 +417,7 @@
 
             <!-- Vaccination Schedule Tab -->
             <a-tab-pane key="vaccination" tab="Lịch tiêm">
-              <VaccinationSchedule 
+              <VaccinationSchedule
                 :customer-id="customerId"
                 :health-book-id="healthBook?._id"
               />
@@ -503,6 +514,26 @@ const profileInfo = ref<{
   avatar?: string;
 }>({});
 
+// Responsive state for screen size
+const isMobile = ref(true);
+
+// Computed property for overview tab label
+const overviewTabLabel = computed(() =>
+  isMobile.value ? "Tổng quan" : "Tổng quan sức khỏe"
+);
+
+// Handle screen resize
+const handleResize = () => {
+  if (typeof window !== "undefined") {
+    isMobile.value = window.innerWidth < 768;
+  }
+};
+
+// Cleanup resize listener
+onUnmounted(() => {
+  window.removeEventListener("resize", handleResize);
+});
+
 // Fetch healthbook profile (bé's profile info)
 const fetchHealthBookProfile = async () => {
   try {
@@ -558,10 +589,15 @@ const fetchHealthBookProfile = async () => {
       // After getting healthbook, fetch today's health record
       await fetchHealthRecordByDate();
     } else {
-      // User hasn't created healthbook yet - show empty state
+      // User hasn't created healthbook yet - show empty state and auto open modal
       hasHealthBook.value = false;
       healthBook.value = null;
       loading.value = false;
+
+      // Auto open create healthbook modal after a short delay
+      setTimeout(() => {
+        showCreateHealthBookModal.value = true;
+      }, 500);
     }
   } catch (err: any) {
     console.error("Error fetching healthbook profile:", err);
@@ -728,6 +764,10 @@ const handleRecordCreated = async () => {
 
 // Initial load
 onMounted(async () => {
+  // Setup responsive listener for tab labels
+  handleResize();
+  window.addEventListener("resize", handleResize);
+
   const urlParams = new URLSearchParams(window.location.search);
   const code = urlParams.get("code");
   const state = urlParams.get("state");
@@ -739,11 +779,11 @@ onMounted(async () => {
 
     try {
       const response = await completeGoogleLogin(code, state || undefined);
-      
+
       if (!response || !response.success || !response.data) {
         throw new Error(response?.error || "Đăng nhập Google thất bại");
       }
-      
+
       // Calculate token expiry time
       let tokenExpireAtNum: number;
       if (typeof response.data.tokenExpireAt === "string") {
@@ -756,9 +796,15 @@ onMounted(async () => {
       // Prepare user data
       const userData = {
         ...response.data.user,
-        id: (response.data.user as any)?._id || response.data.user?.id || `google-user-${Date.now()}`,
+        id:
+          (response.data.user as any)?._id ||
+          response.data.user?.id ||
+          `google-user-${Date.now()}`,
         email: response.data.user?.email || "user@google.com",
-        fullname: (response.data.user as any)?.fullname || response.data.user?.name || "Google User",
+        fullname:
+          (response.data.user as any)?.fullname ||
+          response.data.user?.name ||
+          "Google User",
         avatar: response.data.user?.avatar || "",
         role: (response.data.user as any)?.role || "user",
         verified: true,
@@ -783,7 +829,8 @@ onMounted(async () => {
       return;
     } catch (err: any) {
       console.error("❌ Google login error:", err);
-      error.value = err.message || "Đăng nhập Google thất bại. Vui lòng thử lại.";
+      error.value =
+        err.message || "Đăng nhập Google thất bại. Vui lòng thử lại.";
       loading.value = false;
       isCheckingAuth.value = false;
 
@@ -821,12 +868,14 @@ onMounted(async () => {
 /* Tabs styling */
 :deep(.health-book-tabs .ant-tabs-nav) {
   margin-bottom: 24px;
+  width: 100%;
 }
 
 :deep(.health-book-tabs .ant-tabs-tab) {
-  padding: 12px 24px;
+  padding: 12px;
   font-size: 16px;
   font-weight: 500;
+  color: #b5b5b5;
 }
 
 :deep(.health-book-tabs .ant-tabs-tab + .ant-tabs-tab) {
@@ -834,12 +883,21 @@ onMounted(async () => {
 }
 
 :deep(.health-book-tabs .ant-tabs-tab-active) {
-  color: #317BC4;
+  color: #317bc4;
+}
+
+:deep(.health-book-tabs .ant-tabs-tab-active .ant-tabs-tab-btn) {
+  color: #317bc4;
 }
 
 :deep(.health-book-tabs .ant-tabs-ink-bar) {
-  background-color: #317BC4;
+  background-color: #317bc4;
   height: 3px;
+}
+
+:deep(.health-book-tabs.ant-tabs) {
+  align-items: center;
+  justify-content: center;
 }
 
 /* Mobile responsive */
@@ -848,7 +906,9 @@ onMounted(async () => {
     align-items: center;
     justify-content: center;
   }
-
+  :deep(.health-book-tabs .ant-tabs-nav) {
+    width: auto;
+  }
   :deep(.health-book-tabs .ant-tabs-nav::before) {
     border: none;
   }
@@ -902,19 +962,19 @@ onMounted(async () => {
 /* Custom Date Picker Desktop */
 :deep(.custom-date-picker) {
   border-radius: 24px !important;
-  border: 2px solid #317BC4 !important;
+  border: 2px solid #317bc4 !important;
   padding: 8px 20px !important;
   width: 150px;
 }
 
 :deep(.custom-date-picker .ant-picker-input input) {
-  color: #317BC4 !important;
+  color: #317bc4 !important;
   font-weight: 500;
   font-size: 16px;
 }
 
 :deep(.custom-date-picker .ant-picker-suffix) {
-  color: #317BC4;
+  color: #317bc4;
 }
 
 /* Custom Create Button Desktop */
@@ -929,32 +989,32 @@ onMounted(async () => {
   justify-content: center !important;
   background-color: #fff !important;
   box-shadow: none;
-  border: 2px solid #317BC4 !important;
-  color: #317BC4 !important;
+  border: 2px solid #317bc4 !important;
+  color: #317bc4 !important;
 }
 .custom-create-button:hover {
   color: #fff !important;
-  background-color: #317BC4 !important;
+  background-color: #317bc4 !important;
   opacity: 1 !important;
 }
 
 /* Custom Date Picker Mobile */
 :deep(.custom-date-picker-mobile) {
   border-radius: 24px !important;
-  border: 2px solid #317BC4 !important;
+  border: 2px solid #317bc4 !important;
   padding: 8px 20px !important;
   height: 48px !important;
 }
 
 :deep(.custom-date-picker-mobile .ant-picker-input input) {
-  color: #317BC4 !important;
+  color: #317bc4 !important;
   font-weight: 500;
   font-size: 16px;
   text-align: center;
 }
 
 :deep(.custom-date-picker-mobile .ant-picker-suffix) {
-  color: #317BC4;
+  color: #317bc4;
 }
 
 /* Custom Create Button Mobile */
@@ -969,12 +1029,12 @@ onMounted(async () => {
   justify-content: center !important;
   background-color: #fff !important;
   box-shadow: none;
-  border: 2px solid #317BC4 !important;
-  color: #317BC4 !important;
+  border: 2px solid #317bc4 !important;
+  color: #317bc4 !important;
 }
 
 :deep(.ant-btn.ant-btn-primary) {
-  background-color: #317BC4;
+  background-color: #317bc4;
 }
 
 :deep(.ant-btn.ant-btn-primary:hover) {
