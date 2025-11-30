@@ -286,8 +286,8 @@ const handleSubmit = async () => {
 
     if (response?.data?.data) {
       // Show success screen instead of closing modal
+      // Don't emit success here - wait for user to click "Về trang chủ"
       isCreateSuccess.value = true;
-      emit("success", response.data.data);
     }
     // Error is already handled by API client, no need to show duplicate message
   } catch (error: any) {
@@ -300,13 +300,17 @@ const handleSubmit = async () => {
 
 // Handle close
 const handleClose = () => {
+  // If success screen is showing, emit success event before closing
+  if (isCreateSuccess.value) {
+    emit("success", null);
+  }
   emit("update:visible", false);
 };
 
 // Handle go to home page
 const handleGoHome = () => {
+  emit("success", null);
   emit("update:visible", false);
-  // navigateTo("/");
 };
 
 // Reset form when modal closes

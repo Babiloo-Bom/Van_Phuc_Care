@@ -1,8 +1,8 @@
 <template>
-  <div class="bg-white rounded-none lg:rounded-lg shadow-none lg:shadow-sm py-6">
+  <div class="flex flex-col lg:flex-col-reverse lg:gap-4 bg-white rounded-none lg:rounded-lg shadow-none lg:shadow-sm py-4">
     <!-- Health Condition -->
     <div v-if="healthBook.healthCondition" class="mb-2">
-      <div class="flex items-start justify-between">
+      <div class="flex items-start justify-between lg:flex-col">
         <h4 class="font-bold text-[#1A75BB] text-sm mb-0">
           Tình trạng sức khỏe:
         </h4>
@@ -44,7 +44,9 @@
       <h4 class="font-bold text-[#1A75BB] text-sm mb-2">
         Lưu ý:
       </h4>
-      <div class="text-sm text-gray-600 leading-relaxed" v-html="healthBook.note" />
+      <ul class="list-disc list-inside text-sm text-gray-600 leading-relaxed space-y-1">
+        <li v-for="(line, index) in noteLines" :key="index">{{ line }}</li>
+      </ul>
     </div>
   </div>
 </template>
@@ -57,7 +59,16 @@ interface Props {
   healthBook: HealthBook
 }
 
-defineProps<Props>()
+const props = defineProps<Props>()
+
+// Convert note string to array of lines (split by newline)
+const noteLines = computed(() => {
+  if (!props.healthBook.note) return []
+  return props.healthBook.note
+    .split(/\r?\n/)
+    .map(line => line.trim())
+    .filter(line => line.length > 0)
+})
 
 const formatDate = (date: string) => {
   return dayjs(date).format('DD/MM/YYYY')

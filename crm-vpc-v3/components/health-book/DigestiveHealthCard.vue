@@ -1,5 +1,5 @@
 <template>
-  <div class="bg-white rounded-none lg:rounded-lg shadow-none lg:shadow-sm">
+  <div class="bg-white rounded-none lg:rounded-lg">
     <h4 class="font-bold text-[#1A75BB] mb-4 text-sm">
       Sức khỏe tiêu hóa:
     </h4>

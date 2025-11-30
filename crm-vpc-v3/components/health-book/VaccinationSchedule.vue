@@ -1,11 +1,11 @@
 <template>
   <div class="vaccination-schedule bg-white rounded-lg">
     <!-- Header with Age Filter -->
-    <div class="flex items-center justify-between mb-6">
-      <h2 class="text-xl font-bold text-blue-600">
+    <div class="flex items-center justify-between mb-6 flex-col md:flex-row">
+      <h2 class="text-xl font-bold text-[#1A75BB]">
         LỊCH TIÊM CHO TRẺ TỪ 0-24 THÁNG TUỔI
       </h2>
-      
+
       <a-select
         v-model:value="selectedAge"
         placeholder="Sơ sinh"
@@ -43,73 +43,83 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, onMounted, watch } from 'vue'
-import { useVaccinationsApi } from '~/composables/api/useVaccinationsApi'
-import VaccinationCard from './VaccinationCard.vue'
+import { ref, computed, onMounted, watch } from "vue";
+import { useVaccinationsApi } from "~/composables/api/useVaccinationsApi";
+import VaccinationCard from "./VaccinationCard.vue";
 
-const props = defineProps<{ 
-  schedule?: any[]
-  customerId?: string
-  healthBookId?: string 
-}>()
+const props = defineProps<{
+  schedule?: any[];
+  customerId?: string;
+  healthBookId?: string;
+}>();
 
-const selectedAge = ref<string>('newborn')
-const vaccinations = ref<any[]>([])
-const { loading, error, getVaccinationSchedule } = useVaccinationsApi()
+const selectedAge = ref<string>("newborn");
+const vaccinations = ref<any[]>([]);
+const { loading, error, getVaccinationSchedule } = useVaccinationsApi();
 
 const fetchVaccinations = async () => {
   // Pass healthBookId (preferred) or customerId to get merged schedule + records
   const data = await getVaccinationSchedule({
     healthBookId: props.healthBookId,
-    customerId: props.customerId
-  })
-  vaccinations.value = data
-}
+    customerId: props.customerId,
+  });
+  vaccinations.value = data;
+};
 
 onMounted(() => {
   if (props.schedule && Array.isArray(props.schedule)) {
-    vaccinations.value = props.schedule
+    vaccinations.value = props.schedule;
   } else {
-    fetchVaccinations()
+    fetchVaccinations();
   }
-})
+});
 
-watch(() => props.schedule, (val) => {
-  if (val && Array.isArray(val)) {
-    vaccinations.value = val
+watch(
+  () => props.schedule,
+  (val) => {
+    if (val && Array.isArray(val)) {
+      vaccinations.value = val;
+    }
   }
-})
+);
 
 // Refetch when healthBookId or customerId changes
 watch([() => props.healthBookId, () => props.customerId], () => {
   if (props.healthBookId || props.customerId) {
-    fetchVaccinations()
+    fetchVaccinations();
   }
-})
+});
 
 const filteredVaccines = computed(() => {
   if (!vaccinations.value || vaccinations.value.length === 0) {
-    return []
+    return [];
   }
 
   // Convert selectedAge to number for comparison
-  const ageInMonths = selectedAge.value === 'newborn' ? 0 : Number(selectedAge.value)
+  const ageInMonths =
+    selectedAge.value === "newborn" ? 0 : Number(selectedAge.value);
 
   // Filter vaccines where ageInMonths matches the selected age
   return vaccinations.value.filter((vaccine: any) => {
-    const vaccineAge = vaccine.ageInMonths ?? 0
-    return vaccineAge === ageInMonths
-  })
-})
+    const vaccineAge = vaccine.ageInMonths ?? 0;
+    return vaccineAge === ageInMonths;
+  });
+});
 
 const handleAgeChange = (value: string) => {
-  selectedAge.value = value
+  selectedAge.value = value;
   // Filtering is handled reactively by filteredVaccines computed
-}
+};
 </script>
 
 <style scoped>
 .vaccination-schedule {
   background-color: #ffffff;
+}
+</style>
+<style>
+.vaccination-schedule .ant-select-selector {
+  color: #1a75bb !important;
+  border-color: #1a75bb !important;
 }
 </style>

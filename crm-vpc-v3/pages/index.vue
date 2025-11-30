@@ -61,7 +61,7 @@
               </div>
 
               <!-- Name -->
-              <h2 class="text-2xl font-bold text-blue-600 mb-1 text-center">
+              <h2 class="text-2xl font-bold text-[#1A75BB] mb-1 text-center">
                 N/A
               </h2>
 
@@ -249,7 +249,7 @@
               </div>
 
               <!-- Name -->
-              <h2 class="text-2xl font-bold text-blue-600 mb-1 text-center">
+              <h2 class="text-2xl font-bold text-[#1A75BB] mb-1 text-center capitalize">
                 {{ profileInfo.name || healthBook?.name }}
               </h2>
 
@@ -373,21 +373,32 @@
 
                 <!-- Right Column: Charts + Additional Info -->
                 <div class="lg:col-span-8 space-y-1">
-                  <!-- Temperature Chart -->
-                  <TemperatureChartCard
-                    :health-book="healthBook"
-                    :temperature-history="temperatureHistory"
-                    :selected-date="selectedDate"
-                  />
-
-                  <!-- Health Status & Vaccination -->
-                  <HealthStatusCard :health-book="healthBook" />
-
                   <!-- Digestive Health -->
-                  <DigestiveHealthCard :health-book="healthBook" />
+                  <div class="hidden lg:block mb-6">
+                    <DigestiveHealthCard :health-book="healthBook" />
+                  </div>
+                  <div class="min-[1440px]:grid min-[1440px]:grid-cols-3 min-[1440px]:gap-6">
+                    <div class="min-[1440px]:col-span-2">
+                      <!-- Temperature Chart -->
+                      <TemperatureChartCard
+                        :health-book="healthBook"
+                        :temperature-history="temperatureHistory"
+                        :selected-date="selectedDate"
+                      />
+                    </div>
+                    <div class="min-[1440px]:col-span-1 flex flex-col min-[1440px]:flex-col-reverse min-[1440px]:justify-end">
+                      <!-- Health Status & Vaccination -->
+                      <HealthStatusCard :health-book="healthBook" />
 
-                  <!-- Exercise & Method -->
-                  <ExerciseMethodCard :health-book="healthBook" />
+                      <!-- Digestive Health -->
+                      <div class="lg:hidden">
+                        <DigestiveHealthCard :health-book="healthBook" />
+                      </div>
+
+                      <!-- Exercise & Method -->
+                      <ExerciseMethodCard :health-book="healthBook" />
+                    </div>
+                  </div>
                 </div>
               </div>
 
