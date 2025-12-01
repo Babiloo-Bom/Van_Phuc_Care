@@ -3,6 +3,8 @@
  * Handles course-related API calls
  */
 
+import { useApiBase } from "./useApiBase";
+
 export const useCourseApi = () => {
   const { apiAdmin, apiUser } = useApiBase()
   const apiBase = apiAdmin
