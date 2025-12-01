@@ -393,7 +393,7 @@ export const useAuthApi = () => {
         const token = authStore.token
         
         return await withRetry(() =>
-          fetchWithTimeout(`${apiBase}/admins/profile`, {
+          fetchWithTimeout(`${apiBase}/users/profile`, {
             method: "GET",
             headers: {
               Authorization: `Bearer ${token}`,
@@ -417,7 +417,7 @@ export const useAuthApi = () => {
         const token = authStore.token
         
         return await withRetry(() =>
-          fetchWithTimeout(`${apiBase}/admins/course-register`, {
+          fetchWithTimeout(`${apiBase}/users/course-register`, {
             method: "PUT",
             headers: {
               Authorization: `Bearer ${token}`,
