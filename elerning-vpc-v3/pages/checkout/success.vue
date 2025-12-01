@@ -235,8 +235,8 @@ const fetchOrderDetails = async () => {
   }
 
   try {
-    
-    const response: any = await $fetch(`http://localhost:3000/api/u/orders/${orderId.value}`)
+    const { apiUser } = useApiBase()
+    const response: any = await $fetch(`${apiUser}/orders/${orderId.value}`)
     
     if (response.data && response.data.order) {
       order.value = response.data.order

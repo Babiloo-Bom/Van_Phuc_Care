@@ -309,7 +309,8 @@ export const useCoursesStore = defineStore('courses', {
     // Lấy đánh giá
     async fetchReviews(courseId: string, params?: any) {
       try {
-        const response: any = await $fetch(`http://localhost:3000/api/a/reviews/course/${courseId}`)
+        const { apiAdmin } = useApiBase()
+        const response: any = await $fetch(`${apiAdmin}/reviews/course/${courseId}`)
         this.reviews = response.data?.reviews || response.reviews || []
       } catch (error) {
         throw error

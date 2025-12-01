@@ -12,6 +12,7 @@ import {
   getErrorMessage,
   AuthErrorCode,
 } from "~/types/errors";
+import { useApiBase } from "./useApiBase";
 
 // ===== RETRY CONFIG =====
 const RETRY_CONFIG = {
