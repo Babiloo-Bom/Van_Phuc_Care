@@ -26,9 +26,8 @@ export interface TransactionData {
 }
 
 export const usePaymentApi = () => {
-  const config = useRuntimeConfig();
-  // Hardcode localhost for testing
-  const apiBase = 'http://localhost:3000';
+  const { baseUrl } = useApiBase()
+  const apiBase = baseUrl
 
   return {
     // Thanh toán qua VNPay

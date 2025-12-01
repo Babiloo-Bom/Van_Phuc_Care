@@ -1,7 +1,6 @@
 export const useUploaderApi = () => {
-  const config = useRuntimeConfig();
-  // Hardcode localhost for testing
-  const apiBase = 'http://localhost:3000';
+  const { baseUrl } = useApiBase()
+  const apiBase = baseUrl
 
   return {
     // Upload file

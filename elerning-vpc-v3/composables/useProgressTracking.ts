@@ -57,7 +57,8 @@ export const useProgressTracking = () => {
   // Methods
   const markLessonCompleted = async (courseId: string, chapterId: string, lessonId: string, timeSpent?: number) => {
     try {
-      const apiBase = 'http://localhost:3000/api/u'
+      const { apiUser } = useApiBase()
+      const apiBase = apiUser
       loading.value = true
       error.value = null
       // Check if already completed

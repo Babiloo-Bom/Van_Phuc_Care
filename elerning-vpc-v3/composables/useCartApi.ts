@@ -7,9 +7,8 @@ import type {
 } from '~/types/cart';
 
 export const useCartApi = () => {
-  const config = useRuntimeConfig();
-  // Hardcode localhost for testing
-  const apiBase = 'http://localhost:3000/api/a';
+  const { apiAdmin } = useApiBase()
+  const apiBase = apiAdmin
   
 
   // Fetch user's cart

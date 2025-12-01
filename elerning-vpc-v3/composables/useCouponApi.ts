@@ -4,7 +4,8 @@
  */
 
 export const useCouponApi = () => {
-  const apiUserBase = 'http://localhost:3000/api/u'
+  const { apiUser } = useApiBase()
+  const apiUserBase = apiUser
 
   const getCouponValid = async (courseId: string) => {
     try {
