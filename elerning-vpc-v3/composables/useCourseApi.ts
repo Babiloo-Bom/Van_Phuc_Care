@@ -5,8 +5,20 @@
 
 export const useCourseApi = () => {
   const config = useRuntimeConfig()
-  const apiBase = `${config.public.apiBase || 'http://localhost:3000'}/api/a`
-  const apiUserBase = `${config.public.apiBase || 'http://localhost:3000'}/api/u`
+  
+  // Use window.location.origin for client-side, config for server-side
+  const getBaseUrl = () => {
+    if (process.client && typeof window !== 'undefined') {
+      // Client-side: use current domain
+      return window.location.origin.replace(':3102', ':3000')
+    }
+    // Server-side: use internal Docker hostname
+    return config.public.apiBase || 'http://localhost:3000'
+  }
+  
+  const baseUrl = getBaseUrl()
+  const apiBase = `${baseUrl}/api/a`
+  const apiUserBase = `${baseUrl}/api/u`
 
   /**
    * Get all courses (user API - includes isPurchased)
