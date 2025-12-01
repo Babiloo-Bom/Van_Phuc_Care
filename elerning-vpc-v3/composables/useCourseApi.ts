@@ -4,8 +4,9 @@
  */
 
 export const useCourseApi = () => {
-  const apiBase = 'http://localhost:3000/api/a'
-  const apiUserBase = 'http://localhost:3000/api/u'
+  const config = useRuntimeConfig()
+  const apiBase = `${config.public.apiBase || 'http://localhost:3000'}/api/a`
+  const apiUserBase = `${config.public.apiBase || 'http://localhost:3000'}/api/u`
 
   /**
    * Get all courses (user API - includes isPurchased)
