@@ -244,7 +244,8 @@
                   @error="(e) => { const t = e.target as HTMLImageElement; if (t) t.src = '/images/baby-default.png' }"
                 />
                 <CameraOutlined
-                  class="absolute flex items-center justify-center bottom-2.5 right-2.5 size-4 bg-white rounded-full p-0.5 text-gray-500 text-sm shadow"
+                  class="absolute flex items-center justify-center bottom-2.5 right-2.5 size-4 bg-white rounded-full p-0.5 text-gray-500 text-sm shadow cursor-pointer hover:bg-gray-100"
+                  @click="openAvatarPicker"
                 />
               </div>
 
@@ -292,6 +293,7 @@
                 />
                 <CameraOutlined
                   class="absolute bottom-1 right-1 bg-white rounded-full p-2 text-gray-500 shadow cursor-pointer hover:bg-gray-50"
+                  @click="openAvatarPicker"
                 />
               </div>
               <div class="w-40 h-20"></div>
@@ -456,6 +458,29 @@
       :selected-date="selectedDate"
       @success="handleRecordCreated"
     />
+
+    <!-- Hidden file input for avatar upload -->
+    <input
+      ref="avatarFileInput"
+      type="file"
+      accept="image/*"
+      class="hidden"
+      @change="handleAvatarChange"
+    />
+
+    <!-- Avatar Upload Loading Modal -->
+    <a-modal
+      v-model:open="isUploadingAvatar"
+      :closable="false"
+      :footer="null"
+      :maskClosable="false"
+      centered
+    >
+      <div class="flex flex-col items-center justify-center py-8">
+        <a-spin size="large" />
+        <p class="mt-4 text-gray-600">Đang tải ảnh lên...</p>
+      </div>
+    </a-modal>
   </div>
 </template>
 
@@ -472,6 +497,7 @@ import { message } from "ant-design-vue";
 import type { HealthBook } from "~/types/api";
 import { useHealthRecordsApi } from "~/composables/api/useHealthRecordsApi";
 import { useHealthBooksApi } from "~/composables/api/useHealthBooksApi";
+import { useUploadApi } from "~/composables/api/useUploadApi";
 import { useAuthStore } from "~/stores/auth";
 import CreateHealthBookModal from "~/components/health-book/CreateHealthBookModal.vue";
 import CreateHealthRecordModal from "~/components/health-book/CreateHealthRecordModal.vue";
@@ -504,8 +530,13 @@ const customerId = computed(() => healthBook.value?.customerId || "");
 
 // API composables
 const { getHealthRecordByDate, getHealthRecords } = useHealthRecordsApi();
-const { getHealthBook, getHealthBooks, getCurrentHealthBook } =
+const { getHealthBook, getHealthBooks, getCurrentHealthBook, updateHealthBook } =
   useHealthBooksApi();
+const { uploadFile } = useUploadApi();
+
+// Avatar upload state
+const avatarFileInput = ref<HTMLInputElement | null>(null);
+const isUploadingAvatar = ref(false);
 
 // State
 const healthBook = ref<HealthBook | null>(null);
@@ -749,6 +780,70 @@ const handleDateChange = (date: Dayjs | null) => {
   if (date) {
     const formattedDate = date.format("DD/MM/YYYY");
     fetchHealthRecordByDate(formattedDate);
+  }
+};
+
+// Avatar upload functions
+const openAvatarPicker = () => {
+  avatarFileInput.value?.click();
+};
+
+const handleAvatarChange = async (event: Event) => {
+  const input = event.target as HTMLInputElement;
+  const file = input.files?.[0];
+
+  if (!file) return;
+
+  // Validate file type
+  if (!file.type.startsWith("image/")) {
+    message.error("Vui lòng chọn file ảnh");
+    return;
+  }
+
+  // Validate file size (max 5MB)
+  if (file.size > 5 * 1024 * 1024) {
+    message.error("Kích thước ảnh tối đa là 5MB");
+    return;
+  }
+
+  if (!healthBook.value?._id) {
+    message.error("Không tìm thấy thông tin sổ sức khỏe");
+    return;
+  }
+
+  try {
+    isUploadingAvatar.value = true;
+
+    // Upload file to MinIO
+    const uploadResult = await uploadFile(file, "avatars");
+
+    if (!uploadResult?.url) {
+      throw new Error("Không thể tải ảnh lên");
+    }
+
+    const avatarUrl = uploadResult.url;
+
+    // Update healthbook with new avatar
+    await updateHealthBook(healthBook.value._id, { avatar: avatarUrl });
+
+    // Update local state
+    if (healthBook.value) {
+      healthBook.value.avatar = avatarUrl;
+    }
+    if (profileInfo.value) {
+      profileInfo.value.avatar = avatarUrl;
+    }
+
+    message.success("Cập nhật ảnh đại diện thành công!");
+  } catch (err: any) {
+    console.error("Error uploading avatar:", err);
+    message.error(err.message || "Không thể cập nhật ảnh đại diện");
+  } finally {
+    isUploadingAvatar.value = false;
+    // Reset input value to allow selecting the same file again
+    if (input) {
+      input.value = "";
+    }
   }
 };
 
