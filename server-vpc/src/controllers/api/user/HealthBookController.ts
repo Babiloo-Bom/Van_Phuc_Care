@@ -2,7 +2,8 @@ import { Request, Response } from 'express';
 import { sendError, sendSuccess } from '@libs/response';
 import MongoDbHealthBooks from '@mongodb/vanphuccare/health-book';
 import MongoDbHealthRecords from '@mongodb/vanphuccare/health-record';
-import moment from 'moment';
+import MinioService from "@services/minio";
+import moment from "moment";
 
 class HealthBookController {
   /**
@@ -14,7 +15,7 @@ class HealthBookController {
       const userId = (req as any).user?.id || (req as any).user?._id;
 
       if (!userId) {
-        return sendError(res, 401, 'Unauthorized');
+        return sendError(res, 401, "Unauthorized");
       }
 
       const { page = 1, limit = 20 } = req.query;
@@ -23,7 +24,7 @@ class HealthBookController {
       const [healthBooks, total] = await Promise.all([
         MongoDbHealthBooks.model
           .find({ userId: userId.toString() })
-          .select('-domain -__v')
+          .select("-domain -__v")
           .sort({ createdAt: -1 })
           .skip(skip)
           .limit(Number(limit))
@@ -41,7 +42,7 @@ class HealthBookController {
         },
       });
     } catch (error: any) {
-      console.error('Error fetching healthbooks:', error);
+      console.error("Error fetching healthbooks:", error);
       return sendError(res, 500, error.message);
     }
   }
@@ -55,26 +56,26 @@ class HealthBookController {
       const userId = (req as any).user?.id || (req as any).user?._id;
 
       if (!userId) {
-        return sendError(res, 401, 'Unauthorized');
+        return sendError(res, 401, "Unauthorized");
       }
 
       const healthBook = await MongoDbHealthBooks.model
         .findOne({ userId: userId.toString() })
-        .select('-domain -__v')
+        .select("-domain -__v")
         .lean();
 
       // Return 200 with null data if healthbook doesn't exist yet
       // This is a valid state, not an error
       if (!healthBook) {
-        return sendSuccess(res, { 
+        return sendSuccess(res, {
           data: null,
-          message: 'Healthbook not created yet'
+          message: "Healthbook not created yet",
         });
       }
 
       return sendSuccess(res, { data: healthBook });
     } catch (error: any) {
-      console.error('Error fetching current user healthbook:', error);
+      console.error("Error fetching current user healthbook:", error);
       return sendError(res, 500, error.message);
     }
   }
@@ -89,7 +90,7 @@ class HealthBookController {
       const { id } = req.params;
 
       if (!userId) {
-        return sendError(res, 401, 'Unauthorized');
+        return sendError(res, 401, "Unauthorized");
       }
 
       const healthBook = await MongoDbHealthBooks.model
@@ -97,16 +98,16 @@ class HealthBookController {
           _id: id,
           userId: userId.toString(),
         })
-        .select('-domain -__v')
+        .select("-domain -__v")
         .lean();
 
       if (!healthBook) {
-        return sendError(res, 404, 'HealthBook not found');
+        return sendError(res, 404, "HealthBook not found");
       }
 
       return sendSuccess(res, { data: healthBook });
     } catch (error: any) {
-      console.error('Error fetching healthbook:', error);
+      console.error("Error fetching healthbook:", error);
       return sendError(res, 500, error.message);
     }
   }
@@ -122,7 +123,7 @@ class HealthBookController {
       const { page = 1, limit = 30, startDate, endDate } = req.query;
 
       if (!userId) {
-        return sendError(res, 401, 'Unauthorized');
+        return sendError(res, 401, "Unauthorized");
       }
 
       // Verify healthbook belongs to user
@@ -132,7 +133,7 @@ class HealthBookController {
       });
 
       if (!healthBook) {
-        return sendError(res, 404, 'HealthBook not found');
+        return sendError(res, 404, "HealthBook not found");
       }
 
       const skip = (Number(page) - 1) * Number(limit);
@@ -150,12 +151,7 @@ class HealthBookController {
       }
 
       const [records, total] = await Promise.all([
-        MongoDbHealthRecords.model
-          .find(query)
-          .sort({ date: -1 })
-          .skip(skip)
-          .limit(Number(limit))
-          .lean(),
+        MongoDbHealthRecords.model.find(query).sort({ date: -1 }).skip(skip).limit(Number(limit)).lean(),
         MongoDbHealthRecords.model.countDocuments(query),
       ]);
 
@@ -169,7 +165,7 @@ class HealthBookController {
         },
       });
     } catch (error: any) {
-      console.error('Error fetching health records:', error);
+      console.error("Error fetching health records:", error);
       return sendError(res, 500, error.message);
     }
   }
@@ -246,7 +242,7 @@ class HealthBookController {
         temperatureHistory,
       });
     } catch (error: any) {
-      console.error('Error fetching health record:', error);
+      console.error("Error fetching health record:", error);
       return sendError(res, 500, error.message);
     }
   }
@@ -279,11 +275,11 @@ class HealthBookController {
       } = req.body;
 
       if (!userId) {
-        return sendError(res, 401, 'Unauthorized');
+        return sendError(res, 401, "Unauthorized");
       }
 
       if (!date) {
-        return sendError(res, 400, 'Date is required');
+        return sendError(res, 400, "Date is required");
       }
 
       // Verify healthbook belongs to user
@@ -293,11 +289,11 @@ class HealthBookController {
       });
 
       if (!healthBook) {
-        return sendError(res, 404, 'HealthBook not found');
+        return sendError(res, 404, "HealthBook not found");
       }
 
       // Parse date
-      const recordDate = moment(date, 'YYYY-MM-DD').startOf('day').toDate();
+      const recordDate = moment(date, "YYYY-MM-DD").startOf("day").toDate();
 
       // Prepare record data
       const recordData: any = {
@@ -339,17 +335,17 @@ class HealthBookController {
       );
 
       return sendSuccess(res, {
-        message: 'Lưu dữ liệu sức khỏe thành công',
+        message: "Lưu dữ liệu sức khỏe thành công",
         data: record,
       });
     } catch (error: any) {
-      console.error('Error upserting health record:', error);
-      
+      console.error("Error upserting health record:", error);
+
       // Handle unique constraint violation
       if (error.code === 11000) {
-        return sendError(res, 400, 'Đã có bản ghi cho ngày này');
+        return sendError(res, 400, "Đã có bản ghi cho ngày này");
       }
-      
+
       return sendError(res, 500, error.message);
     }
   }
@@ -364,7 +360,7 @@ class HealthBookController {
       const { id, recordId } = req.params;
 
       if (!userId) {
-        return sendError(res, 401, 'Unauthorized');
+        return sendError(res, 401, "Unauthorized");
       }
 
       // Verify healthbook belongs to user
@@ -374,7 +370,7 @@ class HealthBookController {
       });
 
       if (!healthBook) {
-        return sendError(res, 404, 'HealthBook not found');
+        return sendError(res, 404, "HealthBook not found");
       }
 
       // Delete record
@@ -384,14 +380,81 @@ class HealthBookController {
       });
 
       if (result.deletedCount === 0) {
-        return sendError(res, 404, 'Record not found');
+        return sendError(res, 404, "Record not found");
       }
 
       return sendSuccess(res, {
-        message: 'Xóa bản ghi thành công',
+        message: "Xóa bản ghi thành công",
       });
     } catch (error: any) {
-      console.error('Error deleting health record:', error);
+      console.error("Error deleting health record:", error);
+      return sendError(res, 500, error.message);
+    }
+  }
+
+  /**
+   * Update healthbook (with optional avatar upload)
+   * PATCH /api/u/healthbooks/:id
+   */
+  public async update(req: Request, res: Response) {
+    try {
+      const userId = (req as any).user?.id || (req as any).user?._id;
+      const { id } = req.params;
+
+      if (!userId) {
+        return sendError(res, 401, "Unauthorized");
+      }
+
+      // Verify healthbook belongs to user
+      const healthBook = await MongoDbHealthBooks.model.findOne({
+        _id: id,
+        userId: userId.toString(),
+      });
+
+      if (!healthBook) {
+        return sendError(res, 404, "HealthBook not found");
+      }
+
+      // Prepare update data
+      const updateData: any = {};
+      const { name, dob, gender } = req.body;
+
+      if (name) updateData.name = name;
+      if (dob) updateData.dob = dob;
+      if (gender) updateData.gender = gender;
+
+      // Handle avatar upload if file is present
+      const file = (req as any).file as Express.Multer.File | undefined;
+      if (file) {
+        try {
+          const fileUrl = await MinioService.uploadFile(file.buffer, file.originalname, file.mimetype, "avatars");
+
+          // Get public URL
+          const publicUrl = MinioService.getPublicUrl(fileUrl.replace(`/${MinioService.getBucketName()}/`, ""));
+          updateData.avatar = publicUrl;
+        } catch (uploadError: any) {
+          console.error("Avatar upload error:", uploadError);
+          return sendError(res, 500, "Không thể tải ảnh lên: " + uploadError.message);
+        }
+      }
+
+      // If no update data, return error
+      if (Object.keys(updateData).length === 0) {
+        return sendError(res, 400, "Không có dữ liệu cần cập nhật");
+      }
+
+      // Update healthbook
+      const updatedHealthBook = await MongoDbHealthBooks.model
+        .findByIdAndUpdate(id, { $set: updateData }, { new: true })
+        .select("-domain -__v")
+        .lean();
+
+      return sendSuccess(res, {
+        message: "Cập nhật hồ sơ thành công",
+        data: updatedHealthBook,
+      });
+    } catch (error: any) {
+      console.error("Error updating healthbook:", error);
       return sendError(res, 500, error.message);
     }
   }
@@ -405,14 +468,14 @@ class HealthBookController {
       const userId = (req as any).user?.id || (req as any).user?._id;
 
       if (!userId) {
-        return sendError(res, 401, 'Unauthorized');
+        return sendError(res, 401, "Unauthorized");
       }
 
       const { name, dob, gender, avatar } = req.body;
 
       // Validate required fields
       if (!name || !dob || !gender) {
-        return sendError(res, 400, 'Họ tên, ngày sinh và giới tính là bắt buộc');
+        return sendError(res, 400, "Họ tên, ngày sinh và giới tính là bắt buộc");
       }
 
       // Check if user already has a healthbook
@@ -421,7 +484,7 @@ class HealthBookController {
       });
 
       if (existingHealthBook) {
-        return sendError(res, 409, 'Bạn đã có hồ sơ sức khỏe rồi');
+        return sendError(res, 409, "Bạn đã có hồ sơ sức khỏe rồi");
       }
 
       // Create new healthbook
@@ -430,15 +493,15 @@ class HealthBookController {
         name,
         dob,
         gender,
-        avatar: avatar || '',
+        avatar: avatar || "",
       });
 
       return sendSuccess(res, {
         data: healthBook,
-        message: 'Tạo hồ sơ thành công',
+        message: "Tạo hồ sơ thành công",
       });
     } catch (error: any) {
-      console.error('Error creating healthbook:', error);
+      console.error("Error creating healthbook:", error);
       return sendError(res, 500, error.message);
     }
   }

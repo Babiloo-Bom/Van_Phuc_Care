@@ -22,11 +22,28 @@ app.use(express.json()); // Middleware để parse JSON
 app.use(express.urlencoded({ extended: true })); // Middleware để parse form data
 
 // Cấu hình CORS tường minh
+const allowedOrigins = [
+  "http://localhost:3101", // CRM dev
+  "http://localhost:3100", // Admin dev
+  "http://localhost:3102", // Elearning dev
+  "http://localhost:3000", // API itself (for swagger, etc.)
+];
+
 const corsOptions = {
-  origin: '*', // Thay bằng domain thực tế được phép
-  methods: ['GET', 'POST', 'PUT', 'DELETE','PATCH'], // Các phương thức HTTP được phép
-  allowedHeaders: ['Content-Type', 'Authorization'], // Các header được phép
-  credentials: true, // Cho phép gửi cookie trong CORS
+  origin: function (origin: string | undefined, callback: (err: Error | null, allow?: boolean) => void) {
+    // Allow requests with no origin (like mobile apps or curl requests)
+    if (!origin) return callback(null, true);
+
+    if (allowedOrigins.indexOf(origin) !== -1 || process.env.NODE_ENV !== "production") {
+      callback(null, true);
+    } else {
+      callback(new Error("Not allowed by CORS"));
+    }
+  },
+  methods: ["GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"],
+  allowedHeaders: ["Content-Type", "Authorization", "Accept", "Accept-Language", "Origin", "X-Requested-With"],
+  credentials: true,
+  maxAge: 86400, // 24 hours - cache preflight response
 };
 
 app.use(cors(corsOptions));

@@ -1,20 +1,37 @@
 import { Router } from 'express';
-import HealthBookController from '@controllers/api/user/HealthBookController';
-import { userPassport } from '@middlewares/passport';
+import multer from "multer";
+import HealthBookController from "@controllers/api/user/HealthBookController";
+import { userPassport } from "@middlewares/passport";
 
 const router = Router();
 
 // All routes require authentication
-const auth = userPassport.authenticate('jwt', { session: false });
+const auth = userPassport.authenticate("jwt", { session: false });
+
+// Configure multer for memory storage (avatar upload)
+const upload = multer({
+  storage: multer.memoryStorage(),
+  limits: { fileSize: 5 * 1024 * 1024 }, // 5MB limit
+  fileFilter: (req, file, cb) => {
+    if (file.mimetype.startsWith("image/")) {
+      cb(null, true);
+    } else {
+      cb(new Error("Only image files are allowed"));
+    }
+  },
+});
 
 // Get user's healthbooks
-router.get('/', auth, HealthBookController.index);
+router.get("/", auth, HealthBookController.index);
 
 // Create new healthbook
-router.post('/', auth, HealthBookController.create);
+router.post("/", auth, HealthBookController.create);
 
 // Get current user's healthbook (must be before /:id to match first)
-router.get('/me', auth, HealthBookController.getCurrentHealthBook);
+router.get("/me", auth, HealthBookController.getCurrentHealthBook);
+
+// Update healthbook (with optional avatar upload)
+router.patch("/:id", auth, upload.single("avatar"), HealthBookController.update);
 
 // Get healthbook detail by ID
 router.get('/:id', auth, HealthBookController.show);

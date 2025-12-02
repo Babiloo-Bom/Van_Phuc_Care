@@ -40,26 +40,28 @@
       </a-button>
     </div>
 
-    <!-- Request List - Desktop Table View -->
+    <!-- Request List -->
     <div v-else class="request-list-container">
-      <!-- Header with Create Button -->
-      <div class="list-header">
-        <a-button type="primary" class="create-btn" @click="handleCreateRequest">
-          <template #icon>
-            <PlusOutlined />
-          </template>
-          Tạo phiếu mới
-        </a-button>
-      </div>
-
       <!-- Desktop Table View -->
-      <div class="desktop-table">
+      <div class="desktop-view">
+        <!-- Header with Title and Create Button -->
+        <div class="list-header">
+          <h2 class="list-title">DANH SÁCH PHIẾU HỖ TRỢ</h2>
+          <a-button class="create-btn" @click="handleCreateRequest">
+            <template #icon>
+              <PlusOutlined />
+            </template>
+            Tạo phiếu mới
+          </a-button>
+        </div>
+
         <a-table
           :columns="columns"
           :data-source="requests"
           :pagination="tablePagination"
           :row-key="(record: SupportRequest) => record.id"
           @change="handleTableChange"
+          class="support-table"
         >
           <template #bodyCell="{ column, record }">
             <template v-if="column.key === 'ticketNumber'">
@@ -72,25 +74,39 @@
               <span class="request-title">{{ record.title }}</span>
             </template>
             <template v-else-if="column.key === 'detail'">
-              <a class="detail-link" @click="handleViewDetail(record.id)">Chi tiết</a>
+              <button class="detail-btn" @click="handleViewDetail(record.id)">
+                <svg width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
+                  <g clip-path="url(#clip0_244_9744)">
+                    <path d="M14 0.666992H2C1.46957 0.666992 0.960859 0.877706 0.585786 1.25278C0.210714 1.62785 0 2.13656 0 2.66699L0 15.3337H16V2.66699C16 2.13656 15.7893 1.62785 15.4142 1.25278C15.0391 0.877706 14.5304 0.666992 14 0.666992ZM2 2.00033H14C14.1768 2.00033 14.3464 2.07056 14.4714 2.19559C14.5964 2.32061 14.6667 2.49018 14.6667 2.66699V4.66699H1.33333V2.66699C1.33333 2.49018 1.40357 2.32061 1.5286 2.19559C1.65362 2.07056 1.82319 2.00033 2 2.00033ZM1.33333 14.0003V6.00033H14.6667V14.0003H1.33333ZM3.33333 8.00033H12.6667V9.33366H3.33333V8.00033ZM3.33333 10.667H10V12.0003H3.33333V10.667ZM2 3.33366C2 3.2018 2.0391 3.07291 2.11235 2.96328C2.18561 2.85365 2.28973 2.7682 2.41154 2.71774C2.53336 2.66728 2.66741 2.65408 2.79673 2.6798C2.92605 2.70553 3.04484 2.76902 3.13807 2.86225C3.23131 2.95549 3.2948 3.07428 3.32052 3.2036C3.34625 3.33292 3.33305 3.46696 3.28259 3.58878C3.23213 3.7106 3.14668 3.81472 3.03705 3.88797C2.92741 3.96123 2.79852 4.00033 2.66667 4.00033C2.48986 4.00033 2.32029 3.93009 2.19526 3.80506C2.07024 3.68004 2 3.51047 2 3.33366ZM4 3.33366C4 3.2018 4.0391 3.07291 4.11235 2.96328C4.18561 2.85365 4.28973 2.7682 4.41154 2.71774C4.53336 2.66728 4.66741 2.65408 4.79673 2.6798C4.92605 2.70553 5.04484 2.76902 5.13807 2.86225C5.23131 2.95549 5.2948 3.07428 5.32052 3.2036C5.34625 3.33292 5.33305 3.46696 5.28259 3.58878C5.23213 3.7106 5.14668 3.81472 5.03705 3.88797C4.92741 3.96123 4.79852 4.00033 4.66667 4.00033C4.48986 4.00033 4.32029 3.93009 4.19526 3.80506C4.07024 3.68004 4 3.51047 4 3.33366ZM6 3.33366C6 3.2018 6.0391 3.07291 6.11235 2.96328C6.18561 2.85365 6.28973 2.7682 6.41154 2.71774C6.53336 2.66728 6.66741 2.65408 6.79673 2.6798C6.92605 2.70553 7.04484 2.76902 7.13807 2.86225C7.23131 2.95549 7.2948 3.07428 7.32052 3.2036C7.34625 3.33292 7.33305 3.46696 7.28259 3.58878C7.23213 3.7106 7.14668 3.81472 7.03705 3.88797C6.92741 3.96123 6.79852 4.00033 6.66667 4.00033C6.48986 4.00033 6.32029 3.93009 6.19526 3.80506C6.07024 3.68004 6 3.51047 6 3.33366Z" fill="#317BC4"/>
+                  </g>
+                  <defs>
+                    <clipPath id="clip0_244_9744">
+                      <rect width="16" height="16" fill="white"/>
+                    </clipPath>
+                  </defs>
+                </svg>
+              </button>
             </template>
             <template v-else-if="column.key === 'createdAt'">
               <span class="date-text">{{ formatDate(record.createdAt) }}</span>
             </template>
             <template v-else-if="column.key === 'status'">
-              <a-tag :color="getStatusColor(record.status)" class="status-tag">
+              <span 
+                class="status-badge"
+                :class="getStatusClass(record.status)"
+              >
                 {{ getStatusLabel(record.status) }}
-              </a-tag>
+              </span>
             </template>
           </template>
         </a-table>
       </div>
 
       <!-- Mobile Card View -->
-      <div class="mobile-cards">
+      <div class="mobile-view">
         <h2 class="mobile-title">DANH SÁCH PHIẾU HỖ TRỢ</h2>
         
-        <a-button type="default" class="mobile-create-btn" block @click="handleCreateRequest">
+        <a-button class="mobile-create-btn" block @click="handleCreateRequest">
           <template #icon>
             <PlusOutlined />
           </template>
@@ -105,21 +121,24 @@
           >
             <div class="card-header">
               <h3 class="card-title">{{ request.title }}</h3>
-              <a-tag :color="getStatusColor(request.status)" class="status-tag">
+              <span 
+                class="status-badge"
+                :class="getStatusClass(request.status)"
+              >
                 {{ getStatusLabel(request.status) }}
-              </a-tag>
+              </span>
             </div>
             <div class="card-divider"></div>
             <div class="card-body">
-              <div class="card-info">
-                <span class="info-text">{{ getCategoryLabel(request.category) }}</span>
-                <span class="info-divider">|</span>
-                <span class="info-text">{{ formatDate(request.createdAt) }}</span>
-              </div>
-              <div class="card-footer">
-                <span class="ticket-id">ID: #{{ formatTicketNumber(request.ticketNumber) }}</span>
+              <div class="card-row">
+                <div class="card-info">
+                  <span class="info-text">{{ getCategoryLabel(request.category) }}</span>
+                  <span class="info-divider">|</span>
+                  <span class="info-text">{{ formatDate(request.createdAt) }}</span>
+                </div>
                 <a class="detail-link" @click="handleViewDetail(request.id)">Chi tiết</a>
               </div>
+              <div class="ticket-id">ID: #{{ formatTicketNumber(request.ticketNumber) }}</div>
             </div>
           </div>
         </div>
@@ -188,7 +207,7 @@ const columns = [
   {
     title: 'CHI TIẾT',
     key: 'detail',
-    width: 80,
+    width: 100,
     align: 'center' as const,
   },
   {
@@ -259,6 +278,15 @@ const getStatusColor = (status: SupportRequestStatus): string => {
     completed: 'green',
   }
   return colors[status] || 'default'
+}
+
+const getStatusClass = (status: SupportRequestStatus): string => {
+  const classes: Record<SupportRequestStatus, string> = {
+    pending: 'status-processing',
+    processing: 'status-processing',
+    completed: 'status-completed',
+  }
+  return classes[status] || 'status-default'
 }
 
 // Fetch requests
@@ -364,51 +392,78 @@ onMounted(() => {
   padding: 0;
 }
 
+/* Desktop View */
+.desktop-view {
+  display: block;
+}
+
 /* Header */
 .list-header {
   display: flex;
-  justify-content: flex-end;
+  justify-content: space-between;
+  align-items: center;
   margin-bottom: 16px;
 }
 
+.list-title {
+  font-size: 16px;
+  font-weight: 700;
+  color: #317BC4;
+  margin: 0;
+  letter-spacing: 0.5px;
+}
+
 .create-btn {
-  border-radius: 8px;
+  border-radius: 20px;
   height: 40px;
-  padding: 0 20px;
+  padding: 0 24px;
   font-weight: 500;
   display: flex;
   align-items: center;
   justify-content: center;
+  gap: 8px;
+  border: 1px solid #317BC4;
+  color: #317BC4;
+  background: #fff;
+}
+
+.create-btn:hover {
+  background: #317BC4;
+  color: #fff;
+  border-color: #317BC4;
 }
 
 /* Desktop Table */
-.desktop-table {
-  display: block;
-}
-
-.desktop-table :deep(.ant-table) {
+.support-table :deep(.ant-table) {
   border-radius: 8px;
   overflow: hidden;
+  border: 1px solid #e8e8e8;
 }
 
-.desktop-table :deep(.ant-table-thead > tr > th) {
-  background: #f5f5f5;
+.support-table :deep(.ant-table-thead > tr > th) {
+  background: #E8F4FC;
   font-weight: 600;
   font-size: 12px;
-  color: #666;
+  color: #333;
   text-transform: uppercase;
   letter-spacing: 0.5px;
-  padding: 12px 16px;
-  border-bottom: 1px solid #e8e8e8;
+  padding: 14px 16px;
+  border-bottom: 1px solid #d4e8f7;
 }
 
-.desktop-table :deep(.ant-table-tbody > tr > td) {
+.support-table :deep(.ant-table-tbody > tr > td) {
   padding: 16px;
   border-bottom: 1px solid #f0f0f0;
+  vertical-align: middle;
 }
 
-.desktop-table :deep(.ant-table-tbody > tr:hover > td) {
+.support-table :deep(.ant-table-tbody > tr:hover > td) {
   background: #fafafa;
+}
+
+.support-table :deep(.ant-pagination) {
+  margin: 16px 0;
+  padding: 0 16px;
 }
 
 .ticket-number {
@@ -424,38 +479,77 @@ onMounted(() => {
   color: #333;
 }
 
+/* Desktop Detail Button */
+.detail-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 48px;
+  height: 48px;
+  background: #E8F4FC;
+  border: none;
+  border-radius: 12px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.detail-btn:hover {
+  background: #d4e8f7;
+}
+
+.detail-btn svg {
+  width: 20px;
+  height: 20px;
+}
+
+/* Mobile Detail Link */
 .detail-link {
   color: #317BC4;
   cursor: pointer;
   text-decoration: underline;
+  font-weight: 500;
 }
 
 .detail-link:hover {
-  color: #40a9ff;
+  color: #1d5a9e;
 }
 
 .date-text {
   color: #666;
 }
 
-.status-tag {
+/* Status Badge - Desktop */
+.status-badge {
+  display: inline-block;
+  padding: 4px 16px;
   border-radius: 4px;
+  font-size: 13px;
   font-weight: 500;
-  padding: 2px 12px;
-  border: none;
+  white-space: nowrap;
 }
 
-.status-tag :deep(.ant-tag) {
-  margin: 0;
+.status-completed {
+  background: #E6F7EC;
+  color: #52c41a;
 }
 
-/* Mobile Cards - Hidden by default on desktop */
-.mobile-cards {
+.status-processing {
+  background: #FFF2E8;
+  color: #fa541c;
+}
+
+.status-default {
+  background: #f5f5f5;
+  color: #666;
+}
+
+/* Mobile View - Hidden by default on desktop */
+.mobile-view {
   display: none;
 }
 
 .mobile-title {
-  font-size: 18px;
+  font-size: 16px;
   font-weight: 700;
   color: #317BC4;
   text-align: center;
@@ -464,12 +558,22 @@ onMounted(() => {
 }
 
 .mobile-create-btn {
-  margin-bottom: 20px;
+  margin-bottom: 16px;
   height: 44px;
-  border-radius: 20px;
+  border-radius: 24px;
   border: 1px solid #317BC4;
   color: #317BC4;
+  background: #fff;
   font-weight: 500;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+}
+
+.mobile-create-btn:hover {
+  background: #317BC4;
+  color: #fff;
 }
 
 .card-list {
@@ -511,7 +615,13 @@ onMounted(() => {
 .card-body {
   display: flex;
   flex-direction: column;
-  gap: 8px;
+  gap: 6px;
+}
+
+.card-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
 }
 
 .card-info {
@@ -522,14 +632,12 @@ onMounted(() => {
   color: #666;
 }
 
-.info-divider {
-  color: #d9d9d9;
+.info-text {
+  color: #666;
 }
 
-.card-footer {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
+.info-divider {
+  color: #d9d9d9;
 }
 
 .ticket-id {
@@ -555,17 +663,35 @@ onMounted(() => {
     font-size: 14px;
   }
 
-  /* Hide desktop table, show mobile cards */
-  .desktop-table {
+  /* Hide desktop view, show mobile view */
+  .desktop-view {
     display: none;
   }
 
-  .mobile-cards {
+  .mobile-view {
     display: block;
   }
 
-  .list-header {
-    display: none;
+  /* Mobile status badge - text only, no background */
+  .status-badge {
+    padding: 0;
+    background: transparent;
+    border-radius: 0;
+  }
+
+  .status-completed {
+    background: transparent;
+    color: #52c41a;
+  }
+
+  .status-processing {
+    background: transparent;
+    color: #fa8c16;
+  }
+
+  .status-default {
+    background: transparent;
+    color: #666;
   }
 }
 </style>

@@ -7,7 +7,7 @@
       <div class="profile-card bg-white rounded-xl p-8 flex flex-col items-center justify-center md:col-span-1">
         <a-spin v-if="loading" />
         <template v-else>
-          <img :src="userInfo?.avatar || '/images/avatar.png'" alt="Avatar" class="w-28 h-28 rounded-full mb-4" />
+          <img :src="userInfo?.avatar || '/images/avatar-fallback.png'" alt="Avatar" class="w-28 h-28 rounded-full mb-4" />
           <h2 class="text-xl font-bold mb-1">{{ userInfo?.name || userInfo?.fullname || 'Chưa có tên' }}</h2>
           <p class="text-gray-600">{{ userInfo?.email || 'Chưa có email' }}</p>
         </template>

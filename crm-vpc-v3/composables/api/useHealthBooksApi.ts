@@ -11,7 +11,7 @@ import type {
   HealthBooksListResponse,
   TemperatureHistoryResponse,
   HealthBookQueryParams,
-} from '~/types/api';
+} from "~/types/api";
 
 export const useHealthBooksApi = () => {
   const apiClient = useApiClient();
@@ -22,7 +22,7 @@ export const useHealthBooksApi = () => {
      * GET /api/u/healthbooks
      */
     async getHealthBooks(params?: HealthBookQueryParams) {
-      return apiClient.get<HealthBooksListResponse>('/api/u/healthbooks', {
+      return apiClient.get<HealthBooksListResponse>("/api/u/healthbooks", {
         params,
         showError: false,
       });
@@ -53,7 +53,7 @@ export const useHealthBooksApi = () => {
      * GET /api/u/healthbooks/me
      */
     async getCurrentHealthBook() {
-      return apiClient.get<HealthBookResponse>('/api/u/healthbooks/me', {
+      return apiClient.get<HealthBookResponse>("/api/u/healthbooks/me", {
         showError: false,
       });
     },
@@ -62,15 +62,53 @@ export const useHealthBooksApi = () => {
      * Create new health book for current user
      * POST /api/u/healthbooks
      */
-    async createHealthBook(data: { 
-      name: string;
-      dob: string;
-      gender: string;
-      avatar?: string;
-    }) {
-      return apiClient.post<HealthBookResponse>('/api/u/healthbooks', data, {
-        errorMessage: 'Không thể tạo hồ sơ sức khỏe',
+    async createHealthBook(data: { name: string; dob: string; gender: string; avatar?: string }) {
+      return apiClient.post<HealthBookResponse>("/api/u/healthbooks", data, {
+        errorMessage: "Không thể tạo hồ sơ sức khỏe",
       });
+    },
+
+    /**
+     * Update user's health book (with optional avatar file)
+     * PATCH /api/u/healthbooks/:id
+     */
+    async updateUserHealthBook(
+      id: string,
+      data: {
+        name?: string;
+        dob?: string;
+        gender?: string;
+        avatar?: File;
+      }
+    ) {
+      const formData = new FormData();
+
+      if (data.name) formData.append("name", data.name);
+      if (data.dob) formData.append("dob", data.dob);
+      if (data.gender) formData.append("gender", data.gender);
+      if (data.avatar) formData.append("avatar", data.avatar);
+
+      const config = useRuntimeConfig();
+      const baseUrl = config.public.apiBaseUrl || "http://localhost:3000";
+
+      // Get token from localStorage (key is 'auth_token')
+      const token = localStorage.getItem("auth_token");
+
+      const response = await fetch(`${baseUrl}/api/u/healthbooks/${id}`, {
+        method: "PATCH",
+        headers: {
+          ...(token ? { Authorization: `Bearer ${token}` } : {}),
+        },
+        body: formData,
+        // Không cần credentials vì đang dùng Bearer token trong header
+      });
+
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.message || "Không thể cập nhật hồ sơ sức khỏe");
+      }
+
+      return response.json();
     },
 
     /**
@@ -78,7 +116,7 @@ export const useHealthBooksApi = () => {
      * GET /api/a/health-book/temperature
      */
     async getTemperatureHistory(date: string) {
-      return apiClient.get<TemperatureHistoryResponse>('/api/a/health-book/temperature', {
+      return apiClient.get<TemperatureHistoryResponse>("/api/a/health-book/temperature", {
         params: { date },
       });
     },
@@ -87,12 +125,14 @@ export const useHealthBooksApi = () => {
      * Create new health book (admin endpoint)
      * POST /api/a/health-book
      */
-    async createHealthBookAdmin(data: Partial<HealthBook> & { 
-      customerEmail: string
-      recordedAt: string 
-    }) {
-      return apiClient.post<{ status: boolean }>('/api/a/health-book', data, {
-        errorMessage: 'Không thể tạo sổ sức khỏe',
+    async createHealthBookAdmin(
+      data: Partial<HealthBook> & {
+        customerEmail: string;
+        recordedAt: string;
+      }
+    ) {
+      return apiClient.post<{ status: boolean }>("/api/a/health-book", data, {
+        errorMessage: "Không thể tạo sổ sức khỏe",
       });
     },
 
@@ -102,7 +142,7 @@ export const useHealthBooksApi = () => {
      */
     async updateHealthBook(id: string, data: Partial<HealthBook>) {
       return apiClient.patch<{ healthBookCheck: HealthBook }>(`/api/a/health-book/${id}`, data, {
-        errorMessage: 'Không thể cập nhật sổ sức khỏe',
+        errorMessage: "Không thể cập nhật sổ sức khỏe",
       });
     },
 
@@ -112,7 +152,7 @@ export const useHealthBooksApi = () => {
      */
     async deleteHealthBook(id: string) {
       return apiClient.delete<{ status: boolean }>(`/api/a/health-book/${id}`, {
-        errorMessage: 'Không thể xóa sổ sức khỏe',
+        errorMessage: "Không thể xóa sổ sức khỏe",
       });
     },
 
@@ -121,10 +161,9 @@ export const useHealthBooksApi = () => {
      * POST /api/a/health-book/comment
      */
     async addComment(data: { healthBookId: string; content: string }) {
-      return apiClient.post<{ status: boolean }>('/api/a/health-book/comment', data, {
-        errorMessage: 'Không thể thêm ghi chú',
+      return apiClient.post<{ status: boolean }>("/api/a/health-book/comment", data, {
+        errorMessage: "Không thể thêm ghi chú",
       });
     },
   };
 };
-

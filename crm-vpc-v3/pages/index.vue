@@ -497,7 +497,6 @@ import { message } from "ant-design-vue";
 import type { HealthBook } from "~/types/api";
 import { useHealthRecordsApi } from "~/composables/api/useHealthRecordsApi";
 import { useHealthBooksApi } from "~/composables/api/useHealthBooksApi";
-import { useUploadApi } from "~/composables/api/useUploadApi";
 import { useAuthStore } from "~/stores/auth";
 import CreateHealthBookModal from "~/components/health-book/CreateHealthBookModal.vue";
 import CreateHealthRecordModal from "~/components/health-book/CreateHealthRecordModal.vue";
@@ -530,9 +529,8 @@ const customerId = computed(() => healthBook.value?.customerId || "");
 
 // API composables
 const { getHealthRecordByDate, getHealthRecords } = useHealthRecordsApi();
-const { getHealthBook, getHealthBooks, getCurrentHealthBook, updateHealthBook } =
+const { getHealthBook, getHealthBooks, getCurrentHealthBook, updateUserHealthBook } =
   useHealthBooksApi();
-const { uploadFile } = useUploadApi();
 
 // Avatar upload state
 const avatarFileInput = ref<HTMLInputElement | null>(null);
@@ -814,17 +812,15 @@ const handleAvatarChange = async (event: Event) => {
   try {
     isUploadingAvatar.value = true;
 
-    // Upload file to MinIO
-    const uploadResult = await uploadFile(file, "avatars");
+    // Call API to update healthbook with avatar file
+    const result = await updateUserHealthBook(healthBook.value._id, { avatar: file });
 
-    if (!uploadResult?.url) {
-      throw new Error("Không thể tải ảnh lên");
+    // Response structure: { message: "", data: { message: "...", data: { avatar: "..." } } }
+    const avatarUrl = result?.data?.data?.avatar || result?.data?.avatar;
+    
+    if (!avatarUrl) {
+      throw new Error("Không thể cập nhật ảnh đại diện");
     }
-
-    const avatarUrl = uploadResult.url;
-
-    // Update healthbook with new avatar
-    await updateHealthBook(healthBook.value._id, { avatar: avatarUrl });
 
     // Update local state
     if (healthBook.value) {

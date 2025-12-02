@@ -163,7 +163,7 @@ import {
       </div>
 
       <!-- Ghi chú -->
-      <a-form-item label="Ghi chú" name="notes">
+      <a-form-item label="Lưu ý" name="notes">
         <a-textarea v-model:value="formState.notes" :rows="4" placeholder="Bé bị sốt" :maxlength="500" show-count />
       </a-form-item>
 
