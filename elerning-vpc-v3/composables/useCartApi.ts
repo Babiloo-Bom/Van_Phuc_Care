@@ -5,6 +5,7 @@ import type {
   ApplyCouponData,
   CartItem, 
 } from '~/types/cart';
+import { useApiBase } from './useApiBase';
 
 export const useCartApi = () => {
   const { apiAdmin } = useApiBase()

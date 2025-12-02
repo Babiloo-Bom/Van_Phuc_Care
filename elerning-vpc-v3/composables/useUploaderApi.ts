@@ -1,3 +1,5 @@
+import { useApiBase } from "./useApiBase";
+
 export const useUploaderApi = () => {
   const { baseUrl } = useApiBase()
   const apiBase = baseUrl

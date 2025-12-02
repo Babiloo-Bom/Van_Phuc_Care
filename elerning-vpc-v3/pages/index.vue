@@ -609,7 +609,7 @@ const handleBuyNow = async (course: any) => {
     // Add to cart first
     await cartStore.addToCart({ courseId: course._id, quantity: 1, userId: String(authStore.user?.id) || "" });
     // Navigate to checkout
-    navigateTo("/checkout");
+    navigateTo("/cart");
   } catch (error) {
     console.error("❌ Error buying now:", error);
   }

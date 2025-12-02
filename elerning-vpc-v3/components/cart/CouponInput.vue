@@ -71,9 +71,9 @@ const applyCoupon = async () => {
   }
   
   isLoading.value = true
-  
+  const { apiUser } = useApiBase()
   try {
-    const response: any = await $fetch('http://localhost:3000/api/u/coupons/apply', {
+    const response: any = await $fetch(`${apiUser}/coupons/apply`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',

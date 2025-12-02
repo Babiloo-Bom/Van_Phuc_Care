@@ -1,6 +1,7 @@
 import { ref, computed } from 'vue';
 import { useAuthStore } from '~/stores/auth';
 import { useCourseApi } from './useCourseApi';
+import { useApiBase } from './useApiBase';
 
 export interface LessonProgress {
   courseId: string
