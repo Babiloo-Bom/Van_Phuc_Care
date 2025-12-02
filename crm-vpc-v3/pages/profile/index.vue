@@ -355,8 +355,13 @@ async function handleErrorSubmit() {
   min-height: 260px;
 }
 
+:deep(.profile-form .ant-form-item-control-input-content) {
+  text-align: end !important;
+}
+
 .profile-form .ant-btn-primary {
   background-color: #317bc4;
+  width: 220px;
 }
 
 /* Upload Container Styles */
@@ -404,6 +409,52 @@ async function handleErrorSubmit() {
   }
   .profile-form .ant-btn-primary {
     width: 100%;
+  }
+
+  /* Mobile Tabs Styling */
+  .profile-form :deep(.ant-tabs-nav) {
+    margin-bottom: 16px;
+  }
+
+  .profile-form :deep(.ant-tabs-nav::before) {
+    border: none;
+  }
+
+  .profile-form :deep(.ant-tabs-nav-wrap) {
+    border: 1px solid #e8e8e8;
+    border-radius: 8px;
+    overflow: hidden;
+  }
+
+  .profile-form :deep(.ant-tabs-nav-list) {
+    width: 100%;
+  }
+
+  .profile-form :deep(.ant-tabs-tab) {
+    flex: 1;
+    justify-content: center;
+    margin: 0 !important;
+    padding: 10px 12px;
+    background: #fff;
+    border-radius: 0;
+    transition: all 0.3s;
+  }
+
+  .profile-form :deep(.ant-tabs-tab .ant-tabs-tab-btn) {
+    color: #747474;
+    font-size: 14px;
+  }
+
+  .profile-form :deep(.ant-tabs-tab-active) {
+    background: #1A75BB !important;
+  }
+
+  .profile-form :deep(.ant-tabs-tab-active .ant-tabs-tab-btn) {
+    color: #fff !important;
+  }
+
+  .profile-form :deep(.ant-tabs-ink-bar) {
+    display: none;
   }
 }
 </style>

@@ -876,6 +876,23 @@ onMounted(async () => {
 
   // Case 1: Google OAuth callback - handle login first
   if (code) {
+    // Check if this code was already used (stored in sessionStorage)
+    const usedCodes = JSON.parse(sessionStorage.getItem('usedGoogleCodes') || '[]');
+    if (usedCodes.includes(code)) {
+      // Code already used, just clean URL and continue
+      console.log('Google OAuth code already used, skipping...');
+      await router.replace('/');
+      isCheckingAuth.value = false;
+      
+      // If user is authenticated, load healthbook
+      if (authStore.isAuthenticated) {
+        await fetchHealthBookProfile();
+      } else {
+        router.push("/login");
+      }
+      return;
+    }
+
     loading.value = true;
     error.value = "";
 
@@ -885,6 +902,10 @@ onMounted(async () => {
       if (!response || !response.success || !response.data) {
         throw new Error(response?.error || "Đăng nhập Google thất bại");
       }
+
+      // Mark this code as used
+      usedCodes.push(code);
+      sessionStorage.setItem('usedGoogleCodes', JSON.stringify(usedCodes));
 
       // Calculate token expiry time
       let tokenExpireAtNum: number;
@@ -922,8 +943,8 @@ onMounted(async () => {
       // Show success message
       message.success("Đăng nhập Google thành công!");
 
-      // Clean URL (remove query params)
-      window.history.replaceState({}, document.title, "/");
+      // Clean URL using router.replace to properly update history
+      await router.replace('/');
 
       // Continue to load healthbook data
       isCheckingAuth.value = false;
@@ -931,6 +952,10 @@ onMounted(async () => {
       return;
     } catch (err: any) {
       console.error("❌ Google login error:", err);
+      
+      // Clean URL first to prevent reload loop
+      await router.replace('/');
+      
       error.value =
         err.message || "Đăng nhập Google thất bại. Vui lòng thử lại.";
       loading.value = false;
