@@ -3,9 +3,12 @@
  * Handles course-related API calls
  */
 
+import { useApiBase } from "./useApiBase";
+
 export const useQuizApi = () => {
-  const apiBase = 'http://localhost:3000/api/a'
-  const apiBaseUser = 'http://localhost:3000/api/u'
+  const { apiAdmin, apiUser } = useApiBase()
+  const apiBase = apiAdmin
+  const apiBaseUser = apiUser
 
   /**
    * Get quiz detail by id

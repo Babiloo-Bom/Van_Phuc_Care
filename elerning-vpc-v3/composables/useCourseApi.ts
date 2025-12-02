@@ -3,9 +3,12 @@
  * Handles course-related API calls
  */
 
+import { useApiBase } from "./useApiBase";
+
 export const useCourseApi = () => {
-  const apiBase = 'http://localhost:3000/api/a'
-  const apiUserBase = 'http://localhost:3000/api/u'
+  const { apiAdmin, apiUser } = useApiBase()
+  const apiBase = apiAdmin
+  const apiUserBase = apiUser
 
   /**
    * Get all courses (user API - includes isPurchased)

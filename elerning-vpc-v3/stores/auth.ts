@@ -75,10 +75,9 @@ export const useAuthStore = defineStore("auth", {
         this.tokenExpireAt = tokenExpireAt ? this.calculateExpireTime(tokenExpireAt) : this.calculateExpireTime('7d')
         this.isAuthenticated = true
         this.rememberAccount = remindAccount
-        
         // Create basic user object (will be enhanced later if needed)
         this.user = {
-          id: response.data.id || "temp-id",
+          id: response.data._id || "temp-id",
           email: username,
           username: username,
           fullname: response.fullname || username,
@@ -166,7 +165,10 @@ export const useAuthStore = defineStore("auth", {
         
         if (response.data?.user) {
           // Update user data with fresh data from backend
-          this.user = response.data.user
+          this.user = {
+            ...response.data.user,
+            id: response.data.user?._id
+          }
           this.saveAuth()
         }
       } catch (error) {

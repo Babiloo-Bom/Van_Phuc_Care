@@ -422,7 +422,7 @@ const handlePayment = async (method: string) => {
 
 const processBypassOrder = async () => {
   if (cartItems.value.length === 0) return
-  
+  const { apiUser } = useApiBase()
   try {
     isProcessingOrder.value = true
     
@@ -458,7 +458,7 @@ const processBypassOrder = async () => {
     }
     
     // Create order
-    const orderResponse: any = await $fetch('http://localhost:3000/api/u/orders', {
+    const orderResponse: any = await $fetch(`${apiUser}/orders`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json'
@@ -476,7 +476,7 @@ const processBypassOrder = async () => {
     await new Promise(resolve => setTimeout(resolve, 1000))
     
     // Process payment
-    await $fetch('http://localhost:3000/api/u/orders/payment', {
+    await $fetch(`${apiUser}/orders/payment`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json'

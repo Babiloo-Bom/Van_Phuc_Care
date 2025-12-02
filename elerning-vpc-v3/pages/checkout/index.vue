@@ -423,7 +423,7 @@ const handleSubmit = async (e?: Event) => {
   try {
     isSubmitting.value = true
     loading.value = true
-    
+    const { apiUser } = useApiBase()
     // Create order first
     const orderData = {
       userId: authStore.user?.id,
@@ -446,11 +446,11 @@ const handleSubmit = async (e?: Event) => {
       } : null,
       totalAmount: totalPrice.value,
       paymentMethod: checkoutForm.value.paymentMethod,
-      notes: checkoutForm.value.notes || ''
+      notes: checkoutForm.value.note || ''
     }
 
     // Create order
-    const orderResponse: any = await $fetch('http://localhost:3000/api/u/orders', {
+    const orderResponse: any = await $fetch(`${apiUser}/orders`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json'
@@ -470,9 +470,9 @@ const handleSubmit = async (e?: Event) => {
       // Simulate payment processing
       await new Promise(resolve => setTimeout(resolve, 1000))
       
-      
+      const { apiUser } = useApiBase()
       // Update order status
-      await $fetch(`http://localhost:3000/api/u/orders/payment`, {
+      await $fetch(`${apiUser}/orders/payment`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json'
@@ -505,9 +505,9 @@ const handleSubmit = async (e?: Event) => {
     })
     
     if (paymentResult.success) {
-
+      const { apiUser } = useApiBase()
       // Update order status
-      await $fetch(`http://localhost:3000/api/u/orders/payment`, {
+      await $fetch(`${apiUser}/orders/payment`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json'
