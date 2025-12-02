@@ -71,7 +71,7 @@
               <span class="category-text">{{ getCategoryLabel(record.category) }}</span>
             </template>
             <template v-else-if="column.key === 'title'">
-              <span class="request-title">{{ record.title }}</span>
+              <span class="request-title">{{ record.description }}</span>
             </template>
             <template v-else-if="column.key === 'detail'">
               <button class="detail-btn" @click="handleViewDetail(record.id)">
@@ -115,12 +115,12 @@
 
         <div class="card-list">
           <div 
-            v-for="request in requests" 
+            v-for="request in paginatedRequests" 
             :key="request.id" 
             class="request-card"
           >
             <div class="card-header">
-              <h3 class="card-title">{{ request.title }}</h3>
+              <h3 class="card-title">{{ request.description }}</h3>
               <span 
                 class="status-badge"
                 :class="getStatusClass(request.status)"
@@ -141,6 +141,17 @@
               <div class="ticket-id">ID: #{{ formatTicketNumber(request.ticketNumber) }}</div>
             </div>
           </div>
+        </div>
+
+        <!-- Mobile Pagination -->
+        <div class="mobile-pagination">
+          <a-pagination
+            v-model:current="currentPage"
+            :total="total"
+            :page-size="pageSize"
+            :show-size-changer="false"
+            size="small"
+          />
         </div>
       </div>
     </div>
@@ -202,12 +213,13 @@ const columns = [
     title: 'NỘI DUNG YÊU CẦU',
     key: 'title',
     dataIndex: 'title',
+    width: 200,
     ellipsis: true,
   },
   {
     title: 'CHI TIẾT',
     key: 'detail',
-    width: 100,
+    width: 120,
     align: 'center' as const,
   },
   {
@@ -215,6 +227,7 @@ const columns = [
     key: 'createdAt',
     dataIndex: 'createdAt',
     width: 120,
+    align: 'center' as const,
   },
   {
     title: 'TRẠNG THÁI',
@@ -232,8 +245,15 @@ const tablePagination = computed(() => ({
   total: total.value,
   showSizeChanger: false,
   showQuickJumper: true,
-  showTotal: (t: number) => `Tổng ${t} phiếu`,
+  // showTotal: (t: number) => `Tổng ${t} phiếu`,
 }))
+
+// Paginated requests for mobile view
+const paginatedRequests = computed(() => {
+  const start = (currentPage.value - 1) * pageSize.value
+  const end = start + pageSize.value
+  return requests.value.slice(start, end)
+})
 
 // Helpers
 const formatTicketNumber = (ticketNumber: string): string => {
@@ -382,7 +402,7 @@ onMounted(() => {
 .empty-text {
   font-size: 16px;
   line-height: 1.6;
-  color: #333;
+  color: #202224;
   margin: 0 0 12px;
   max-width: 600px;
 }
@@ -442,9 +462,9 @@ onMounted(() => {
 
 .support-table :deep(.ant-table-thead > tr > th) {
   background: #E8F4FC;
-  font-weight: 600;
-  font-size: 12px;
-  color: #333;
+  font-weight: 700;
+  font-size: 14px;
+  color: #317BC4;
   text-transform: uppercase;
   letter-spacing: 0.5px;
   padding: 14px 16px;
@@ -464,19 +484,85 @@ onMounted(() => {
 .support-table :deep(.ant-pagination) {
   margin: 16px 0;
   padding: 0 16px;
+  display: flex;
+  justify-content: flex-end;
+  align-items: center;
+  gap: 8px;
+}
+
+.support-table :deep(.ant-pagination-item) {
+  border: none;
+  background: transparent;
+  min-width: 32px;
+  height: 32px;
+  line-height: 32px;
+  margin: 0;
+}
+
+.support-table :deep(.ant-pagination-item a) {
+  color: #666;
+  font-weight: 500;
+}
+
+.support-table :deep(.ant-pagination-item-active) {
+  background: transparent;
+  border: none;
+}
+
+.support-table :deep(.ant-pagination-item-active a) {
+  color: #317BC4;
+  font-weight: 700;
+}
+
+.support-table :deep(.ant-pagination-prev),
+.support-table :deep(.ant-pagination-next) {
+  min-width: 32px;
+  height: 32px;
+  line-height: 32px;
+  border: 1px solid #317BC4;
+  border-radius: 6px;
+  margin: 0;
+}
+
+.support-table :deep(.ant-pagination-prev:hover),
+.support-table :deep(.ant-pagination-next:hover) {
+  background: #E8F4FC;
+}
+
+.support-table :deep(.ant-pagination-prev .ant-pagination-item-link),
+.support-table :deep(.ant-pagination-next .ant-pagination-item-link) {
+  color: #317BC4;
+  border: none;
+  background: transparent;
+}
+
+.support-table :deep(.ant-pagination-disabled) {
+  border-color: #d9d9d9;
+}
+
+.support-table :deep(.ant-pagination-disabled .ant-pagination-item-link) {
+  color: #d9d9d9;
+}
+
+.support-table :deep(.ant-pagination-jump-prev),
+.support-table :deep(.ant-pagination-jump-next) {
+  min-width: 32px;
+  height: 32px;
+  line-height: 32px;
+  margin: 0;
 }
 
 .ticket-number {
   font-weight: 500;
-  color: #333;
+  color: #202224;
 }
 
 .category-text {
-  color: #666;
+  color: #202224;
 }
 
 .request-title {
-  color: #333;
+  color: #202224;
 }
 
 /* Desktop Detail Button */
@@ -491,6 +577,7 @@ onMounted(() => {
   border-radius: 12px;
   cursor: pointer;
   transition: all 0.2s ease;
+  margin: 0 auto;
 }
 
 .detail-btn:hover {
@@ -643,6 +730,82 @@ onMounted(() => {
 .ticket-id {
   font-size: 13px;
   color: #999;
+}
+
+/* Mobile Pagination */
+.mobile-pagination {
+  display: flex;
+  justify-content: center;
+  margin-top: 20px;
+  padding: 0 16px;
+}
+
+.mobile-pagination :deep(.ant-pagination) {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.mobile-pagination :deep(.ant-pagination-item) {
+  border: none;
+  background: transparent;
+  min-width: 32px;
+  height: 32px;
+  line-height: 32px;
+  margin: 0;
+}
+
+.mobile-pagination :deep(.ant-pagination-item a) {
+  color: #666;
+  font-weight: 500;
+}
+
+.mobile-pagination :deep(.ant-pagination-item-active) {
+  background: transparent;
+  border: none;
+}
+
+.mobile-pagination :deep(.ant-pagination-item-active a) {
+  color: #317BC4;
+  font-weight: 700;
+}
+
+.mobile-pagination :deep(.ant-pagination-prev),
+.mobile-pagination :deep(.ant-pagination-next) {
+  min-width: 32px;
+  height: 32px;
+  line-height: 32px;
+  border: 1px solid #317BC4;
+  border-radius: 6px;
+  margin: 0;
+}
+
+.mobile-pagination :deep(.ant-pagination-prev:hover),
+.mobile-pagination :deep(.ant-pagination-next:hover) {
+  background: #E8F4FC;
+}
+
+.mobile-pagination :deep(.ant-pagination-prev .ant-pagination-item-link),
+.mobile-pagination :deep(.ant-pagination-next .ant-pagination-item-link) {
+  color: #317BC4;
+  border: none;
+  background: transparent;
+}
+
+.mobile-pagination :deep(.ant-pagination-disabled) {
+  border-color: #d9d9d9;
+}
+
+.mobile-pagination :deep(.ant-pagination-disabled .ant-pagination-item-link) {
+  color: #d9d9d9;
+}
+
+.mobile-pagination :deep(.ant-pagination-jump-prev),
+.mobile-pagination :deep(.ant-pagination-jump-next) {
+  min-width: 32px;
+  height: 32px;
+  line-height: 32px;
+  margin: 0;
 }
 
 /* Mobile Responsive */

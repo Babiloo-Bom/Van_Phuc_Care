@@ -37,21 +37,24 @@
         <div class="category-label">
           [{{ getCategoryLabel(request.category) }}] {{ request.title }}
         </div>
-        <p class="description">{{ request.description }}</p>
 
-        <!-- Attachments -->
-        <div
-          v-if="request.attachments && request.attachments.length > 0"
-          class="attachments"
-        >
-          <div class="attachment-list">
-            <div
-              v-for="(attachment, index) in request.attachments"
-              :key="index"
-              class="attachment-item"
-              @click="previewImage(attachment.url)"
-            >
-              <img :src="attachment.url" :alt="attachment.filename" />
+        <div class="request-content-wrapper">
+          <p class="description">{{ request.description }}</p>
+
+          <!-- Attachments -->
+          <div
+            v-if="request.attachments && request.attachments.length > 0"
+            class="attachments"
+          >
+            <div class="attachment-list">
+              <div
+                v-for="(attachment, index) in request.attachments"
+                :key="index"
+                class="attachment-item"
+                @click="previewImage(attachment.url)"
+              >
+                <img :src="attachment.url" :alt="attachment.filename" />
+              </div>
             </div>
           </div>
         </div>
@@ -71,9 +74,11 @@
               response.isAdmin ? 'admin-response' : 'user-response',
             ]"
           >
-            <div class="response-bubble">
-              <p class="response-text">{{ response.content }}</p>
-              <!-- Response Attachments -->
+            <div class="response-content">
+              <div class="response-bubble">
+                <p class="response-text">{{ response.content }}</p>
+              </div>
+              <!-- Response Attachments - Outside bubble -->
               <div
                 v-if="response.attachments && response.attachments.length > 0"
                 class="response-attachments"
@@ -85,11 +90,14 @@
                   @click="previewImage(img.url)"
                 >
                   <img :src="img.url" :alt="img.filename" />
+                  <div v-if="isVideo(img.url)" class="video-play-icon">
+                    <PlayCircleOutlined />
+                  </div>
                 </div>
               </div>
             </div>
             <div class="response-avatar">
-              <a-avatar :src="response.avatar" :size="32">
+              <a-avatar :src="response.avatar" :size="40">
                 {{ response.name?.charAt(0) || "U" }}
               </a-avatar>
             </div>
@@ -100,108 +108,107 @@
             <p>Chưa có phản hồi nào.</p>
           </div>
         </div>
-      </div>
 
-      <!-- Reply Section -->
-      <div class="reply-section">
-        <!-- Reply Editor -->
-        <div class="reply-editor">
-          <div class="editor-toolbar">
-            <button class="toolbar-btn" title="Bold">
-              <BoldOutlined />
-            </button>
-            <button class="toolbar-btn" title="Italic">
-              <ItalicOutlined />
-            </button>
-            <button class="toolbar-btn" title="Underline">
-              <UnderlineOutlined />
-            </button>
-            <button class="toolbar-btn" title="Strikethrough">
-              <StrikethroughOutlined />
-            </button>
-            <button class="toolbar-btn" title="Ordered List">
-              <OrderedListOutlined />
-            </button>
-            <button class="toolbar-btn" title="Unordered List">
-              <UnorderedListOutlined />
-            </button>
-            <div class="toolbar-divider"></div>
-            <a-upload
-              v-model:file-list="replyFileList"
-              :before-upload="beforeUpload"
-              :show-upload-list="false"
-              accept="image/*,video/*"
-              :multiple="true"
-            >
-              <button class="toolbar-btn" title="Thêm ảnh hoặc video">
-                <PictureOutlined />
+        <!-- Reply Section -->
+        <div class="reply-section">
+          <!-- Reply Editor -->
+          <div class="reply-editor">
+            <div class="editor-toolbar">
+              <button class="toolbar-btn" title="Bold">
+                <BoldOutlined />
               </button>
-            </a-upload>
-          </div>
-          <!-- Mobile: Add attachment button -->
-          <div class="mobile-attachment-btn">
-            <a-upload
-              v-model:file-list="replyFileList"
-              :before-upload="beforeUpload"
-              :show-upload-list="false"
-              accept="image/*,video/*"
-              :multiple="true"
-            >
-              <a-button type="link" class="add-attachment-btn">
-                <LinkOutlined />
-                Thêm ảnh hoặc video mô tả
-              </a-button>
-            </a-upload>
-          </div>
-          <a-textarea
-            v-model:value="replyContent"
-            :rows="4"
-            placeholder="Nhập nội dung phản hồi..."
-            class="reply-textarea"
-          />
-        </div>
-
-        <!-- Preview uploaded files -->
-        <div v-if="replyFileList?.length" class="uploaded-preview">
-          <div
-            v-for="file in replyFileList"
-            :key="file.uid"
-            class="preview-item"
-          >
-            <img
-              v-if="getFilePreviewUrl(file)"
-              :src="getFilePreviewUrl(file)"
-              alt="preview"
+              <button class="toolbar-btn" title="Italic">
+                <ItalicOutlined />
+              </button>
+              <button class="toolbar-btn" title="Underline">
+                <UnderlineOutlined />
+              </button>
+              <button class="toolbar-btn" title="Strikethrough">
+                <StrikethroughOutlined />
+              </button>
+              <button class="toolbar-btn" title="Ordered List">
+                <OrderedListOutlined />
+              </button>
+              <button class="toolbar-btn" title="Unordered List">
+                <UnorderedListOutlined />
+              </button>
+              <div class="toolbar-divider"></div>
+              <a-upload
+                v-model:file-list="replyFileList"
+                :before-upload="beforeUpload"
+                :show-upload-list="false"
+                accept="image/*,video/*"
+                :multiple="true"
+              >
+                <button class="toolbar-btn" title="Thêm ảnh hoặc video">
+                  <PictureOutlined />
+                </button>
+              </a-upload>
+            </div>
+            <!-- Mobile: Add attachment button -->
+            <div class="mobile-attachment-btn">
+              <a-upload
+                v-model:file-list="replyFileList"
+                :before-upload="beforeUpload"
+                :show-upload-list="false"
+                accept="image/*,video/*"
+                :multiple="true"
+              >
+                <a-button type="link" class="add-attachment-btn">
+                  <LinkOutlined />
+                  Thêm ảnh hoặc video mô tả
+                </a-button>
+              </a-upload>
+            </div>
+            <a-textarea
+              v-model:value="replyContent"
+              :rows="4"
+              placeholder="Nhập nội dung phản hồi..."
+              class="reply-textarea"
+              :style="replyFileList?.length ? { borderRadius: '0 !important' } : {} "
             />
-            <span class="file-name">{{ file.name }}</span>
-            <a-button type="text" size="small" @click="removeFile(file)">
-              <CloseOutlined />
+            <!-- Preview uploaded files -->
+            <div v-if="replyFileList?.length" class="uploaded-preview">
+              <div
+                v-for="file in replyFileList"
+                :key="file.uid"
+                class="preview-item"
+              >
+                <img
+                  v-if="getFilePreviewUrl(file)"
+                  :src="getFilePreviewUrl(file)"
+                  alt="preview"
+                />
+                <a-button type="text" size="small" @click="removeFile(file)">
+                  <CloseOutlined />
+                </a-button>
+              </div>
+            </div>
+          </div>
+
+          <!-- Action Buttons -->
+          <div class="action-buttons">
+            <a-button
+              v-if="request.status !== 'completed'"
+              type="default"
+              size="large"
+              class="complete-btn"
+              :loading="completing"
+              @click="handleMarkComplete"
+            >
+              Đánh dấu hoàn tất
+            </a-button>
+            <a-button
+              type="primary"
+              size="large"
+              class="send-btn"
+              :loading="sending"
+              :disabled="!replyContent.trim()"
+              @click="handleSendReply"
+            >
+              Gửi
             </a-button>
           </div>
-        </div>
-
-        <!-- Action Buttons -->
-        <div class="action-buttons">
-          <a-button
-            v-if="request.status !== 'completed'"
-            type="default"
-            size="large"
-            class="complete-btn"
-            :loading="completing"
-            @click="handleMarkComplete"
-          >
-            Đánh dấu hoàn tất
-          </a-button>
-          <a-button
-            type="primary"
-            size="large"
-            class="send-btn"
-            :loading="sending"
-            :disabled="!replyContent.trim()"
-            @click="handleSendReply"
-          >
-            Gửi
-          </a-button>
         </div>
       </div>
     </div>
@@ -231,6 +238,7 @@ import {
   OrderedListOutlined,
   UnorderedListOutlined,
   PictureOutlined,
+  PlayCircleOutlined,
 } from "@ant-design/icons-vue";
 import { message } from "ant-design-vue";
 import type { UploadProps } from "ant-design-vue";
@@ -246,8 +254,12 @@ const router = useRouter();
 const requestId = computed(() => route.params.id as string);
 
 // API
-const { getSupportRequestById, updateSupportRequest, getComments, addCommentWithFiles } =
-  useSupportRequestsApi();
+const {
+  getSupportRequestById,
+  updateSupportRequest,
+  getComments,
+  addCommentWithFiles,
+} = useSupportRequestsApi();
 
 // State
 const loading = ref(true);
@@ -335,6 +347,12 @@ const previewImage = (url: string) => {
   previewVisible.value = true;
 };
 
+// Check if URL is video
+const isVideo = (url: string): boolean => {
+  const videoExtensions = [".mp4", ".webm", ".ogg", ".mov", ".avi"];
+  return videoExtensions.some((ext) => url.toLowerCase().includes(ext));
+};
+
 // Upload handlers - return false to prevent auto upload
 const beforeUpload: UploadProps["beforeUpload"] = (file) => {
   const isImage = file.type.startsWith("image/");
@@ -362,7 +380,7 @@ const getFilePreviewUrl = (file: any): string => {
   if (file.originFileObj) {
     return URL.createObjectURL(file.originFileObj);
   }
-  return '';
+  return "";
 };
 
 const removeFile = (file: any) => {
@@ -509,20 +527,27 @@ definePageMeta({
   margin-bottom: 12px;
 }
 
+.request-content-wrapper {
+  display: flex;
+  gap: 24px;
+  align-items: flex-start;
+}
+
 .description {
   font-size: 15px;
   line-height: 1.7;
   color: #333;
-  margin: 0 0 16px;
+  margin: 0;
+  flex: 1;
 }
 
 .attachments {
-  margin-top: 16px;
+  flex-shrink: 0;
 }
 
 .attachment-list {
   display: flex;
-  gap: 12px;
+  gap: 8px;
   flex-wrap: wrap;
 }
 
@@ -547,7 +572,10 @@ definePageMeta({
 
 /* Responses Section */
 .responses-section {
-  margin-bottom: 24px;
+  background-color: #fff;
+  padding: 24px;
+  border: 1px solid #e8e8e8;
+  border-radius: 12px;
 }
 
 .section-title {
@@ -560,46 +588,67 @@ definePageMeta({
 .responses-list {
   display: flex;
   flex-direction: column;
-  gap: 16px;
+  gap: 24px;
 }
 
 .response-item {
   display: flex;
   gap: 12px;
   align-items: flex-start;
+  justify-content: flex-end;
 }
 
 .admin-response {
-  flex-direction: row;
-}
-
-.user-response {
   flex-direction: row-reverse;
 }
 
-.response-bubble {
+.user-response {
+  flex-direction: row;
+}
+
+.response-content {
+  display: flex;
+  flex-direction: column;
   max-width: 70%;
-  padding: 16px;
+}
+
+.admin-response .response-content {
+  align-items: flex-start;
+}
+
+.user-response .response-content {
+  align-items: flex-end;
+}
+
+.response-bubble {
+  padding: 16px 20px;
   border-radius: 12px;
   font-size: 14px;
   line-height: 1.6;
 }
 
 .admin-response .response-bubble {
-  background: #e6f4ff;
-  border: 1px solid #91caff;
-  border-radius: 12px 12px 12px 0;
+  background: #1a75bb;
+  border: none;
+  border-radius: 12px;
+}
+
+.admin-response .response-text {
+  color: #fff;
 }
 
 .user-response .response-bubble {
-  background: #fff;
-  border: 1px solid #e8e8e8;
-  border-radius: 12px 12px 0 12px;
+  background: #f4f7f9;
+  border: none;
+  border-radius: 12px;
+}
+
+.user-response .response-text {
+  color: #020618;
 }
 
 .response-text {
   margin: 0;
-  color: #333;
 }
 
 .response-attachments {
@@ -607,12 +656,16 @@ definePageMeta({
   gap: 8px;
   flex-wrap: wrap;
   margin-top: 12px;
+  padding: 12px;
+  background-color: #f4f7f9;
+  border-radius: 8px;
 }
 
 .response-attachment {
-  width: 120px;
-  height: 80px;
-  border-radius: 8px;
+  position: relative;
+  width: 200px;
+  height: 140px;
+  border-radius: 4px;
   overflow: hidden;
   cursor: pointer;
 }
@@ -620,11 +673,26 @@ definePageMeta({
 .response-attachment img {
   width: 100%;
   height: 100%;
-  object-fit: cover;
+  object-fit: contain;
+}
+
+.response-attachment:hover {
+  border-color: #317bc4;
+}
+
+.video-play-icon {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  font-size: 48px;
+  color: rgba(255, 255, 255, 0.9);
+  text-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
 }
 
 .response-avatar {
   flex-shrink: 0;
+  margin-top: 4px;
 }
 
 .empty-responses {
@@ -636,20 +704,20 @@ definePageMeta({
 /* Reply Section */
 .reply-section {
   background: #fff;
-  border: 1px solid #e8e8e8;
-  border-radius: 12px;
-  padding: 20px;
+  padding-top: 20px;
 }
 
 .reply-editor {
   margin-bottom: 16px;
+  border-bottom: 1px solid #1A75BB;
+  border-radius: 0 0 8px 8px;
 }
 
 .editor-toolbar {
   display: flex;
   gap: 4px;
   padding: 8px;
-  border: 1px solid #1A75BB;
+  border: 1px solid #1a75bb;
   border-bottom: none;
   border-radius: 8px 8px 0 0;
   background: #fafafa;
@@ -681,13 +749,7 @@ definePageMeta({
 }
 
 .reply-textarea {
-  border-radius: 0 0 8px 8px !important;
   resize: none;
-}
-
-.reply-textarea:focus {
-  border-color: #317bc4 !important;
-  box-shadow: none !important;
 }
 
 .mobile-attachment-btn {
@@ -708,16 +770,19 @@ definePageMeta({
   display: flex;
   gap: 12px;
   flex-wrap: wrap;
-  margin-bottom: 16px;
+  padding: 16px 8px;
+  border-left: 1px solid #1A75BB;
+  border-right: 1px solid #1A75BB;
+  border-radius: 0 0 8px 8px;
 }
 
 .preview-item {
   display: flex;
   align-items: center;
   gap: 8px;
-  padding: 8px;
   background: #f5f5f5;
   border-radius: 8px;
+  position: relative;
 }
 
 .preview-item img {
@@ -725,6 +790,21 @@ definePageMeta({
   height: 48px;
   object-fit: cover;
   border-radius: 4px;
+}
+
+:deep(.preview-item .ant-btn) {
+  position: absolute;
+  top: -8px;
+  right: -8px;
+  background: rgba(0, 0, 0, 0.6);
+  border-radius: 50%;
+  color: #fff;
+  width: 20px;
+  height: 20px;
+  padding: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 
 .file-name {
@@ -776,7 +856,9 @@ definePageMeta({
 }
 
 :deep(.ant-input.reply-textarea) {
-  border-color: #1A75BB;
+  border-radius: 0 0 8px 8px !important;
+  border: 1px solid #1a75bb !important;
+  border-bottom: none !important;
 }
 
 /* Mobile Responsive */
@@ -808,8 +890,17 @@ definePageMeta({
     font-size: 15px;
   }
 
+  .request-content-wrapper {
+    flex-direction: column;
+    gap: 16px;
+  }
+
   .description {
     font-size: 14px;
+  }
+
+  .attachments {
+    width: 100%;
   }
 
   .attachment-list {
@@ -817,13 +908,17 @@ definePageMeta({
   }
 
   .attachment-item {
-    width: 70px;
-    height: 70px;
+    width: calc(33.33% - 6px);
+    height: auto;
+    aspect-ratio: 1;
+  }
+
+  .response-content {
+    max-width: 85%;
   }
 
   .response-bubble {
-    max-width: 85%;
-    padding: 12px;
+    padding: 12px 16px;
     font-size: 13px;
   }
 
@@ -832,13 +927,27 @@ definePageMeta({
     height: 150px;
   }
 
+  .response-attachments {
+    gap: 8px;
+  }
+
+  .video-play-icon {
+    font-size: 36px;
+  }
+
+  .response-avatar :deep(.ant-avatar) {
+    width: 32px !important;
+    height: 32px !important;
+    font-size: 12px !important;
+  }
+
   .editor-toolbar {
     display: none;
   }
 
   .reply-textarea {
     border-radius: 0 0 8px 8px !important;
-    border: 1px solid #1A75BB;
+    border: 1px solid #1a75bb;
   }
 
   .mobile-attachment-btn {
@@ -847,7 +956,7 @@ definePageMeta({
     align-items: center;
     padding: 14px 16px;
     background: #fff;
-    border: 1px solid #1A75BB;
+    border: 1px solid #1a75bb;
     border-bottom: none;
     border-radius: 8px 8px 0 0;
   }
