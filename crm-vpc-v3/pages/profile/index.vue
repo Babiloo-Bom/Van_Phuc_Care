@@ -1,6 +1,6 @@
 <template>
-  <div>
-    <div class="flex justify-between items-center mb-4 md:mb-8">
+  <div class="container mx-auto">
+    <div class="flex justify-between items-center mb-4 md:mb-6">
       <h1
         class="text-3xl font-bold text-[#1A75BB] w-full text-center md:text-left"
       >
@@ -41,20 +41,22 @@
                     size="large"
                   />
                 </a-form-item>
-                <a-form-item label="Số điện thoại" name="phone">
-                  <a-input
-                    v-model:value="infoForm.phone"
-                    placeholder="092 333 3389"
-                    size="large"
-                  />
-                </a-form-item>
-                <a-form-item label="Email" name="email">
-                  <a-input
-                    v-model:value="infoForm.email"
-                    placeholder="nguyenvana@gmail.com"
-                    size="large"
-                  />
-                </a-form-item>
+                <div class="flex flex-col gap-0 lg:flex-row lg:gap-4 w-full">
+                  <a-form-item label="Số điện thoại" name="phone" class="flex-1">
+                    <a-input
+                      v-model:value="infoForm.phone"
+                      placeholder="092 333 3389"
+                      size="large"
+                    />
+                  </a-form-item>
+                  <a-form-item label="Email" name="email" class="flex-1">
+                    <a-input
+                      v-model:value="infoForm.email"
+                      placeholder="nguyenvana@gmail.com"
+                      size="large"
+                    />
+                  </a-form-item>
+                </div>
                 <a-form-item label="Địa chỉ" name="address">
                   <a-textarea
                     v-model:value="infoForm.address"
@@ -63,7 +65,7 @@
                     size="large"
                   />
                 </a-form-item>
-                <a-form-item>
+                <a-form-item class="mb-0 md:mt-14">
                   <a-button
                     type="primary"
                     html-type="submit"
@@ -87,7 +89,7 @@
                     size="large"
                   />
                 </a-form-item>
-                <div class="flex gap-4">
+                <div class="flex gap-0 flex-col md:flex-row md:gap-4">
                   <a-form-item
                     label="Mật khẩu mới"
                     name="newPassword"
@@ -109,7 +111,7 @@
                     />
                   </a-form-item>
                 </div>
-                <a-form-item>
+                <a-form-item class="mb-0 md:mt-[150px]">
                   <a-button
                     type="primary"
                     html-type="submit"
@@ -150,7 +152,7 @@
                     </a-upload>
                   </div>
                 </a-form-item>
-                <a-form-item>
+                <a-form-item class="mb-0 md:mt-28">
                   <a-button
                     type="primary"
                     html-type="submit"
@@ -446,7 +448,7 @@ async function handleErrorSubmit() {
   }
 
   .profile-form :deep(.ant-tabs-tab-active) {
-    background: #1A75BB !important;
+    background: #1a75bb !important;
   }
 
   .profile-form :deep(.ant-tabs-tab-active .ant-tabs-tab-btn) {

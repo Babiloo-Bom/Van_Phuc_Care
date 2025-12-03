@@ -45,7 +45,7 @@
         Lưu ý:
       </h4>
       <ul class="list-disc list-inside text-sm text-gray-600 leading-relaxed space-y-1">
-        <li v-for="(line, index) in noteLines" :key="index">{{ line }}</li>
+        <li class="font-bold" v-for="(line, index) in noteLines" :key="index">{{ line }}</li>
       </ul>
     </div>
   </div>

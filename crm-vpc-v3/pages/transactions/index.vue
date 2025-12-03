@@ -1,5 +1,5 @@
 <template>
-  <div>
+  <div class="container mx-auto">
     <div class="flex justify-between items-center mb-8">
       <h1 class="page-title">Lịch sử giao dịch</h1>
     </div>
@@ -10,7 +10,6 @@
         :pagination="false"
         row-key="_id"
         class="transaction-table"
-        bordered
         size="middle"
       >
         <template #headerCell="{ column }">
@@ -38,7 +37,7 @@
         @change="fetchTransactions"
         :show-size-changer="false"
         class="ant-pagination-custom"
-        style="margin-top: 20px; display: flex; justify-content: center; align-items: center"
+        style="margin-top: 20px; display: flex; justify-content: flex-end; align-items: center"
       />
     </div>
   </div>
@@ -106,16 +105,42 @@ function statusClass(status: string) {
   width: 100%;
   text-align: left;
 }
-.table-wrapper {
-  background: #fff;
-  border-radius: 12px;
-  overflow-x: auto;
-  padding: 16px;
-}
+
 .transaction-table {
-  min-width: 800px;
-  overflow-x: auto;
+  width: 100%;
 }
+
+/* Table border styles - only horizontal lines + left/right border */
+.transaction-table :deep(.ant-table) {
+  border-radius: 12px;
+  overflow: hidden;
+  border: 1px solid #e8e8e8;
+  border-bottom: none;
+}
+
+.transaction-table :deep(.ant-table-thead > tr > th) {
+  border-bottom: 1px solid #f0f0f0;
+  border-right: none !important;
+  background: #dbedffcf;
+}
+
+.transaction-table :deep(.ant-table-thead > tr > th::before) {
+  display: none !important;
+}
+
+.transaction-table :deep(.ant-table-tbody > tr > td) {
+  border-bottom: 1px solid #f0f0f0;
+  border-right: none !important;
+}
+
+.transaction-table :deep(.ant-table-tbody > tr:last-child > td) {
+  border-bottom: none;
+}
+
+.transaction-table :deep(.ant-table-container) {
+  border-radius: 12px;
+}
+
 .table-header {
   color: #1976d2;
   font-weight: 600;
@@ -153,19 +178,97 @@ function statusClass(status: string) {
 @media (max-width: 768px) {
   .table-wrapper {
     padding: 4px;
+    overflow-x: auto;
+  }
+  .transaction-table :deep(.ant-table-content) {
+    overflow-x: auto !important;
+  }
+  .transaction-table :deep(.ant-table-content table) {
+    min-width: 900px;
   }
   .page-title {
     text-align: center;
     font-size: 1.5rem;
     line-height: 1.5;
   }
+  .ant-pagination-custom {
+    justify-content: center !important;
+  }
 }
 </style>
 <style>
 /* ant design */
+.ant-table-wrapper .ant-table-ping-right:not(.ant-table-has-fix-right) .ant-table-container::after,
+.ant-table-wrapper .ant-table-ping-left:not(.ant-table-has-fix-left) .ant-table-container::before {
+  box-shadow: none !important;
+}
+
 .ant-pagination-item-link {
   display: flex !important;
   align-items: center !important;
   justify-content: center !important;
+}
+
+/* Pagination Styles */
+.ant-pagination-custom .ant-pagination-item {
+  min-width: 32px;
+  height: 32px;
+  line-height: 32px;
+  border: none;
+  background: transparent;
+  margin: 0;
+}
+
+.ant-pagination-custom .ant-pagination-item a {
+  color: #666;
+  font-weight: 500;
+}
+
+.ant-pagination-custom .ant-pagination-item-active {
+  background: transparent;
+  border: none;
+}
+
+.ant-pagination-custom .ant-pagination-item-active a {
+  color: #317BC4;
+  font-weight: 700;
+}
+
+.ant-pagination-custom .ant-pagination-prev,
+.ant-pagination-custom .ant-pagination-next {
+  min-width: 32px;
+  height: 32px;
+  line-height: 32px;
+  border: 1px solid #317BC4;
+  border-radius: 6px;
+  margin: 0;
+}
+
+.ant-pagination-custom .ant-pagination-prev:hover,
+.ant-pagination-custom .ant-pagination-next:hover {
+  background: #E8F4FC;
+}
+
+.ant-pagination-custom .ant-pagination-prev .ant-pagination-item-link,
+.ant-pagination-custom .ant-pagination-next .ant-pagination-item-link {
+  color: #317BC4;
+  border: none;
+  background: transparent;
+}
+
+.ant-pagination-custom .ant-pagination-disabled {
+  border-color: #d9d9d9;
+}
+
+.ant-pagination-custom .ant-pagination-disabled .ant-pagination-item-link {
+  color: #d9d9d9;
+}
+
+.ant-pagination-custom .ant-pagination-jump-prev,
+.ant-pagination-custom .ant-pagination-jump-next {
+  min-width: 32px;
+  height: 32px;
+  line-height: 32px;
+  margin: 0;
 }
 </style>

@@ -1,5 +1,5 @@
 <template>
-  <div class="services-container">
+  <div class="container mx-auto">
     <!-- Header: Title + Tabs -->
     <div class="header-wrapper">
       <!-- Page Title -->

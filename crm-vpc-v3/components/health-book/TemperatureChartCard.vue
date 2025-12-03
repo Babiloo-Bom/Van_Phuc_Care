@@ -138,10 +138,9 @@
     <!-- Note -->
     <div v-if="healthBook.note" class="hidden lg:block bg-blue-50 rounded-lg p-4 mt-5">
       <h4 class="font-bold text-[#1A75BB] text-sm mb-2">Lưu ý:</h4>
-      <div
-        class="text-sm text-gray-600 leading-relaxed"
-        v-html="healthBook.note"
-      />
+      <ul class="list-disc list-inside text-sm text-gray-600 leading-relaxed space-y-1">
+        <li class="font-bold" v-for="(line, index) in noteLines" :key="index">{{ line }}</li>
+      </ul>
     </div>
   </div>
 </template>
@@ -168,6 +167,15 @@ const selectedDayIndex = computed(() => {
   if (!props.selectedDate) return dayjs().date() - 1; // Default to today
   return props.selectedDate.date() - 1;
 });
+
+// Convert note string to array of lines (split by newline)
+const noteLines = computed(() => {
+  if (!props.healthBook.note) return []
+  return props.healthBook.note
+    .split(/\r?\n/)
+    .map(line => line.trim())
+    .filter(line => line.length > 0)
+})
 
 // chartData: lấy từ props.temperatureHistory nếu có, fallback mock nếu không
 const chartData = computed(() => {

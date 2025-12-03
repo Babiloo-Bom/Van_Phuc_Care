@@ -44,7 +44,7 @@
         </h1>
       </div>
 
-      <div class="w-full bg-white rounded-xl p-3 pt-0 mt-20">
+      <div class="w-full bg-white rounded-xl p-5 pt-0 mt-20">
         <!-- Profile Header Section - Empty State -->
         <div class="bg-white rounded-lg mb-6">
           <!-- Mobile Layout -->
@@ -222,7 +222,7 @@
         </div>
       </div>
 
-      <div class="w-full bg-white rounded-xl p-3 pt-0 mt-20">
+      <div class="w-full bg-white rounded-xl p-5 pt-0 mt-20">
         <!-- Profile Header Section - Always visible -->
         <div class="bg-white rounded-lg mb-6">
           <!-- Mobile Layout -->
@@ -995,6 +995,10 @@ onMounted(async () => {
 /* Tabs styling */
 :deep(.health-book-tabs .ant-tabs-nav) {
   margin-bottom: 24px;
+  width: 100%;
+}
+
+:deep(.health-book-tabs .ant-tabs-content-holder) {
   width: 100%;
 }
 
