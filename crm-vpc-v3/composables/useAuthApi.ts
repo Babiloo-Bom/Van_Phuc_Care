@@ -22,8 +22,8 @@ const RETRY_CONFIG = {
 
 export const useAuthApi = () => {
   const config = useRuntimeConfig();
-  // Hardcode for testing - should be http://localhost:3000/api/a
-  let apiBase = config.public.apiBase || 'http://localhost:3000/api/u';
+  // Use runtime config, fallback to relative path for production
+  let apiBase = config.public.apiBase || '/api/u';
 
   // Check if it's absolute path (http://...) or relative path
   const isAbsolutePath =

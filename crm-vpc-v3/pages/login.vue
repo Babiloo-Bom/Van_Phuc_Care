@@ -237,15 +237,9 @@ const handleGoogleLogin = async () => {
     const frontendUrl = baseFrontend;
 
     // Google OAuth luôn dùng /api/a (admin endpoint)
-    const isAbsolutePath =
-      baseFrontend.startsWith("http://localhost") ||
-      baseFrontend.includes("localhost");
-    const googleApiBase = isAbsolutePath
-      ? "http://localhost:3000/api/a"
-      : "/api/a";
-    const backendBase = googleApiBase.startsWith("http")
-      ? googleApiBase
-      : `${baseFrontend}${googleApiBase}`;
+    // In production, use relative path; Nginx will proxy /api/ to backend
+    const googleApiBase = "/api/a";
+    const backendBase = `${baseFrontend}${googleApiBase}`;
 
     const url = `${backendBase}/auth/google?redirect_uri=${encodeURIComponent(
       redirectUri

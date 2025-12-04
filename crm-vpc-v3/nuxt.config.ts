@@ -59,10 +59,10 @@ export default defineNuxtConfig({
     apiHostInternal: process.env.NUXT_API_HOST_INTERNAL || 'http://localhost:3000',
     
     public: {
-      // API Configuration
-      apiHost: process.env.NUXT_PUBLIC_API_HOST || 'http://localhost:3000',
-      apiBase: process.env.NUXT_PUBLIC_API_BASE || (process.env.NODE_ENV === 'production' ? '/u' : 'http://localhost:3000/api/u'),
-      apiBaseUrl: process.env.NUXT_PUBLIC_API_BASE_URL || 'http://localhost:3000',
+      // API Configuration - use relative paths in production for Nginx proxy
+      apiHost: process.env.NUXT_PUBLIC_API_HOST || (process.env.NODE_ENV === 'production' ? '' : 'http://localhost:3000'),
+      apiBase: process.env.NUXT_PUBLIC_API_BASE || (process.env.NODE_ENV === 'production' ? '/api/u' : 'http://localhost:3000/api/u'),
+      apiBaseUrl: process.env.NUXT_PUBLIC_API_BASE_URL || (process.env.NODE_ENV === 'production' ? '' : 'http://localhost:3000'),
       
       // Google OAuth Configuration
       googleClientId: process.env.NUXT_PUBLIC_GOOGLE_CLIENT_ID || '',

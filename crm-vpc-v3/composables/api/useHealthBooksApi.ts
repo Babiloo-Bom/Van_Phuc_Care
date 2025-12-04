@@ -89,7 +89,8 @@ export const useHealthBooksApi = () => {
       if (data.avatar) formData.append("avatar", data.avatar);
 
       const config = useRuntimeConfig();
-      const baseUrl = config.public.apiBaseUrl || "http://localhost:3000";
+      // Use runtime config, fallback to empty string for relative path in production
+      const baseUrl = config.public.apiBaseUrl || "";
 
       // Get token from localStorage (key is 'auth_token')
       const token = localStorage.getItem("auth_token");
