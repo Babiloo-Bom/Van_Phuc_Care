@@ -2,6 +2,16 @@ require('dotenv').config();
 
 const isProduction = process.env.NODE_ENV === 'production';
 
+// Helper function to get API host - for SPA, we'll use relative URL or window.location
+const getApiHost = () => {
+    // During build, use env var or empty string (will be resolved at runtime)
+    if (process.env.API_HOST) {
+        return process.env.API_HOST;
+    }
+    // For production SPA, use relative path so browser resolves correctly
+    return isProduction ? '/api' : 'http://localhost:3000/api';
+};
+
 export default {
     dev: !isProduction,
 
@@ -113,7 +123,7 @@ export default {
     ],
 
     axios: {
-        baseURL: process.env.API_HOST,
+        baseURL: getApiHost(),
     },
 
     auth: {
@@ -133,12 +143,12 @@ export default {
                 },
                 endpoints: {
                     login: {
-                        url: `${process.env.API_HOST}/a/sessions/login`,
+                        url: '/a/sessions/login',
                         method: 'POST',
                     },
                     logout: false,
                     user: {
-                        url: `${process.env.API_HOST}/a/sessions/current_admin`,
+                        url: '/a/sessions/current_admin',
                         method: 'GET',
                     },
                 },
@@ -192,7 +202,7 @@ export default {
     },
 
     env: {
-        API_HOST: process.env.API_HOST || 'localhost',
+        API_HOST: getApiHost(),
         RSA_PUBLIC_KEY: process.env.RSA_PUBLIC_KEY,
         TINYMCE_KEY: process.env.TINYMCE_KEY,
         IMAGE_BASE_URL: process.env.IMAGE_BASE_URL,

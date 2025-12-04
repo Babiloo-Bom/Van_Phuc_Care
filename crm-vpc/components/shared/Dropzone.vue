@@ -9,7 +9,7 @@
         props: {
             url: {
                 type: String,
-                default: `${process.env.API_HOST}/uploader`,
+                default: `${process.env.API_HOST || '/api'}/uploader`,
             },
             method: {
                 type: String,

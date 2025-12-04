@@ -16,7 +16,7 @@
         },
         computed: {
             googleAuth() {
-                return `${process.env.API_HOST}/a/sessions/google/login`;
+                return `${process.env.API_HOST || '/api'}/a/sessions/google/login`;
             },
         },
         methods: {
