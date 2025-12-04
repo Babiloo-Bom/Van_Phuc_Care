@@ -81,7 +81,3 @@ export default defineEventHandler(async (event) => {
     });
   }
 });
-      message: `Proxy error: ${err.message}`,
-    });
-  }
-});
