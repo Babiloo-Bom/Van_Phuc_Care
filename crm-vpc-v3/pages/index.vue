@@ -169,7 +169,7 @@
                     type="primary"
                     @click="showCreateHealthBookModal = true"
                   >
-                    Tạo hồ sơ của bé 3
+                    Tạo hồ sơ của bé
                   </a-button>
                 </a-empty>
               </div>
@@ -929,20 +929,18 @@ onMounted(async () => {
   }
 
   // Case 1b: Google OAuth error
-  if (googleError) {
-    console.log("Google OAuth error received");
+  else if (googleError) {
     await router.replace('/login');
     message.error("Đăng nhập Google thất bại");
     return;
   }
 
   // Case 1c: Google OAuth callback with code (frontend needs to exchange)
-  if (code) {
+  else if (code) {
     // Check if this code was already used (stored in sessionStorage)
     const usedCodes = JSON.parse(sessionStorage.getItem('usedGoogleCodes') || '[]');
     if (usedCodes.includes(code)) {
       // Code already used, just clean URL and continue
-      console.log('Google OAuth code already used, skipping...');
       await router.replace('/');
       isCheckingAuth.value = false;
       
@@ -957,14 +955,12 @@ onMounted(async () => {
 
     loading.value = true;
     error.value = "";
-
     try {
       const response = await completeGoogleLogin(code, state || undefined);
 
       if (!response || !response.success || !response.data) {
         throw new Error(response?.error || "Đăng nhập Google thất bại");
       }
-
       // Mark this code as used
       usedCodes.push(code);
       sessionStorage.setItem('usedGoogleCodes', JSON.stringify(usedCodes));
@@ -994,7 +990,6 @@ onMounted(async () => {
         role: (response.data.user as any)?.role || "user",
         verified: true,
       };
-
       // Save to auth store
       await authStore.completeGoogleLogin(
         response.data.accessToken,

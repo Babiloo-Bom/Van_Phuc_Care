@@ -248,7 +248,6 @@ const handleGoogleLogin = async () => {
       redirectUri
     )}&frontend_url=${encodeURIComponent(frontendUrl)}`;
     
-    console.log("Google Login URL:", url);
     window.location.href = url;
   } catch (error: any) {
     console.error("Google login error:", error);
