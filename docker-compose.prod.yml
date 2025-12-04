@@ -88,9 +88,9 @@ services:
       - "3101:3000"
     environment:
       - NODE_ENV=production
-      - NUXT_PUBLIC_API_HOST=
-      - NUXT_PUBLIC_API_BASE=/api/u
-      - NUXT_PUBLIC_API_BASE_URL=
+      - NUXT_PUBLIC_API_HOST=http://api:3000
+      - NUXT_PUBLIC_API_BASE=http://api:3000
+      - NUXT_PUBLIC_API_BASE_URL=http://api:3000
       - NUXT_API_HOST_INTERNAL=http://api:3000
       - NUXT_PUBLIC_TINYMCE_KEY=${TINYMCE_KEY}
       - NUXT_PUBLIC_APP_NAME=CRM Portal - Van Phuc Care

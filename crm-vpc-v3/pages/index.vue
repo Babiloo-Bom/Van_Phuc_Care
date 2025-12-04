@@ -873,8 +873,70 @@ onMounted(async () => {
   const urlParams = new URLSearchParams(window.location.search);
   const code = urlParams.get("code");
   const state = urlParams.get("state");
+  const googleSuccess = urlParams.get("google_success");
+  const token = urlParams.get("token");
+  const googleError = urlParams.get("google_error");
 
-  // Case 1: Google OAuth callback - handle login first
+  // Case 1a: Google OAuth callback with token directly (backend handled OAuth)
+  if (googleSuccess === "true" && token) {
+    console.log("Google OAuth callback with token received");
+    loading.value = true;
+    error.value = "";
+
+    try {
+      // Token expiry: 7 days from now
+      const tokenExpireAtNum = Date.now() + 7 * 24 * 60 * 60 * 1000;
+
+      // Save token and fetch user profile from API
+      // Pass null as userData to trigger API fetch
+      const result = await authStore.completeGoogleLogin(
+        token,
+        tokenExpireAtNum,
+        null as any // Will trigger fetch from API
+      );
+
+      if (!result.success) {
+        throw new Error(result.error || "Đăng nhập Google thất bại");
+      }
+
+      // Show success message
+      message.success("Đăng nhập Google thành công!");
+
+      // Clean URL
+      await router.replace('/');
+
+      // Continue to load healthbook data
+      isCheckingAuth.value = false;
+      await fetchHealthBookProfile();
+      return;
+    } catch (err: any) {
+      console.error("❌ Google login error:", err);
+      
+      // Clean URL first
+      await router.replace('/');
+      
+      error.value = err.message || "Đăng nhập Google thất bại. Vui lòng thử lại.";
+      loading.value = false;
+      isCheckingAuth.value = false;
+
+      message.error(error.value);
+
+      setTimeout(() => {
+        router.push("/login");
+      }, 3000);
+      return;
+    }
+  }
+
+  // Case 1b: Google OAuth error
+  if (googleError) {
+    console.log("Google OAuth error received");
+    await router.replace('/login');
+    message.error("Đăng nhập Google thất bại");
+    return;
+  }
+
+  // Case 1c: Google OAuth callback with code (frontend needs to exchange)
   if (code) {
     // Check if this code was already used (stored in sessionStorage)
     const usedCodes = JSON.parse(sessionStorage.getItem('usedGoogleCodes') || '[]');
