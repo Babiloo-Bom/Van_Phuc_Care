@@ -33,7 +33,6 @@ const TicketSchema = new mongoose.Schema<ITicket>(
   {
     ticketNumber: {
       type: String,
-      required: true,
       unique: true,
       index: true,
     },
@@ -111,11 +110,13 @@ TicketSchema.index({ assignedTo: 1, status: 1 });
 TicketSchema.index({ priority: 1, status: 1 });
 
 /**
- * Pre-save middleware to generate ticket number
+ * Pre-validate middleware to generate ticket number
  */
-TicketSchema.pre('save', async function (next) {
+TicketSchema.pre('validate', async function (next) {
   if (this.isNew && !this.ticketNumber) {
-    const count = await TicketModel.countDocuments();
+    // Use mongoose.model to get the model reference
+    const Ticket = mongoose.model('tickets');
+    const count = await Ticket.countDocuments();
     this.ticketNumber = `TK${String(count + 1).padStart(6, '0')}`;
   }
   next();

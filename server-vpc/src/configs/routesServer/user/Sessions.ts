@@ -14,5 +14,6 @@ router.patch('/change_password', userPassport.authenticate('jwt', { session: fal
 router.post('/forgot_password', SessionController.forgotPassword);
 router.post('/verify_otp', SessionController.verifyOtp);
 router.post('/reset_password', SessionController.resetPassword);
+router.post('/logout', userPassport.authenticate('jwt', { session: false }), SessionController.logout);
 
 export default router;

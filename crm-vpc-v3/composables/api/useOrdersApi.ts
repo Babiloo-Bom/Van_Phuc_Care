@@ -5,10 +5,10 @@
  * All order-related API calls
  */
 
-import type { Order, OrderQueryParams, PaginatedResponse } from '~/types/api'
+import type { Order, OrderQueryParams, PaginatedResponse } from '~/types/api';
 
 export const useOrdersApi = () => {
-  const apiClient = useApiClient()
+  const apiClient = useApiClient();
 
   return {
     /**
@@ -17,15 +17,15 @@ export const useOrdersApi = () => {
     async getOrders(params?: OrderQueryParams) {
       return apiClient.get<PaginatedResponse<Order>>('/api/a/orders', {
         params,
-        showError: false
-      })
+        showError: false,
+      });
     },
 
     /**
      * Get order by ID
      */
     async getOrder(id: string) {
-      return apiClient.get<{ order: Order }>(`/api/a/orders/${id}`)
+      return apiClient.get<{ order: Order }>(`/api/a/orders/${id}`);
     },
 
     /**
@@ -33,8 +33,8 @@ export const useOrdersApi = () => {
      */
     async createOrder(data: Partial<Order>) {
       return apiClient.post<{ order: Order }>('/api/a/orders', data, {
-        errorMessage: 'Không thể tạo đơn hàng'
-      })
+        errorMessage: 'Không thể tạo đơn hàng',
+      });
     },
 
     /**
@@ -42,8 +42,8 @@ export const useOrdersApi = () => {
      */
     async updateOrder(id: string, data: Partial<Order>) {
       return apiClient.patch<{ order: Order }>(`/api/a/orders/${id}`, data, {
-        errorMessage: 'Không thể cập nhật đơn hàng'
-      })
+        errorMessage: 'Không thể cập nhật đơn hàng',
+      });
     },
 
     /**
@@ -51,8 +51,8 @@ export const useOrdersApi = () => {
      */
     async updateOrderStatus(id: string, status: Order['status']) {
       return apiClient.patch(`/api/a/orders/${id}/status`, { status }, {
-        errorMessage: 'Không thể cập nhật trạng thái đơn hàng'
-      })
+        errorMessage: 'Không thể cập nhật trạng thái đơn hàng',
+      });
     },
 
     /**
@@ -60,8 +60,8 @@ export const useOrdersApi = () => {
      */
     async updatePaymentStatus(id: string, paymentStatus: Order['paymentStatus']) {
       return apiClient.patch(`/api/a/orders/${id}/payment-status`, { paymentStatus }, {
-        errorMessage: 'Không thể cập nhật trạng thái thanh toán'
-      })
+        errorMessage: 'Không thể cập nhật trạng thái thanh toán',
+      });
     },
 
     /**
@@ -69,15 +69,15 @@ export const useOrdersApi = () => {
      */
     async cancelOrder(id: string, reason?: string) {
       return apiClient.post(`/api/a/orders/${id}/cancel`, { reason }, {
-        errorMessage: 'Không thể hủy đơn hàng'
-      })
+        errorMessage: 'Không thể hủy đơn hàng',
+      });
     },
 
     /**
      * Get order statistics
      */
     async getOrderStats(params?: { from?: string; to?: string }) {
-      return apiClient.get('/api/a/orders/statistics', { params })
+      return apiClient.get('/api/a/orders/statistics', { params });
     },
 
     /**
@@ -86,9 +86,9 @@ export const useOrdersApi = () => {
     async exportOrders(params?: OrderQueryParams) {
       return apiClient.get('/api/a/orders/export', {
         params,
-        errorMessage: 'Không thể export đơn hàng'
-      })
-    }
-  }
-}
+        errorMessage: 'Không thể export đơn hàng',
+      });
+    },
+  };
+};
 

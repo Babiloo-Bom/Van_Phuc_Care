@@ -9,11 +9,14 @@ router.get('/all', HealthBookController.index);
 // Lấy health book dựa theo email hoặc ID của admin
 router.get('/show', HealthBookController.show);
 
+// Lấy health book theo ngày và customerId (phải đứng trước /:id)
+router.get('/by-date/:customerId', HealthBookController.getByDate);
+
+// API lấy nhiệt độ theo ngày
+router.get('/temperature', HealthBookController.temperature);
+
 // Lấy health book theo ID
 router.get('/:id', HealthBookController.getOne);
-
-// Lấy health book theo ngày và customerId
-router.get('/by-date/:customerId', HealthBookController.getByDate);
 
 // Cập nhật health book
 router.patch('/:id', HealthBookController.update);
@@ -30,7 +33,5 @@ router.delete('/:id', HealthBookController.delete);
 // API comment (chưa triển khai logic)
 router.post('/comment', HealthBookController.comment);
 
-// API lấy nhiệt độ theo ngày
-router.get('/temperature', HealthBookController.temperature);
 
 export default router;

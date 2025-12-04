@@ -10,6 +10,11 @@ class HealthBooks {
 
   public generateSchema () {
     this.schema = new Schema({
+      userId: {
+        type: String,
+        required: true,
+        index: true,
+      },
       customerId: {
         type: String,
       },
@@ -105,6 +110,7 @@ class HealthBooks {
     },
     );
     this.schema.index({ domain: 1, customerId: 1 });
+    this.schema.index({ userId: 1, customerId: 1 });
     if (!mongoose.models[HealthBooks.COLLECTION_NAME]) {
       mongoose.model(HealthBooks.COLLECTION_NAME, this.schema, HealthBooks.COLLECTION_NAME);
     }

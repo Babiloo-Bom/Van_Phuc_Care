@@ -3,6 +3,7 @@ import { Request, Response } from 'express';
 import { initializeApp } from 'firebase/app';
 import { getStorage, ref, getDownloadURL, uploadBytesResumable } from 'firebase/storage';
 import dayjs from 'dayjs';
+import MinioService from '@services/minio';
 
 class UploadController {
   public async uploadFirebase (req: Request, res: Response) {
@@ -35,6 +36,48 @@ class UploadController {
       }
       sendSuccess(res, { fileAttributes });
     } catch (error: any) {
+      sendError(res, 500, error.message, error as Error);
+    }
+  }
+
+  /**
+   * Upload files to MinIO
+   * POST /uploads/minio
+   */
+  public async uploadMinio(req: Request, res: Response) {
+    try {
+      const files = req.files as Express.Multer.File[];
+      const folder = (req.query.folder as string) || 'general';
+
+      if (!files || files.length === 0) {
+        return sendError(res, 400, 'No files uploaded');
+      }
+
+      const uploadedFiles: any[] = [];
+
+      for (const file of files) {
+        const fileUrl = await MinioService.uploadFile(
+          file.buffer,
+          file.originalname,
+          file.mimetype,
+          folder
+        );
+
+        // Get public URL
+        const publicUrl = MinioService.getPublicUrl(fileUrl.replace(`/${MinioService.getBucketName()}/`, ''));
+
+        uploadedFiles.push({
+          filename: file.originalname,
+          url: publicUrl,
+          size: file.size,
+          type: file.mimetype,
+          uploadedAt: new Date().toISOString(),
+        });
+      }
+
+      sendSuccess(res, { files: uploadedFiles });
+    } catch (error: any) {
+      console.error('Upload MinIO error:', error);
       sendError(res, 500, error.message, error as Error);
     }
   }

@@ -8,7 +8,7 @@ class Users {
   public readonly CREATABLE_PARAMETERS = ['fullname', 'email', 'phoneNumber', 'password', 'avatar', 'gender',
     { address: [{ province: ['id', 'name'] }, { district: ['id', 'name'] }, { ward: ['id', 'name'] }, 'addressDetail'] }]
 
-  public readonly UPDATABLE_PARAMETERS = ['fullname', 'email', 'phoneNumber', 'avatar', 'gender',
+  public readonly UPDATABLE_PARAMETERS = ['fullname', 'email', 'phoneNumber', 'avatar', 'gender', 'fullAddress',
     { address: [{ province: ['id', 'name'] }, { district: ['id', 'name'] }, { ward: ['id', 'name'] }, 'addressDetail'] }]
 
   public readonly ADMIN_UPDATABLE_PARAMETERS = ['fullname', 'email', 'phoneNumber', 'avatar', 'gender', 'password', 'status',
@@ -52,6 +52,9 @@ class Users {
           name: { type: String },
         },
         addressDetail: { type: String },
+      },
+      fullAddress: {
+        type: String,
       },
       avatar: {
         type: String,

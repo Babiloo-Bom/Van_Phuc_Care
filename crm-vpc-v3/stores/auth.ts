@@ -1,25 +1,27 @@
-import { defineStore } from 'pinia'
+import { defineStore } from 'pinia';
 
 export interface User {
-  id: string | number
-  email: string
-  fullname?: string
-  name?: string
-  username?: string
-  phone?: string
-  role?: string
-  avatar?: string
-  verified?: boolean
-  status?: string
+  id: string | number;
+  email: string;
+  fullname?: string;
+  name?: string;
+  username?: string;
+  phone?: string;
+  role?: string;
+  avatar?: string;
+  verified?: boolean;
+  status?: string;
+  courseRegister?: string[]; // Danh sách khóa học đã mua
+  courseCompleted?: string[]; // Danh sách khóa học đã hoàn thành
 }
 
 export interface AuthState {
-  user: User | null
-  token: string | null
-  tokenExpireAt: string | null
-  isAuthenticated: boolean
-  isLoading: boolean
-  rememberAccount: boolean
+  user: User | null;
+  token: string | null;
+  tokenExpireAt: string | null;
+  isAuthenticated: boolean;
+  isLoading: boolean;
+  rememberAccount: boolean;
 }
 
 export const useAuthStore = defineStore('auth', {
@@ -29,15 +31,15 @@ export const useAuthStore = defineStore('auth', {
     tokenExpireAt: null,
     isAuthenticated: false,
     isLoading: false,
-    rememberAccount: false
+    rememberAccount: false,
   }),
 
   getters: {
-    currentUser: (state) => state.user,
-    isLoggedIn: (state) => state.isAuthenticated,
-    userRole: (state) => state.user?.role || 'guest',
-    userName: (state) => state.user?.fullname || state.user?.name || 'Unknown',
-    userEmail: (state) => state.user?.email || ''
+    currentUser: state => state.user,
+    isLoggedIn: state => state.isAuthenticated,
+    userRole: state => state.user?.role || 'guest',
+    userName: state => state.user?.fullname || state.user?.name || 'Unknown',
+    userEmail: state => state.user?.email || '',
   },
 
   actions: {
@@ -46,72 +48,157 @@ export const useAuthStore = defineStore('auth', {
      * Migrated from admin-vpc/pages/login.vue
      */
     async login(username: string, password: string, remindAccount = false) {
-      this.isLoading = true
-      
+      this.isLoading = true;
+
       try {
-        const authApi = useAuthApi()
-        
+        const authApi = useAuthApi();
+
         // Call API login
-        const response: any = await authApi.login(username, password, remindAccount)
+        const response: any = await authApi.login(
+          username,
+          password,
+          remindAccount,
+        );
 
         // Backend returns: { data: { accessToken, tokenExpireAt } }
-        const token = response.data?.accessToken || response.accessToken || response.token
-        const tokenExpireAt = response.data?.tokenExpireAt || response.tokenExpireAt
-
-        console.log('🔍 Login response:', { token: !!token, tokenExpireAt, responseData: response.data })
+        const token =
+          response.data?.accessToken || response.accessToken || response.token;
+        const tokenExpireAt =
+          response.data?.tokenExpireAt || response.tokenExpireAt;
 
         if (!token) {
-          throw new Error('No token received from server')
+          throw new Error('No token received from server');
         }
 
         // Calculate token expiry time (default 7 days if not provided)
-        this.token = token
-        console.log('🔍 About to calculate expire time with:', tokenExpireAt, 'type:', typeof tokenExpireAt)
-        this.tokenExpireAt = tokenExpireAt ? this.calculateExpireTime(tokenExpireAt) : this.calculateExpireTime('7d')
-        console.log('🔍 Calculated tokenExpireAt:', this.tokenExpireAt)
-        this.isAuthenticated = true
-        this.rememberAccount = remindAccount
-        
-        // Create basic user object (will be enhanced later if needed)
-        this.user = { 
-          id: response.id || 'temp-id',
-          email: username,
-          username: username,
-          fullname: response.fullname || username
+        this.token = token;
+        this.tokenExpireAt = tokenExpireAt
+          ? this.calculateExpireTime(tokenExpireAt)
+          : this.calculateExpireTime('7d');
+        this.isAuthenticated = true;
+        this.rememberAccount = remindAccount;
+
+        // Fetch full user profile data from API
+        try {
+          const profileResponse = (await authApi.getUserProfile()) as any;
+          const userData = profileResponse?.data?.user || profileResponse?.data?.data || profileResponse?.data;
+          
+          this.user = {
+            id: userData?._id || userData?.id || 'temp-id',
+            email: userData?.email || username,
+            username: userData?.username || username,
+            fullname: userData?.fullname || userData?.name || username,
+            name: userData?.name || userData?.fullname,
+            phone: userData?.phoneNumber || userData?.phone,
+            avatar: userData?.avatar,
+            role: userData?.role || userData?.type,
+            verified: userData?.verified,
+            status: userData?.status,
+            courseRegister: userData?.courseRegister || [],
+            courseCompleted: userData?.courseCompleted || [],
+          };
+          
+        } catch (profileError) {
+          console.error('⚠️ Failed to fetch user profile, using basic data:', profileError);
+          // Fallback to basic user data if profile fetch fails
+          this.user = {
+            id: response.id || response._id || 'temp-id',
+            email: username,
+            username: username,
+            fullname: response.fullname || username,
+          };
         }
 
         // Save to localStorage
         if (process.client) {
-          localStorage.setItem('auth_token', token)
-          localStorage.setItem('token_expire_at', this.tokenExpireAt || '')
-          localStorage.setItem('user', JSON.stringify(this.user))
-          
+          localStorage.setItem('auth_token', token);
+          localStorage.setItem('token_expire_at', this.tokenExpireAt || '');
+          localStorage.setItem('user', JSON.stringify(this.user));
+
           if (remindAccount) {
-            localStorage.setItem('auth_data', JSON.stringify({
-              username,
-              remindAccount,
-              origin: 'vanphuccare.gensi.vn'
-            }))
+            localStorage.setItem(
+              'auth_data',
+              JSON.stringify({
+                username,
+                remindAccount,
+                origin: 'vanphuccare.gensi.vn',
+              }),
+            );
           }
         }
 
-        return { success: true, user: this.user, token }
+        return { success: true, user: this.user, token };
       } catch (error: any) {
         // Ignore AbortError (request cancelled due to navigation/reload)
-        const errorMessage = error?.message || ''
-        const messageString = typeof errorMessage === 'string' ? errorMessage : String(errorMessage || '')
-        
-        if (error?.name === 'AbortError' || messageString.includes('aborted')) {
-          console.log('[Auth] Login cancelled (navigation/reload)')
-          return { success: false, error: 'Request cancelled' }
+        if (
+          error?.name === 'AbortError' ||
+          error?.message?.includes('aborted')
+        ) {
+          return { success: false, error: 'Request cancelled' };
         }
-        console.error('Login error:', error)
-        return { 
-          success: false, 
-          error: error.data?.message || messageString || 'Tên đăng nhập hoặc mật khẩu không chính xác'
-        }
+        console.error('Login error:', error);
+        return {
+          success: false,
+          error:
+            error.data?.message ||
+            error.message ||
+            'Tên đăng nhập hoặc mật khẩu không chính xác',
+        };
       } finally {
-        this.isLoading = false
+        this.isLoading = false;
+      }
+    },
+
+    /**
+     * Update course register via API
+     */
+    async updateCourseRegister(
+      courseIds: string[],
+      action: 'add' | 'remove' = 'add',
+    ) {
+      if (!this.user || !this.token) {
+        return false;
+      }
+
+      try {
+        const authApi = useAuthApi();
+        const response = (await authApi.updateCourseRegister(
+          courseIds,
+          action,
+        )) as any;
+
+        if (response.data?.user) {
+          // Update local user data
+          this.user.courseRegister = response.data.user.courseRegister;
+          this.saveAuth();
+          return true;
+        }
+        return false;
+      } catch (error) {
+        console.error('❌ Error updating course register:', error);
+        return false;
+      }
+    },
+
+    /**
+     * Refresh user data from backend
+     */
+    async refreshUserData() {
+      if (!this.user || !this.token) {
+        return;
+      }
+
+      try {
+        const authApi = useAuthApi();
+        const response = (await authApi.getUserProfile()) as any;
+
+        if (response.data?.user) {
+          // Update user data with fresh data from backend
+          this.user = response.data.user;
+          this.saveAuth();
+        }
+      } catch (error) {
+        console.error('❌ Error refreshing user data:', error);
       }
     },
 
@@ -119,28 +206,43 @@ export const useAuthStore = defineStore('auth', {
      * Register new account (CRM/E-Learning)
      * Migrated from crm-vpc/components/auth/forms/SignUp.vue
      */
-    async register(email: string, password: string, repeatPassword: string, fullname?: string, phone?: string) {
-      this.isLoading = true
-      
+    async register(
+      email: string,
+      password: string,
+      repeatPassword: string,
+      fullname?: string,
+      phone?: string,
+    ) {
+      this.isLoading = true;
+
       try {
         if (password !== repeatPassword) {
-          throw new Error('Mật khẩu không khớp')
+          throw new Error('Mật khẩu không khớp');
         }
 
-        const authApi = useAuthApi()
-        
+        const authApi = useAuthApi();
+
         // Call API register
-        const response: any = await authApi.register(email, password, repeatPassword, fullname, phone)
+        const response: any = await authApi.register(
+          email,
+          password,
+          repeatPassword,
+          fullname,
+          phone,
+        );
 
-        return { success: true, data: response }
+        return { success: true, data: response };
       } catch (error: any) {
-        console.error('Register error:', error)
-        return { 
-          success: false, 
-          error: error.data?.message || error.message || 'Email đã được sử dụng, vui lòng nhập email khác!'
-        }
+        console.error('Register error:', error);
+        return {
+          success: false,
+          error:
+            error.data?.message ||
+            error.message ||
+            'Email đã được sử dụng, vui lòng nhập email khác!',
+        };
       } finally {
-        this.isLoading = false
+        this.isLoading = false;
       }
     },
 
@@ -149,23 +251,26 @@ export const useAuthStore = defineStore('auth', {
      * Migrated from crm-vpc/components/auth/forms/SignUp.vue
      */
     async verifyEmail(email: string, otp: string) {
-      this.isLoading = true
-      
-      try {
-        const authApi = useAuthApi()
-        
-        // Verify OTP
-        await authApi.verifyEmail(email, otp)
+      this.isLoading = true;
 
-        return { success: true }
+      try {
+        const authApi = useAuthApi();
+
+        // Verify OTP
+        await authApi.verifyEmail(email, otp);
+
+        return { success: true };
       } catch (error: any) {
-        console.error('Verify email error:', error)
-        return { 
-          success: false, 
-          error: error.data?.message || error.message || 'Mã xác thực không chính xác!'
-        }
+        console.error('Verify email error:', error);
+        return {
+          success: false,
+          error:
+            error.data?.message ||
+            error.message ||
+            'Mã xác thực không chính xác!',
+        };
       } finally {
-        this.isLoading = false
+        this.isLoading = false;
       }
     },
 
@@ -174,10 +279,7 @@ export const useAuthStore = defineStore('auth', {
      * Auto login user after successful registration
      */
     async loginAfterRegister(email: string, password: string) {
-      console.log('🔍 authStore.loginAfterRegister called with email:', email)
-      const result = await this.login(email, password, false)
-      console.log('🔍 authStore.loginAfterRegister result:', result)
-      return result
+      return await this.login(email, password, false);
     },
 
     /**
@@ -185,45 +287,22 @@ export const useAuthStore = defineStore('auth', {
      * Migrated from admin-vpc/components/auth/forms/GetOtp.vue
      */
     async forgotPassword(email: string) {
-      this.isLoading = true
-      
+      this.isLoading = true;
+
       try {
-        const authApi = useAuthApi()
-        
-        await authApi.forgotPassword(email)
+        const authApi = useAuthApi();
 
-        return { success: true }
+        await authApi.forgotPassword(email);
+
+        return { success: true };
       } catch (error: any) {
-        console.error('Forgot password error:', error)
-        return { 
-          success: false, 
-          error: error.data?.message || error.message || 'Gửi OTP thất bại'
-        }
+        console.error('Forgot password error:', error);
+        return {
+          success: false,
+          error: error.data?.message || error.message || 'Gửi OTP thất bại',
+        };
       } finally {
-        this.isLoading = false
-      }
-    },
-
-    /**
-     * Verify OTP for password reset
-     */
-    async verifyOtpForPassword(email: string, otp: string) {
-      this.isLoading = true
-      
-      try {
-        const authApi = useAuthApi()
-        
-        const response: any = await authApi.verifyOtp(email, otp)
-
-        return { success: true, token: response.data?.token }
-      } catch (error: any) {
-        console.error('Verify OTP error:', error)
-        return { 
-          success: false, 
-          error: error.data?.message || error.message || 'Mã OTP không chính xác'
-        }
-      } finally {
-        this.isLoading = false
+        this.isLoading = false;
       }
     },
 
@@ -231,23 +310,24 @@ export const useAuthStore = defineStore('auth', {
      * Reset password with token
      * Migrated from admin-vpc/components/auth/forms/NewPassword.vue
      */
-    async resetPassword(email: string, token: string, newPassword: string) {
-      this.isLoading = true
-      
-      try {
-        const authApi = useAuthApi()
-        
-        await authApi.resetPassword(email, token, newPassword)
+    async resetPassword(token: string, newPassword: string) {
+      this.isLoading = true;
 
-        return { success: true }
+      try {
+        const authApi = useAuthApi();
+
+        await authApi.resetPassword(token, newPassword);
+
+        return { success: true };
       } catch (error: any) {
-        console.error('Reset password error:', error)
-        return { 
-          success: false, 
-          error: error.data?.message || error.message || 'Đổi mật khẩu thất bại'
-        }
+        console.error('Reset password error:', error);
+        return {
+          success: false,
+          error:
+            error.data?.message || error.message || 'Đổi mật khẩu thất bại',
+        };
       } finally {
-        this.isLoading = false
+        this.isLoading = false;
       }
     },
 
@@ -256,34 +336,35 @@ export const useAuthStore = defineStore('auth', {
      * Migrated from admin-vpc/components/auth/dialogs/UpdatePassword.vue
      */
     async changePassword(oldPassword: string, newPassword: string) {
-      this.isLoading = true
-      
+      this.isLoading = true;
+
       try {
-        const authApi = useAuthApi()
-        
-        await authApi.changePassword(oldPassword, newPassword)
+        const authApi = useAuthApi();
+
+        await authApi.changePassword(oldPassword, newPassword);
 
         // Logout after password change
-        await this.logout()
+        await this.logout();
 
-        return { success: true }
+        return { success: true };
       } catch (error: any) {
-        console.error('Change password error:', error)
-        
+        console.error('Change password error:', error);
+
         // Check for specific error code
         if (error.status === 425 || error.data?.error?.code === 425) {
           return {
             success: false,
-            error: 'Mật khẩu cũ không chính xác'
-          }
+            error: 'Mật khẩu cũ không chính xác',
+          };
         }
-        
-        return { 
-          success: false, 
-          error: error.data?.message || error.message || 'Đổi mật khẩu thất bại'
-        }
+
+        return {
+          success: false,
+          error:
+            error.data?.message || error.message || 'Đổi mật khẩu thất bại',
+        };
       } finally {
-        this.isLoading = false
+        this.isLoading = false;
       }
     },
 
@@ -292,38 +373,57 @@ export const useAuthStore = defineStore('auth', {
      * Migrated from admin-vpc/api/auth.js
      */
     async logout() {
-      this.isLoading = true
+      this.isLoading = true;
 
       try {
         // Call logout API to clear server session
-        const authApi = useAuthApi()
+        const authApi = useAuthApi();
         await authApi.logout().catch(() => {
           // Ignore logout API errors
-        })
+        });
 
         // Clear state
-        this.user = null
-        this.token = null
-        this.isAuthenticated = false
-        this.rememberAccount = false
+        this.user = null;
+        this.token = null;
+        this.isAuthenticated = false;
+        this.rememberAccount = false;
 
         // Clear localStorage
         if (process.client) {
-          localStorage.removeItem('auth_token')
-          localStorage.removeItem('user')
-          
+          localStorage.removeItem('auth_token');
+          localStorage.removeItem('user');
+
           // Keep auth_data if rememberAccount was true
           if (!this.rememberAccount) {
-            localStorage.removeItem('auth_data')
+            localStorage.removeItem('auth_data');
           }
         }
 
         // Redirect to login
-        navigateTo('/login')
+        navigateTo('/login');
       } catch (error) {
-        console.error('Logout error:', error)
+        console.error('Logout error:', error);
       } finally {
-        this.isLoading = false
+        this.isLoading = false;
+      }
+    },
+
+    /**
+     * Save current auth state to localStorage
+     */
+    saveAuth() {
+      if (process.client && this.user && this.token) {
+        try {
+          const authData = {
+            user: this.user,
+            token: this.token,
+            tokenExpireAt: this.tokenExpireAt,
+            rememberAccount: this.rememberAccount,
+          };
+          localStorage.setItem('authData', JSON.stringify(authData));
+        } catch (error) {
+          console.error('❌ Error saving auth data:', error);
+        }
       }
     },
 
@@ -331,42 +431,81 @@ export const useAuthStore = defineStore('auth', {
      * Check and restore session from localStorage
      * Migrated from @nuxtjs/auth-next behavior
      */
-    initAuth() {
+    async initAuth() {
       if (process.client) {
-        const token = localStorage.getItem('auth_token')
-        const tokenExpireAt = localStorage.getItem('token_expire_at')
-        const userStr = localStorage.getItem('user')
-        const authDataStr = localStorage.getItem('auth_data')
+        const token = localStorage.getItem('auth_token');
+        const tokenExpireAt = localStorage.getItem('token_expire_at');
+        const userStr = localStorage.getItem('user');
+        const authDataStr = localStorage.getItem('auth_data');
 
-        if (token && userStr) {
+        // Try to restore from authData first (new format), then fallback to old format
+        let authData = null;
+        if (authDataStr) {
+          try {
+            authData = JSON.parse(authDataStr);
+          } catch (e) {
+            console.error('⚠️ Failed to parse authData:', e);
+          }
+        }
+
+        if (authData && authData.user && authData.token) {
+          // Use new format (authData)
           try {
             // Check if token is expired
-            if (tokenExpireAt) {
-              const expireTime = new Date(tokenExpireAt).getTime()
-              const now = Date.now()
-              
-              if (now >= expireTime) {
+            if (authData.tokenExpireAt) {
+              const expireTime = new Date(authData.tokenExpireAt).getTime();
+              const now = Date.now();
+              if (!isNaN(expireTime) && now >= expireTime) {
                 // Token expired, clear data
-                this.logout()
-                return
+                this.logout();
+                return;
               }
             }
 
-            this.token = token
-            this.tokenExpireAt = tokenExpireAt
-            this.user = JSON.parse(userStr)
-            this.isAuthenticated = true
+            this.token = authData.token;
+            this.tokenExpireAt = authData.tokenExpireAt;
+            this.user = authData.user;
+            this.isAuthenticated = true;
+          } catch (e) {
+            console.error('❌ Error restoring from authData:', e);
+            this.logout();
+            return;
+          }
+        } else if (token && userStr && tokenExpireAt) {
+          // Fallback to old format
+          try {
+            // Check if token is expired
+            if (tokenExpireAt) {
+              const expireTime = new Date(tokenExpireAt).getTime();
+              const now = Date.now();
+
+              if (!isNaN(expireTime) && now >= expireTime) {
+                // Token expired, clear data
+                this.logout();
+                return;
+              }
+            }
+
+            this.token = token;
+            this.tokenExpireAt = tokenExpireAt;
+            this.user = JSON.parse(userStr);
+            this.isAuthenticated = true;
 
             // Check for remember account
             if (authDataStr) {
-              const authData = JSON.parse(authDataStr)
-              this.rememberAccount = authData.remindAccount || false
+              const authData = JSON.parse(authDataStr);
+              this.rememberAccount = authData.remindAccount || false;
             }
+
+            // Refresh user data from backend to get latest courseRegister
+            await this.refreshUserData();
           } catch (error) {
-            console.error('Init auth error:', error)
+            console.error('❌ Init auth error:', error);
             // Clear corrupted data
-            this.logout()
+            this.logout();
           }
+        } else {
+          console.log('ℹ️ No auth data found in localStorage');
         }
       }
     },
@@ -375,85 +514,128 @@ export const useAuthStore = defineStore('auth', {
      * Calculate token expiry time from TTL string (e.g., '7d', '24h', '1y')
      */
     calculateExpireTime(ttl: string | Date | number): string {
-      console.log('🔍 calculateExpireTime called with:', ttl, 'type:', typeof ttl)
-      const now = new Date()
-      
+      const now = new Date();
+
       // If ttl is already a Date object, return it
       if (ttl instanceof Date) {
-        console.log('🔍 ttl is Date object')
-        return ttl.toISOString()
+        return ttl.toISOString();
       }
-      
+
       // If ttl is a number (timestamp), convert to Date
       if (typeof ttl === 'number') {
-        console.log('🔍 ttl is number')
-        return new Date(ttl).toISOString()
+        return new Date(ttl + new Date().getTime()).toISOString();
       }
-      
+
       // If ttl is a string, parse it
       if (typeof ttl !== 'string') {
-        console.log('🔍 ttl is not string, using default')
         // Default to 7 days if format is invalid
-        return new Date(now.getTime() + 7 * 24 * 60 * 60 * 1000).toISOString()
+        return new Date(now.getTime() + 7 * 24 * 60 * 60 * 1000).toISOString();
       }
-      
+
       // Parse TTL string (e.g., '7d' = 7 days, '24h' = 24 hours)
-      const match = ttl.match(/^(\d+)([smhdy])$/)
-      
+      const match = ttl.match(/^(\d+)([smhdy])$/);
+
       if (!match) {
         // Default to 7 days if format is invalid
-        return new Date(now.getTime() + 7 * 24 * 60 * 60 * 1000).toISOString()
+        return new Date(now.getTime() + 7 * 24 * 60 * 60 * 1000).toISOString();
       }
 
-      const [, value, unit] = match
-      const amount = parseInt(value)
-      
-      let milliseconds = 0
+      const [, value, unit] = match;
+      const amount = parseInt(value || '0');
+
+      let milliseconds = 0;
       switch (unit) {
         case 's': // seconds
-          milliseconds = amount * 1000
-          break
+          milliseconds = amount * 1000;
+          break;
         case 'm': // minutes
-          milliseconds = amount * 60 * 1000
-          break
+          milliseconds = amount * 60 * 1000;
+          break;
         case 'h': // hours
-          milliseconds = amount * 60 * 60 * 1000
-          break
+          milliseconds = amount * 60 * 60 * 1000;
+          break;
         case 'd': // days
-          milliseconds = amount * 24 * 60 * 60 * 1000
-          break
+          milliseconds = amount * 24 * 60 * 60 * 1000;
+          break;
         case 'y': // years
-          milliseconds = amount * 365 * 24 * 60 * 60 * 1000
-          break
+          milliseconds = amount * 365 * 24 * 60 * 60 * 1000;
+          break;
         default:
-          milliseconds = 7 * 24 * 60 * 60 * 1000 // default 7 days
+          milliseconds = 7 * 24 * 60 * 60 * 1000; // default 7 days
       }
 
-      return new Date(now.getTime() + milliseconds).toISOString()
+      return new Date(now.getTime() + milliseconds).toISOString();
     },
 
     /**
      * Complete Google Login
      * Store token and user data from Google OAuth
+     * If userData is not provided, will fetch from API
      */
-    async completeGoogleLogin(accessToken: string, tokenExpireAt: number, userData: User) {
+    async completeGoogleLogin(
+      accessToken: string,
+      tokenExpireAt: number,
+      userData: User,
+    ) {
       try {
-        this.token = accessToken
-        this.tokenExpireAt = new Date(tokenExpireAt).toISOString()
-        this.user = userData
-        this.isAuthenticated = true
+        this.token = accessToken;
+
+        // Save token to localStorage first (needed for API calls)
+        if (process.client) {
+          localStorage.setItem('auth_token', accessToken);
+        }
+
+        // Handle tokenExpireAt properly
+        if (typeof tokenExpireAt === 'number') {
+          this.tokenExpireAt = new Date(
+            Date.now() + tokenExpireAt,
+          ).toISOString();
+        } else {
+          // Default to 7 days if not provided
+          this.tokenExpireAt = new Date(
+            Date.now() + 7 * 24 * 60 * 60 * 1000,
+          ).toISOString();
+        }
+
+        // If userData is not provided, fetch from API
+        if (!userData) {
+          const authApi = useAuthApi();
+          const profileResponse = (await authApi.getUserProfile()) as any;
+          const fetchedUserData = profileResponse?.data?.user || profileResponse?.data?.data || profileResponse?.data;
+          
+          userData = {
+            id: fetchedUserData?._id || fetchedUserData?.id || 'temp-id',
+            email: fetchedUserData?.email || '',
+            username: fetchedUserData?.username || fetchedUserData?.email,
+            fullname: fetchedUserData?.fullname || fetchedUserData?.name || '',
+            name: fetchedUserData?.name || fetchedUserData?.fullname,
+            phone: fetchedUserData?.phoneNumber || fetchedUserData?.phone,
+            role: fetchedUserData?.role || 'user',
+            avatar: fetchedUserData?.avatar,
+            verified: fetchedUserData?.verified,
+            status: fetchedUserData?.status,
+          };
+        }
+
+        this.user = userData;
+        this.isAuthenticated = true;
 
         // Save to localStorage
         if (process.client) {
-          localStorage.setItem('auth_token', accessToken)
-          localStorage.setItem('token_expire_at', this.tokenExpireAt)
-          localStorage.setItem('user', JSON.stringify(userData))
+          localStorage.setItem('token_expire_at', this.tokenExpireAt);
+          localStorage.setItem('user', JSON.stringify(userData));
         }
 
-        return { success: true }
+        return { success: true };
       } catch (error: any) {
-        console.error('Complete Google login error:', error)
-        return { success: false, error: error.message }
+        console.error('Complete Google login error:', error);
+        // Cleanup on error
+        if (process.client) {
+          localStorage.removeItem('auth_token');
+        }
+        this.token = null;
+        this.isAuthenticated = false;
+        return { success: false, error: error.message };
       }
     },
 
@@ -462,33 +644,40 @@ export const useAuthStore = defineStore('auth', {
      * Migrated from admin-vpc/api/auth.js
      */
     async updateProfile(userData: Partial<User>) {
-      this.isLoading = true
-      
+      this.isLoading = true;
+
       try {
-        const authApi = useAuthApi()
-        
-        const response: any = await authApi.updateProfile(userData)
+        const authApi = useAuthApi();
+
+        const response: any = await authApi.updateProfile(userData);
 
         // Update local user data
         if (this.user) {
-          this.user = { ...this.user, ...response.user }
-          
+          this.user = { ...this.user, ...response.user };
+
           if (process.client) {
-            localStorage.setItem('user', JSON.stringify(this.user))
+            localStorage.setItem('user', JSON.stringify(this.user));
           }
         }
 
-        return { success: true, user: response.user }
+        return { success: true, user: response.user };
       } catch (error: any) {
-        console.error('Update profile error:', error)
-        return { 
-          success: false, 
-          error: error.data?.message || error.message || 'Cập nhật thông tin thất bại'
-        }
+        console.error('Update profile error:', error);
+        return {
+          success: false,
+          error:
+            error.data?.message ||
+            error.message ||
+            'Cập nhật thông tin thất bại',
+        };
       } finally {
-        this.isLoading = false
+        this.isLoading = false;
       }
-    }
-  }
-})
+    },
+  },
+});
 
+// Expose store to window for console debugging
+if (process.client) {
+  (window as any).authStore = useAuthStore;
+}

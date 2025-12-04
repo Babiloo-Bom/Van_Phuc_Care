@@ -10,7 +10,7 @@ const router = Router();
  *   post:
  *     tags:
  *      - "Uploaders"
- *     summary: Upload file image
+ *     summary: Upload file image to Firebase
  *     consumes:
  *      - "multipart/form-data"
  *     produces:
@@ -33,5 +33,36 @@ const router = Router();
  *      - Bearer: []
  */
 router.post('/', withoutSavingUploader.any(), UploaderController.uploadFirebase);
+
+/**
+ * @openapi
+ * /uploads/minio:
+ *   post:
+ *     tags:
+ *      - "Uploaders"
+ *     summary: Upload file to MinIO storage
+ *     consumes:
+ *      - "multipart/form-data"
+ *     parameters:
+ *      - in: "query"
+ *        name: "folder"
+ *        description: "Folder to store files (default: general)"
+ *        required: false
+ *        type: "string"
+ *      - in: "formData"
+ *        name: "files"
+ *        description: "files to upload"
+ *        required: true
+ *        allowMultiple: true
+ *        type: "file"
+ *     responses:
+ *       200:
+ *         description: "Upload success"
+ *       400:
+ *         description: No files uploaded
+ *       500:
+ *        description: Server error
+ */
+router.post('/minio', withoutSavingUploader.any(), UploaderController.uploadMinio);
 
 export default router;

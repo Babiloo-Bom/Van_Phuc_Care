@@ -35,6 +35,58 @@ class UserController {
         status: user.status,
         type: user.type,
         address: user.address,
+        fullAddress: user.fullAddress,
+        courseRegister: user.courseRegister || [],
+        courseCompleted: user.courseCompleted || [],
+        createdAt: user.createdAt,
+        updatedAt: user.updatedAt
+      };
+
+      sendSuccess(res, { user: userProfile });
+    } catch (error: any) {
+      sendError(res, 500, error.message, error as Error);
+    }
+  }
+
+  public async updateProfile(req: Request, res: Response) {
+    try {
+      const currentUser = (req as any).currentUser;
+      const { fullname, phoneNumber, email, address, fullAddress, avatar, gender } = req.body;
+
+      if (!currentUser) {
+        return sendError(res, 404, 'Không tìm thấy người dùng');
+      }
+
+      const userId = currentUser._id;
+      const user = await MongoDbUsers.model.findById(userId) as any;
+
+      if (!user) {
+        return sendError(res, 404, 'Không tìm thấy người dùng');
+      }
+
+      // Update user fields if provided
+      if (fullname !== undefined) user.fullname = fullname;
+      if (phoneNumber !== undefined) user.phoneNumber = phoneNumber;
+      if (email !== undefined) user.email = email;
+      if (address !== undefined) user.address = address;
+      if (fullAddress !== undefined) user.fullAddress = fullAddress;
+      if (avatar !== undefined) user.avatar = avatar;
+      if (gender !== undefined) user.gender = gender;
+
+      await user.save();
+
+      // Return updated user profile
+      const userProfile = {
+        _id: user._id,
+        fullname: user.fullname,
+        email: user.email,
+        phoneNumber: user.phoneNumber,
+        avatar: user.avatar,
+        gender: user.gender,
+        status: user.status,
+        type: user.type,
+        address: user.address,
+        fullAddress: user.fullAddress,
         courseRegister: user.courseRegister || [],
         courseCompleted: user.courseCompleted || [],
         createdAt: user.createdAt,

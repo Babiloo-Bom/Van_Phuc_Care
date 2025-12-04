@@ -1,50 +1,597 @@
 <template>
-  <div>
-    <div class="flex justify-between items-center mb-8">
-      <div>
-        <h1 class="text-3xl font-bold text-gray-900">Services</h1>
-        <p class="text-gray-600 mt-2">Manage service offerings</p>
+  <div class="container mx-auto">
+    <!-- Header: Title + Tabs -->
+    <div class="header-wrapper">
+      <!-- Page Title -->
+      <h1 class="page-title">Dịch vụ</h1>
+
+      <!-- Tab Filter -->
+      <div class="tabs-wrapper">
+        <button
+          class="tab-button"
+          :class="{ 'tab-active': activeTab === 'used' }"
+          @click="activeTab = 'used'"
+        >
+          Đã sử dụng
+        </button>
+        <button
+          class="tab-button"
+          :class="{ 'tab-active': activeTab === 'all' }"
+          @click="activeTab = 'all'"
+        >
+          Tất cả dịch vụ
+        </button>
       </div>
-      <button class="btn-primary flex items-center gap-2">
-        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
-        </svg>
-        Add Service
-      </button>
     </div>
 
-    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-      <div v-for="i in 6" :key="i" class="card hover:shadow-xl transition-shadow">
-        <div class="aspect-video bg-gradient-to-br from-teal-400 to-teal-600 rounded-lg mb-4 flex items-center justify-center">
-          <span class="text-5xl">💼</span>
-        </div>
-        <h3 class="text-lg font-semibold text-gray-900 mb-2">Service Package {{ i }}</h3>
-        <p class="text-gray-600 text-sm mb-4">Comprehensive service description and benefits</p>
-        <div class="flex justify-between items-center mb-4">
-          <span class="text-2xl font-bold text-primary-500">${{ (i * 100) + 99 }}/mo</span>
-          <span class="px-2 py-1 text-xs rounded-full bg-green-100 text-green-800">Active</span>
-        </div>
-        <div class="space-y-2 text-sm text-gray-600 mb-4">
-          <div class="flex items-center gap-2">
-            <svg class="w-4 h-4 text-green-500" fill="currentColor" viewBox="0 0 20 20">
-              <path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd" />
-            </svg>
-            <span>Feature {{ i }} included</span>
-          </div>
-          <div class="flex items-center gap-2">
-            <svg class="w-4 h-4 text-green-500" fill="currentColor" viewBox="0 0 20 20">
-              <path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd" />
-            </svg>
-            <span>24/7 Support</span>
-          </div>
-        </div>
-        <button class="btn-secondary w-full">Manage Service</button>
+    <!-- Loading State -->
+    <div v-if="isLoading" class="flex justify-center items-center py-12">
+      <div class="text-center">
+        <div class="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-[#317BC4]"></div>
+        <p class="mt-2 text-sm text-gray-500">Đang tải...</p>
       </div>
     </div>
+
+    <!-- Empty State -->
+    <div v-else-if="filteredServices.length === 0" class="text-center py-12">
+      <p class="text-gray-500">
+        {{ activeTab === 'used' ? 'Bạn chưa đăng ký dịch vụ nào' : 'Không có dịch vụ nào' }}
+      </p>
+    </div>
+
+    <!-- Services Grid -->
+    <div v-else class="services-grid">
+      <div
+        v-for="service in filteredServices"
+        :key="service._id"
+        class="service-card"
+        @click="goDetail(service)"
+      >
+        <!-- Thumbnail -->
+        <div class="card-image-wrapper">
+          <img
+            :src="service.thumbnail || '/images/service-thumbnail-default.png'"
+            :alt="service.title"
+            class="card-image"
+            @error="(e) => (e.target as HTMLImageElement).src = '/images/service-thumbnail-default.png'"
+          />
+        </div>
+
+        <!-- Content -->
+        <div class="card-content">
+          <h3 class="card-title">
+            {{ service.title }}
+          </h3>
+          <p class="card-description">
+            {{ service.shortDescriptions || service.descriptions }}
+          </p>
+          
+          <!-- Action Button -->
+          <div class="card-footer">
+            <button 
+              v-if="service.isRegistered" 
+              class="detail-button"
+              @click.stop="goDetail(service)"
+            >
+              Chi tiết
+            </button>
+            <button 
+              v-else 
+              class="register-button"
+              @click.stop="openRegisterModal(service)"
+            >
+              Đăng ký dịch vụ
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Register Modal -->
+    <a-modal
+      v-model:open="isRegisterModalOpen"
+      :footer="null"
+      :width="isMobile ? '90%' : 900"
+      :centered="true"
+      @cancel="closeRegisterModal"
+      :bodyStyle="{ padding: 0 }"
+      class="relative overflow-hidden rounded-xl"
+    >
+      <div class="register-modal">
+        <!-- Registration Form -->
+        <div v-if="!isRegistrationSuccess" class="modal-content-wrapper">
+          <!-- Left Side: Form -->
+          <div class="modal-form-section">
+            <h2 class="modal-title">Đăng ký dịch vụ</h2>
+            
+            <a-form :model="registerForm" layout="vertical" @finish="handleRegisterSubmit">
+          <!-- Họ và tên -->
+          <a-form-item label="Họ và tên" name="fullname" :rules="[{ required: true, message: 'Vui lòng nhập họ và tên' }]">
+            <a-input 
+              v-model:value="registerForm.fullname" 
+              placeholder="Nguyễn Văn A" 
+              size="large" 
+            />
+          </a-form-item>
+
+          <!-- Số điện thoại và Email -->
+          <div :class="isMobile ? 'space-y-4' : 'grid grid-cols-2 gap-4'">
+            <a-form-item label="Số điện thoại" name="phone" :rules="[{ required: true, message: 'Vui lòng nhập số điện thoại' }]">
+              <a-input 
+                v-model:value="registerForm.phone" 
+                placeholder="0923333389" 
+                size="large" 
+              />
+            </a-form-item>
+            
+            <a-form-item label="Email" name="email">
+              <a-input 
+                v-model:value="registerForm.email" 
+                placeholder="nguyenvana@gmail.com" 
+                size="large" 
+                type="email"
+              />
+            </a-form-item>
+          </div>
+
+          <!-- Địa chỉ -->
+          <a-form-item label="Địa chỉ" name="address">
+            <a-textarea 
+              v-model:value="registerForm.address" 
+              placeholder="Số 59 ngõ 249 Yên Duyên, Phường Yên Sở, Quận Hoàng Mai, Hà Nội" 
+              :rows="3" 
+              size="large" 
+            />
+          </a-form-item>
+
+          <!-- Submit Button -->
+          <a-form-item>
+            <a-button 
+              type="primary" 
+              html-type="submit" 
+              size="large" 
+              block
+              :loading="isSubmitting"
+              class="register-submit-btn"
+            >
+              Đăng ký ngay
+            </a-button>
+          </a-form-item>
+            </a-form>
+          </div>
+          
+          <!-- Right Side: Image (Desktop only) -->
+          <div v-if="!isMobile" class="modal-image-section">
+          </div>
+          <img src="/images/service/service-register.png" alt="Register" class="modal-image" />
+        </div>
+
+        <!-- Success Screen -->
+        <div v-else class="success-screen">
+          <div class="success-content">
+            <!-- Mascot Image -->
+            <div class="success-mascot">
+              <img src="/images/service/service-register.png" alt="Register" class="modal-image-success" />
+              <img src="/images/service/service-register-success.png" alt="Success" class="mascot-image" />
+            </div>
+
+            <!-- Success Title -->
+            <h2 class="success-title">Đăng ký thành công</h2>
+
+            <!-- Success Message -->
+            <p class="success-message">
+              Cảm ơn bạn đã tin tưởng và đăng ký dịch vụ của Vạn Phúc Care. Bộ phận dịch vụ khách hàng sẽ liên hệ lại trong thời gian sớm nhất.
+            </p>
+
+            <!-- Action Button -->
+            <a-button 
+              type="primary" 
+              size="large" 
+              block
+              @click="goToHome"
+              class="success-btn"
+            >
+              Về trang chủ
+            </a-button>
+          </div>
+        </div>
+      </div>
+    </a-modal>
   </div>
 </template>
 
 <script setup lang="ts">
+import { ref, computed, onMounted, watch } from 'vue'
+import { message } from 'ant-design-vue'
+import { useServicesApi } from '~/composables/api/useServicesApi'
+import { useRouter } from 'vue-router'
+import { useAuth } from '~/composables/useAuth'
+
 definePageMeta({ layout: 'default' })
-useHead({ title: 'Services' })
+useHead({ title: 'Dịch vụ' })
+
+const { getServices, getMyServices, registerService } = useServicesApi()
+const router = useRouter()
+const { user } = useAuth()
+
+const services = ref<any[]>([])
+const activeTab = ref<'all' | 'used'>('all')
+const isLoading = ref(false)
+const isRegisterModalOpen = ref(false)
+const isSubmitting = ref(false)
+const selectedService = ref<any>(null)
+const isMobile = ref(false)
+const isRegistrationSuccess = ref(false)
+
+const registerForm = ref({
+  fullname: '',
+  phone: '',
+  email: '',
+  address: '',
+})
+
+const fetchServices = async () => {
+  try {
+    isLoading.value = true
+    
+    if (activeTab.value === 'used') {
+      // Get user's registered services
+      const res = await getMyServices({})
+      services.value = res.data?.data?.data || res.data?.data || []
+    } else {
+      // Get all services
+      const res = await getServices({})
+      services.value = res.data?.data?.data || res.data?.data || []
+    }
+    
+  } catch (e) {
+    console.error('Error fetching services:', e)
+    services.value = []
+  } finally {
+    isLoading.value = false
+  }
+}
+
+// Watch activeTab changes to fetch data
+watch(activeTab, () => {
+  fetchServices()
+})
+
+onMounted(() => {
+  fetchServices()
+  isMobile.value = window.innerWidth < 768
+  window.addEventListener('resize', () => {
+    isMobile.value = window.innerWidth < 768
+  })
+})
+
+const filteredServices = computed<any[]>(() => {
+  return services.value
+})
+
+function goDetail(service: any) {
+  router.push(`/services/${service.slug || service._id}`)
+}
+
+function openRegisterModal(service: any) {
+  selectedService.value = service
+  
+  // Pre-fill form with user info if available
+  if (user.value) {
+    registerForm.value.fullname = user.value.fullname || user.value.name || ''
+    registerForm.value.phone = user.value.phone || user.value.phoneNumber || ''
+    registerForm.value.email = user.value.email || ''
+    registerForm.value.address = user.value.fullAddress || user.value.address || ''
+  }
+  
+  isRegisterModalOpen.value = true
+}
+
+function closeRegisterModal() {
+  isRegisterModalOpen.value = false
+  isRegistrationSuccess.value = false
+  selectedService.value = null
+  // Reset form
+  registerForm.value = {
+    fullname: '',
+    phone: '',
+    email: '',
+    address: '',
+  }
+}
+
+function goToHome() {
+  closeRegisterModal()
+  // router.push('/')
+}
+
+async function handleRegisterSubmit() {
+  if (!selectedService.value) return
+  
+  try {
+    isSubmitting.value = true
+    
+    const response = await registerService({
+      serviceId: selectedService.value._id,
+      notes: `Họ tên: ${registerForm.value.fullname}\nSĐT: ${registerForm.value.phone}\nEmail: ${registerForm.value.email}\nĐịa chỉ: ${registerForm.value.address}`,
+    })
+    
+    if (response.status) {
+      // Show success screen instead of closing modal
+      isRegistrationSuccess.value = true
+      // Refresh services list
+      await fetchServices()
+    } else {
+      message.error(response.message || 'Đăng ký thất bại!')
+    }
+  } catch (e: any) {
+    console.error('Failed to register service:', e)
+    message.error(e?.message || 'Đăng ký thất bại, vui lòng thử lại!')
+  } finally {
+    isSubmitting.value = false
+  }
+}
 </script>
+
+<style scoped>
+.services-container {
+  @apply px-4 py-6 max-w-7xl mx-auto;
+  @apply md:px-6 md:py-8;
+}
+
+/* Header */
+.header-wrapper {
+  @apply flex flex-col items-center mb-6;
+  @apply md:flex-row md:justify-between md:items-center md:mb-8;
+}
+
+.page-title {
+  @apply text-2xl font-bold text-[#317BC4] mb-4;
+  @apply md:text-3xl md:mb-0;
+  font-family: 'SVN-Gilroy', sans-serif;
+}
+
+/* Tabs */
+.tabs-wrapper {
+  @apply flex rounded-full bg-[#EBEBEB];
+}
+
+.tab-button {
+  @apply px-6 py-2 rounded-full font-semibold text-sm transition-all;
+  @apply bg-transparent text-[#999999];
+  font-family: 'SVN-Gilroy', sans-serif;
+}
+
+.tab-button.tab-active {
+  @apply bg-[#317BC4] text-white;
+}
+
+.tab-button:hover {
+  @apply opacity-90;
+}
+
+/* Grid */
+.services-grid {
+  @apply grid grid-cols-1 gap-4 mb-8;
+  @apply sm:grid-cols-2 sm:gap-5;
+  @apply lg:grid-cols-3 lg:gap-6;
+  @apply xl:grid-cols-4;
+}
+
+/* Card */
+.service-card {
+  @apply bg-white rounded-2xl overflow-hidden cursor-pointer p-4;
+  @apply border border-[#D5D5D5] shadow-sm;
+  @apply transition-all duration-300;
+  @apply hover:shadow-md;
+}
+
+.card-image-wrapper {
+  @apply w-full aspect-video overflow-hidden bg-gray-50 relative;
+}
+
+.card-image {
+  @apply w-full h-full object-cover rounded-lg;
+}
+
+.card-image-placeholder {
+  @apply w-full h-full flex items-center justify-center;
+  @apply bg-gradient-to-br from-blue-50 to-blue-100;
+}
+
+.card-content {
+  @apply mt-4;
+}
+
+.card-title {
+  @apply text-base font-bold text-[#317BC4] mb-2;
+  @apply line-clamp-1;
+  font-family: 'SVN-Gilroy', sans-serif;
+}
+
+.card-description {
+  @apply text-sm text-[#9CA3AF] mb-3;
+  @apply line-clamp-2 min-h-[40px];
+  font-family: 'SVN-Gilroy', sans-serif;
+}
+
+.card-footer {
+  @apply flex justify-end;
+}
+
+.detail-button {
+  @apply text-sm font-semibold text-[#317BC4];
+  @apply underline transition-all;
+  font-family: 'SVN-Gilroy', sans-serif;
+}
+
+.register-button {
+  @apply px-4 py-2 text-sm font-semibold rounded-lg;
+  @apply text-[#317BC4] bg-white underline;
+  @apply hover:bg-[#317BC4] hover:text-white transition-all;
+  font-family: 'SVN-Gilroy', sans-serif;
+}
+
+/* Register Modal */
+.register-modal {
+  @apply overflow-hidden;
+}
+
+.modal-content-wrapper {
+  @apply flex;
+}
+
+.modal-form-section {
+  @apply flex-1 p-8 bg-white;
+}
+
+.modal-image-section {
+  @apply w-72 flex items-center justify-center;
+  background: linear-gradient(180deg, #E8F3FF 0%, #FFFFFF 100%);
+}
+
+.modal-image {
+  @apply w-[500px] h-auto object-contain hidden md:block absolute -bottom-20 -right-36 -rotate-12;
+}
+
+.modal-title {
+  @apply text-2xl font-bold text-[#317BC4] mb-6;
+  font-family: 'SVN-Gilroy', sans-serif;
+}
+
+.register-submit-btn {
+  @apply bg-[#317BC4] hover:bg-[#2563a8] border-none;
+  @apply h-12 text-base font-semibold;
+  font-family: 'SVN-Gilroy', sans-serif;
+}
+
+/* Success Screen */
+.success-screen {
+  @apply flex items-center justify-center p-8;
+  @apply md:p-16;
+  min-height: 500px;
+}
+
+.success-content {
+  @apply text-center max-w-md mx-auto;
+}
+
+.modal-image-success {
+  @apply h-60 w-auto object-contain;
+}
+
+.success-mascot {
+  @apply flex justify-center mb-2 relative;
+}
+
+.mascot-image {
+  @apply w-16 h-16 object-contain absolute left-1/2 top-[55%];
+}
+
+.success-title {
+  @apply text-2xl font-bold text-[#317BC4] mb-2;
+  @apply md:text-3xl md:mb-3;
+  font-family: 'SVN-Gilroy', sans-serif;
+}
+
+.success-message {
+  @apply text-sm text-gray-600 leading-relaxed mb-2;
+  @apply md:text-base md:mb-4;
+  font-family: 'SVN-Gilroy', sans-serif;
+}
+
+.success-btn {
+  @apply bg-[#317BC4] hover:bg-[#2563a8] border-none;
+  @apply h-12 text-base font-semibold rounded-lg;
+  @apply md:h-14 md:text-lg;
+  font-family: 'SVN-Gilroy', sans-serif;
+}
+
+/* Mobile specific */
+@media (max-width: 767px) {
+  .services-container {
+    @apply px-4;
+  }
+
+  .header-wrapper {
+    @apply mb-4;
+  }
+
+  .page-title {
+    @apply text-center text-xl mb-3;
+  }
+
+  .services-grid {
+    @apply gap-3;
+  }
+
+  .card-content {
+    @apply p-3;
+  }
+
+  .card-title {
+    @apply text-sm mb-1.5;
+  }
+
+  .card-description {
+    @apply text-xs min-h-[36px] mb-2;
+  }
+
+  .detail-button {
+    @apply text-xs;
+  }
+
+  .register-button {
+    @apply px-3 py-1.5 text-xs;
+  }
+
+  .modal-title {
+    @apply text-xl mb-4;
+  }
+
+  .modal-content-wrapper {
+    @apply flex-col;
+  }
+
+  .modal-form-section {
+    @apply p-4;
+  }
+
+  .success-screen {
+    @apply p-6;
+    min-height: 400px;
+  }
+
+  .success-title {
+    @apply text-xl mb-3;
+  }
+
+  .success-message {
+    @apply text-sm mb-6;
+  }
+
+  .success-btn {
+    @apply h-12 text-base;
+  }
+}
+
+/* Line clamp utilities */
+.line-clamp-1 {
+  display: -webkit-box;
+  -webkit-line-clamp: 1;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.line-clamp-2 {
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+</style>
+<style>
+.ant-modal-content:has(.register-modal) {
+@apply bg-[#ECF5FF] p-0 rounded-md;
+}
+</style>

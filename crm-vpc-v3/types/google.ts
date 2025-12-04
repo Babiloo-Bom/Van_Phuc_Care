@@ -59,12 +59,12 @@ export interface GoogleLoginResponse {
 export const GOOGLE_SCOPES = [
   'openid',
   'email',
-  'profile'
-] as const
+  'profile',
+] as const;
 
 // ===== GOOGLE OAUTH ENDPOINTS =====
 export const GOOGLE_ENDPOINTS = {
   AUTH: 'https://accounts.google.com/o/oauth2/v2/auth',
   TOKEN: 'https://oauth2.googleapis.com/token',
-  USER_INFO: 'https://www.googleapis.com/oauth2/v2/userinfo'
-} as const
+  USER_INFO: 'https://www.googleapis.com/oauth2/v2/userinfo',
+} as const;
