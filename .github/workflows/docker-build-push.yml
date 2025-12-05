@@ -265,5 +265,6 @@ jobs:
             git reset --hard origin/main
             # Remove orphaned nginx container if exists
             docker rm -f vpc-nginx 2>/dev/null || true
-            # Run deploy script
+            # Run deploy script (add execute permission if needed)
+            chmod +x ./deploy.sh
             ./deploy.sh production
