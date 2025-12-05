@@ -9,7 +9,7 @@ export default defineEventHandler(async (event) => {
   setResponseStatus(event, 200);
   console.log('[GET /api/_health] Health check OK!');
   return {
-    status: 'ok !',
+    status: 'ok',
     timestamp: new Date().toISOString(),
     server: 'nuxt-nitro',
     environment: process.env.NODE_ENV || 'unknown',

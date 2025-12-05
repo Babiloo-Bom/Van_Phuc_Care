@@ -39,6 +39,10 @@ docker compose -f $COMPOSE_FILE pull
 echo "🛑 Stopping old containers..."
 docker compose -f $COMPOSE_FILE down
 
+# Remove orphaned nginx container if exists (from previous deployments)
+echo "🧹 Removing orphaned containers..."
+docker rm -f vpc-nginx 2>/dev/null || true
+
 # Start new containers
 echo "▶️  Starting new containers..."
 docker compose -f $COMPOSE_FILE up -d --build
