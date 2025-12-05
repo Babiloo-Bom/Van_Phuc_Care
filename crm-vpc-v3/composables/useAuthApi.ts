@@ -195,8 +195,9 @@ export const useAuthApi = () => {
      */
     async login(username: string, password: string, remindAccount = false) {
       try {
+        // Use Nuxt server proxy endpoint
         return await withRetry(() =>
-          fetchWithTimeout(`${apiBase}/sessions/login`, {
+          fetchWithTimeout('/api/auth/login', {
             method: 'POST',
             body: {
               username,

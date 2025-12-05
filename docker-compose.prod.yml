@@ -22,6 +22,31 @@ services:
       timeout: 5s
       retries: 5
 
+  # ============================================
+  # MinIO Object Storage
+  # ============================================
+  minio:
+    image: minio/minio:latest
+    container_name: vpc-minio
+    restart: unless-stopped
+    ports:
+      - "9000:9000"  # S3 API
+      - "9001:9001"  # Console UI
+    environment:
+      - MINIO_ROOT_USER=${MINIO_ACCESS_KEY:-minioadmin}
+      - MINIO_ROOT_PASSWORD=${MINIO_SECRET_KEY:-minioadmin}
+    command: server /data --console-address ":9001"
+    volumes:
+      - minio_data:/data
+    networks:
+      - vpc-network
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:9000/minio/health/live"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 30s
+
   api:
     image: ghcr.io/babiloo-bom/vanphuccare-api:latest
     container_name: vpc-api
@@ -40,10 +65,22 @@ services:
       - MAIL_USER=${MAIL_USER}
       - MAIL_PASSWORD=${MAIL_PASSWORD}
       - MAIL_FROM=${MAIL_FROM}
+      # MinIO Configuration
+      - MINIO_ENDPOINT=minio
+      - MINIO_PORT=9000
+      - MINIO_USE_SSL=false
+      - MINIO_ACCESS_KEY=${MINIO_ACCESS_KEY:-minioadmin}
+      - MINIO_SECRET_KEY=${MINIO_SECRET_KEY:-minioadmin}
+      - MINIO_BUCKET_NAME=${MINIO_BUCKET_NAME:-van-phuc-care}
+      # IMPORTANT: This URL must be publicly accessible from browser
+      # Change to your actual domain or IP, e.g., http://minio.vanphuccare.com:9000
+      - MINIO_PUBLIC_URL=${MINIO_PUBLIC_URL:-http://103.216.119.104:9000}
     networks:
       - vpc-network
     depends_on:
       mongodb:
+        condition: service_healthy
+      minio:
         condition: service_healthy
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:3000/api/health"]
@@ -148,5 +185,7 @@ volumes:
   mongodb_data:
     driver: local
   mongodb_config:
+    driver: local
+  minio_data:
     driver: local
 

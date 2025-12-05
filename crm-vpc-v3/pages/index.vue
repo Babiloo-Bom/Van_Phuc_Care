@@ -688,8 +688,17 @@ const fetchHealthRecordByDate = async (date?: string) => {
     // Format date to YYYY-MM-DD for API
     const selectedDateObj = date ? dayjs(date, "DD/MM/YYYY") : dayjs();
     const formattedDate = selectedDateObj.format("YYYY-MM-DD");
-    // Get health record by date using 'me' endpoint
-    const response = await getHealthRecordByDate("me", formattedDate);
+    
+    // Get health record by date using healthbook ID
+    const healthBookId = healthBook.value?._id;
+    if (!healthBookId) {
+      console.error("No healthbook ID available");
+      loading.value = false;
+      hasHealthBookRecord.value = false;
+      return;
+    }
+    
+    const response = await getHealthRecordByDate(healthBookId, formattedDate);
     const record = response?.data?.data?.data;
     temperatureHistory.value = response?.data?.data?.temperatureHistory;
 

@@ -19,10 +19,10 @@ export const useHealthBooksApi = () => {
   return {
     /**
      * Get user's health books list
-     * GET /api/u/healthbooks
+     * GET /api/healthbooks -> backend /api/u/healthbooks
      */
     async getHealthBooks(params?: HealthBookQueryParams) {
-      return apiClient.get<HealthBooksListResponse>("/api/u/healthbooks", {
+      return apiClient.get<HealthBooksListResponse>("/api/healthbooks", {
         params,
         showError: false,
       });
@@ -30,10 +30,10 @@ export const useHealthBooksApi = () => {
 
     /**
      * Get health book by ID
-     * GET /api/u/healthbooks/:id
+     * GET /api/healthbooks/:id -> backend /api/u/healthbooks/:id
      */
     async getHealthBook(id: string) {
-      return apiClient.get<HealthBookResponse>(`/api/u/healthbooks/${id}`, {
+      return apiClient.get<HealthBookResponse>(`/api/healthbooks/${id}`, {
         showError: false,
       });
     },
@@ -50,27 +50,27 @@ export const useHealthBooksApi = () => {
 
     /**
      * Get current user's health book
-     * GET /api/u/healthbooks/me
+     * GET /api/healthbooks/me -> backend /api/u/healthbooks/me
      */
     async getCurrentHealthBook() {
-      return apiClient.get<HealthBookResponse>("/api/u/healthbooks/me", {
+      return apiClient.get<HealthBookResponse>("/api/healthbooks/me", {
         showError: false,
       });
     },
 
     /**
      * Create new health book for current user
-     * POST /api/u/healthbooks
+     * POST /api/healthbooks -> backend /api/u/healthbooks
      */
     async createHealthBook(data: { name: string; dob: string; gender: string; avatar?: string }) {
-      return apiClient.post<HealthBookResponse>("/api/u/healthbooks", data, {
+      return apiClient.post<HealthBookResponse>("/api/healthbooks", data, {
         errorMessage: "Không thể tạo hồ sơ sức khỏe",
       });
     },
 
     /**
      * Update user's health book (with optional avatar file)
-     * PATCH /api/u/healthbooks/:id
+     * PATCH /api/healthbooks/:id -> backend /api/u/healthbooks/:id
      */
     async updateUserHealthBook(
       id: string,
@@ -88,24 +88,20 @@ export const useHealthBooksApi = () => {
       if (data.gender) formData.append("gender", data.gender);
       if (data.avatar) formData.append("avatar", data.avatar);
 
-      const config = useRuntimeConfig();
-      // Use runtime config, fallback to empty string for relative path in production
-      const baseUrl = config.public.apiBaseUrl || "";
-
-      // Get token from localStorage (key is 'auth_token')
+      // Get token from localStorage
       const token = localStorage.getItem("auth_token");
 
-      const response = await fetch(`${baseUrl}/api/u/healthbooks/${id}`, {
+      // Call through Nuxt server proxy
+      const response = await fetch(`/api/healthbooks/${id}`, {
         method: "PATCH",
         headers: {
           ...(token ? { Authorization: `Bearer ${token}` } : {}),
         },
         body: formData,
-        // Không cần credentials vì đang dùng Bearer token trong header
       });
 
       if (!response.ok) {
-        const error = await response.json();
+        const error = await response.json().catch(() => ({ message: "Không thể cập nhật hồ sơ sức khỏe" }));
         throw new Error(error.message || "Không thể cập nhật hồ sơ sức khỏe");
       }
 

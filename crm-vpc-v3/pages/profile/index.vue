@@ -209,6 +209,7 @@ async function fetchUserInfo() {
     const res = await apiClient.get("/api/u/users/profile", {
       showError: false, // Disable automatic error toast
     });
+    console.log("✅ Fetched user info:", res);
     // Try different response structures
     // Backend might return: {status: true, data: {user: {...}}}
     // Or: {data: {user: {...}}}
