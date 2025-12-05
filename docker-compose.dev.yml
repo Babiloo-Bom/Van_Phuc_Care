@@ -134,7 +134,7 @@ services:
     container_name: vpc-crm-dev
     restart: unless-stopped
     ports:
-      - "3101:3001"
+      - "3101:3000"
     environment:
       - NODE_ENV=development
       # Empty apiHost so browser uses relative paths, proxied by Nuxt server
