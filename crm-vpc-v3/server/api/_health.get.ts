@@ -7,7 +7,7 @@
 export default defineEventHandler(async (event) => {
   // Set explicit 200 status
   setResponseStatus(event, 200);
-  console.log('[GET /api/_health] Health check OK');
+  console.log('[GET /api/_health] Health check OK!');
   return {
     status: 'ok',
     timestamp: new Date().toISOString(),
