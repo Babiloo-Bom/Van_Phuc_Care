@@ -260,5 +260,10 @@ jobs:
           port: 24700
           script: |
             cd /opt/vanphuccare
-            git pull origin main || true
+            # Reset local changes and pull latest code
+            git fetch origin main
+            git reset --hard origin/main
+            # Remove orphaned nginx container if exists
+            docker rm -f vpc-nginx 2>/dev/null || true
+            # Run deploy script
             ./deploy.sh production
