@@ -7,10 +7,10 @@ export const useServicesApi = () => {
   return {
     /**
      * Get all services (public)
-     * GET /api/u/services
+     * Uses Nuxt server proxy: /api/services -> backend /api/u/services
      */
     async getServices(params: Partial<BaseQueryParams> = {}) {
-      return apiClient.get('/api/u/services', {
+      return apiClient.get('/api/services', {
         params,
         showError: false,
       });
@@ -18,20 +18,20 @@ export const useServicesApi = () => {
 
     /**
      * Get service detail by ID
-     * GET /api/u/services/:id
+     * Uses Nuxt server proxy: /api/services/:id -> backend /api/u/services/:id
      */
     async getServiceDetail(id: string) {
-      return apiClient.get(`/api/u/services/${id}`, {
+      return apiClient.get(`/api/services/${id}`, {
         showError: false,
       });
     },
 
     /**
      * Get user's registered services (requires auth)
-     * GET /api/u/services/my-services
+     * Uses Nuxt server proxy: /api/services/my-services -> backend /api/u/services/my-services
      */
     async getMyServices(params: Partial<BaseQueryParams> = {}) {
-      return apiClient.get('/api/u/services/my-services', {
+      return apiClient.get('/api/services/my-services', {
         params,
         showError: false,
       });
@@ -39,14 +39,14 @@ export const useServicesApi = () => {
 
     /**
      * Đăng ký dịch vụ (requires auth)
-     * POST /api/u/services/register
+     * Uses Nuxt server proxy: /api/services/register -> backend /api/u/services/register
      */
     async registerService(data: {
       serviceId: string;
       notes?: string;
       preferredDate?: string;
     }) {
-      return apiClient.post('/api/u/services/register', data, {
+      return apiClient.post('/api/services/register', data, {
         errorMessage: 'Không thể đăng ký dịch vụ',
       });
     },

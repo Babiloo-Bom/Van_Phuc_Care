@@ -383,12 +383,20 @@ export const useAuthApi = () => {
 
     /**
      * Logout
+     * Uses Nuxt server proxy: /api/sessions/logout -> backend /api/u/sessions/logout
      */
     async logout() {
       try {
+        const authStore = useAuthStore();
+        const token = authStore.token;
+
+        // Use Nuxt server proxy instead of direct backend call
         return await withRetry(() =>
-          fetchWithTimeout(`${apiBase}/sessions/logout`, {
+          fetchWithTimeout('/api/sessions/logout', {
             method: 'POST',
+            headers: {
+              Authorization: `Bearer ${token}`,
+            },
           }),
         );
       } catch (error: any) {
@@ -467,14 +475,16 @@ export const useAuthApi = () => {
 
     /**
      * Get user profile
+     * Uses Nuxt server proxy: /api/users/profile -> backend /api/u/users/profile
      */
     async getUserProfile() {
       try {
         const authStore = useAuthStore();
         const token = authStore.token;
 
+        // Use Nuxt server proxy instead of direct backend call
         return await withRetry(() =>
-          fetchWithTimeout(`${apiBase}/users/profile`, {
+          fetchWithTimeout('/api/users/profile', {
             method: 'GET',
             headers: {
               Authorization: `Bearer ${token}`,
