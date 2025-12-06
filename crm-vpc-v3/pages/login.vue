@@ -232,16 +232,13 @@ const handleSubmit = async () => {
 const handleGoogleLogin = async () => {
   try {
     const baseFrontend = window.location.origin.replace(/\/$/, "");
-    
-    // Frontend URL để redirect về sau khi đăng nhập
+    // Redirect về trang chủ sau khi đăng nhập Google
     const redirectUri = baseFrontend;
     const frontendUrl = baseFrontend;
-    
-    // Backend API base cho browser redirect:
-    // - Localhost (dev hoặc Docker local): dùng http://localhost:3000/api/a trực tiếp
-    // - Production (không phải localhost): dùng relative path /api/a (Nginx sẽ proxy)
+
+    // Google OAuth luôn dùng /api/u (user endpoint)
     const isLocalhost = baseFrontend.startsWith("http://localhost") || baseFrontend.includes("localhost");
-    const googleApiBase = isLocalhost ? "http://localhost:3000/api/a" : "/api/a";
+    const googleApiBase = isLocalhost ? "http://localhost:3000/api/u" : "/api/u";
     const backendBase = googleApiBase.startsWith("http") ? googleApiBase : `${baseFrontend}${googleApiBase}`;
     
     const url = `${backendBase}/auth/google?redirect_uri=${encodeURIComponent(
