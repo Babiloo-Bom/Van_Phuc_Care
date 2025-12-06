@@ -23,8 +23,8 @@ export default {
     secure: false, // Use STARTTLS for port 587
     requireTLS: true, // Require TLS
     auth: {
-      user: process.env.SMTP_USER || 'lam.kd@seventh-pitch.com',
-      pass: process.env.SMTP_PASS || 'hgfuzyrokxqgrwlk',
+      user: process.env.SMTP_USER || '',
+      pass: process.env.SMTP_PASS || '',
     },
   },
 };
