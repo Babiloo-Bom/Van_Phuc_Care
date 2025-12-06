@@ -527,19 +527,19 @@ const filteredCourses = computed(() => {
   switch (sortBy.value) {
     case "priority":
       // Đã mua → Chưa mua → Hoàn thành
-      sourceCourses = sourceCourses.sort((a, b) => {
-        const aPurchased = isPurchased(a._id);
-        const bPurchased = isPurchased(b._id);
-        const aCompleted =
-          authStore.user?.courseCompleted?.includes(a._id) || false;
-        const bCompleted =
-          authStore.user?.courseCompleted?.includes(b._id) || false;
+      sourceCourses = sourceCourses.sort((a: any, b: any) => {
+        const aPurchased = authStore.user?.courseRegister?.includes(a._id) || false;
+        const bPurchased = authStore.user?.courseRegister?.includes(b._id) || false;
 
-        if (aPurchased && !bPurchased) return -1;
-        if (!aPurchased && bPurchased) return 1;
-        if (aCompleted && !bCompleted) return 1;
-        if (!aCompleted && bCompleted) return -1;
-        return 0;
+        const aCompleted = authStore.user?.courseCompleted?.includes(a._id) || false;
+        const bCompleted = authStore.user?.courseCompleted?.includes(b._id) || false;
+        const priorityA =
+          aCompleted ? 3 : aPurchased ? 1 : 2
+
+        const priorityB =
+          bCompleted ? 3 : bPurchased ? 1 : 2;
+        
+        return priorityA - priorityB
       });
       break;
     case "price-low":
@@ -618,6 +618,10 @@ const handleBuyNow = async (course: any) => {
 const handleViewDetail = (course: any) => {
   try {
     // Navigate to course detail page
+    if (course.isPurchased) {
+      navigateTo(`/my-learning/${course.slug}`);
+      return
+    }
     navigateTo(`/courses/${course.slug}`);
   } catch (error) {
     console.error("❌ Error viewing detail:", error);

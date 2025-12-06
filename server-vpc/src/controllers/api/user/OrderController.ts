@@ -2,6 +2,13 @@ import { sendError, sendSuccess } from "@libs/response";
 import { Request, Response } from "express";
 import { NoData } from "@libs/errors";
 import mongoose from "mongoose";
+import ModelTransaction from '@mongodb/transactions';
+import moment from 'moment';
+import crypto from 'crypto';
+import qs from 'qs';
+import configs from "@configs/configs";
+import { sortObj } from "@libs/common";
+
 
 const orderSchema = new mongoose.Schema(
   {
@@ -383,6 +390,144 @@ class OrderController {
     }
   }
 
+  /** 
+   * Process payment vnpay
+   */
+  public async processPaymentVnpay(req: Request, res: Response) {
+    try {
+      const { orderId, paymentData } = req.body;
+
+      if (!orderId) {
+        return sendError(res, 400, "Order ID and payment method are required");
+      }
+
+      const order = await OrderModel.findOne({ orderId });
+
+      if (!order) {
+        return sendError(res, 404, "Order not found");
+      }
+
+      // Simulate payment processing based on method
+      const transaction: any = await ModelTransaction.model.create({
+        userId: order.userId,
+        origin: "web",
+        type: "payment",
+        title: `Thanh toán đơn hàng ${order.orderId}`,
+        total: paymentData.totalAmount,
+        fee: 0,
+        retryCount: 0,
+        status: ModelTransaction.STATUS_ENUM.PENDING,
+        paymentMethod: "vnpay",
+        orderId: order.orderId,
+        expiredAt: new Date(Date.now() + 15 * 60 * 1000)
+      });
+
+      await order.update({
+        ...order.toObject(),
+        paymentMethod: 'vnpay',
+        paymentStatus: 'pending',
+        transactionId: transaction._id.toString(),
+        status: 'processing'
+      });
+
+      const ipAddr = req.headers['x-forwarded-for'] || req.connection.remoteAddress;
+      const createDate = moment(new Date()).utcOffset(7).format('YYYYMMDDHHmmss');
+      const expiredAt = moment(new Date(transaction.get('expiredAt'))).utcOffset(7).format('YYYYMMDDHHmmss');
+      let params:any = {
+        vnp_Version: "2.1.0",
+        vnp_Command: "pay",
+        vnp_TmnCode: configs.vnpayConfig.vnp_TmnCode,
+        vnp_Amount: transaction.get('total') * 100,
+        vnp_CurrCode: "VND",
+        vnp_TxnRef: transaction._id.toString(),
+        vnp_OrderInfo: `Thanh toan transaction ${transaction._id}, order ${order.orderId}. So tien ${transaction.total}d`,
+        vnp_OrderType: "190000",
+        vnp_Locale: "vn",
+        vnp_ReturnUrl: configs.vnpayConfig.vnp_ReturnUrl,
+        vnp_IpAddr: ipAddr,
+        vnp_CreateDate: createDate,
+        vnp_ExpireDate: expiredAt
+      };
+      params = sortObj(params)
+      const signData = qs.stringify(params, { encode: false });
+      console.log(configs.vnpayConfig);
+      console.log(params);
+
+      const hmac = crypto.createHmac("sha512", configs.vnpayConfig.vnp_HashSecret);
+      const secureHash = hmac.update(Buffer.from(signData, "utf-8")).digest("hex");
+
+      params.vnp_SecureHash = secureHash;
+
+      const paymentUrl = `${configs.vnpayConfig.vnp_Url}?${qs.stringify(params, { encode: false })}`;
+      await this.clearCartUser(order);
+      sendSuccess(res, {
+        message: "Create Payment successfully",
+        paymentUrl,
+      });
+    } catch (error: any) {
+      console.error("❌ Process payment error:", error);
+      sendError(res, 500, error.message, error as Error);
+    }
+  }
+
+  public async paymentVnpayIpn(req: Request, res: Response) {
+    const params = req.query;
+
+    const secureHash = params.vnp_SecureHash;
+    delete params.vnp_SecureHash;
+    delete params.vnp_SecureHashType;
+
+    const signData = qs.stringify(sortObj(params), { encode: false });
+    const signed = crypto.createHmac("sha512", configs.vnpayConfig.vnp_HashSecret)
+      .update(signData, "utf-8")
+      .digest("hex");
+
+    // Sai chữ ký → từ chối
+    if (secureHash !== signed) {
+      return res.json({ RspCode: "97", Message: "Invalid signature" });
+    }
+
+    const transactionId = params.vnp_TxnRef;
+    const responseCode = params.vnp_ResponseCode;
+
+    const transaction = await ModelTransaction.model.findById(transactionId);
+    if (!transaction) {
+      return res.json({ RspCode: "01", Message: "Transaction not found" });
+    }
+
+    // Nếu đã xử lý trước đó → OK
+    if (transaction.get('status') === "success") {
+      return res.json({ RspCode: "00", Message: "Already confirmed" });
+    }
+
+    if (responseCode === "00") {
+      // Thành công
+      await ModelTransaction.model.findByIdAndUpdate(transactionId, {
+        status: "success",
+        paidAt: new Date(),
+        referenceId: params.vnp_TransactionNo,
+        metadata: params,
+      });
+
+      const order = await OrderModel.findOneAndUpdate({ orderId: transaction.get('orderId') }, {
+        paymentStatus: 'completed',
+        status: 'completed'
+      });
+      
+      await this.updateCourseForUser(order);
+
+      return res.json({ RspCode: "00", Message: "Success" });
+    }
+
+    // Thất bại
+    await ModelTransaction.model.findByIdAndUpdate(transactionId, {
+      status: "failed",
+      errorCode: responseCode,
+    });
+
+    return res.json({ RspCode: "00", Message: "Failed" });
+  }
+
   /**
    * Get order by order ID
    */
@@ -447,6 +592,58 @@ class OrderController {
       sendSuccess(res, { order: result });
     } catch (error: any) {
       sendError(res, 500, error.message, error as Error);
+    }
+  }
+
+  private async updateCourseForUser(order: any) {
+    if (order.userId && order.userId !== 'guest_user') {
+      try {
+        const MongoDbUsers = (await import("@mongodb/users")).default;
+        const user: any = await MongoDbUsers.model.findById(order.userId.toString());
+        
+        if (user) {
+          // Initialize courseRegister if not exists
+          if (!user.courseRegister) {
+            user.courseRegister = [];
+          }
+
+          // Get course IDs from order items
+          const courseIds = order.items.map((item: any) => {
+            const id = item.courseId?.toString() || item.course?._id?.toString();
+            return id;
+          }).filter(Boolean);
+
+          // Add new courses (avoid duplicates)
+          const newCourses = courseIds.filter((id: string) => !user.courseRegister.includes(id));
+          if (newCourses.length > 0) {
+            user.courseRegister = [...user.courseRegister, ...newCourses];
+            await user.save();
+            console.log(`✅ Added ${newCourses.length} courses to user ${order.userId} courseRegister`);
+          }
+        }
+      } catch (error: any) {
+        console.error('❌ Error updating user courseRegister:', error);
+        // Don't fail the payment processing if this fails
+      }
+    }
+  }
+  private async clearCartUser(order: any) {
+    if (order.userId && order.userId !== 'guest_user') {
+      try {
+        const cart = await Cart.findOne({ userId: order.userId.toString() });
+        
+        if (cart) {
+          cart.items = [];
+          cart.totalItems = 0;
+          cart.totalPrice = 0;
+          cart.coupon = undefined;
+          await cart.save();
+          console.log(`✅ Cart cleared for user ${order.userId}`);
+        }
+      } catch (error: any) {
+        console.error('❌ Error clearing cart:', error);
+        // Don't fail the payment processing if this fails
+      }
     }
   }
 }

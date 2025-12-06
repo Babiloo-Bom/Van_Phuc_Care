@@ -139,10 +139,14 @@
           </svg>
         </button>
       </div>
-
-      <div  v-else class="flex-grow flex flex-col justify-end w-full gap-4">
+      <div  v-else-if="!course?.isCompleted" class="flex-grow flex flex-col justify-end w-full gap-4">
         <div class="course-actions">
           <button class="btn-access" @click.stop="viewDetail">Học ngay</button>
+        </div>
+      </div>
+      <div  v-else class="flex-grow flex flex-col justify-end w-full gap-4">
+        <div class="course-actions">
+          <button class="btn-completed" @click.stop="viewDetail">Đã hoàn thành</button>
         </div>
       </div>
     </div>
@@ -187,6 +191,7 @@ interface Course {
   createdAt: string;
   updatedAt: string;
   isPurchased?: boolean;
+  isCompleted?: boolean;
 }
 
 const props = defineProps<{
@@ -194,7 +199,6 @@ const props = defineProps<{
   isPurchased?: boolean;
   progress?: number;
 }>();
-console.log('isPurchased', props.isPurchased);
 
 const emit = defineEmits<{
   addToCart: [course: Course];
@@ -437,6 +441,22 @@ const viewDetail = () => {
 
 .btn-access:hover {
   background: #1a75bbdd;
+}
+.btn-completed {
+  flex: 1;
+  padding: 10px 16px;
+  border: none;
+  border-radius: 6px;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  background: linear-gradient(88.69deg, #FFBE6A -1.04%, #EBBC46 23.61%, #FFDA7D 55.57%, #EBBC46 74.44%, #FFBE6A 97.91%);
+  color: white;
+}
+
+.btn-completed:hover {
+  opacity: 0.9;
 }
 
 .course-purchased {

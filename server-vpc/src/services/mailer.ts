@@ -39,6 +39,7 @@ class MailerService {
     const templateArgs: any = {
       expireTime: settings.otpTtl,
       otp,
+      linkOtp: `${process.env.BASE_URL_ELEARNING}/verify-otp?otp=${otp}&email=${email}`
     };
     await this.sendMail(mailerOptions, 'verifyAccount', templateArgs);
   }

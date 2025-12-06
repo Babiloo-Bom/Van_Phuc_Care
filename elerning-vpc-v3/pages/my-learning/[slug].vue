@@ -291,6 +291,7 @@
         <div v-if="course?.progress?.isCompleted === true" class="flex-1">
           <CourseCertificateComponent
             :course="course"
+            @is-repeating="handleRepeat"
           />
         </div>
 
@@ -336,6 +337,7 @@ const markingCompleted = ref(false);
 
 // Computed
 const course = computed<Course | null>(() => coursesStore.course);
+const isRepeat = computed<boolean>(() => coursesStore.isRepeatLearn);
 const slug = computed(() => route.params.slug as string);
 const currentChapter = computed<Chapter | null>(() => {
   if (!course.value?.chapters || course.value.chapters.length === 0)
@@ -481,6 +483,9 @@ const canMarkLessonCompleted = (
   return true;
 };
 
+const handleRepeat = () => {
+  fetchCourseDetail();
+}
 const findValidLesson = (): {
   chapterIndex: number;
   lessonIndex: number;
@@ -557,12 +562,54 @@ const fetchCourseDetail = async () => {
     ) {
       currentLessonIndex.value = 0;
     }
+    if (isRepeat.value) {
+      let totalLessons = 0;
+      let completedLessons = 0;
+      if (course.value?.chapters && course.value?.chapters?.length > 0) {
+        for (const chapter of course.value?.chapters) {
+          if (chapter.lessons && Array.isArray(chapter.lessons)) {
+            totalLessons += chapter.lessons.length;
+            completedLessons += chapter.lessons.filter(
+              (lesson: any , index: number) => lesson.isCompleted === true && index <= currentLessonIndex.value
+            ).length;
+          }
+        }
+      }
+      
+      const progressPercentage =
+        totalLessons > 0
+          ? Math.round((completedLessons / totalLessons) * 100)
+          : 0;
+
+      coursesStore.setCurrentCourse({
+        ...(coursesStore?.currentCourse || {}),
+        progress: {
+          ...coursesStore?.currentCourse?.progress,
+          progressPercentage: progressPercentage,
+          isCompleted: progressPercentage === 100 ? true : false
+        },
+        chapters: coursesStore?.currentCourse?.chapters?.map((chapter: Chapter) => {
+          return {
+            ...chapter,
+            lessons: chapter?.lessons?.map((lesson, idxLesson) => {
+              return {
+                ...lesson,
+                isCompleted: idxLesson <= currentLessonIndex.value ? true : false
+              }
+            })
+          }
+        })
+      } as Course)
+    }
+
+    
   } catch (error) {
     navigateTo("/my-learning");
   } finally {
     loading.value = false;
   }
 };
+console.log(coursesStore.isRepeatLearn)
 
 const handleFinishQuiz = async (quizResult: any) => {
     const chapterParam = route.query.chapter;
@@ -642,6 +689,9 @@ watch(
 onMounted(async () => {
   await fetchCourseDetail();
 });
+onUnmounted(() => {
+  coursesStore.setIsRepeatLearn(false);
+})
 </script>
 
 <style scoped>

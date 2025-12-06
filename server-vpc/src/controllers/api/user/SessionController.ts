@@ -68,13 +68,13 @@ class SessionController {
         const user = await MongoDbUsers.model.create({
           ...params,
           password: passwordEncode,
-          status: MongoDbUsers.STATUS_ENUM.ACTIVE, // Tự động active sau khi đăng ký
+          status: MongoDbUsers.STATUS_ENUM.INACTIVE,
         });
         // Không cần gửi OTP và verify nữa vì đã auto active
-        // const otp = (Math.random() * (999999 - 100000) + 100000).toString().slice(0, 6);
-        // await user.update({ verifyOtp: otp });
-        // MailerService.verifyAccountOTP(user.get('email'), otp);
-        // user.set('verifyOtp', null);
+        const otp = (Math.random() * (999999 - 100000) + 100000).toString().slice(0, 6);
+        await user.update({ verifyOtp: otp });
+        MailerService.verifyAccountOTP(user.get('email'), otp);
+        user.set('verifyOtp', null);
         sendSuccess(res, { user });
       }
     } catch (error: any) {
@@ -93,7 +93,17 @@ class SessionController {
         return sendError(res, 400, InvalidOtp);
       }
       await user.update({ status: MongoDbUsers.STATUS_ENUM.ACTIVE, verifyOtp: null });
-      sendSuccess(res, { });
+      const accessToken = jwt.sign({ id: user.get('_id') }, settings.jwt.userSecret, { expiresIn: settings.jwt.ttl });
+      const timestampNow = Date.now()
+      const tokenExpireAt = new Date(timestampNow + settings.jwt.ttl)
+      sendSuccess(res, { 
+        accessToken, 
+        tokenExpireAt: tokenExpireAt, 
+        id: user.get('_id') as string,
+        username: user.get('email'),
+        fullname: user.get('fullname'),
+        email: user.get('email'),
+       });
     } catch (error: any) {
       sendError(res, 500, error.message, error as Error);
     }
