@@ -177,11 +177,11 @@ definePageMeta({
 
 // SEO
 useHead({
-  title: "Đăng ký - Van Phuc Care E-Learning",
+  title: "Đăng ký - Van Phuc Care CRM",
   meta: [
     {
       name: "description",
-      content: "Đăng ký tài khoản mới tại Van Phuc Care E-Learning",
+      content: "Đăng ký tài khoản mới tại Van Phuc Care CRM",
     },
   ],
 });
@@ -273,7 +273,7 @@ const handleSuccessClose = () => {
 /* Base styles - will be overridden by media queries */
 .register-form-section {
   position: relative;
-  width: 50%;
+  width: 100%;
   height: 100vh;
   background: #ffffff;
   display: flex;
@@ -282,6 +282,7 @@ const handleSuccessClose = () => {
   justify-content: center;
   padding: 0;
   flex: 0 0 50%;
+  overflow-y: auto;
 }
 
 .content-wrapper {
@@ -535,7 +536,7 @@ const handleSuccessClose = () => {
 /* Left Side - Registration Form */
 .register-form-section {
   position: relative;
-  width: 50%;
+  width: 100%;
   height: 100vh;
   background: #ffffff;
   display: flex;
@@ -544,6 +545,7 @@ const handleSuccessClose = () => {
   justify-content: center;
   padding: 0;
   flex: 0 0 50%;
+  overflow-y: auto;
 }
 
 .content-wrapper {
@@ -1311,5 +1313,29 @@ const handleSuccessClose = () => {
     width: 100%;
     justify-content: center;
   }
+}
+
+/* Custom Scrollbar - Transparent */
+.register-form-section {
+  scrollbar-width: thin;
+  scrollbar-color: transparent transparent;
+}
+
+.register-form-section::-webkit-scrollbar {
+  width: 6px;
+  background: transparent;
+}
+
+.register-form-section::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.register-form-section::-webkit-scrollbar-thumb {
+  background: transparent;
+  border-radius: 3px;
+}
+
+.register-form-section::-webkit-scrollbar-thumb:hover {
+  background: rgba(0, 0, 0, 0.1);
 }
 </style>

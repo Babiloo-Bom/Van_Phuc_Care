@@ -31,15 +31,31 @@ class MailerService {
     await this.sendMail(mailerOptions, 'forgotPasswordLink', templateArgs);
   }
 
-  public static async verifyAccountOTP (email: string, otp: string) {
+  public static async verifyAccountOTP (email: string, otp: string, source?: string) {
     const mailerOptions: Mail.Options = {
       to: email,
       subject: '[Hệ thống] Xác thực email',
     };
+    
+    // Determine base URL based on source - must be set in environment variables
+    let baseUrl: string;
+    if (source === 'crm') {
+      baseUrl = process.env.BASE_URL_CRM || 'http://crm.vanphuccare.com';
+    } else if (source === 'admin') {
+      baseUrl = process.env.BASE_URL_ADMIN || 'http://admin.vanphuccare.com';
+    } else {
+      // default to elearning
+      baseUrl = process.env.BASE_URL_ELEARNING || 'http://elearning.vanphuccare.com';
+    }
+    
+    if (!baseUrl) {
+      console.warn(`⚠️ BASE_URL for source "${source}" is not set in environment variables`);
+    }
+    
     const templateArgs: any = {
       expireTime: settings.otpTtl,
       otp,
-      linkOtp: `${process.env.BASE_URL_ELEARNING}/verify-otp?otp=${otp}&email=${email}`
+      linkOtp: `${baseUrl}/verify-otp?otp=${otp}&email=${encodeURIComponent(email)}`
     };
     await this.sendMail(mailerOptions, 'verifyAccount', templateArgs);
   }

@@ -38,8 +38,10 @@ services:
       - CLOUDFLARE_R2_ACCOUNT_ID=ccf4b0496c6ff822f2b165e18a830d99
       - CLOUDFLARE_R2_ACCESS_KEY_ID=42f261e5d63b284d51b8f5b3ffa9d894
       - CLOUDFLARE_R2_SECRET_ACCESS_KEY=8fba295a9781fe61e7c0568004c2ec1487184396bb19fd9e30f6d0dd641d8682
-      # Base url elearning for email
+      # Base URLs for email verification links
       - BASE_URL_ELEARNING=http://localhost:3102
+      - BASE_URL_CRM=http://localhost:3101
+      - BASE_URL_ADMIN=http://localhost:3100
     volumes:
       - ./server-vpc/src:/app/src:cached
       - ./server-vpc/dist:/app/dist:cached
