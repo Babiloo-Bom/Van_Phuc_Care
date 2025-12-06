@@ -106,16 +106,26 @@ export default class GoogleAuthController {
       })
 
       if (user) {
-        // Update existing user
-        user.set({
-          fullname: googleProfileData.name,
-          avatar: googleProfileData.picture,
+        // Update existing user - only update fields that are not already set by user
+        // Don't overwrite user's custom fullname/avatar if they have edited it
+        const updateData: any = {
           provider: 'google',
           googleId: googleProfileData.id,
           status: MongoDbUsers.STATUS_ENUM.ACTIVE,
           updatedAt: new Date()
-        })
+        }
         
+        // Only set fullname from Google if user doesn't have one
+        if (!user.get('fullname')) {
+          updateData.fullname = googleProfileData.name
+        }
+        
+        // Only set avatar from Google if user doesn't have one
+        if (!user.get('avatar')) {
+          updateData.avatar = googleProfileData.picture
+        }
+        
+        user.set(updateData)
         await user.save()
       } else {
         // Create new user

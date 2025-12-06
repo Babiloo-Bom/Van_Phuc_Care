@@ -96,8 +96,8 @@ export const useAuthStore = defineStore('auth', {
             role: userData?.role || userData?.type,
             verified: userData?.verified,
             status: userData?.status,
-            fullAddress: userData?.fullAddress || userData?.address || '',
-            address: userData?.address || userData?.fullAddress || '',
+            fullAddress: userData?.fullAddress || '',
+            address: userData?.address || '',
             courseRegister: userData?.courseRegister || [],
             courseCompleted: userData?.courseCompleted || [],
           };
@@ -197,10 +197,26 @@ export const useAuthStore = defineStore('auth', {
       try {
         const authApi = useAuthApi();
         const response = (await authApi.getUserProfile()) as any;
+        const userData = response?.data?.user || response?.data?.data || response?.data;
 
-        if (response.data?.user) {
-          // Update user data with fresh data from backend
-          this.user = response.data.user;
+        if (userData) {
+          // Update user data with fresh data from backend (same mapping as login)
+          this.user = {
+            id: userData?._id || userData?.id || this.user.id,
+            email: userData?.email || this.user.email,
+            username: userData?.username || this.user.username,
+            fullname: userData?.fullname || userData?.name || this.user.fullname,
+            name: userData?.name || userData?.fullname,
+            phone: userData?.phoneNumber || userData?.phone,
+            avatar: userData?.avatar,
+            role: userData?.role || userData?.type,
+            verified: userData?.verified,
+            status: userData?.status,
+            fullAddress: userData?.fullAddress || '',
+            address: userData?.address || '',
+            courseRegister: userData?.courseRegister || [],
+            courseCompleted: userData?.courseCompleted || [],
+          };
           this.saveAuth();
         }
       } catch (error) {
