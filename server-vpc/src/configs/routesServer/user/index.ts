@@ -26,7 +26,7 @@ router.use("/cart", CartRouter);
 router.use("/categories", CategoryRouter);
 router.use("/faqs", FaqRouter);
 router.use("/feedbacks", FeedbackRouter);
-router.use("/order", OrdersRouter);
+router.use("/orders", OrdersRouter);
 router.use("/products", ProductsRouter);
 router.use("/sessions", SessionRouter);
 router.use("/users", UserRouter);

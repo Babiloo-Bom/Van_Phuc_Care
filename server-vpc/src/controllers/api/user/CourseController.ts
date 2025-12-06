@@ -1,7 +1,7 @@
 import { sendError, sendSuccess } from '@libs/response';
 import { Request, Response } from 'express';
 import { NoData } from '@libs/errors';
-import MinioService from '@services/minio';
+import CloudflareService from '@services/cloudflare';
 import ChaptersModel from '@mongodb/chapters';
 import mongoose from 'mongoose';
 import QuizzesModel from '@mongodb/quizzes';
@@ -133,11 +133,13 @@ class CourseController {
       // Get user's courseRegister if authenticated
       const userId = (req as any).currentUser?._id;
       let userCourseRegister: string[] = [];
+      let userCourseCompleted: string[] = [];
       if (userId) {
         try {
           const user = await MongoDbUsers.model.findById(userId.toString());
           if (user) {
             userCourseRegister = (user as any).courseRegister || [];
+            userCourseCompleted = (user as any).courseCompleted || [];
           }
         } catch (error) {
           console.error("❌ Error getting user courseRegister:", error);
@@ -151,6 +153,9 @@ class CourseController {
           
           // Check if user has purchased this course
           const isPurchased = userCourseRegister.some(
+            (id: string) => String(id) === courseIdStr || id === courseIdStr
+          );
+          const isCompleted = userCourseCompleted.some(
             (id: string) => String(id) === courseIdStr || id === courseIdStr
           );
 
@@ -222,6 +227,7 @@ class CourseController {
             quizCount: totalQuizCount,
             examCount: totalQuizCount, // Alias for consistency
             isPurchased: isPurchased, // Add purchase status
+            isCompleted: isCompleted, // Add purchase status
             createdAt: courseData.createdAt,
             updatedAt: courseData.updatedAt,
           };
@@ -592,25 +598,18 @@ class CourseController {
       if (path.startsWith("http://") || path.startsWith("https://")) {
         return path;
       }
-      
-      if (path.startsWith("/van-phuc-care/")) {
-        try {
-          const objectName = path.replace(/^\/van-phuc-care\//, "");
-  
-          const fileUrl = await MinioService.getFileUrlWithFallback(
-            objectName,
-            false,
-            7 * 24 * 60 * 60
-          );
-          return fileUrl; 
-        } catch (error) {
-          console.error("❌ Error converting MinIO path to URL:", path, error);
-          const objectName = path.replace(/^\/van-phuc-care\//, "");
-          return MinioService.getPublicUrl(objectName);
-        }
+      const objectName = path.replace(/^\/vanphuccare-video-edu\//, "");
+      try {
+        const fileUrl = await CloudflareService.getFileUrlWithFallback(
+          objectName,
+          true,
+          7 * 24 * 60 * 60
+        );
+        return fileUrl; 
+      } catch (error) {
+        console.error("❌ Error converting MinIO path to URL:", path, error);
+        return CloudflareService.getPublicUrl(objectName);
       }
-  
-      return path;
     }
 
   /**

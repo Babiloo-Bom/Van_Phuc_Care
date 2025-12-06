@@ -51,6 +51,8 @@ export default class QuizController {
   public static async submitQuizAttempt(req: Request, res: Response) {
     try {
       const userId = (req as any).currentUser?._id || (req as any).currentAdmin?._id;
+
+      const isUserSubmit = !!(req as any).currentUser?._id 
       
       if (!userId) {
         return sendError(res, 401, 'User not authenticated');
@@ -188,6 +190,17 @@ export default class QuizController {
               },
               { upsert: true, new: true }
             );
+            if (progressPercentage === 100 && isUserSubmit) {
+              const UserModel = (await import('@mongodb/users')).default;
+              const user = (await UserModel.model.findById(userId)) as any;
+              if (!user.courseCompleted) {
+                user.courseCompleted = [];
+              }
+              
+              user.courseCompleted = [...user.courseCompleted, courseId];
+              user.updatedAt = new Date();
+              await user.save();
+            }
           }
           
           console.log(`✅ Lesson ${chapterId}-${lessonId} auto-completed after quiz passed`);

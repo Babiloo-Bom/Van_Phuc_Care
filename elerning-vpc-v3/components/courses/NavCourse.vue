@@ -50,39 +50,52 @@
             >
               <!-- Icon section -->
               <div class="lesson-icon-container">
-                <!-- Checkmark icon nếu đã hoàn thành -->
-                <svg
-                  v-if="lesson.isCompleted"
-                  xmlns="http://www.w3.org/2000/svg"
-                  width="16"
-                  height="16"
-                  viewBox="0 0 14 14"
-                  fill="none"
-                  class="lesson-icon lesson-icon-completed"
-                >
-                  <circle
-                    cx="7"
-                    cy="7"
-                    r="7"
-                    fill="#15CF74"
-                  />
-                  <path
-                    d="M4 7.005L5.892 8.9L9.79 5"
-                    stroke="white"
-                    stroke-width="1.5"
-                    stroke-linecap="square"
-                  />
-                </svg>
-                <!-- Radio button nếu chưa hoàn thành -->
-                <div 
-                  v-else 
-                  class="lesson-icon lesson-icon-pending"
-                ></div>
+                <template v-if="!hasQuiz(lesson)">
+                  <!-- Checkmark icon nếu đã hoàn thành -->
+                  <svg
+                    v-if="lesson.isCompleted"
+                    xmlns="http://www.w3.org/2000/svg"
+                    width="16"
+                    height="16"
+                    viewBox="0 0 14 14"
+                    fill="none"
+                    class="lesson-icon lesson-icon-completed"
+                  >
+                    <circle
+                      cx="7"
+                      cy="7"
+                      r="7"
+                      fill="#15CF74"
+                    />
+                    <path
+                      d="M4 7.005L5.892 8.9L9.79 5"
+                      stroke="white"
+                      stroke-width="1.5"
+                      stroke-linecap="square"
+                    />
+                  </svg>
+                  <!-- Radio button nếu chưa hoàn thành -->
+                  <div 
+                    v-else 
+                    class="lesson-icon lesson-icon-pending"
+                  ></div>
+                </template>
+                <template v-else>
+                  <div class="quiz-icon-container">
+                    <svg v-if="!lesson?.isCompleted" width="15" height="14" viewBox="0 0 15 14" fill="none" xmlns="http://www.w3.org/2000/svg">
+                      <path d="M6.1628 13.5H2.38759C1.3451 13.5 0.499993 12.7725 0.5 11.875L0.500073 2.125C0.50008 1.22753 1.34519 0.5 2.38767 0.5H10.8821C11.9246 0.5 12.7697 1.22754 12.7697 2.125V6.59377M8.9945 11.1979L10.7248 12.6875L14.5 9.43739M3.8036 3.75001H9.4664M3.8036 6.18752H9.4664M3.8036 8.62502H6.635" stroke="#798894" stroke-linecap="round" stroke-linejoin="round"/>
+                    </svg>
+                    <svg v-else width="15" height="14" viewBox="0 0 15 14" fill="none" xmlns="http://www.w3.org/2000/svg">
+                      <path d="M6.1628 13.5H2.38759C1.3451 13.5 0.499993 12.7725 0.5 11.875L0.500073 2.125C0.50008 1.22753 1.34519 0.5 2.38767 0.5H10.8821C11.9246 0.5 12.7697 1.22754 12.7697 2.125V6.59377M8.9945 11.1979L10.7248 12.6875L14.5 9.43739M3.8036 3.75001H9.4664M3.8036 6.18752H9.4664M3.8036 8.62502H6.635" stroke="#15CF74" stroke-linecap="round" stroke-linejoin="round"/>
+                    </svg>
+                  </div>
+                </template>
               </div>
               
               <!-- Content section -->
               <div class="flex-1 min-w-0">
                 <h3 
+                  v-if="!hasQuiz(lesson)"
                     :class="`lesson-title ${
                       lesson.isCompleted ? 'lesson-title-completed' : 'lesson-title-pending hover:!text-[#155a8f]'
                       
@@ -93,29 +106,8 @@
                 >
                   {{ lesson.title }}
                 </h3>
-              </div>
-            </div>
-
-            <!-- Quiz Item (thụt vào dưới lesson) -->
-            <div 
-              v-if="hasQuiz(lesson)"
-              class="flex items-start gap-3 py-3 ml-7 quiz-item"
-              :class="{ 
-                'border-b border-dotted border-gray-300': lessonIndex < chapter.lessons.length - 1
-              }"
-            >
-              <!-- Quiz Icon -->
-              <div class="quiz-icon-container">
-                <img src="../../public/images/svg/quiz.svg" alt="quiz" class="quiz-icon" width="16" height="16" />
-              </div>
-              
-              <!-- Quiz Content -->
-              <div class="flex-1 min-w-0">
-                <h3 
-                  class="quiz-title" 
-                  @click="handleQuizClick(chapterIndex, lessonIndex, lesson)"
-                >
-                  {{ getQuizTitle(lesson) }}
+                <h3 v-else :class="['lesson-title', {'lesson-title-completed': lesson.isCompleted, 'lesson-title-pending hover:!text-[#155a8f]': !lesson.isCompleted, 'lesson-title-locked': lesson.isLocked}]" @click="handleQuizClick(chapterIndex, lessonIndex, lesson)">
+                   {{ getQuizTitle(lesson) }}
                 </h3>
               </div>
             </div>

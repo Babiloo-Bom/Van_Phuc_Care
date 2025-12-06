@@ -94,8 +94,41 @@ const optionalAuth = (req: Request, res: any, next: any) => {
   }
 };
 
+const optionalUserAuth = (req: Request, res: any, next: any) => {
+  try {
+    // Check if Authorization header or accessToken query param exists
+    const authHeader = req.headers.authorization;
+    const accessToken = req.query.accessToken;
+    
+    // If no token present, skip authentication and continue
+    if (!authHeader && !accessToken) {
+      return next();
+    }
+    
+    // Try to authenticate, but don't fail if token is invalid
+    userPassport.authenticate('jwt', { session: false }, (err: any, user: any, info: any) => {
+      // If error occurred (e.g., invalid token), just continue without auth
+      if (err) {
+        return next();
+      }
+      
+      // If user found, attach to request
+      if (user) {
+        req.currentUser = user; // Also set as currentUser for consistency
+      } else {
+      }
+      // Continue regardless of auth result
+      next();
+    })(req, res, next);
+  } catch (error: any) {
+    // If any error occurs, just continue without auth
+    next();
+  }
+};
+
 export {
   adminPassport,
   userPassport,
   optionalAuth,
+  optionalUserAuth,
 };

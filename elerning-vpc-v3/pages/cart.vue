@@ -415,6 +415,11 @@ const handlePayment = async (method: string) => {
     await processBypassOrder()
     return
   }
+
+  if (method === 'vnpay') {
+    await processVnPay()
+    return
+  }
   
   // For other methods, navigate to checkout
   navigateTo(`/checkout?method=${method}`)
@@ -502,6 +507,93 @@ const processBypassOrder = async () => {
     
     // Redirect to my-learning page
     await navigateTo(`/my-learning/`)
+    
+  } catch (error: any) {
+    console.error('❌ Error processing bypass order:', error)
+    // Show error message to user
+    const errorMsg = error.data?.message || error.message || 'Có lỗi xảy ra khi xử lý đơn hàng'
+    message.error({
+      content: errorMsg,
+      duration: 5,
+      style: {
+        marginTop: '80px',
+      },
+    })
+  } finally {
+    isProcessingOrder.value = false
+  }
+}
+
+const processVnPay = async () => {
+  if (cartItems.value.length === 0) return
+  const { apiUser } = useApiBase()
+  try {
+    isProcessingOrder.value = true
+    
+    // Get user info from authStore
+    if (!authStore.user || !authStore.user.id) {
+      await navigateTo('/login')
+      return
+    }
+    
+    // Prepare order data
+    const orderData = {
+      userId: authStore.user.id,
+      customerInfo: {
+        fullName: authStore.user.fullname || authStore.user.name || '',
+        phone: authStore.user.phone || '',
+        email: authStore.user.email || ''
+      },
+      items: cartItems.value.map((item: any) => ({
+        courseId: item.courseId || item.course?._id || item._id,
+        course: item.course || item,
+        price: item.course?.price || item.price || 0
+      })),
+      subtotal: subtotalPrice.value,
+      discount: appliedCoupon.value ? {
+        type: appliedCoupon.value.type,
+        value: appliedCoupon.value.value,
+        amount: discountAmount.value,
+        couponCode: appliedCoupon.value.code
+      } : null,
+      totalAmount: totalPrice.value,
+      paymentMethod: 'vnpay',
+      notes: ''
+    }
+    
+    // Create order
+    const orderResponse: any = await $fetch(`${apiUser}/orders`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json'
+      },
+      body: orderData
+    })
+    
+    if (!orderResponse.data || !orderResponse.data.order) {
+      throw new Error('Failed to create order')
+    }
+    
+    const order = orderResponse.data.order
+    
+    // Simulate payment processing
+    await new Promise(resolve => setTimeout(resolve, 1000))
+    
+    // Process payment
+    const paymentRes = await $fetch(`${apiUser}/orders/payment/vnpay`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json'
+      },
+      body: {
+        orderId: order.orderId,
+        paymentData: {
+          ...orderData
+        }
+      }
+    })
+    
+    console.log(paymentRes)
     
   } catch (error: any) {
     console.error('❌ Error processing bypass order:', error)

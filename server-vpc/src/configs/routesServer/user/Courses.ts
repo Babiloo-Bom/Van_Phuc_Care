@@ -1,6 +1,6 @@
 import { Router } from 'express';
 import CourseController from '@controllers/api/user/CourseController';
-import { userPassport, optionalAuth } from '@middlewares/passport';
+import { userPassport, optionalAuth, optionalUserAuth } from '@middlewares/passport';
 
 const router = Router();
 
@@ -9,7 +9,7 @@ router.get('/my-courses', userPassport.authenticate('jwt', { session: false }), 
 router.get('/my-courses/:slug', userPassport.authenticate('jwt', { session: false }), CourseController.getMyCourseBySlug);
 
 // Public routes (no authentication required, but will check purchase status if user is logged in)
-router.get('/', optionalAuth, CourseController.getAllCourses);
-router.get('/:slug', optionalAuth, CourseController.getCourseBySlug);
+router.get('/', optionalUserAuth, CourseController.getAllCourses);
+router.get('/:slug', optionalUserAuth, CourseController.getCourseBySlug);
 
 export default router;

@@ -151,6 +151,8 @@ export const useCoursesStore = defineStore('courses', {
     
     // Tiến trình học của khóa học hiện tại
     processing: null as CourseProcessing | null,
+
+    isRepeatLearn: false,
     
     // Chapter hiện tại
     chapter: null as Chapter | null,
@@ -187,6 +189,8 @@ export const useCoursesStore = defineStore('courses', {
     
     // Lấy tiến trình học
     currentProcessing: state => state.processing,
+
+    isRepeating: state => state.isRepeatLearn,
     
     // Tính % hoàn thành
     completionPercentage: state => {
@@ -248,6 +252,10 @@ export const useCoursesStore = defineStore('courses', {
       this.courses = courses
     },
 
+    setIsRepeatLearn(value: boolean) {
+      this.isRepeatLearn = value;
+    },
+
     // Lấy danh sách tất cả khóa học
     async fetchAll(params?: any) {
       this.loading = true;
@@ -285,6 +293,7 @@ export const useCoursesStore = defineStore('courses', {
         const courseApi = useCourseApi()
         const response: any = await courseApi.getMyCourseBySlug(slug)
         this.course = response.data?.course || response.data || response.course || response
+        
       } catch (error) {
         throw error
       } finally {

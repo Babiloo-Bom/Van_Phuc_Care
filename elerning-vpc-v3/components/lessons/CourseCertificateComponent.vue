@@ -86,7 +86,7 @@
           <div class="w-full lg:w-[330px]">
             <a-button
               type="primary"
-              @click="navigateTo('/my-learning')"
+              @click="handleReLearn"
               class="bg-[#317BC4] border-none hover:bg-blue-600 rounded-[4px] h-[44px] font-semibold px-8 text-white w-full text-[13px]"
             >
               Học lại từ đầu
@@ -123,7 +123,9 @@ interface ICoupon {
 const props = defineProps<{
   course: Course | null
 }>()
-
+const emit = defineEmits<{
+  isRepeating: []
+}>()
 const loading = ref(false)
 const courseStore = useCoursesStore();
 const authStore = useAuthStore();
@@ -137,6 +139,11 @@ const filteredCourses = computed(() => {
   return courseStore.courses.filter(c => c.isPurchased === false && c._id !== props.course?._id)
 })
 
+const handleReLearn = () => {
+  courseStore.setIsRepeatLearn(true)
+  navigateTo(`/my-learning/${courseStore.currentCourse?.slug}`)
+  emit('isRepeating')
+}
 // Methods
 const fetchCourses = async () => {
   try {

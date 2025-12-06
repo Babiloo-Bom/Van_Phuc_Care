@@ -4,6 +4,7 @@ import LessonsModel from '@mongodb/lessons';
 import ChaptersModel from '@mongodb/chapters';
 import QuizzesModel from '@mongodb/quizzes';
 import MinioService from '@services/minio';
+import CloudflareService from '@services/cloudflare';
 
 class LessonController {
 
@@ -75,7 +76,6 @@ class LessonController {
           quizId: newQuiz._id
         });
       }
-
       const files = req.files as Express.Multer.File[];
       const uploadedDocuments: any[] = [];
       const uploadedVideos: any[] = [];
@@ -84,7 +84,7 @@ class LessonController {
         for (const file of files) {
           const folderType = file.fieldname.includes('document') ? 'documents' : 'videos';
           
-          const fileUrl = await MinioService.uploadFile(
+          const fileUrl = await CloudflareService.uploadFile(
             file.buffer,
             file.originalname,
             file.mimetype,
@@ -158,7 +158,7 @@ class LessonController {
         for (const file of files) {
           const folderType = file.fieldname.includes('document') ? 'documents' : 'videos';
           
-          const fileUrl = await MinioService.uploadFile(
+          const fileUrl = await CloudflareService.uploadFile(
             file.buffer,
             file.originalname,
             file.mimetype,
@@ -274,7 +274,7 @@ class LessonController {
       if (lessonData.documents && lessonData.documents.length > 0) {
         for (const doc of lessonData.documents) {
           try {
-            await MinioService.deleteFile(doc.fileUrl.replace(`/${process.env.MINIO_BUCKET_NAME}/`, ''));
+            await CloudflareService.deleteFile(doc.fileUrl.replace(`/${process.env.MINIO_BUCKET_NAME}/`, ''));
           } catch (err) {
             console.error('Error deleting document from MinIO:', err);
           }
@@ -284,7 +284,7 @@ class LessonController {
       if (lessonData.videos && lessonData.videos.length > 0) {
         for (const video of lessonData.videos) {
           try {
-            await MinioService.deleteFile(video.videoUrl.replace(`/${process.env.MINIO_BUCKET_NAME}/`, ''));
+            await CloudflareService.deleteFile(video.videoUrl.replace(`/${process.env.MINIO_BUCKET_NAME}/`, ''));
           } catch (err) {
             console.error('Error deleting video from MinIO:', err);
           }

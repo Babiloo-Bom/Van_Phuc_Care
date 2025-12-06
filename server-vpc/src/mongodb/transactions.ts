@@ -13,12 +13,31 @@ class TransactionModels {
   public generateSchema () {
     this.schema = new Schema(
       {
-        origin: { type: String, require: true },
-        userId: { type: String, require: true },
-        type: { type: String, require: true },
-        title: { type: String, require: true },
-        total: { type: Number, require: true },
-        status: { type: String, default: "pending", enum: Object.values(this.STATUS_ENUM) },
+        origin: { type: String, required: true },       // nguồn giao dịch (web/app/api)
+        userId: { type: String, required: true },       // ID người dùng
+        type: { type: String, required: true },         // loại giao dịch
+        title: { type: String, required: true },        // mô tả ngắn
+        total: { type: Number, required: true },        // tổng tiền
+        fee: { type: Number, default: 0 },              // phí giao dịch
+        retryCount: { type: Number, default: 0 },       // số lần retry
+
+        paymentMethod: { type: String, default: null }, // momo, vnpay, cod, wallet...
+        
+        status: {
+          type: String,
+          default: this.STATUS_ENUM.PENDING,
+          enum: Object.values(this.STATUS_ENUM),
+        },
+
+        paidAt: { type: Date, default: null },          // thời điểm thanh toán thành công
+        expiredAt: { type: Date, default: null },       // thời gian hết hạn giao dịch
+
+        orderId: { type: String },                  // mã tham chiếu đối tác
+        referenceId: { type: String },                  // mã tham chiếu đối tác
+        metadata: { type: Schema.Types.Mixed, default: {} },
+
+        errorMessage: { type: String },
+        errorCode: { type: String },
       },
       {
         strict: false,
@@ -28,6 +47,7 @@ class TransactionModels {
     if (!mongoose.models[TransactionModels.COLLECTION_NAME]) {
       mongoose.model(TransactionModels.COLLECTION_NAME, this.schema, TransactionModels.COLLECTION_NAME);
     }
+    this.schema.index({ userId: 1 });
     this.model = mongoose.model(TransactionModels.COLLECTION_NAME);
   }
 }

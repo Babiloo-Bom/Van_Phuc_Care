@@ -122,6 +122,55 @@ export const useAuthStore = defineStore("auth", {
       }
     },
 
+    async loginAfterVerify(data: any) {
+      try {
+        // Backend returns: { data: { accessToken, tokenExpireAt } }
+        const token = data?.accessToken;
+        const tokenExpireAt = data?.tokenExpireAt;
+
+        if (!token) {
+          throw new Error("No token received from server");
+        }
+
+        // Calculate token expiry time (default 7 days if not provided)
+        this.token = token
+        this.tokenExpireAt = tokenExpireAt ? this.calculateExpireTime(tokenExpireAt) : this.calculateExpireTime('7d')
+        this.isAuthenticated = true
+        this.rememberAccount = false
+        // Create basic user object (will be enhanced later if needed)
+        this.user = {
+          id: data._id || "temp-id",
+          email: data.email,
+          username: data.username,
+          fullname: data.fullname,
+        };
+
+        // Save to localStorage
+        if (process.client) {
+          localStorage.setItem("auth_token", token);
+          localStorage.setItem("token_expire_at", this.tokenExpireAt || "");
+          localStorage.setItem("user", JSON.stringify(this.user));
+        }
+
+        return { success: true, user: this.user, token };
+      } catch (error: any) {
+        // Ignore AbortError (request cancelled due to navigation/reload)
+        if (
+          error?.name === "AbortError" ||
+          error?.message?.includes("aborted")
+        ) {
+          return { success: false, error: "Request cancelled" };
+        }
+        return {
+          success: false,
+          error:
+            error.data?.message ||
+            error.message ||
+            "Tên đăng nhập hoặc mật khẩu không chính xác",
+        };
+      }
+    },
+
     /**
      * Update course register via API
      */
@@ -227,13 +276,15 @@ export const useAuthStore = defineStore("auth", {
         const authApi = useAuthApi();
 
         // Verify OTP
-        await authApi.verifyEmail(email, otp);
-
-        return { success: true };
+        const res:any = await authApi.verifyEmail(email, otp);
+        this.loginAfterVerify(res.data)
+        return { 
+          success: true,
+         };
       } catch (error: any) {
         return { 
           success: false, 
-          error: error.data?.message || error.message || 'Mã xác thực không chính xác!'
+          error: error.data?.message || error.message?.message || error.message || 'Mã xác thực không chính xác!'
         }
       } finally {
         this.isLoading = false;

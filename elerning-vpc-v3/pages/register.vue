@@ -233,7 +233,7 @@ const handleSubmit = async () => {
       // Show success modal instead of message
       showSuccessModal.value = true;
     } else {
-      message.error(result.error || "Đăng ký thất bại");
+      message.error("Đăng ký thất bại");
     }
   } catch (error: any) {
     message.error('Đăng ký thất bại')
