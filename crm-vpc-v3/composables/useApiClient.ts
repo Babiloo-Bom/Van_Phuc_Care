@@ -14,13 +14,23 @@ export const useApiClient = () => {
   const authStore = useAuthStore();
   const router = useRouter();
   
-  // Base API URL
+  // Base API URL for direct backend calls
   const baseURL = config.public.apiHost;
+
+  // List of API paths that should go through Nuxt server (no baseURL prefix)
+  const nuxtServerPaths = ['/api/healthbooks', '/api/tickets', '/api/auth', '/api/users', '/api/vaccinations', '/api/transactions', '/api/sessions', '/api/feedbacks', '/api/services', '/api/_health'];
+
+  /**
+   * Check if URL should use Nuxt server (relative path)
+   */
+  const shouldUseNuxtServer = (url: string): boolean => {
+    return nuxtServerPaths.some(path => url.startsWith(path));
+  };
 
   /**
    * Create fetch options with defaults
    */
-  const createFetchOptions = (options: ApiRequestOptions = {}) => {
+  const createFetchOptions = (url: string, options: ApiRequestOptions = {}) => {
     const headers: Record<string, string> = {
       'Content-Type': 'application/json',
       ...options.headers,
@@ -31,8 +41,12 @@ export const useApiClient = () => {
       headers['Authorization'] = `Bearer ${authStore.token}`;
     }
 
+    // Only use baseURL for direct backend calls
+    // Nuxt server proxy endpoints should use relative paths
+    const useBaseURL = !shouldUseNuxtServer(url);
+
     return {
-      baseURL,
+      baseURL: useBaseURL ? baseURL : undefined,
       headers,
       timeout: options.timeout || 30000,
       retry: typeof options.retry === 'number' ? options.retry : options.retry?.limit || 0,
@@ -109,7 +123,7 @@ export const useApiClient = () => {
     options: ApiRequestOptions = {},
   ): Promise<ApiResponse<T>> => {
     try {
-      const fetchOptions = createFetchOptions(options);
+      const fetchOptions = createFetchOptions(url, options);
       
       const response = await $fetch<T>(url, {
         method: 'GET',
@@ -135,7 +149,7 @@ export const useApiClient = () => {
     options: ApiRequestOptions = {},
   ): Promise<ApiResponse<T>> => {
     try {
-      const fetchOptions = createFetchOptions(options);
+      const fetchOptions = createFetchOptions(url, options);
       
       const response = await $fetch<T>(url, {
         method: 'POST',
@@ -162,7 +176,7 @@ export const useApiClient = () => {
     options: ApiRequestOptions = {},
   ): Promise<ApiResponse<T>> => {
     try {
-      const fetchOptions = createFetchOptions(options);
+      const fetchOptions = createFetchOptions(url, options);
       
       const response = await $fetch<T>(url, {
         method: 'PUT',
@@ -189,7 +203,7 @@ export const useApiClient = () => {
     options: ApiRequestOptions = {},
   ): Promise<ApiResponse<T>> => {
     try {
-      const fetchOptions = createFetchOptions(options);
+      const fetchOptions = createFetchOptions(url, options);
       
       const response = await $fetch<T>(url, {
         method: 'PATCH',
@@ -215,7 +229,7 @@ export const useApiClient = () => {
     options: ApiRequestOptions = {},
   ): Promise<ApiResponse<T>> => {
     try {
-      const fetchOptions = createFetchOptions(options);
+      const fetchOptions = createFetchOptions(url, options);
       
       const response = await $fetch<T>(url, {
         method: 'DELETE',
@@ -250,11 +264,14 @@ export const useApiClient = () => {
         headers['Authorization'] = `Bearer ${authStore.token}`;
       }
 
+      // Only use baseURL for direct backend calls
+      const useBaseURL = !shouldUseNuxtServer(url);
+
       // Don't set Content-Type for FormData (browser will set it with boundary)
       const response = await $fetch(url, {
         method: 'POST',
         body: formData,
-        baseURL,
+        baseURL: useBaseURL ? baseURL : undefined,
         headers,
         timeout: options.timeout || 60000, // 60s for uploads
       });

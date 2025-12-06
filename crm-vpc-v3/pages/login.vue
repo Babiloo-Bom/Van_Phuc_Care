@@ -236,15 +236,20 @@ const handleGoogleLogin = async () => {
     const redirectUri = `${baseFrontend}`;
     const frontendUrl = baseFrontend;
 
-    // Google OAuth luôn dùng /api/a (admin endpoint)
-    // In production, use relative path; Nginx will proxy /api/ to backend
-    const googleApiBase = "/api/a";
-    const backendBase = `${baseFrontend}${googleApiBase}`;
-
+    // Google OAuth luôn dùng /api/u (user endpoint)
+    // Nginx sẽ proxy /api/u/ trực tiếp đến backend
+    const isAbsolutePath =
+      baseFrontend.startsWith("http://localhost") ||
+      baseFrontend.includes("localhost");
+    const googleApiBase = isAbsolutePath
+      ? "http://localhost:3000/api/u"
+      : "/api/u";
+    const backendBase = googleApiBase.startsWith("http")
+      ? googleApiBase
+      : `${baseFrontend}${googleApiBase}`;
     const url = `${backendBase}/auth/google?redirect_uri=${encodeURIComponent(
       redirectUri
     )}&frontend_url=${encodeURIComponent(frontendUrl)}`;
-    
     window.location.href = url;
   } catch (error: any) {
     console.error("Google login error:", error);

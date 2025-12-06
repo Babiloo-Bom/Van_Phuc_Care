@@ -260,5 +260,15 @@ jobs:
           port: 24700
           script: |
             cd /opt/vanphuccare
-            git pull origin main || true
+            # Reset local changes and pull latest code
+            git fetch origin main
+            git reset --hard origin/main
+            # Remove orphaned nginx container if exists
+            docker rm -f vpc-nginx 2>/dev/null || true
+            # Run deploy script (add execute permission if needed)
+            chmod +x ./deploy.sh
             ./deploy.sh production
+            # Update Nginx config on host
+            echo "🔄 Updating Nginx configuration..."
+            sudo cp ./nginx/conf.d/default.conf /etc/nginx/conf.d/vanphuccare.conf 2>/dev/null || sudo cp ./nginx/conf.d/default.conf /etc/nginx/sites-available/vanphuccare.conf 2>/dev/null || true
+            sudo nginx -t && sudo systemctl reload nginx && echo "✅ Nginx reloaded" || echo "⚠️ Nginx reload failed"

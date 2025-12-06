@@ -206,9 +206,11 @@ const apiClient = useApiClient();
 async function fetchUserInfo() {
   try {
     loading.value = true;
-    const res = await apiClient.get("/api/u/users/profile", {
+    // Uses Nuxt server proxy: /api/users/profile -> backend /api/u/users/profile
+    const res = await apiClient.get("/api/users/profile", {
       showError: false, // Disable automatic error toast
     });
+    console.log("✅ Fetched user info:", res);
     // Try different response structures
     // Backend might return: {status: true, data: {user: {...}}}
     // Or: {data: {user: {...}}}
@@ -237,9 +239,9 @@ onMounted(() => {
 
 async function handleInfoSubmit() {
   try {
-    // Use user profile update API
+    // Uses Nuxt server proxy: /api/users/profile -> backend /api/u/users/profile
     const response = await apiClient.put(
-      "/api/u/users/profile",
+      "/api/users/profile",
       {
         fullname: infoForm.name,
         phoneNumber: infoForm.phone,
@@ -283,8 +285,9 @@ async function handlePasswordSubmit() {
   }
 
   try {
+    // Uses Nuxt server proxy: /api/sessions/change-password -> backend /api/u/sessions/change_password
     const response = await apiClient.patch(
-      "/api/u/sessions/change_password",
+      "/api/sessions/change-password",
       {
         oldPassword: passwordForm.currentPassword,
         newPassword: passwordForm.newPassword,
@@ -317,14 +320,14 @@ async function handleErrorSubmit() {
   }
 
   try {
-    // Use user feedback API (POST /api/u/feedbacks)
+    // Uses Nuxt server proxy: /api/feedbacks -> backend /api/u/feedbacks
     const feedbackData: any = {
       content: errorForm.note,
       fullname: userInfo.value?.fullname || userInfo.value?.name || "",
       email: userInfo.value?.email || "",
       phoneNumber: userInfo.value?.phoneNumber || userInfo.value?.phone || "",
     };
-    const response = await apiClient.post("/api/u/feedbacks", feedbackData, {
+    const response = await apiClient.post("/api/feedbacks", feedbackData, {
       showError: false, // Disable automatic error toast
     });
 

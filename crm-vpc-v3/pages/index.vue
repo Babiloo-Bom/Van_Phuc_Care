@@ -169,7 +169,7 @@
                     type="primary"
                     @click="showCreateHealthBookModal = true"
                   >
-                    Tạo hồ sơ của bé 3
+                    Tạo hồ sơ của bé
                   </a-button>
                 </a-empty>
               </div>
@@ -688,8 +688,17 @@ const fetchHealthRecordByDate = async (date?: string) => {
     // Format date to YYYY-MM-DD for API
     const selectedDateObj = date ? dayjs(date, "DD/MM/YYYY") : dayjs();
     const formattedDate = selectedDateObj.format("YYYY-MM-DD");
-    // Get health record by date using 'me' endpoint
-    const response = await getHealthRecordByDate("me", formattedDate);
+    
+    // Get health record by date using healthbook ID
+    const healthBookId = healthBook.value?._id;
+    if (!healthBookId) {
+      console.error("No healthbook ID available");
+      loading.value = false;
+      hasHealthBookRecord.value = false;
+      return;
+    }
+    
+    const response = await getHealthRecordByDate(healthBookId, formattedDate);
     const record = response?.data?.data?.data;
     temperatureHistory.value = response?.data?.data?.temperatureHistory;
 
@@ -873,14 +882,74 @@ onMounted(async () => {
   const urlParams = new URLSearchParams(window.location.search);
   const code = urlParams.get("code");
   const state = urlParams.get("state");
+  const googleSuccess = urlParams.get("google_success");
+  const token = urlParams.get("token");
+  const googleError = urlParams.get("google_error");
 
-  // Case 1: Google OAuth callback - handle login first
-  if (code) {
+  // Case 1a: Google OAuth callback with token directly (backend handled OAuth)
+  if (googleSuccess === "true" && token) {
+    console.log("Google OAuth callback with token received");
+    loading.value = true;
+    error.value = "";
+
+    try {
+      // Token expiry: 7 days from now
+      const tokenExpireAtNum = Date.now() + 7 * 24 * 60 * 60 * 1000;
+
+      // Save token and fetch user profile from API
+      // Pass null as userData to trigger API fetch
+      const result = await authStore.completeGoogleLogin(
+        token,
+        tokenExpireAtNum,
+        null as any // Will trigger fetch from API
+      );
+
+      if (!result.success) {
+        throw new Error(result.error || "Đăng nhập Google thất bại");
+      }
+
+      // Show success message
+      message.success("Đăng nhập Google thành công!");
+
+      // Clean URL
+      await router.replace('/');
+
+      // Continue to load healthbook data
+      isCheckingAuth.value = false;
+      await fetchHealthBookProfile();
+      return;
+    } catch (err: any) {
+      console.error("❌ Google login error:", err);
+      
+      // Clean URL first
+      await router.replace('/');
+      
+      error.value = err.message || "Đăng nhập Google thất bại. Vui lòng thử lại.";
+      loading.value = false;
+      isCheckingAuth.value = false;
+
+      message.error(error.value);
+
+      setTimeout(() => {
+        router.push("/login");
+      }, 3000);
+      return;
+    }
+  }
+
+  // Case 1b: Google OAuth error
+  else if (googleError) {
+    await router.replace('/login');
+    message.error("Đăng nhập Google thất bại");
+    return;
+  }
+
+  // Case 1c: Google OAuth callback with code (frontend needs to exchange)
+  else if (code) {
     // Check if this code was already used (stored in sessionStorage)
     const usedCodes = JSON.parse(sessionStorage.getItem('usedGoogleCodes') || '[]');
     if (usedCodes.includes(code)) {
       // Code already used, just clean URL and continue
-      console.log('Google OAuth code already used, skipping...');
       await router.replace('/');
       isCheckingAuth.value = false;
       
@@ -895,14 +964,12 @@ onMounted(async () => {
 
     loading.value = true;
     error.value = "";
-
     try {
       const response = await completeGoogleLogin(code, state || undefined);
 
       if (!response || !response.success || !response.data) {
         throw new Error(response?.error || "Đăng nhập Google thất bại");
       }
-
       // Mark this code as used
       usedCodes.push(code);
       sessionStorage.setItem('usedGoogleCodes', JSON.stringify(usedCodes));
@@ -932,7 +999,6 @@ onMounted(async () => {
         role: (response.data.user as any)?.role || "user",
         verified: true,
       };
-
       // Save to auth store
       await authStore.completeGoogleLogin(
         response.data.accessToken,

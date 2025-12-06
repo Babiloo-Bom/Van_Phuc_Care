@@ -313,13 +313,20 @@ const handleSubmit = async () => {
       healthStatus: formState.healthStatus,
     };
     // Gọi API tạo phiếu sức khỏe
-    await upsertHealthRecord(healthBookId.value as string, healthRecordData);
+    const response = await upsertHealthRecord(healthBookId.value as string, healthRecordData);
+    
+    // Check if API call was successful
+    if (response.status === false) {
+      // Error already shown by apiClient, don't show duplicate
+      return;
+    }
+    
     message.success("Đã lưu thông tin sức khỏe thành công!");
     emit("success");
     handleClose();
   } catch (error) {
     console.error("Error creating health record:", error);
-    message.error("Có lỗi xảy ra khi lưu thông tin!");
+    // Error already shown by apiClient
   } finally {
     loading.value = false;
   }

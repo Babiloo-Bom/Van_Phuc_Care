@@ -3,7 +3,7 @@
 
 const fetch = require('node-fetch');
 
-const BASE_URL = process.env.SEED_API_URL || 'http://localhost:3000';
+const BASE_URL = process.env.SEED_API_URL || 'http://103.216.119.104:3000';
 
 async function seed() {
   try {

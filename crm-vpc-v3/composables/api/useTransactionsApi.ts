@@ -64,9 +64,10 @@ export const useTransactionsApi = () => {
 
     /**
      * Get transactions list for user
+     * Uses Nuxt server proxy: /api/transactions/list -> backend /api/u/transactions-list
      */
     async getUserTransactions(params?: BaseQueryParams) {
-      return apiClient.get<{ data: { transactions: Transaction[] } }>("/api/u/transactions-list", {
+      return apiClient.get<{ data: { transactions: Transaction[] } }>("/api/transactions/list", {
         params,
         showError: false,
       });

@@ -12,7 +12,10 @@ export function useVaccinationsApi() {
   const error = ref('')
   const apiClient = useApiClient()
 
-  // Lấy danh sách vaccine schedule (có thể merge với records của healthBook)
+  /**
+   * Lấy danh sách vaccine schedule (có thể merge với records của healthBook)
+   * GET /api/vaccinations/schedule -> backend /api/u/schedule-vaccins
+   */
   const getVaccinationSchedule = async (params?: {
     healthBookId?: string
     customerId?: string
@@ -28,7 +31,8 @@ export function useVaccinationsApi() {
         queryParams.customerId = params.customerId;
       }
       
-      const res = await apiClient.get<VaccinationScheduleResponse>('/api/u/schedule-vaccins', { 
+      // Use Nuxt server proxy endpoint
+      const res = await apiClient.get<VaccinationScheduleResponse>('/api/vaccinations/schedule', { 
         params: queryParams,
         showError: false 
       });
@@ -41,13 +45,17 @@ export function useVaccinationsApi() {
     }
   }
 
-  // Lấy danh sách vaccination records của customer
+  /**
+   * Lấy danh sách vaccination records của customer
+   * GET /api/vaccinations/records/:customerId -> backend /api/u/vaccination-records/:customerId
+   */
   const getVaccinationRecords = async (customerId: string): Promise<VaccinationRecord[]> => {
     loading.value = true;
     error.value = '';
     try {
+      // Use Nuxt server proxy endpoint
       const res = await apiClient.get<VaccinationRecordsListResponse>(
-        `/api/u/vaccination-records/${customerId}`,
+        `/api/vaccinations/records/${customerId}`,
         { showError: false }
       );
       return res?.data?.vaccinationRecords || [];
@@ -59,7 +67,10 @@ export function useVaccinationsApi() {
     }
   }
 
-  // Tạo vaccination record mới (đánh dấu đã tiêm)
+  /**
+   * Tạo vaccination record mới (đánh dấu đã tiêm)
+   * POST /api/vaccinations/records -> backend /api/u/vaccination-records
+   */
   const createVaccinationRecord = async (data: {
     customerId: string;
     healthBookId: string;
@@ -76,8 +87,9 @@ export function useVaccinationsApi() {
     loading.value = true;
     error.value = '';
     try {
+      // Use Nuxt server proxy endpoint
       const res = await apiClient.post<VaccinationRecordResponse>(
-        '/api/u/vaccination-records',
+        '/api/vaccinations/records',
         data
       );
       return res?.data?.vaccinationRecord || null;
@@ -89,7 +101,10 @@ export function useVaccinationsApi() {
     }
   }
 
-  // Cập nhật vaccination record
+  /**
+   * Cập nhật vaccination record
+   * PUT /api/vaccinations/records/:id -> backend /api/u/vaccination-records/:id
+   */
   const updateVaccinationRecord = async (
     recordId: string,
     data: Partial<VaccinationRecord>
@@ -97,8 +112,9 @@ export function useVaccinationsApi() {
     loading.value = true;
     error.value = '';
     try {
+      // Use Nuxt server proxy endpoint
       const res = await apiClient.put<VaccinationRecordResponse>(
-        `/api/u/vaccination-records/${recordId}`,
+        `/api/vaccinations/records/${recordId}`,
         data
       );
       return res?.data?.vaccinationRecord || null;
@@ -110,12 +126,16 @@ export function useVaccinationsApi() {
     }
   }
 
-  // Xóa vaccination record
+  /**
+   * Xóa vaccination record
+   * DELETE /api/vaccinations/records/:id -> backend /api/u/vaccination-records/:id
+   */
   const deleteVaccinationRecord = async (recordId: string): Promise<boolean> => {
     loading.value = true;
     error.value = '';
     try {
-      await apiClient.delete(`/api/u/vaccination-records/${recordId}`);
+      // Use Nuxt server proxy endpoint
+      await apiClient.delete(`/api/vaccinations/records/${recordId}`);
       return true;
     } catch (err: any) {
       error.value = err?.message || 'Không thể xóa bản ghi tiêm chủng';

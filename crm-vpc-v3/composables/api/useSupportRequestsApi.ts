@@ -212,7 +212,7 @@ export const useSupportRequestsApi = () => {
         data: BackendTicket[];
         pagination: { page: number; pageSize: number; total: number };
       };
-    }>("/api/u/tickets", { params: backendParams, showError: false });
+    }>("/api/tickets", { params: backendParams, showError: false });
 
     if (!response.status || !response.data?.data?.data) {
       return { data: [], pagination: { page: 1, pageSize: 10, total: 0 } };
@@ -228,7 +228,7 @@ export const useSupportRequestsApi = () => {
     id: string
   ): Promise<SupportRequest | null> => {
     const response = await apiClient.get<{ data: { ticket: BackendTicket } }>(
-      `/api/u/tickets/${id}`
+      `/api/tickets/${id}`
     );
 
     if (!response.status || !response.data?.data?.ticket) {
@@ -251,7 +251,7 @@ export const useSupportRequestsApi = () => {
     };
 
     const response = await apiClient.post<{ data: { ticket: BackendTicket } }>(
-      "/api/u/tickets",
+      "/api/tickets",
       backendPayload
     );
 
@@ -284,7 +284,7 @@ export const useSupportRequestsApi = () => {
     }
 
     const response = await apiClient.post<{ data: { ticket: BackendTicket } }>(
-      "/api/u/tickets",
+      "/api/tickets",
       formData,
       {
         headers: {
@@ -313,7 +313,7 @@ export const useSupportRequestsApi = () => {
     }
 
     const response = await apiClient.patch<{ data: { ticket: BackendTicket } }>(
-      `/api/u/tickets/${id}`,
+      `/api/tickets/${id}`,
       backendPayload
     );
 
@@ -325,7 +325,7 @@ export const useSupportRequestsApi = () => {
   };
 
   const deleteSupportRequest = async (id: string): Promise<boolean> => {
-    const response = await apiClient.delete(`/api/u/tickets/${id}`);
+    const response = await apiClient.delete(`/api/tickets/${id}`);
     return response.status;
   };
 
@@ -348,7 +348,7 @@ export const useSupportRequestsApi = () => {
 
   const getComments = async (ticketId: string): Promise<TicketComment[]> => {
     const response = await apiClient.get<{ data: { comments: TicketComment[] } }>(
-      `/api/u/tickets/${ticketId}/comments`,
+      `/api/tickets/${ticketId}/comments`,
       { showError: false }
     );
 
@@ -365,7 +365,7 @@ export const useSupportRequestsApi = () => {
     attachments?: Attachment[]
   ): Promise<TicketComment | null> => {
     const response = await apiClient.post<{ data: { comment: TicketComment } }>(
-      `/api/u/tickets/${ticketId}/comments`,
+      `/api/tickets/${ticketId}/comments`,
       { content, attachments }
     );
 
@@ -396,7 +396,7 @@ export const useSupportRequestsApi = () => {
     }
 
     const response = await apiClient.post<{ data: { comment: TicketComment } }>(
-      `/api/u/tickets/${ticketId}/comments`,
+      `/api/tickets/${ticketId}/comments`,
       formData,
       {
         headers: {

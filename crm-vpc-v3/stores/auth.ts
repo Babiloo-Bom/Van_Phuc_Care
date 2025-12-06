@@ -11,6 +11,8 @@ export interface User {
   avatar?: string;
   verified?: boolean;
   status?: string;
+  fullAddress?: string;
+  address?: string;
   courseRegister?: string[]; // Danh sách khóa học đã mua
   courseCompleted?: string[]; // Danh sách khóa học đã hoàn thành
 }
@@ -94,6 +96,8 @@ export const useAuthStore = defineStore('auth', {
             role: userData?.role || userData?.type,
             verified: userData?.verified,
             status: userData?.status,
+            fullAddress: userData?.fullAddress || '',
+            address: userData?.address || '',
             courseRegister: userData?.courseRegister || [],
             courseCompleted: userData?.courseCompleted || [],
           };
@@ -106,6 +110,8 @@ export const useAuthStore = defineStore('auth', {
             email: username,
             username: username,
             fullname: response.fullname || username,
+            fullAddress: response.fullAddress || '',
+            address: response.address || '',
           };
         }
 
@@ -191,10 +197,26 @@ export const useAuthStore = defineStore('auth', {
       try {
         const authApi = useAuthApi();
         const response = (await authApi.getUserProfile()) as any;
+        const userData = response?.data?.user || response?.data?.data || response?.data;
 
-        if (response.data?.user) {
-          // Update user data with fresh data from backend
-          this.user = response.data.user;
+        if (userData) {
+          // Update user data with fresh data from backend (same mapping as login)
+          this.user = {
+            id: userData?._id || userData?.id || this.user.id,
+            email: userData?.email || this.user.email,
+            username: userData?.username || this.user.username,
+            fullname: userData?.fullname || userData?.name || this.user.fullname,
+            name: userData?.name || userData?.fullname,
+            phone: userData?.phoneNumber || userData?.phone,
+            avatar: userData?.avatar,
+            role: userData?.role || userData?.type,
+            verified: userData?.verified,
+            status: userData?.status,
+            fullAddress: userData?.fullAddress || '',
+            address: userData?.address || '',
+            courseRegister: userData?.courseRegister || [],
+            courseCompleted: userData?.courseCompleted || [],
+          };
           this.saveAuth();
         }
       } catch (error) {

@@ -1,0 +1,42 @@
+/**
+ * POST /api/sessions/logout
+ * Logout user session
+ * Proxies to backend: POST /api/u/sessions/logout
+ */
+
+export default defineEventHandler(async (event) => {
+  try {
+    const config = useRuntimeConfig(event);
+    const apiHost = config.apiHostInternal || 'http://localhost:3000';
+
+    // Get authorization header from client
+    const authHeader = getHeader(event, 'authorization');
+
+    const targetUrl = `${apiHost}/api/u/sessions/logout`;
+
+    console.log(`[POST /api/sessions/logout] -> ${targetUrl}`);
+
+    // Build headers
+    const headers: Record<string, string> = {
+      'Content-Type': 'application/json',
+    };
+    if (authHeader) {
+      headers['Authorization'] = authHeader;
+    }
+
+    // Forward request to backend
+    const response = await $fetch(targetUrl, {
+      method: 'POST',
+      headers,
+    });
+
+    console.log('[POST /api/sessions/logout] Success');
+    return response;
+  } catch (error: any) {
+    console.error('[POST /api/sessions/logout] Error:', error.message || error);
+
+    // For logout, we don't want to throw errors - just return success
+    // Backend might fail if session already expired, but that's OK
+    return { status: true, message: 'Logged out' };
+  }
+});

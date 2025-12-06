@@ -206,6 +206,7 @@ import { message } from 'ant-design-vue'
 import { useServicesApi } from '~/composables/api/useServicesApi'
 import { useRouter } from 'vue-router'
 import { useAuth } from '~/composables/useAuth'
+import { useAuthStore } from '~/stores/auth'
 
 definePageMeta({ layout: 'default' })
 useHead({ title: 'Dịch vụ' })
@@ -213,6 +214,7 @@ useHead({ title: 'Dịch vụ' })
 const { getServices, getMyServices, registerService } = useServicesApi()
 const router = useRouter()
 const { user } = useAuth()
+const authStore = useAuthStore()
 
 const services = ref<any[]>([])
 const activeTab = ref<'all' | 'used'>('all')
@@ -273,15 +275,24 @@ function goDetail(service: any) {
   router.push(`/services/${service.slug || service._id}`)
 }
 
-function openRegisterModal(service: any) {
+async function openRegisterModal(service: any) {
   selectedService.value = service
+  
+  // Refresh user profile to get latest data including fullAddress
+  if (user.value) {
+    try {
+      await authStore.refreshUserData()
+    } catch (e) {
+      console.error('Failed to refresh profile:', e)
+    }
+  }
   
   // Pre-fill form with user info if available
   if (user.value) {
     registerForm.value.fullname = user.value.fullname || user.value.name || ''
-    registerForm.value.phone = user.value.phone || user.value.phoneNumber || ''
+    registerForm.value.phone = user.value.phone || ''
     registerForm.value.email = user.value.email || ''
-    registerForm.value.address = user.value.fullAddress || user.value.address || ''
+    registerForm.value.address = user.value.fullAddress || ''
   }
   
   isRegisterModalOpen.value = true

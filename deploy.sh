@@ -39,6 +39,10 @@ docker compose -f $COMPOSE_FILE pull
 echo "🛑 Stopping old containers..."
 docker compose -f $COMPOSE_FILE down
 
+# Remove orphaned nginx container if exists (from previous deployments)
+echo "🧹 Removing orphaned containers..."
+docker rm -f vpc-nginx 2>/dev/null || true
+
 # Start new containers
 echo "▶️  Starting new containers..."
 docker compose -f $COMPOSE_FILE up -d --build
@@ -46,6 +50,13 @@ docker compose -f $COMPOSE_FILE up -d --build
 # Wait for services to be healthy
 echo "⏳ Waiting for services to be healthy..."
 sleep 10
+
+# Update Nginx config on host (if Nginx is running on host, not in Docker)
+if [ -d "/etc/nginx/conf.d" ]; then
+    echo "🔄 Updating Nginx configuration..."
+    sudo cp ./nginx/conf.d/default.conf /etc/nginx/conf.d/vanphuccare.conf 2>/dev/null || true
+    sudo nginx -t && sudo systemctl reload nginx && echo "✅ Nginx reloaded successfully" || echo "⚠️  Nginx reload failed"
+fi
 
 # Check service status
 echo "✅ Checking service status..."
