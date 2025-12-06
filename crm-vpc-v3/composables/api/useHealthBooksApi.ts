@@ -59,13 +59,35 @@ export const useHealthBooksApi = () => {
     },
 
     /**
-     * Create new health book for current user
+     * Create new health book for current user (with optional avatar file)
      * POST /api/healthbooks -> backend /api/u/healthbooks
      */
-    async createHealthBook(data: { name: string; dob: string; gender: string; avatar?: string }) {
-      return apiClient.post<HealthBookResponse>("/api/healthbooks", data, {
-        errorMessage: "Không thể tạo hồ sơ sức khỏe",
+    async createHealthBook(data: { name: string; dob: string; gender: string; avatar?: File }) {
+      const formData = new FormData();
+
+      formData.append("name", data.name);
+      formData.append("dob", data.dob);
+      formData.append("gender", data.gender);
+      if (data.avatar) formData.append("avatar", data.avatar);
+
+      // Get token from localStorage
+      const token = localStorage.getItem("auth_token");
+
+      // Call through Nuxt server proxy
+      const response = await fetch("/api/healthbooks", {
+        method: "POST",
+        headers: {
+          ...(token ? { Authorization: `Bearer ${token}` } : {}),
+        },
+        body: formData,
       });
+
+      if (!response.ok) {
+        const error = await response.json().catch(() => ({ message: "Không thể tạo hồ sơ sức khỏe" }));
+        throw new Error(error.message || "Không thể tạo hồ sơ sức khỏe");
+      }
+
+      return response.json();
     },
 
     /**

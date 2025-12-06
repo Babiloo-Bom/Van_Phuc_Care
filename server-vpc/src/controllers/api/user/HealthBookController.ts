@@ -471,7 +471,7 @@ class HealthBookController {
         return sendError(res, 401, "Unauthorized");
       }
 
-      const { name, dob, gender, avatar } = req.body;
+      const { name, dob, gender } = req.body;
 
       // Validate required fields
       if (!name || !dob || !gender) {
@@ -487,13 +487,26 @@ class HealthBookController {
         return sendError(res, 409, "Bạn đã có hồ sơ sức khỏe rồi");
       }
 
+      // Handle avatar upload if file is present
+      let avatarUrl = "";
+      const file = (req as any).file as Express.Multer.File | undefined;
+      if (file) {
+        try {
+          const fileUrl = await MinioService.uploadFile(file.buffer, file.originalname, file.mimetype, "avatars");
+          avatarUrl = MinioService.getPublicUrl(fileUrl.replace(`/${MinioService.getBucketName()}/`, ""));
+        } catch (uploadError: any) {
+          console.error("Avatar upload error:", uploadError);
+          return sendError(res, 500, "Không thể tải ảnh lên: " + uploadError.message);
+        }
+      }
+
       // Create new healthbook
       const healthBook = await MongoDbHealthBooks.model.create({
         userId: userId.toString(),
         name,
         dob,
         gender,
-        avatar: avatar || "",
+        avatar: avatarUrl,
       });
 
       return sendSuccess(res, {

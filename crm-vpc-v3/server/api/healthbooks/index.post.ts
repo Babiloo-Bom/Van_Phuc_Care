@@ -1,17 +1,17 @@
 /**
  * POST /api/healthbooks
- * Create a new health book for the current user
+ * Create a new health book for the current user (supports file upload for avatar)
  * Proxies to backend: POST /api/u/healthbooks
  */
 
 export default defineEventHandler(async (event) => {
   try {
-    const body = await readBody(event);
     const config = useRuntimeConfig(event);
     const apiHost = config.apiHostInternal || 'http://localhost:3000';
 
     // Get authorization header from client
     const authHeader = getHeader(event, 'authorization');
+    const contentType = getHeader(event, 'content-type') || '';
 
     if (!authHeader) {
       throw createError({
@@ -20,25 +20,67 @@ export default defineEventHandler(async (event) => {
       });
     }
 
-    console.log('[POST /api/healthbooks] -> /api/u/healthbooks', { name: body.name });
+    const targetUrl = `${apiHost}/api/u/healthbooks`;
 
-    // Forward request to backend
-    const response = await $fetch(`${apiHost}/api/u/healthbooks`, {
-      method: 'POST',
-      headers: {
-        'Authorization': authHeader,
-        'Content-Type': 'application/json',
-      },
-      body: {
-        name: body.name,
-        dob: body.dob,
-        gender: body.gender,
-        avatar: body.avatar,
-      },
-    });
+    // Check if it's multipart form data (file upload)
+    if (contentType.includes('multipart/form-data')) {
+      // For file uploads, read raw body and forward it
+      const rawBody = await readRawBody(event, false);
+      
+      if (!rawBody) {
+        throw createError({
+          statusCode: 400,
+          message: 'Request body is required',
+        });
+      }
 
-    console.log('[POST /api/healthbooks] Success');
-    return response;
+      console.log(`[POST /api/healthbooks] Forwarding multipart, size: ${rawBody.length} bytes`);
+
+      // Forward multipart request to backend using native fetch
+      const response = await fetch(targetUrl, {
+        method: 'POST',
+        headers: {
+          'Authorization': authHeader,
+          'Content-Type': contentType,
+        },
+        body: rawBody,
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({ message: 'Unknown error' }));
+        console.error(`[POST /api/healthbooks] Backend error:`, response.status, errorData);
+        throw createError({
+          statusCode: response.status,
+          message: errorData.message || `Backend returned ${response.status}`,
+          data: errorData,
+        });
+      }
+
+      const data = await response.json();
+      console.log(`[POST /api/healthbooks] Success`);
+      return data;
+    } else {
+      // For JSON requests, use $fetch
+      const body = await readBody(event);
+
+      console.log('[POST /api/healthbooks] -> /api/u/healthbooks', { name: body.name });
+
+      const response = await $fetch(targetUrl, {
+        method: 'POST',
+        headers: {
+          'Authorization': authHeader,
+          'Content-Type': 'application/json',
+        },
+        body: {
+          name: body.name,
+          dob: body.dob,
+          gender: body.gender,
+        },
+      });
+
+      console.log('[POST /api/healthbooks] Success');
+      return response;
+    }
   } catch (error: any) {
     console.error('[POST /api/healthbooks] Error:', error.message || error);
 

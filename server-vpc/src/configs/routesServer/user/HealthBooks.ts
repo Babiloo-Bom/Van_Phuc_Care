@@ -24,8 +24,8 @@ const upload = multer({
 // Get user's healthbooks
 router.get("/", auth, HealthBookController.index);
 
-// Create new healthbook
-router.post("/", auth, HealthBookController.create);
+// Create new healthbook (with optional avatar upload)
+router.post("/", auth, upload.single("avatar"), HealthBookController.create);
 
 // Get current user's healthbook (must be before /:id to match first)
 router.get("/me", auth, HealthBookController.getCurrentHealthBook);

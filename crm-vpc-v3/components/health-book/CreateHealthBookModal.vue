@@ -279,7 +279,7 @@ const handleSubmit = async () => {
       name: formState.name,
       dob: formState.dob?.format("YYYY-MM-DD") || "",
       gender: formState.gender || "",
-      avatar: avatarPreview.value,
+      avatar: avatarFile.value || undefined,
     };
 
     const response = await createHealthBook(healthbookData);
