@@ -233,15 +233,23 @@ const handleGoogleLogin = async () => {
   try {
     const baseFrontend = window.location.origin.replace(/\/$/, "");
     // Redirect về trang chủ sau khi đăng nhập Google
-    const redirectUri = baseFrontend;
+    const redirectUri = `${baseFrontend}`;
     const frontendUrl = baseFrontend;
 
-    // Sử dụng Nuxt server route /api/auth/google
-    // Route này sẽ redirect đến backend OAuth endpoint
-    const url = `/api/auth/google?redirect_uri=${encodeURIComponent(
+    // Google OAuth luôn dùng /api/u (user endpoint)
+    // Nginx sẽ proxy /api/u/ trực tiếp đến backend
+    const isAbsolutePath =
+      baseFrontend.startsWith("http://localhost") ||
+      baseFrontend.includes("localhost");
+    const googleApiBase = isAbsolutePath
+      ? "http://localhost:3000/api/u"
+      : "/api/u";
+    const backendBase = googleApiBase.startsWith("http")
+      ? googleApiBase
+      : `${baseFrontend}${googleApiBase}`;
+    const url = `${backendBase}/auth/google?redirect_uri=${encodeURIComponent(
       redirectUri
     )}&frontend_url=${encodeURIComponent(frontendUrl)}`;
-    
     window.location.href = url;
   } catch (error: any) {
     console.error("Google login error:", error);
