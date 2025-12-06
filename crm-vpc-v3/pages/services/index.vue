@@ -279,9 +279,9 @@ function openRegisterModal(service: any) {
   // Pre-fill form with user info if available
   if (user.value) {
     registerForm.value.fullname = user.value.fullname || user.value.name || ''
-    registerForm.value.phone = user.value.phone || user.value.phoneNumber || ''
+    registerForm.value.phone = user.value.phone || ''
     registerForm.value.email = user.value.email || ''
-    registerForm.value.address = user.value.fullAddress || user.value.address || ''
+    registerForm.value.address = user.value.fullAddress || ''
   }
   
   isRegisterModalOpen.value = true

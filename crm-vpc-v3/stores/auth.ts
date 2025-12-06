@@ -11,6 +11,8 @@ export interface User {
   avatar?: string;
   verified?: boolean;
   status?: string;
+  fullAddress?: string;
+  address?: string;
   courseRegister?: string[]; // Danh sách khóa học đã mua
   courseCompleted?: string[]; // Danh sách khóa học đã hoàn thành
 }
@@ -94,6 +96,8 @@ export const useAuthStore = defineStore('auth', {
             role: userData?.role || userData?.type,
             verified: userData?.verified,
             status: userData?.status,
+            fullAddress: userData?.fullAddress || userData?.address || '',
+            address: userData?.address || userData?.fullAddress || '',
             courseRegister: userData?.courseRegister || [],
             courseCompleted: userData?.courseCompleted || [],
           };
@@ -106,6 +110,8 @@ export const useAuthStore = defineStore('auth', {
             email: username,
             username: username,
             fullname: response.fullname || username,
+            fullAddress: response.fullAddress || '',
+            address: response.address || '',
           };
         }
 

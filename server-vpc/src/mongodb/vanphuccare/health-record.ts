@@ -77,9 +77,9 @@ const HealthRecordSchema = new mongoose.Schema<IHealthRecord>({
   collection: 'health_records',
 });
 
-// Ensure one record per customer per day
-HealthRecordSchema.index({ customerId: 1, date: 1 }, { unique: true });
-HealthRecordSchema.index({ healthBookId: 1, date: 1 });
+// Ensure one record per healthBook per day
+HealthRecordSchema.index({ healthBookId: 1, date: 1 }, { unique: true });
+HealthRecordSchema.index({ customerId: 1, date: 1 });
 
 const HealthRecordModel: Model<IHealthRecord> = mongoose.model<IHealthRecord>('health_records', HealthRecordSchema);
 

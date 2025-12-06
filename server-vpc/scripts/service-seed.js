@@ -83,7 +83,7 @@ const services = [
   },
 ];
 
-fetch('http://localhost:3000/api/a/seed/services', {
+fetch('http://103.216.119.104:3000/api/a/seed/services', {
   method: 'POST',
   headers: { 'Content-Type': 'application/json' },
   body: JSON.stringify({ services })
