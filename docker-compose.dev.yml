@@ -27,6 +27,15 @@ services:
       - MINIO_ACCESS_KEY=${MINIO_ROOT_USER:-minioadmin}
       - MINIO_SECRET_KEY=${MINIO_ROOT_PASSWORD:-minioadmin}
       - MINIO_BUCKET_NAME=van-phuc-care
+      # Mail
+      - SMTP_HOST=${SMTP_HOST:-smtp.gmail.com}
+      - SMTP_PORT=${SMTP_PORT:-587}
+      - SMTP_SECURE=${SMTP_SECURE:-false}
+      - SMTP_USER=${SMTP_USER}
+      - SMTP_PASS=${SMTP_PASS}
+      - SMTP_FROM_NAME=${SMTP_FROM_NAME:-Van Phuc Care}
+      - SMTP_FROM_EMAIL=${SMTP_FROM_EMAIL}
+      # VNpay
       - VNP_TMNCODE=VPCTEST1
       - VNP_HASHSECRET=95M6E1P08UICHY6HS515HCXC9ORKNZRF
       - VNP_URL=https://sandbox.vnpayment.vn/paymentv2/vpcpay.html

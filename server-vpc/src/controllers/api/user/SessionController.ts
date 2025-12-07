@@ -78,6 +78,7 @@ class SessionController {
         sendSuccess(res, { user });
       }
     } catch (error: any) {
+      console.log("register", error)
       sendError(res, 500, error.message, error as Error);
     }
   }
