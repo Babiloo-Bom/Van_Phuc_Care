@@ -70,10 +70,14 @@ class SessionController {
           password: passwordEncode,
           status: MongoDbUsers.STATUS_ENUM.INACTIVE,
         });
-        // Không cần gửi OTP và verify nữa vì đã auto active
+        // Generate OTP and send verification email
         const otp = (Math.random() * (999999 - 100000) + 100000).toString().slice(0, 6);
         await user.update({ verifyOtp: otp });
-        MailerService.verifyAccountOTP(user.get('email'), otp);
+        
+        // Get source from request body to determine which site the user registered from
+        const source = req.body.source || 'elearning';
+        MailerService.verifyAccountOTP(user.get('email'), otp, source);
+        
         user.set('verifyOtp', null);
         sendSuccess(res, { user });
       }
@@ -112,14 +116,14 @@ class SessionController {
 
   public async sendBackOtp (req: Request, res: Response) {
     try {
-      const { email } = req.body;
+      const { email, source } = req.body;
       const user = await MongoDbUsers.model.findOne({ email, status: MongoDbUsers.STATUS_ENUM.PENDING });
       if (!user) {
         return sendError(res, 404, NoData);
       }
       const otp = (Math.random() * (999999 - 100000) + 100000).toString().slice(0, 6);
       await user.update({ verifyOtp: otp });
-      MailerService.verifyAccountOTP(user.get('email'), otp);
+      MailerService.verifyAccountOTP(user.get('email'), otp, source || 'elearning');
       sendSuccess(res, {});
     } catch (error: any) {
       sendError(res, 500, error.message, error as Error);

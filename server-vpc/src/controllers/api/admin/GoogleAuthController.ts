@@ -107,18 +107,27 @@ export default class GoogleAuthController {
       })
 
       if (admin) {
-        // Update existing user
-        
-        admin.set({
-          fullname: googleProfileData.name,
-          avatar: googleProfileData.picture,
+        // Update existing admin - only update fields that are not already set
+        // Don't overwrite custom fullname/avatar if user has edited them
+        const adminUpdateData: any = {
           provider: 'google',
           googleId: googleProfileData.id,
           verified: true,
           status: MongoDbAdmins.STATUS_ENUM.ACTIVE,
           updatedAt: new Date()
-        })
+        }
         
+        // Only set fullname from Google if admin doesn't have one
+        if (!admin.get('fullname')) {
+          adminUpdateData.fullname = googleProfileData.name
+        }
+        
+        // Only set avatar from Google if admin doesn't have one
+        if (!admin.get('avatar')) {
+          adminUpdateData.avatar = googleProfileData.picture
+        }
+        
+        admin.set(adminUpdateData)
         await admin.save()
       } else {
         // Create new user
@@ -143,15 +152,26 @@ export default class GoogleAuthController {
       })
 
       if (user) {
-        // Update existing user
-        user.set({
-          fullname: googleProfileData.name,
-          avatar: googleProfileData.picture,
+        // Update existing user - only update fields that are not already set
+        // Don't overwrite custom fullname/avatar if user has edited them
+        const userUpdateData: any = {
           provider: 'google',
           googleId: googleProfileData.id,
           status: MongoDbUsers.STATUS_ENUM.ACTIVE,
           updatedAt: new Date()
-        })
+        }
+        
+        // Only set fullname from Google if user doesn't have one
+        if (!user.get('fullname')) {
+          userUpdateData.fullname = googleProfileData.name
+        }
+        
+        // Only set avatar from Google if user doesn't have one
+        if (!user.get('avatar')) {
+          userUpdateData.avatar = googleProfileData.picture
+        }
+        
+        user.set(userUpdateData)
         await user.save()
       } else {
         // Create new user in users collection

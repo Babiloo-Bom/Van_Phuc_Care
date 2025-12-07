@@ -227,17 +227,16 @@ export const useAuthApi = () => {
       phone?: string,
     ) {
       try {
+        // Use Nuxt server proxy endpoint (same pattern as login)
         const result = await withRetry(() =>
-          fetchWithTimeout(`${apiBase}/sessions`, {
+          fetchWithTimeout('/api/auth/register', {
             method: 'POST',
             body: {
               email,
               password,
               repeat_password,
-              fullname: fullname || email.split('@')[0], // Use email prefix if no fullname
+              fullname: fullname || email.split('@')[0],
               phone: phone || '',
-              domain: 'vanphuccare.gensi.vn',
-              origin: 'vanphuccare.gensi.vn',
             },
           }),
         );
@@ -256,13 +255,13 @@ export const useAuthApi = () => {
      */
     async verifyEmail(email: string, otp: string) {
       try {
+        // Use Nuxt server proxy endpoint
         return await withRetry(() =>
-          fetchWithTimeout(`${apiBase}/sessions/verify_email`, {
+          fetchWithTimeout('/api/auth/verify-email', {
             method: 'POST',
             body: {
               email,
               otp,
-              origin: 'vanphuccare.gensi.vn',
             },
           }),
         );

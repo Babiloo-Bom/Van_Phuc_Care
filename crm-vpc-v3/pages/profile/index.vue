@@ -255,8 +255,10 @@ async function handleInfoSubmit() {
 
     if (response.status) {
       message.success("Cập nhật thông tin thành công!");
-      // Refresh user info
+      // Refresh user info in local state
       await fetchUserInfo();
+      // Refresh auth store so header/sidebar also updates
+      await authStore.refreshUserData();
     } else {
       message.error(response.message || "Cập nhật thất bại!");
     }
