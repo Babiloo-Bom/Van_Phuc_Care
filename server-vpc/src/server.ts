@@ -27,6 +27,7 @@ const allowedOrigins = [
   "http://localhost:3100", // Admin dev
   "http://localhost:3102", // Elearning dev
   "http://localhost:3000", // API itself (for swagger, etc.)
+  "http://elearning.vanphuccare.com"
 ];
 
 const corsOptions = {
