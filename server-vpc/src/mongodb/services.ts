@@ -26,6 +26,7 @@ class ServiceModels {
         slug: { type: String },
         reviews: { type: Number, default: 0 },
         status: { type: String, default: "active", enum: ["active", "inactive"] },
+        link: { type: String }, // External link for registered services
       },
       {
         strict: false,

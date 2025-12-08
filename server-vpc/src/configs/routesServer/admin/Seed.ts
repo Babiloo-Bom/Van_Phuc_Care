@@ -13,6 +13,7 @@ router.post('/users', UserController.seedUsers);
 router.post('/courses', CourseController.seedCourses);
 router.post("/tickets", TicketController.seedTickets);
 router.post("/services", ServiceControllerSeed.seedServices);
+router.delete("/services", ServiceControllerSeed.deleteAllServices);
 router.post("/transactions", TransactionController.seedTransactions);
 router.post('/coupons', CouponController.seedCoupons);
 
