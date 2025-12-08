@@ -31,6 +31,7 @@ export interface IQuizResult {
   quizCompleted: boolean
   passed: boolean
   score: number
+  totalPoints: number
   percentage: number
   attemptsLeft: number
 }
@@ -43,7 +44,8 @@ export const useQuizStore = defineStore('quiz', {
     // Loading states
     loading: false,
     submitLoading: false,
-    quizResult: null as IQuizResult | null
+    quizResult: null as IQuizResult | null,
+    quizAttempt: null as any
   }),
 
   getters: {
@@ -54,6 +56,8 @@ export const useQuizStore = defineStore('quiz', {
     getSubmitLoading: state => state.submitLoading,
 
     getQuizResult: state => state.quizResult,
+    
+    getQuizAttempt: state => state.quizAttempt,
 
     getAnswers: state => state.answers,
   },
@@ -94,8 +98,10 @@ export const useQuizStore = defineStore('quiz', {
           }))
         })
         if (response.data) {
+          this.quizAttempt = response?.data?.quizAttempt
           this.quizResult = {
             quizCompleted: true,
+            totalPoints: response?.data?.quizAttempt?.answers?.length,
             passed: response.data.quizAttempt?.passed,
             score: response.data.quizAttempt?.score,
             percentage: response.data.quizAttempt?.percentage,
@@ -114,6 +120,7 @@ export const useQuizStore = defineStore('quiz', {
       this.submitLoading = false;
       this.loading = false;
       this.currentQuiz = null;
+      this.quizAttempt = null;
       this.answers = {}
       this.quizResult = null;
     },

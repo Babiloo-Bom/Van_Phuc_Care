@@ -110,7 +110,18 @@
       </div>
 
       <p class="course-description">{{ course.shortDescription }}</p>
-
+      <div v-if="course.isPurchased == true" class="w-full mb-3 sm:mb-4 flex-grow flex flex-col justify-end">
+        <div class="w-full flex items-center justify-between mb-2">
+          <span class="text-xs sm:text-sm text-[#868686]">Tiến độ</span>
+          <span class="text-xs sm:text-sm text-[#868686]">{{ progress ?? 0 }}%</span>
+        </div>
+        <div class="relative w-full h-1 bg-[#dfdfdf] rounded-sm">
+          <div 
+            class="absolute top-0 bottom-0 left-0 bg-[#6DE380] rounded-sm transition-all duration-300" 
+            :style="{ width: `${Math.min(Math.max(progress ?? 0, 0), 100)}%` }"
+          ></div>
+        </div>
+      </div>
       <div class="course-actions" v-if="!course.isPurchased">
         <button class="btn-buy-now" @click.stop="buyNow">Mua ngay</button>
         <button class="btn-add-cart" @click.stop="addToCart">

@@ -119,8 +119,11 @@
           </div>
 
           <!-- Action Button -->
-          <div class="course-actions">
+          <div class="course-actions" v-if="!course?.progress?.isCompleted">
             <button class="btn-access" @click.stop="viewDetail">Học ngay</button>
+          </div>
+          <div v-else class="course-actions">
+            <button class="btn-completed" @click.stop="viewDetail">Đã hoàn thành</button>
           </div>
         </div>
       </div>
@@ -157,6 +160,9 @@
     };
     tags: string[];
     isPublished: boolean;
+    progress:{
+      isCompleted: boolean;
+    },
     isFeatured: boolean;
     status: string;
     videoCount: number;
@@ -378,7 +384,22 @@
     gap: 8px;
     margin-top: auto;
   }
-  
+  .btn-completed {
+  flex: 1;
+  padding: 10px 16px;
+  border: none;
+  border-radius: 6px;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  background: linear-gradient(88.69deg, #FFBE6A -1.04%, #EBBC46 23.61%, #FFDA7D 55.57%, #EBBC46 74.44%, #FFBE6A 97.91%);
+  color: white;
+}
+
+.btn-completed:hover {
+  opacity: 0.9;
+}
   .btn-add-cart,
   .btn-buy-now {
     padding: 10px 16px;

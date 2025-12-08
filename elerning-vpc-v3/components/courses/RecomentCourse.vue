@@ -26,6 +26,7 @@
         @add-to-cart="handleAddToCart"
         @buy-now="handleBuyNow"
         @view-detail="handleViewDetail"
+        :progress="getProgress(course._id)"
       />
     </div>
   </div>
@@ -89,7 +90,13 @@ const handleBuyNow = async (course: any) => {
 const handleViewDetail = (course: any) => {
   navigateTo(`/courses/${course.slug}`)
 }
-
+const getProgress = (courseId: string) => {
+  const course = coursesStore.myCourses.find((c: any) => c._id === courseId);
+  if (course && course.progress) {
+    return course.progress.progressPercentage || 0;
+  }
+  return 0;
+};
 onMounted(() => {
   fetchCourses()
 })

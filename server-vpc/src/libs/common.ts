@@ -1,10 +1,19 @@
 const sortObj = (obj: any) => {
-  const sorted: Record<any, any> = {};
-  const keys = Object.keys(obj).sort();
-  keys.forEach((k) => (sorted[k] = obj[k]));
-  return sorted;
+  	let sorted = {};
+	let str = [];
+	let key;
+	for (key in obj){
+		if (obj.hasOwnProperty(key)) {
+			str.push(encodeURIComponent(key));
+		}
+	}
+	str.sort();
+	for (key = 0; key < str.length; key++) {
+		sorted[str[key]] = encodeURIComponent(obj[str[key]]).replace(/%20/g, "+");
+	}
+	return sorted;
 };
 
 export {
-    sortObj
+  sortObj
 }

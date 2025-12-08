@@ -229,7 +229,8 @@
                     type="primary"
                     size="large"
                     class="w-full flex items-center justify-center gap-2 !bg-[#2579F2] !h-12 sm:!h-14 !text-white !border-prim-100 !text-base sm:!text-base !font-semibold !rounded-lg"
-                    :disabled="cartItems.length === 0"
+                    :disabled="cartItems.length === 0 || isProcessingOrderVnpay"
+                    :loading="isProcessingOrderVnpay"
                     @click="handlePayment('vnpay')"
                   >
                     Thanh toán bằng 
@@ -285,6 +286,7 @@ const authStore = useAuthStore()
 
 // Loading state for bypass payment
 const isProcessingOrder = ref(false)
+const isProcessingOrderVnpay = ref(false)
 
 // Reactive data
 const cartItems = computed(() => {
@@ -528,7 +530,7 @@ const processVnPay = async () => {
   if (cartItems.value.length === 0) return
   const { apiUser } = useApiBase()
   try {
-    isProcessingOrder.value = true
+    isProcessingOrderVnpay.value = true
     
     // Get user info from authStore
     if (!authStore.user || !authStore.user.id) {
@@ -580,7 +582,7 @@ const processVnPay = async () => {
     await new Promise(resolve => setTimeout(resolve, 1000))
     
     // Process payment
-    const paymentRes = await $fetch(`${apiUser}/orders/payment/vnpay`, {
+    const paymentRes: any = await $fetch(`${apiUser}/orders/payment/vnpay`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json'
@@ -592,8 +594,10 @@ const processVnPay = async () => {
         }
       }
     })
-    
-    console.log(paymentRes)
+    if (paymentRes?.data?.paymentUrl) {
+      window.open(paymentRes?.data?.paymentUrl)
+    }
+    return true
     
   } catch (error: any) {
     console.error('❌ Error processing bypass order:', error)
@@ -607,7 +611,7 @@ const processVnPay = async () => {
       },
     })
   } finally {
-    isProcessingOrder.value = false
+    isProcessingOrderVnpay.value = false
   }
 }
 

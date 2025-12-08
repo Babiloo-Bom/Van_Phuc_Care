@@ -143,7 +143,6 @@ export const useAuthApi = () => {
               username,
               password,
               remindAccount,
-              origin: "vanphuccare.gensi.vn",
             },
           })
         );
@@ -177,8 +176,6 @@ export const useAuthApi = () => {
               repeat_password,
               fullname: fullname || email.split("@")[0], // Use email prefix if no fullname
               phone: phone || "",
-              domain: "vanphuccare.gensi.vn",
-              origin: "vanphuccare.gensi.vn",
             },
           })
         )
@@ -202,7 +199,6 @@ export const useAuthApi = () => {
             body: {
               email,
               otp,
-              origin: "vanphuccare.gensi.vn",
             },
           })
         );
