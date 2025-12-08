@@ -71,7 +71,7 @@
             <button 
               v-if="service.isRegistered" 
               class="detail-button"
-              @click.stop="goDetail(service)"
+              @click.stop="handleDetailClick(service)"
             >
               Chi tiết
             </button>
@@ -273,6 +273,16 @@ const filteredServices = computed<any[]>(() => {
 
 function goDetail(service: any) {
   router.push(`/services/${service.slug || service._id}`)
+}
+
+function handleDetailClick(service: any) {
+  // If service has external link, open in new tab
+  if (service.link) {
+    window.open(service.link, '_blank', 'noopener,noreferrer')
+  } else {
+    // Otherwise go to detail page
+    goDetail(service)
+  }
 }
 
 async function openRegisterModal(service: any) {
