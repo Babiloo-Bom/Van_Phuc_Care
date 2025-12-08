@@ -278,7 +278,6 @@ export const useCoursesStore = defineStore('courses', {
       try {
         const courseApi = useCourseApi()
         const response: any = await courseApi.getMyCourses(params)
-        console.log('responsessssssssssss', response.data.courses);
         this.myCourses = response.data?.courses || response.data || response.courses || response
       } catch (error) {
         throw error

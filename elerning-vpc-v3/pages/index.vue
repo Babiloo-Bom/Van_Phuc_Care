@@ -724,7 +724,9 @@ onMounted(async () => {
   // Only load cart if user is logged in
   if (authStore.isLoggedIn) {
     await cartStore.fetchCart();
+    
   }
+  await coursesStore.fetchMyCourses()
 });
 </script>
 

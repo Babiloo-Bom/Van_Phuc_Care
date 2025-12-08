@@ -278,6 +278,7 @@ const handleViewDetail = (course: any) => {
 onMounted(async () => {
   authStore.initAuth()
   await fetchCourses()
+  courseStore.fetchMyCourses()
 })
 
 // Page meta
