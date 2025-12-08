@@ -1,6 +1,6 @@
 const sortObj = (obj: any) => {
-  	let sorted = {};
-	let str = [];
+  	let sorted:any = {};
+	let str:any = [];
 	let key;
 	for (key in obj){
 		if (obj.hasOwnProperty(key)) {
