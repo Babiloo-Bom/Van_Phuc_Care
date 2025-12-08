@@ -45,7 +45,7 @@
         v-for="service in filteredServices"
         :key="service._id"
         class="service-card"
-        @click="goDetail(service)"
+        @click="handleServiceClick(service)"
       >
         <!-- Thumbnail -->
         <div class="card-image-wrapper">
@@ -71,7 +71,7 @@
             <button 
               v-if="service.isRegistered" 
               class="detail-button"
-              @click.stop="handleDetailClick(service)"
+              @click.stop="handleServiceClick(service)"
             >
               Chi tiết
             </button>
@@ -275,7 +275,7 @@ function goDetail(service: any) {
   router.push(`/services/${service.slug || service._id}`)
 }
 
-function handleDetailClick(service: any) {
+function handleServiceClick(service: any) {
   // If service has external link, open in new tab
   if (service.link) {
     window.open(service.link, '_blank', 'noopener,noreferrer')
