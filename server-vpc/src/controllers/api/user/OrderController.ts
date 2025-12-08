@@ -450,14 +450,11 @@ class OrderController {
       };
       params = sortObj(params)
       const signData = qs.stringify(params, { encode: false });
-      console.log(configs.vnpayConfig);
-      console.log(params);
 
       const hmac = crypto.createHmac("sha512", configs.vnpayConfig.vnp_HashSecret);
       const secureHash = hmac.update(Buffer.from(signData, "utf-8")).digest("hex");
-
       params.vnp_SecureHash = secureHash;
-
+      
       const paymentUrl = `${configs.vnpayConfig.vnp_Url}?${qs.stringify(params, { encode: false })}`;
       await this.clearCartUser(order);
       sendSuccess(res, {
@@ -526,6 +523,63 @@ class OrderController {
     });
 
     return res.json({ RspCode: "00", Message: "Failed" });
+  }
+  public async paymentVnpayVerify(req: Request, res: Response) {
+    const params = req.body;
+
+    const secureHash = params.vnp_SecureHash;
+    delete params.vnp_SecureHash;
+    delete params.vnp_SecureHashType;
+
+    const signData = qs.stringify(sortObj(params), { encode: false });
+    const signed = crypto.createHmac("sha512", configs.vnpayConfig.vnp_HashSecret)
+      .update(signData, "utf-8")
+      .digest("hex");
+
+    // Sai chữ ký → từ chối
+    if (secureHash !== signed) {
+      return sendError(res, 500, 'Invalid signature');
+    }
+
+    const transactionId = params.vnp_TxnRef;
+    const responseCode = params.vnp_ResponseCode;
+
+    const transaction = await ModelTransaction.model.findById(transactionId);
+    if (!transaction) {
+      return sendError(res, 500, 'Invalid Transaction');
+    }
+
+    // Nếu đã xử lý trước đó → OK
+    if (transaction.get('status') === "success") {
+      return sendError(res, 500, 'Order completed');
+    }
+
+    if (responseCode === "00") {
+      // Thành công
+      await ModelTransaction.model.findByIdAndUpdate(transactionId, {
+        status: "success",
+        paidAt: new Date(),
+        referenceId: params.vnp_TransactionNo,
+        metadata: params,
+      });
+
+      const order = await OrderModel.findOneAndUpdate({ orderId: transaction.get('orderId') }, {
+        paymentStatus: 'completed',
+        status: 'completed'
+      });
+      
+      await this.updateCourseForUser(order);
+
+      return sendSuccess(res, {success: true}, 'Payment success')
+    }
+
+    // Thất bại
+    await ModelTransaction.model.findByIdAndUpdate(transactionId, {
+      status: "failed",
+      errorCode: responseCode,
+    });
+
+    return sendError(res, 500, 'Payment fail');
   }
 
   /**

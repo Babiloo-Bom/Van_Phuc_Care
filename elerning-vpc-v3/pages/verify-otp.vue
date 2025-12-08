@@ -39,7 +39,6 @@ const verifyOtp = async () => {
     loading.value = true;
     // Call reset password API
     const result = await authStore.verifyEmail(email as string, otp as string);
-    console.log(result)
     if (result.success) {
       message.success("Xác minh tài khoản thành công");
       // Redirect to login page

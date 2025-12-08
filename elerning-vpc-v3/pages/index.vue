@@ -154,7 +154,7 @@
 
     <!-- Courses Section -->
     <section class="pb-20 p-4 lg:pt-20 sm:pt-10 bg-[#f4f7f9]">
-      <div class="container mx-auto !px-0 md:!px-auto max-[639px]:!pt-[18rem]">
+      <div class="container mx-auto !px-0 md:!px-auto">
         <div
           v-if="googleError"
           class="flex justify-center items-center min-h-[300px]"
@@ -185,11 +185,12 @@
               <CourseCard
                 v-for="(course, index) in filteredCourses"
                 :key="index"
-                :course="course as any"
+                :course="(course as any)"
                 :is-purchased="isPurchased(course._id)"
                 @add-to-cart="handleAddToCart"
                 @buy-now="handleBuyNow"
                 @view-detail="handleViewDetail"
+                :progress="getProgress(course._id)"
               />
             </div>
             <div v-else class="pt-20">
@@ -241,7 +242,6 @@ import CourseCard from "~/components/courses/CourseCard.vue";
 import CartToast from "~/components/cart/Toast.vue";
 
 // SEO Configuration for SPA mode
-
 // Function to update SEO meta tags
 const updateSEOMetaTags = () => {
   // Update document title
@@ -277,7 +277,7 @@ const updateSEOMetaTags = () => {
     }
     meta.setAttribute("content", content);
   };
-
+  
   // Open Graph tags
   addMetaTag(
     "og:title",
@@ -594,7 +594,13 @@ const isPurchased = (courseId: string) => {
   const purchased = authStore.user?.courseRegister?.includes(courseId) || false
   return purchased
 }
-
+const getProgress = (courseId: string) => {
+  const course = coursesStore.myCourses.find((c: any) => c._id === courseId);
+  if (course && course.progress) {
+    return course.progress.progressPercentage || 0;
+  }
+  return 0;
+  };
 // Cart handlers
 const handleAddToCart = async (course: any) => {
   try {

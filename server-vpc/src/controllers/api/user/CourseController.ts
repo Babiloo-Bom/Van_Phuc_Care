@@ -602,7 +602,7 @@ class CourseController {
       try {
         const fileUrl = await CloudflareService.getFileUrlWithFallback(
           objectName,
-          true,
+          false,
           7 * 24 * 60 * 60
         );
         return fileUrl; 

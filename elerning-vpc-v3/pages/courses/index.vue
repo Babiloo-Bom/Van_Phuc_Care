@@ -88,7 +88,7 @@
 
     <!-- Courses Section -->
     <section class="pb-20 p-4 lg:pt-20 sm:pt-10 bg-[#f4f7f9]">
-      <div class="container mx-auto !px-0 md:!px-auto max-[639px]:!pt-[18rem]">
+      <div class="container mx-auto !px-0 md:!px-auto">
         <div v-if="!loading">
           <div
             v-if="filteredCourses.length"
@@ -102,6 +102,7 @@
               @add-to-cart="handleAddToCart"
               @buy-now="handleBuyNow"
               @view-detail="handleViewDetail"
+              :progress="getProgress(course._id)"
               class=""
             />
           </div>
@@ -159,7 +160,13 @@ const getCourseStatus = (courseId: string) => {
 const isPurchased = (course: any) => {
   return course?.isPurchased || false
 }
-
+const getProgress = (courseId: string) => {
+  const course = courseStore.myCourses.find((c: any) => c._id === courseId);
+  if (course && course.progress) {
+    return course.progress.progressPercentage || 0;
+  }
+  return 0;
+};
 // Computed để sắp xếp theo thứ tự ưu tiên
 const sortedCourses = computed(() => {
   const authStore = useAuthStore();
@@ -483,7 +490,6 @@ useHead({
 
 /* Ensure proper spacing and alignment */
 .container {
-  max-width: 1200px;
   margin: 0 auto;
   padding: 0 1rem;
 }

@@ -48,4 +48,5 @@ router.patch('/:orderId', OrderController.update);
 router.post('/payment', OrderController.processPayment);
 router.post('/payment/vnpay', (req, res) => OrderController.processPaymentVnpay(req, res));
 router.post('/payment/vnpay-ipn', (req, res) => OrderController.paymentVnpayIpn(req, res));
+router.post('/payment/vnpay-verify', (req, res) => OrderController.paymentVnpayVerify(req, res));
 export default router;
