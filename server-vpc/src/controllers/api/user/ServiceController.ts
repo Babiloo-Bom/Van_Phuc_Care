@@ -32,7 +32,7 @@ class ServiceController {
       const [services, total] = await Promise.all([
         MongoDbServices.model
           .find(query)
-          .select('title slug thumbnail shortDescriptions descriptions price duration status category')
+          .select('title slug thumbnail shortDescriptions descriptions price duration status category link')
           .sort({ createdAt: -1 })
           .skip(skip)
           .limit(Number(limit))
@@ -133,7 +133,7 @@ class ServiceController {
           _id: { $in: serviceIds },
           status: 'active' 
         })
-        .select('title slug thumbnail shortDescriptions descriptions price duration status category')
+        .select('title slug thumbnail shortDescriptions descriptions price duration status category link')
         .lean();
 
       // Map services with registration info
