@@ -266,7 +266,6 @@ const handleSuccessClose = () => {
 /* Base styles - will be overridden by media queries */
 .register-form-section {
   position: relative;
-  width: 50%;
   height: 100vh;
   background: #ffffff;
   display: flex;
@@ -528,7 +527,6 @@ const handleSuccessClose = () => {
 /* Left Side - Registration Form */
 .register-form-section {
   position: relative;
-  width: 50%;
   height: 100vh;
   background: #ffffff;
   display: flex;
