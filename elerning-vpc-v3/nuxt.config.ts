@@ -78,6 +78,9 @@ export default defineNuxtConfig({
       // TinyMCE Configuration
       tinymceKey: process.env.NUXT_PUBLIC_TINYMCE_KEY || '',
       
+      // CRM URL
+      baseUrlCrm: process.env.BASE_URL_CRM || 'http://localhost:3101',
+      
       // App Configuration
       appName: process.env.NUXT_PUBLIC_APP_NAME || 'E-Learning Portal - Van Phuc Care',
       appUrl: process.env.NUXT_PUBLIC_APP_URL || 'http://localhost:3102',
