@@ -185,6 +185,7 @@ services:
       - NUXT_PUBLIC_GOOGLE_CLIENT_ID=${NUXT_PUBLIC_GOOGLE_CLIENT_ID}
       - NUXT_GOOGLE_CLIENT_SECRET=${GOOGLE_CLIENT_SECRET}
       - NUXT_PUBLIC_BASE_URL=http://elearning.vanphuccare.com
+      - BASE_URL_CRM=http://crm.vanphuccare.com
     networks:
       - vpc-network
     depends_on:

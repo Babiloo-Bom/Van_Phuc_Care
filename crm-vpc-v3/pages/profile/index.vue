@@ -54,6 +54,7 @@
                       v-model:value="infoForm.email"
                       placeholder="nguyenvana@gmail.com"
                       size="large"
+                      disabled
                     />
                   </a-form-item>
                 </div>
