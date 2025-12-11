@@ -231,76 +231,32 @@
         </div>
       </div>
 
-      <!-- Mobile Menu -->
-      <div
-        v-if="mobileMenuOpen"
-        class="lg:hidden border-t border-white/20 py-6"
-      >
-        <nav class="flex flex-col gap-4 mb-6">
-          <NuxtLink to="/" class="hover:text-gray-200 transition-colors py-2">
-            Trang chủ
-          </NuxtLink>
-          <NuxtLink
-            to="/courses"
-            class="hover:text-gray-200 transition-colors py-2"
-          >
-            Tất cả khóa học
-          </NuxtLink>
-          <NuxtLink
-            to="/my-learning"
-            class="hover:text-gray-200 transition-colors py-2"
-          >
-            Khóa học của tôi
-          </NuxtLink>
-        </nav>
-
-        <!-- Mobile Auth Buttons -->
-        <div v-if="!isLoggedIn" class="flex flex-col gap-3">
-          <a-button
-            type="text"
-            class="!text-white hover:!bg-white/10 !px-4 !py-3 !h-auto !font-medium !text-base !rounded-lg !w-full !justify-start"
-            @click="navigateTo('/login')"
-          >
-            Đăng nhập
-          </a-button>
-          <a-button
-            type="primary"
-            class="!bg-white !text-primary-100 hover:!bg-gray-50 !px-6 !py-3 !h-auto !font-bold !text-base !rounded-xl !shadow-lg !w-full !flex !items-center !justify-center !gap-2"
-            @click="navigateTo('/register')"
-          >
-            <svg
-              xmlns="http://www.w3.org/2000/svg"
-              width="20"
-              height="20"
-              viewBox="0 0 24 24"
-              class="fill-none stroke-current"
-            >
-              <path
-                d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2M9 7a4 4 0 1 0 0-8 4 4 0 0 0 0 8ZM19 8v6M22 11h-6"
-                stroke-width="1.5"
-                stroke-linecap="round"
-                stroke-linejoin="round"
-              />
-            </svg>
-            <span>Đăng ký</span>
-          </a-button>
-        </div>
-        <a-button
-          v-else
-          type="primary"
-          class="!bg-white !text-primary-100 hover:!bg-gray-50 !px-6 !py-3 !h-auto !font-bold !text-base !rounded-xl !shadow-lg !w-full !flex !items-center !justify-center !gap-2"
-          @click="handleLogout"
-          >Đăng xuất</a-button
-        >
-      </div>
+      <!-- Mobile Menu Overlay -->
+      <Teleport to="body">
+        <Transition name="fade">
+          <div 
+            v-if="mobileMenuOpen" 
+            class="lg:hidden fixed inset-0 bg-black/50 z-[99]"
+            @click="mobileMenuOpen = false"
+          />
+        </Transition>
+        <Transition name="slide">
+          <Sidebar 
+            v-if="mobileMenuOpen"
+            :is-mobile="true"
+            @close="mobileMenuOpen = false"
+          />
+        </Transition>
+      </Teleport>
     </div>
   </header>
 </template>
 
 <script setup lang="ts">
-import { ref, computed, watch, defineProps } from "vue";
+import { ref, computed, watch } from "vue";
 import { useCartStore } from "~/stores/cart";
 import { useAuthStore } from "~/stores/auth";
+import Sidebar from "~/components/layout/Sidebar.vue";
 
 const props = defineProps<{
   className: string
@@ -317,9 +273,6 @@ const cartCount = computed(() => cartStore.cartCount);
 const isLoggedIn = computed(() => authStore.isLoggedIn);
 const user = computed(() => authStore.user);
 
-// Watch for auth changes
-
-
 // Watch for user changes
 watch(() => authStore.user, (newUser) => {
 }, { immediate: true })
@@ -327,13 +280,7 @@ watch(() => authStore.user, (newUser) => {
 // Methods
 const handleLogout = async () => {
   try {
-    await authStore.logout()
-    navigateTo('/')
-  } catch (error) {
-  }
-  try {
     await authStore.logout();
-    console.log("✅ Logged out successfully");
     navigateTo("/");
   } catch (error) {
     console.error("❌ Logout failed:", error);
@@ -378,5 +325,26 @@ const handleLogout = async () => {
     padding: 8px 24px !important;
     font-size: 16px !important;
   }
+}
+
+/* Mobile menu transitions */
+.fade-enter-active,
+.fade-leave-active {
+  transition: opacity 0.3s ease;
+}
+
+.fade-enter-from,
+.fade-leave-to {
+  opacity: 0;
+}
+
+.slide-enter-active,
+.slide-leave-active {
+  transition: transform 0.3s ease;
+}
+
+.slide-enter-from,
+.slide-leave-to {
+  transform: translateX(-100%);
 }
 </style>

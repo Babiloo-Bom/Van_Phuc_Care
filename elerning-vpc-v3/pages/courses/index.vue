@@ -278,7 +278,10 @@ const handleViewDetail = (course: any) => {
 onMounted(async () => {
   authStore.initAuth()
   await fetchCourses()
-  courseStore.fetchMyCourses()
+  // Only fetch my courses if user is logged in
+  if (authStore.isLoggedIn) {
+    courseStore.fetchMyCourses()
+  }
 })
 
 // Page meta
