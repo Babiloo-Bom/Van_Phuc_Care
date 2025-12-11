@@ -235,6 +235,7 @@ jobs:
           cache-to: type=registry,ref=${{ env.REGISTRY }}/${{ env.IMAGE_PREFIX }}-elearning:buildcache,mode=max
           build-args: |
             NODE_ENV=production
+            BASE_URL_CRM=http://crm.vanphuccare.com
 
   # Deploy to production
   # Chỉ deploy khi merge vào main (push event), không deploy khi mở pull request

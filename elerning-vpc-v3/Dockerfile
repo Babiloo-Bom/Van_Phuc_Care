@@ -25,6 +25,9 @@ COPY . .
 ENV NODE_ENV=production
 ENV NUXT_TELEMETRY_DISABLED=1
 
+ARG BASE_URL_CRM
+ENV BASE_URL_CRM=$BASE_URL_CRM
+
 RUN npm run build
 
 # ============================================
@@ -36,6 +39,9 @@ WORKDIR /app
 
 ENV NODE_ENV=production
 ENV NUXT_TELEMETRY_DISABLED=1
+
+ARG BASE_URL_CRM
+ENV BASE_URL_CRM=$BASE_URL_CRM
 
 RUN addgroup --system --gid 1001 nodejs
 RUN adduser --system --uid 1001 nuxtjs

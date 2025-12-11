@@ -167,7 +167,7 @@ const menuGroup2 = MENU_GROUP_2;
 
 // CRM Base URL
 const crmBaseUrl = computed(() => config.public.baseUrlCrm || 'http://localhost:3101');
-console.log('CRM Base URL:', crmBaseUrl.value);
+console.log('CRM Base URL_:', crmBaseUrl.value);
 // Get external URL for CRM links
 const getExternalUrl = (path: string) => {
   if (path.startsWith('/crm')) {
