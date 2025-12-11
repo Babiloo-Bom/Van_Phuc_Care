@@ -286,13 +286,57 @@ export const useCoursesStore = defineStore('courses', {
       }
     },
 
-    async fetchMyCourseBySlug(slug: string) {
+    async fetchMyCourseBySlug(slug: string, chapterIndex: number, lessonIndex: number) {
       this.loadingDetail = true;
       try {
         const courseApi = useCourseApi()
         const response: any = await courseApi.getMyCourseBySlug(slug)
-        this.course = response.data?.course || response.data || response.course || response
-        
+
+        const responseCourse = response.data?.course || response.data || response.course || response;
+        if (this.isRepeatLearn) {
+          let totalLessons = 0;
+          let completedLessons = 0;
+          if (responseCourse?.chapters && responseCourse?.chapters?.length > 0) {
+            for (const chapter of responseCourse?.chapters) {
+              const indexChaper = responseCourse?.chapters.findIndex((idc:any) => idc._id == chapter._id)
+              if (chapter.lessons && Array.isArray(chapter.lessons)) {
+                totalLessons += chapter.lessons.length;
+                completedLessons += chapter.lessons.filter(
+                  (lesson: any , index: number) => lesson.isCompleted === true && index <= lessonIndex && indexChaper <= chapterIndex
+                ).length;
+              }
+            }
+          }
+          const progressPercentage =
+            totalLessons > 0
+              ? Math.round((completedLessons / totalLessons) * 100)
+              : 0;
+          this.setCurrentCourse({
+            ...(responseCourse || {}),
+            progress: {
+              ...responseCourse?.progress,
+              progressPercentage: progressPercentage,
+              isCompleted: progressPercentage === 100 ? true : false,
+              completedLessons: completedLessons,
+              totalLessons: totalLessons,
+            },
+            chapters: responseCourse?.chapters?.map((chapter: Chapter, idxChapper:number) => {
+              return {
+                ...chapter,
+                lessons: chapter?.lessons?.map((lesson, idxLesson) => {
+                  console.log('idxLesson', idxLesson)
+                  console.log('indexChapper', idxChapper)
+                  return {
+                    ...lesson,
+                    isCompleted: idxLesson <= lessonIndex && idxChapper <= chapterIndex ? true : false
+                  }
+                })
+              }
+            })
+          })
+        }else{
+          this.course = response.data?.course || response.data || response.course || response
+        }
       } catch (error) {
         throw error
       } finally {
