@@ -58,29 +58,35 @@ class SessionController {
 
   public async register (req: Request, res: Response) {
     try {
-      const _user = await MongoDbUsers.model.findOne({ email: req.params.email });
-      if (_user) {
-        sendError(res, 400, AccountExists);
-      } else {
-        const params = req.parameters.permit(MongoDbUsers.CREATABLE_PARAMETERS).value();
-        const salt = bcrypt.genSaltSync();
-        const passwordEncode = bcrypt.hashSync(params.password, salt);
-        const user = await MongoDbUsers.model.create({
-          ...params,
-          password: passwordEncode,
-          status: MongoDbUsers.STATUS_ENUM.INACTIVE,
-        });
-        // Generate OTP and send verification email
-        const otp = (Math.random() * (999999 - 100000) + 100000).toString().slice(0, 6);
-        await user.update({ verifyOtp: otp });
-        
-        // Get source from request body to determine which site the user registered from
-        const source = req.body.source || 'elearning';
-        MailerService.verifyAccountOTP(user.get('email'), otp, source);
-        
-        user.set('verifyOtp', null);
-        sendSuccess(res, { user });
+      const { email, phoneNumber } = req.body;
+      // Kiểm tra trùng email
+      const existedEmail = await MongoDbUsers.model.findOne({ email });
+      if (existedEmail) {
+        return sendError(res, 400, AccountExists);
       }
+      // Kiểm tra trùng số điện thoại
+      if (phoneNumber) {
+        const existedPhone = await MongoDbUsers.model.findOne({ phoneNumber });
+        if (existedPhone) {
+          return sendError(res, 409, "Số điện thoại đã được sử dụng!");
+        }
+      }
+      const params = req.parameters.permit(MongoDbUsers.CREATABLE_PARAMETERS).value();
+      const salt = bcrypt.genSaltSync();
+      const passwordEncode = bcrypt.hashSync(params.password, salt);
+      const user = await MongoDbUsers.model.create({
+        ...params,
+        password: passwordEncode,
+        status: MongoDbUsers.STATUS_ENUM.INACTIVE,
+      });
+      // Generate OTP and send verification email
+      const otp = (Math.random() * (999999 - 100000) + 100000).toString().slice(0, 6);
+      await user.update({ verifyOtp: otp });
+      // Get source from request body to determine which site the user registered from
+      const source = req.body.source || "elearning";
+      MailerService.verifyAccountOTP(user.get("email"), otp, source);
+      user.set("verifyOtp", null);
+      sendSuccess(res, { user });
     } catch (error: any) {
       console.log("register", error)
       sendError(res, 500, error.message, error as Error);
