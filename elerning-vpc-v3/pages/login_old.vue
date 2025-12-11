@@ -1183,7 +1183,6 @@ const handleSubmit = async () => {
   
   .forgot-password {
     position: absolute;
-    width: 340.14px;
     height: 24px;
     right: 0px;
     top: 0px;

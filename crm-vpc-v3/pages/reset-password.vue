@@ -23,143 +23,47 @@
           <p class="subtitle">Cập nhật thay đổi mật khẩu</p>
         </div>
         <!-- Reset Password Form -->
-        <form @submit.prevent="handleSubmit" class="reset-password-form">
-          <!-- New Password Field -->
+        <form v-if="step === 'otp'" @submit.prevent="handleOtpSubmit" class="reset-password-form">
           <div class="form-group">
-            <label class="form-label">Mật khẩu</label>
+            <label class="form-label">Email</label>
             <div class="input-container">
-              <input
-                v-model="form.newPassword"
-                :type="showNewPassword ? 'text' : 'password'"
-                placeholder="Mật khẩu"
-                class="form-input"
-                required
-              />
-              <button
-                type="button"
-                @click="showNewPassword = !showNewPassword"
-                class="password-toggle"
-              >
-                <svg
-                  v-if="showNewPassword"
-                  width="20"
-                  height="20"
-                  viewBox="0 0 24 24"
-                  fill="none"
-                >
-                  <path
-                    d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"
-                    stroke="currentColor"
-                    stroke-width="2"
-                  />
-                  <circle
-                    cx="12"
-                    cy="12"
-                    r="3"
-                    stroke="currentColor"
-                    stroke-width="2"
-                  />
-                </svg>
-                <svg
-                  v-else
-                  width="20"
-                  height="20"
-                  viewBox="0 0 24 24"
-                  fill="none"
-                >
-                  <path
-                    d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"
-                    stroke="currentColor"
-                    stroke-width="2"
-                  />
-                  <line
-                    x1="1"
-                    y1="1"
-                    x2="23"
-                    y2="23"
-                    stroke="currentColor"
-                    stroke-width="2"
-                  />
-                </svg>
+              <input v-model="form.email" type="text" placeholder="Email" class="form-input" required />
+            </div>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Mã OTP</label>
+            <div class="input-container">
+              <input v-model="form.otp" type="text" placeholder="Nhập mã OTP" class="form-input" required />
+            </div>
+          </div>
+          <button type="submit" :disabled="loading" class="submit-btn">
+            {{ loading ? "Đang kiểm tra..." : "Xác nhận OTP" }}
+          </button>
+        </form>
+        <form v-else @submit.prevent="handlePasswordSubmit" class="reset-password-form">
+          <div class="form-group">
+            <label class="form-label">Mật khẩu mới</label>
+            <div class="input-container">
+              <input v-model="form.newPassword" :type="showNewPassword ? 'text' : 'password'" placeholder="Mật khẩu mới" class="form-input" required />
+              <button type="button" @click="showNewPassword = !showNewPassword" class="password-toggle">
+                <span v-if="showNewPassword">Ẩn</span>
+                <span v-else>Hiện</span>
               </button>
             </div>
           </div>
-
-          <!-- Confirm Password Field -->
           <div class="form-group">
             <label class="form-label">Xác nhận mật khẩu</label>
             <div class="input-container">
-              <input
-                v-model="form.confirmPassword"
-                :type="showConfirmPassword ? 'text' : 'password'"
-                placeholder="Mật khẩu"
-                class="form-input"
-                required
-              />
-              <button
-                type="button"
-                @click="showConfirmPassword = !showConfirmPassword"
-                class="password-toggle"
-              >
-                <svg
-                  v-if="showConfirmPassword"
-                  width="20"
-                  height="20"
-                  viewBox="0 0 24 24"
-                  fill="none"
-                >
-                  <path
-                    d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"
-                    stroke="currentColor"
-                    stroke-width="2"
-                  />
-                  <circle
-                    cx="12"
-                    cy="12"
-                    r="3"
-                    stroke="currentColor"
-                    stroke-width="2"
-                  />
-                </svg>
-                <svg
-                  v-else
-                  width="20"
-                  height="20"
-                  viewBox="0 0 24 24"
-                  fill="none"
-                >
-                  <path
-                    d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"
-                    stroke="currentColor"
-                    stroke-width="2"
-                  />
-                  <line
-                    x1="1"
-                    y1="1"
-                    x2="23"
-                    y2="23"
-                    stroke="currentColor"
-                    stroke-width="2"
-                  />
-                </svg>
+              <input v-model="form.confirmPassword" :type="showConfirmPassword ? 'text' : 'password'" placeholder="Xác nhận mật khẩu" class="form-input" required />
+              <button type="button" @click="showConfirmPassword = !showConfirmPassword" class="password-toggle">
+                <span v-if="showConfirmPassword">Ẩn</span>
+                <span v-else>Hiện</span>
               </button>
             </div>
           </div>
-
-          <!-- Submit Button -->
-          <button
-            type="submit"
-            :disabled="loading || !isFormValid"
-            class="submit-btn"
-          >
+          <button type="submit" :disabled="loading || !isFormValid" class="submit-btn">
             {{ loading ? "Đang xử lý..." : "Tạo mật khẩu mới" }}
           </button>
-
-          <!-- Login Link -->
-          <div class="login-link">
-            <span>Bạn đã có tài khoản.</span>
-            <a href="/login" class="login-text">Đăng nhập ngay</a>
-          </div>
         </form>
       </div>
     </div>
@@ -195,37 +99,40 @@
 </template>
 
 <script setup lang="ts">
-import { ref, reactive, computed } from "vue";
+import { ref, reactive, computed, onMounted } from "vue";
+import { useRoute, useRouter } from "nuxt/app";
 import { useAuthStore } from "~/stores/auth";
 import { message } from "ant-design-vue";
 
-// Use auth layout
-definePageMeta({
-  layout: "auth",
-});
-
-// SEO
+definePageMeta({ layout: "auth" });
 useHead({
   title: "Lấy lại mật khẩu - Van Phuc Care E-Learning",
   meta: [
-    {
-      name: "description",
-      content: "Tạo mật khẩu mới tại Van Phuc Care E-Learning",
-    },
+    { name: "description", content: "Tạo mật khẩu mới tại Van Phuc Care E-Learning" },
   ],
 });
 
+const route = useRoute();
+const router = useRouter();
 const authStore = useAuthStore();
 const loading = ref(false);
 const showNewPassword = ref(false);
 const showConfirmPassword = ref(false);
+const step = ref<'otp' | 'password'>('otp');
 
 const form = reactive({
-  newPassword: "",
-  confirmPassword: "",
+  email: '',
+  otp: '',
+  newPassword: '',
+  confirmPassword: '',
 });
 
-// Form validation
+onMounted(() => {
+  if (route.query.email) {
+    form.email = route.query.email as string;
+  }
+});
+
 const isFormValid = computed(() => {
   return (
     form.newPassword.length >= 6 &&
@@ -234,37 +141,41 @@ const isFormValid = computed(() => {
   );
 });
 
-const handleSubmit = async () => {
-  if (!isFormValid.value) {
-    message.error("Mật khẩu phải có ít nhất 6 ký tự và khớp nhau");
-    return;
-  }
-
+const handleOtpSubmit = async () => {
+  loading.value = true;
   try {
-    loading.value = true;
-
-    // Get token from URL params
-    const route = useRoute();
-    const token = route.query.token as string;
-
-    if (!token) {
-      message.error("Token không hợp lệ");
-      return;
-    }
-
-    // Call reset password API
-    const result = await authStore.resetPassword(token, form.newPassword);
-
+    // Call API verify OTP
+    const result = await authStore.verifyOtp(form.email, form.otp);
     if (result.success) {
-      message.success("Mật khẩu đã được cập nhật thành công");
-      // Redirect to login page
-      await navigateTo("/login");
+      step.value = 'password';
+      message.success('Xác thực OTP thành công, hãy nhập mật khẩu mới');
     } else {
-      message.error(result.error || "Không thể cập nhật mật khẩu");
+      message.error(result.error || 'OTP không hợp lệ');
     }
   } catch (error: any) {
-    console.error("Reset password error:", error);
-    message.error("Không thể cập nhật mật khẩu");
+    message.error('Lỗi xác thực OTP');
+  } finally {
+    loading.value = false;
+  }
+};
+
+const handlePasswordSubmit = async () => {
+  if (!isFormValid.value) {
+    message.error('Mật khẩu phải có ít nhất 6 ký tự và khớp nhau');
+    return;
+  }
+  loading.value = true;
+  try {
+    // Call API reset password
+    const result = await authStore.resetPasswordWithEmail(form.email, form.newPassword, form.otp);
+    if (result.success) {
+      message.success('Mật khẩu đã được cập nhật thành công');
+      router.push('/login');
+    } else {
+      message.error(result.error || 'Không thể cập nhật mật khẩu');
+    }
+  } catch (error: any) {
+    message.error('Lỗi cập nhật mật khẩu');
   } finally {
     loading.value = false;
   }

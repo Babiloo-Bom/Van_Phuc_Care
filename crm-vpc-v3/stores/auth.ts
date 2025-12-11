@@ -271,6 +271,7 @@ export const useAuthStore = defineStore('auth', {
     /**
      * Verify email with OTP (after registration)
      * Migrated from crm-vpc/components/auth/forms/SignUp.vue
+     * Updated: Auto login after successful verification
      */
     async verifyEmail(email: string, otp: string) {
       this.isLoading = true;
@@ -278,8 +279,36 @@ export const useAuthStore = defineStore('auth', {
       try {
         const authApi = useAuthApi();
 
-        // Verify OTP
-        await authApi.verifyEmail(email, otp);
+        // Verify OTP - API returns accessToken if successful
+        const response: any = await authApi.verifyEmail(email, otp);
+        
+        // Auto login: Save token and user info from response
+        if (response?.accessToken) {
+          this.token = response.accessToken;
+          
+          // Handle tokenExpireAt from response
+          this.tokenExpireAt = response.tokenExpireAt
+            ? this.calculateExpireTime(response.tokenExpireAt)
+            : this.calculateExpireTime('7d');
+          
+          this.user = {
+            id: response.id,
+            email: response.email,
+            fullname: response.fullname,
+            username: response.username,
+          };
+          this.isAuthenticated = true;
+          
+          // Persist to localStorage
+          if (import.meta.client) {
+            localStorage.setItem('auth_token', response.accessToken);
+            localStorage.setItem('token_expire_at', this.tokenExpireAt || '');
+            localStorage.setItem('user', JSON.stringify(this.user));
+          }
+          
+          // Fetch full user profile
+          await this.refreshUserData();
+        }
 
         return { success: true };
       } catch (error: any) {

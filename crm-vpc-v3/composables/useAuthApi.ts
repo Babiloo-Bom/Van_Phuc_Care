@@ -314,8 +314,9 @@ export const useAuthApi = () => {
      */
     async forgotPassword(email: string) {
       try {
+        // Call Nuxt server API instead of backend directly
         return await withRetry(() =>
-          fetchWithTimeout(`${apiBase}/passwords/forgot_password`, {
+          fetchWithTimeout(`/api/sessions/forgot-password`, {
             method: 'POST',
             body: { email },
           }),
