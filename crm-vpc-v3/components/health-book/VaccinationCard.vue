@@ -281,7 +281,7 @@ const handleStatusChange = (e: any) => {
 .view-detail-link {
   font-size: 13px;
   font-weight: 400;
-  color: #ff7875;
+  color: #1A75BB;
   margin-left: 8px;
   cursor: pointer;
 }
@@ -356,7 +356,7 @@ const handleStatusChange = (e: any) => {
 
 .injection-count {
   font-size: 13px;
-  color: #ff7875;
+  color: #1A75BB;
   font-weight: 500;
 }
 
@@ -427,7 +427,7 @@ const handleStatusChange = (e: any) => {
 
   .injection-count {
     font-size: 12px;
-    color: #666;
+    color: #1A75BB;
     margin-top: 4px;
   }
 
