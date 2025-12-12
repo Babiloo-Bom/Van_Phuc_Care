@@ -76,7 +76,7 @@ class SessionController {
         
         // Get source from request body to determine which site the user registered from
         const source = req.body.source || 'elearning';
-        MailerService.verifyAccountOTP(user.get('email'), otp, source);
+        MailerService.verifyAccountOTP(user.get('email'), otp, source, user.get('fullname'));
         
         user.set('verifyOtp', null);
         sendSuccess(res, { user });

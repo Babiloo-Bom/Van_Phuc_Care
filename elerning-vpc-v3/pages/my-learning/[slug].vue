@@ -484,6 +484,9 @@ const canMarkLessonCompleted = (
 };
 
 const handleRepeat = () => {
+  navigateTo(
+    `/my-learning/${slug.value}?chapter=0&lesson=0`
+  );
   fetchCourseDetail();
 }
 const findValidLesson = (): {
@@ -543,7 +546,7 @@ const findValidLesson = (): {
 const fetchCourseDetail = async () => {
   try {
     loading.value = true;
-    await coursesStore.fetchMyCourseBySlug(slug.value);
+    await coursesStore.fetchMyCourseBySlug(slug.value, currentChapterIndex.value, currentLessonIndex.value);
 
     const chapterParam = route.query.chapter;
     const lessonParam = route.query.lesson;
@@ -562,46 +565,6 @@ const fetchCourseDetail = async () => {
     ) {
       currentLessonIndex.value = 0;
     }
-    if (isRepeat.value) {
-      let totalLessons = 0;
-      let completedLessons = 0;
-      if (course.value?.chapters && course.value?.chapters?.length > 0) {
-        for (const chapter of course.value?.chapters) {
-          if (chapter.lessons && Array.isArray(chapter.lessons)) {
-            totalLessons += chapter.lessons.length;
-            completedLessons += chapter.lessons.filter(
-              (lesson: any , index: number) => lesson.isCompleted === true && index <= currentLessonIndex.value
-            ).length;
-          }
-        }
-      }
-      
-      const progressPercentage =
-        totalLessons > 0
-          ? Math.round((completedLessons / totalLessons) * 100)
-          : 0;
-
-      coursesStore.setCurrentCourse({
-        ...(coursesStore?.currentCourse || {}),
-        progress: {
-          ...coursesStore?.currentCourse?.progress,
-          progressPercentage: progressPercentage,
-          isCompleted: progressPercentage === 100 ? true : false
-        },
-        chapters: coursesStore?.currentCourse?.chapters?.map((chapter: Chapter) => {
-          return {
-            ...chapter,
-            lessons: chapter?.lessons?.map((lesson, idxLesson) => {
-              return {
-                ...lesson,
-                isCompleted: idxLesson <= currentLessonIndex.value ? true : false
-              }
-            })
-          }
-        })
-      } as Course)
-    }
-
     
   } catch (error) {
     navigateTo("/my-learning");
@@ -609,7 +572,7 @@ const fetchCourseDetail = async () => {
     loading.value = false;
   }
 };
-console.log(coursesStore.isRepeatLearn)
+
 
 const handleFinishQuiz = async (quizResult: any) => {
     const chapterParam = route.query.chapter;
@@ -660,7 +623,7 @@ watch(
           0
         );
 
-        await coursesStore.fetchMyCourseBySlug(slug.value);
+        await coursesStore.fetchMyCourseBySlug(slug.value, currentChapterIndex.value, currentLessonIndex.value);
       } catch (error) {
       } finally {
         markingCompleted.value = false;

@@ -55,7 +55,7 @@
                 <div class="p-2 sm:p-4 rounded-md overflow-hidden shadow-md">
                   <video
                     v-if="currentVideoUrl"
-                    ref="videoRef"
+                    :ref="videoRef"
                     :src="currentVideoUrl"
                     :poster="course?.thumbnail"
                     class="w-full h-auto min-h-[200px] sm:min-h-[300px] md:min-h-[400px] lg:min-h-[500px] object-cover rounded-[8px] sm:rounded-[12px]"
@@ -756,7 +756,7 @@ const socialMediaArray = ref<Array<{ icon: string; link: string }>>([]);
 
 // Expanded chapters state
 const expandedChapters = ref<Record<number, boolean>>({ 0: true }); // B1 expanded by default
-
+const videoRef = ref<any>(null)
 const course = computed(() => coursesStore.course);
 
 // SEO Configuration
@@ -1110,6 +1110,7 @@ const handlePreviewLesson = (lesson: any) => {
   } else if (lesson.videos && lesson.videos.length > 0) {
     currentVideoUrl.value = lesson.videos[0].videoUrl;
   }
+  videoRef.value?.play()
   // Scroll to video section
   nextTick(() => {
     const videoElement = document.querySelector('video');
