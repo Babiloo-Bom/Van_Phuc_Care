@@ -168,7 +168,7 @@ const formattedDate = computed(() => {
   if (props.vaccine.scheduledDate) {
     return dayjs(props.vaccine.scheduledDate).format("DD/MM/YYYY");
   }
-  return "--/--/----";
+  return dayjs().format("DD/MM/YYYY");
 });
 
 // Check if completed
