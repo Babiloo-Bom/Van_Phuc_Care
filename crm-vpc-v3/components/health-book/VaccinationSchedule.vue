@@ -32,6 +32,8 @@
         v-for="vaccine in filteredVaccines"
         :key="vaccine._id || vaccine.id"
         :vaccine="vaccine"
+        @statusChange="handleStatusChange"
+        @viewDetail="handleViewDetail"
       />
     </div>
 
@@ -44,8 +46,10 @@
 
 <script setup lang="ts">
 import { ref, computed, onMounted, watch } from "vue";
+import { message } from "ant-design-vue";
 import { useVaccinationsApi } from "~/composables/api/useVaccinationsApi";
 import VaccinationCard from "./VaccinationCard.vue";
+import type { VaccinationScheduleItem } from "~/types/api";
 
 const props = defineProps<{
   schedule?: any[];
@@ -53,9 +57,13 @@ const props = defineProps<{
   healthBookId?: string;
 }>();
 
+const emit = defineEmits<{
+  viewDetail: [vaccine: VaccinationScheduleItem];
+}>();
+
 const selectedAge = ref<string>("newborn");
 const vaccinations = ref<any[]>([]);
-const { loading, error, getVaccinationSchedule } = useVaccinationsApi();
+const { loading, error, getVaccinationSchedule, createVaccinationRecord } = useVaccinationsApi();
 
 const fetchVaccinations = async () => {
   // Pass healthBookId (preferred) or customerId to get merged schedule + records
@@ -109,6 +117,44 @@ const filteredVaccines = computed(() => {
 const handleAgeChange = (value: string) => {
   selectedAge.value = value;
   // Filtering is handled reactively by filteredVaccines computed
+};
+
+// Handle vaccination status change (tick checkbox)
+const handleStatusChange = async (vaccine: VaccinationScheduleItem, completed: boolean) => {
+  if (!completed) return; // Only handle when marking as completed
+  
+  try {
+    // Create vaccination record to mark as completed
+    await createVaccinationRecord({
+      customerId: props.customerId || '',
+      healthBookId: props.healthBookId || '',
+      vaccineId: vaccine._id || vaccine.id || '',
+      injectionDate: new Date().toISOString(),
+      status: 'completed',
+      injectionNumber: vaccine.injectionNumber || 1,
+    });
+    
+    // Update local state
+    const index = vaccinations.value.findIndex(
+      (v: any) => (v._id || v.id) === (vaccine._id || vaccine.id)
+    );
+    if (index !== -1) {
+      vaccinations.value[index] = {
+        ...vaccinations.value[index],
+        injectionStatus: 'completed',
+        injectionDate: new Date().toISOString(),
+      };
+    }
+    
+    message.success('Đã cập nhật trạng thái tiêm phòng');
+  } catch (err: any) {
+    message.error(err?.message || 'Không thể cập nhật trạng thái tiêm phòng');
+  }
+};
+
+// Handle view detail
+const handleViewDetail = (vaccine: VaccinationScheduleItem) => {
+  emit('viewDetail', vaccine);
 };
 </script>
 

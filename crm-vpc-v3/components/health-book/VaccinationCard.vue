@@ -298,6 +298,7 @@ const handleStatusChange = (e: any) => {
   display: -webkit-box;
   -webkit-box-orient: vertical;
   -webkit-line-clamp: 2;
+  line-clamp: 2;
   overflow: hidden;
 }
 
@@ -334,7 +335,7 @@ const handleStatusChange = (e: any) => {
 }
 
 .status-completed {
-  color: #52c41a;
+  color: #15CF74;
 }
 
 .status-pending {
@@ -372,8 +373,8 @@ const handleStatusChange = (e: any) => {
 }
 
 :deep(.ant-checkbox-checked .ant-checkbox-inner) {
-  background-color: #52c41a;
-  border-color: #52c41a;
+  background-color: #06E775;
+  border-color: #06E775;
 }
 
 :deep(.ant-checkbox-checked .ant-checkbox-inner::after) {
