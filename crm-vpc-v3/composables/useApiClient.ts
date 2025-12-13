@@ -63,11 +63,15 @@ export const useApiClient = () => {
 
     let errorMessage = 'Có lỗi xảy ra, vui lòng thử lại';
     
-    // Extract error message from response
-    if (error.data) {
-      errorMessage = error.data.message || error.data.error || errorMessage;
-    } else if (error.message) {
-      errorMessage = error.message;
+    // Extract error message from response (check nested data structure)
+    if (error.data?.data?.error) {
+      errorMessage = error.data.data.error;
+    } else if (error.data?.data?.message) {
+      errorMessage = error.data.data.message;
+    } else if (error.data?.error) {
+      errorMessage = error.data.error;
+    } else if (error.data?.message) {
+      errorMessage = error.data.message;
     }
 
     // Handle specific status codes
