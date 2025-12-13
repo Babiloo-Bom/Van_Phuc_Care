@@ -55,7 +55,6 @@
                 }}</span>
                 <a-checkbox
                   :checked="isCompleted"
-                  :disabled="isCompleted"
                   @change="handleStatusChange"
                 />
               </div>
@@ -109,7 +108,6 @@
             <span :class="['status-text', statusClass]">{{ statusText }}</span>
             <a-checkbox
               :checked="isCompleted"
-              :disabled="isCompleted"
               @change="handleStatusChange"
             />
           </div>
@@ -370,14 +368,17 @@ const handleStatusChange = (e: any) => {
   width: 20px;
   height: 20px;
   border-radius: 4px;
+  background-color: #fff;
+  border-color: #d9d9d9;
 }
 
 :deep(.ant-checkbox-checked .ant-checkbox-inner) {
-  background-color: #06E775;
+  background-color: #fff;
   border-color: #06E775;
 }
 
 :deep(.ant-checkbox-checked .ant-checkbox-inner::after) {
+  border-color: #06E775;
   width: 6px;
   height: 10px;
 }

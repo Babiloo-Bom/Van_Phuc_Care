@@ -63,7 +63,7 @@ const emit = defineEmits<{
 
 const selectedAge = ref<string>("newborn");
 const vaccinations = ref<any[]>([]);
-const { loading, error, getVaccinationSchedule, createVaccinationRecord } = useVaccinationsApi();
+const { loading, error, getVaccinationSchedule, createVaccinationRecord, deleteVaccinationRecord } = useVaccinationsApi();
 
 const fetchVaccinations = async () => {
   // Pass healthBookId (preferred) or customerId to get merged schedule + records
@@ -119,20 +119,27 @@ const handleAgeChange = (value: string) => {
   // Filtering is handled reactively by filteredVaccines computed
 };
 
-// Handle vaccination status change (tick checkbox)
+// Handle vaccination status change (tick/untick checkbox)
 const handleStatusChange = async (vaccine: VaccinationScheduleItem, completed: boolean) => {
-  if (!completed) return; // Only handle when marking as completed
-  
   try {
-    // Create vaccination record to mark as completed
-    await createVaccinationRecord({
-      customerId: props.customerId || '',
-      healthBookId: props.healthBookId || '',
-      vaccineId: vaccine._id || vaccine.id || '',
-      injectionDate: new Date().toISOString(),
-      status: 'completed',
-      injectionNumber: vaccine.injectionNumber || 1,
-    });
+    const newStatus = completed ? 'completed' : 'pending';
+    
+    if (completed) {
+      // Create vaccination record to mark as completed
+      await createVaccinationRecord({
+        customerId: props.customerId || '',
+        healthBookId: props.healthBookId || '',
+        vaccineId: vaccine._id || vaccine.id || '',
+        injectionDate: new Date().toISOString(),
+        status: 'completed',
+        injectionNumber: vaccine.injectionNumber || 1,
+      });
+    } else {
+      // If unchecking, delete the vaccination record (if exists)
+      if (vaccine.recordId) {
+        await deleteVaccinationRecord(vaccine.recordId);
+      }
+    }
     
     // Update local state
     const index = vaccinations.value.findIndex(
@@ -141,12 +148,12 @@ const handleStatusChange = async (vaccine: VaccinationScheduleItem, completed: b
     if (index !== -1) {
       vaccinations.value[index] = {
         ...vaccinations.value[index],
-        injectionStatus: 'completed',
-        injectionDate: new Date().toISOString(),
+        injectionStatus: newStatus,
+        injectionDate: completed ? new Date().toISOString() : null,
       };
     }
     
-    message.success('Đã cập nhật trạng thái tiêm phòng');
+    message.success(completed ? 'Đã đánh dấu tiêm phòng' : 'Đã bỏ đánh dấu tiêm phòng');
   } catch (err: any) {
     message.error(err?.message || 'Không thể cập nhật trạng thái tiêm phòng');
   }
