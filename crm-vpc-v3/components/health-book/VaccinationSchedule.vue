@@ -30,7 +30,7 @@
     <div class="space-y-4">
       <VaccinationCard
         v-for="vaccine in filteredVaccines"
-        :key="vaccine._id || vaccine.id"
+        :key="`${vaccine._id || vaccine.id}-${vaccine.injectionStatus}`"
         :vaccine="vaccine"
         @statusChange="handleStatusChange"
         @viewDetail="handleViewDetail"
@@ -129,6 +129,11 @@ const handleStatusChange = async (vaccine: VaccinationScheduleItem, completed: b
     (v: any) => (v._id || v.id) === vaccineId
   );
   
+  if (index === -1) {
+    message.error('Không tìm thấy vaccine trong danh sách');
+    return;
+  }
+  
   try {
     if (completed) {
       // Create vaccination record to mark as completed
@@ -141,41 +146,36 @@ const handleStatusChange = async (vaccine: VaccinationScheduleItem, completed: b
         injectionNumber: vaccine.injectionNumber || 1,
       });
       
-      // Update local state với recordId từ response
-      if (index !== -1 && result) {
-        vaccinations.value[index] = {
-          ...vaccinations.value[index],
-          injectionStatus: newStatus,
-          injectionDate: new Date().toISOString(),
-          recordId: result._id || result.id,
-        };
-      }
+      // Update local state với recordId từ response - tạo array mới để Vue detect thay đổi
+      const updatedVaccinations = [...vaccinations.value];
+      updatedVaccinations[index] = {
+        ...updatedVaccinations[index],
+        injectionStatus: 'completed',
+        injectionDate: new Date().toISOString(),
+        recordId: result?._id || result?.id || null,
+      };
+      vaccinations.value = updatedVaccinations;
+      
     } else {
       // If unchecking, delete the vaccination record (if exists)
       if (vaccine.recordId) {
         await deleteVaccinationRecord(vaccine.recordId);
       }
       
-      // Update local state
-      if (index !== -1) {
-        vaccinations.value[index] = {
-          ...vaccinations.value[index],
-          injectionStatus: newStatus,
-          injectionDate: null,
-          recordId: null,
-        };
-      }
+      // Update local state - tạo array mới để Vue detect thay đổi
+      const updatedVaccinations = [...vaccinations.value];
+      updatedVaccinations[index] = {
+        ...updatedVaccinations[index],
+        injectionStatus: 'pending',
+        injectionDate: null,
+        recordId: null,
+      };
+      vaccinations.value = updatedVaccinations;
     }
     
     message.success(completed ? 'Đã đánh dấu tiêm phòng' : 'Đã bỏ đánh dấu tiêm phòng');
   } catch (err: any) {
-    // Revert local state nếu lỗi
-    if (index !== -1) {
-      vaccinations.value[index] = {
-        ...vaccinations.value[index],
-        injectionStatus: completed ? 'pending' : 'completed',
-      };
-    }
+    // Không cần revert vì chưa update state khi có lỗi
     message.error(err?.message || 'Không thể cập nhật trạng thái tiêm phòng');
   }
 };
