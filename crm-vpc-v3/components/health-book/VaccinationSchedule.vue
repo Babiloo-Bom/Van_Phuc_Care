@@ -63,7 +63,7 @@ const emit = defineEmits<{
 
 const selectedAge = ref<string>("newborn");
 const vaccinations = ref<any[]>([]);
-const { loading, error, getVaccinationSchedule, createVaccinationRecord, deleteVaccinationRecord } = useVaccinationsApi();
+const { loading, error, getVaccinationSchedule, createVaccinationRecord, deleteVaccinationRecordByVaccine } = useVaccinationsApi();
 
 const fetchVaccinations = async () => {
   // Pass healthBookId (preferred) or customerId to get merged schedule + records
@@ -157,10 +157,12 @@ const handleStatusChange = async (vaccine: VaccinationScheduleItem, completed: b
       vaccinations.value = updatedVaccinations;
       
     } else {
-      // If unchecking, delete the vaccination record (if exists)
-      if (vaccine.recordId) {
-        await deleteVaccinationRecord(vaccine.recordId);
-      }
+      // If unchecking, delete the vaccination record by vaccineId
+      await deleteVaccinationRecordByVaccine(
+        vaccineId,
+        props.healthBookId || '',
+        vaccine.injectionNumber || 1
+      );
       
       // Update local state - tạo array mới để Vue detect thay đổi
       const updatedVaccinations = [...vaccinations.value];

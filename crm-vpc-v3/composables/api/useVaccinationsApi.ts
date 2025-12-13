@@ -145,6 +145,33 @@ export function useVaccinationsApi() {
     }
   }
 
+  /**
+   * Xóa vaccination record theo vaccineId và healthBookId
+   * DELETE /api/vaccinations/records/by-vaccine/:vaccineId -> backend /api/u/vaccination-records/by-vaccine/:vaccineId
+   */
+  const deleteVaccinationRecordByVaccine = async (
+    vaccineId: string,
+    healthBookId: string,
+    injectionNumber?: number
+  ): Promise<boolean> => {
+    loading.value = true;
+    error.value = '';
+    try {
+      const params: Record<string, string | number> = { healthBookId };
+      if (injectionNumber) {
+        params.injectionNumber = injectionNumber;
+      }
+      // Use Nuxt server proxy endpoint
+      await apiClient.delete(`/api/vaccinations/records/by-vaccine/${vaccineId}`, { params });
+      return true;
+    } catch (err: any) {
+      error.value = err?.message || 'Không thể xóa bản ghi tiêm chủng';
+      throw err;
+    } finally {
+      loading.value = false;
+    }
+  }
+
   return {
     loading,
     error,
@@ -153,5 +180,6 @@ export function useVaccinationsApi() {
     createVaccinationRecord,
     updateVaccinationRecord,
     deleteVaccinationRecord,
+    deleteVaccinationRecordByVaccine,
   }
 }

@@ -15,6 +15,9 @@ router.post('/', UserVaccinationRecordsController.create);
 // PUT /api/u/vaccination-records/:id
 router.put('/:id', UserVaccinationRecordsController.update);
 
+// DELETE /api/u/vaccination-records/by-vaccine/:vaccineId - Xóa theo vaccineId
+router.delete('/by-vaccine/:vaccineId', UserVaccinationRecordsController.deleteByVaccine);
+
 // DELETE /api/u/vaccination-records/:id
 router.delete('/:id', UserVaccinationRecordsController.delete);
 

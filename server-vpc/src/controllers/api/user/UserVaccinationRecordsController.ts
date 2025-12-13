@@ -188,6 +188,45 @@ class UserVaccinationRecordsController {
   }
 
   /**
+   * Xóa vaccination record theo vaccineId và healthBookId
+   * DELETE /api/u/vaccination-records/by-vaccine/:vaccineId
+   * Query: healthBookId (required)
+   */
+  public async deleteByVaccine(req: Request, res: Response) {
+    try {
+      const { vaccineId } = req.params;
+      const { healthBookId, injectionNumber } = req.query;
+
+      if (!healthBookId) {
+        return sendError(res, 400, "healthBookId là bắt buộc");
+      }
+
+      const query: any = {
+        vaccineId,
+        healthBookId,
+      };
+
+      // Nếu có injectionNumber thì thêm vào query
+      if (injectionNumber) {
+        query.injectionNumber = Number(injectionNumber);
+      }
+
+      const record = await VaccinationRecords.model.findOneAndDelete(query);
+
+      if (!record) {
+        return sendError(res, 404, "Không tìm thấy bản ghi tiêm chủng");
+      }
+
+      return sendSuccess(res, {
+        message: "Đã xóa bản ghi tiêm chủng thành công",
+      });
+    } catch (error: any) {
+      console.error("Error deleting vaccination record by vaccine:", error);
+      return sendError(res, 500, error.message);
+    }
+  }
+
+  /**
    * Seed vaccination records cho một healthbook
    * POST /api/u/vaccination-records/seed
    * Body: { healthBookId, customerId? }
