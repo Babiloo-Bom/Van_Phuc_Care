@@ -84,18 +84,58 @@ export interface HealthRecord {
   temperature?: number;
   height?: number;
   weight?: number;
+  
+  // Tình trạng da
   skinCondition?: string;
+  skinConditionNote?: string;
+  
+  // Sức khỏe răng miệng
   oralHealth?: string;
+  oralHealthNote?: string;
+  
+  // Dinh dưỡng
   nutrition?: string;
+  nutritionNote?: string;
+  
+  // Giấc ngủ
   sleep?: string;
+  sleepNote?: string;
+  
+  // Tiêu hóa
   stoolFrequency?: string;
   stoolCondition?: string;
   digestiveIssues?: string;
+  
+  // Lịch sinh hoạt
+  schedule?: string;
+  
+  // Ghi chú
+  notes?: string;
+  
+  // Mốc phát triển
+  developmentMilestone?: string;
+  
+  // Vận động thô
+  grossMotorSkills?: string;
+  
+  // Vận động tinh
+  fineMotorSkills?: string;
+  
+  // Thị giác và nhận thức
+  visualCognition?: string;
+  
+  // Giao tiếp và cảm xúc
+  communicationEmotion?: string;
+  
+  // Dấu hiệu cảnh báo sớm
+  earlyWarning?: string;
+  
+  // Legacy fields
   method?: string;
   motorSkills?: string;
   vaccination?: HealthRecordVaccination | null;
-  notes?: string;
   healthStatus?: string;
+  
   createdAt?: string;
   updatedAt?: string;
   __v?: number;
