@@ -24,7 +24,10 @@
                 {{ vaccine.name }}
                 <a
                   class="view-detail-link"
-                  @click.stop="$emit('viewDetail', vaccine)"
+                  :href="vaccineDetailLink"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  @click.stop
                   >(Xem chi tiết)</a
                 >
               </h3>
@@ -87,7 +90,16 @@
 
         <!-- Vaccine Info -->
         <div class="vaccine-info">
-          <h3 class="vaccine-name">{{ vaccine.name }}</h3>
+          <h3 class="vaccine-name">
+            {{ vaccine.name }}
+            <a
+              class="view-detail-link"
+              :href="vaccineDetailLink"
+              target="_blank"
+              rel="noopener noreferrer"
+              @click.stop
+            >(Xem chi tiết)</a>
+          </h3>
           <div class="date-info">
             <svg
               width="12"
@@ -141,6 +153,12 @@ const handleImageError = (e: Event) => {
   const target = e.target as HTMLImageElement;
   target.src = "/images/vaccines/default.png";
 };
+
+const DEFAULT_DETAIL_LINK = 'https://vanphuccare.vn/tiem-chung';
+
+const vaccineDetailLink = computed(() => {
+  return props.vaccine.detailLink?.trim() || DEFAULT_DETAIL_LINK;
+});
 
 // Format injection date
 const formattedDate = computed(() => {

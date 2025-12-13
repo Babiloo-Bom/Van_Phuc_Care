@@ -10,6 +10,7 @@ export interface VaccinationScheduleItem {
   thumbnail?: string;
   numberOfInjections?: string;
   category?: string;
+  detailLink?: string; // Link to related article/content
   // Merged fields from vaccination records (if customerId is provided)
   vaccinationRecord?: VaccinationRecord | null;
   injectionStatus?: 'completed' | 'pending' | 'scheduled' | 'skipped';
