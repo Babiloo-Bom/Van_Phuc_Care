@@ -52,7 +52,7 @@ class UserVaccinationRecordsController {
    */
   public async create(req: Request, res: Response) {
     try {
-      const {
+      let {
         customerId,
         healthBookId,
         vaccineId,
@@ -66,9 +66,18 @@ class UserVaccinationRecordsController {
         nextDoseDate,
       } = req.body;
 
-      // Validate required fields
-      if (!customerId || !healthBookId || !vaccineId) {
-        return sendError(res, 400, "customerId, healthBookId và vaccineId là bắt buộc");
+      // Validate required fields - healthBookId và vaccineId là bắt buộc
+      if (!healthBookId || !vaccineId) {
+        return sendError(res, 400, "healthBookId và vaccineId là bắt buộc");
+      }
+
+      // Nếu không có customerId, lấy từ healthBook
+      if (!customerId) {
+        const healthBook = await HealthBooks.model.findById(healthBookId);
+        if (!healthBook) {
+          return sendError(res, 404, "HealthBook không tồn tại");
+        }
+        customerId = (healthBook as any).customerId || (healthBook as any).userId || healthBookId;
       }
 
       // Check if vaccine exists

@@ -121,40 +121,61 @@ const handleAgeChange = (value: string) => {
 
 // Handle vaccination status change (tick/untick checkbox)
 const handleStatusChange = async (vaccine: VaccinationScheduleItem, completed: boolean) => {
+  const newStatus = completed ? 'completed' : 'pending';
+  const vaccineId = vaccine._id || vaccine.id || '';
+  
+  // Find vaccine index for updating
+  const index = vaccinations.value.findIndex(
+    (v: any) => (v._id || v.id) === vaccineId
+  );
+  
   try {
-    const newStatus = completed ? 'completed' : 'pending';
-    
     if (completed) {
       // Create vaccination record to mark as completed
-      await createVaccinationRecord({
-        customerId: props.customerId || '',
+      const result = await createVaccinationRecord({
+        customerId: props.customerId || '', // Backend sẽ tự lấy từ healthBook nếu rỗng
         healthBookId: props.healthBookId || '',
-        vaccineId: vaccine._id || vaccine.id || '',
+        vaccineId: vaccineId,
         injectionDate: new Date().toISOString(),
         status: 'completed',
         injectionNumber: vaccine.injectionNumber || 1,
       });
+      
+      // Update local state với recordId từ response
+      if (index !== -1 && result) {
+        vaccinations.value[index] = {
+          ...vaccinations.value[index],
+          injectionStatus: newStatus,
+          injectionDate: new Date().toISOString(),
+          recordId: result._id || result.id,
+        };
+      }
     } else {
       // If unchecking, delete the vaccination record (if exists)
       if (vaccine.recordId) {
         await deleteVaccinationRecord(vaccine.recordId);
       }
-    }
-    
-    // Update local state
-    const index = vaccinations.value.findIndex(
-      (v: any) => (v._id || v.id) === (vaccine._id || vaccine.id)
-    );
-    if (index !== -1) {
-      vaccinations.value[index] = {
-        ...vaccinations.value[index],
-        injectionStatus: newStatus,
-        injectionDate: completed ? new Date().toISOString() : null,
-      };
+      
+      // Update local state
+      if (index !== -1) {
+        vaccinations.value[index] = {
+          ...vaccinations.value[index],
+          injectionStatus: newStatus,
+          injectionDate: null,
+          recordId: null,
+        };
+      }
     }
     
     message.success(completed ? 'Đã đánh dấu tiêm phòng' : 'Đã bỏ đánh dấu tiêm phòng');
   } catch (err: any) {
+    // Revert local state nếu lỗi
+    if (index !== -1) {
+      vaccinations.value[index] = {
+        ...vaccinations.value[index],
+        injectionStatus: completed ? 'pending' : 'completed',
+      };
+    }
     message.error(err?.message || 'Không thể cập nhật trạng thái tiêm phòng');
   }
 };
