@@ -429,6 +429,13 @@ export const useAuthStore = defineStore("auth", {
       this.isLoading = true;
 
       try {
+        // Clear SSO cookie FIRST to prevent SSO login immediately after logout
+        if (process.client) {
+          const { clearSSOCookie } = await import('~/utils/sso');
+          clearSSOCookie();
+          console.log('[Logout] [Elearning] Cleared SSO cookie to prevent auto-login after logout');
+        }
+        
         // Call logout API to clear server session
         const authApi = useAuthApi();
         await authApi.logout().catch(() => {

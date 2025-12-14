@@ -113,14 +113,19 @@ export function startLogoutSyncMonitor(callback: () => void, intervalMs: number 
   
   console.log('[Logout Sync] [CRM] Starting logout sync monitor, interval:', intervalMs, 'ms');
   
+  let checkCount = 0;
   const interval = setInterval(() => {
+    checkCount++;
     const hasCookie = checkLogoutSyncCookie();
     if (hasCookie) {
-      console.log('[Logout Sync] [CRM] Monitor detected logout sync cookie, calling callback...');
+      console.log('[Logout Sync] [CRM] Monitor detected logout sync cookie (check #' + checkCount + '), calling callback...');
       // Clear cookie AFTER calling callback to ensure it's processed
       // But clear it to prevent multiple triggers
       clearLogoutSyncCookie();
       callback();
+    } else if (checkCount % 10 === 0) {
+      // Log every 10 checks to confirm monitor is running (every 20 seconds)
+      console.log('[Logout Sync] [CRM] Monitor running, check #' + checkCount + ', no logout sync cookie found');
     }
   }, intervalMs);
   
