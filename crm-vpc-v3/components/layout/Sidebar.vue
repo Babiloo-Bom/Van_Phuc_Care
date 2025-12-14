@@ -15,7 +15,7 @@
         <!-- External Link -->
         <a
           v-if="isExternalLink(item.path)"
-          :href="item.path"
+          :href="getElearningSSOUrl(item.path)"
           target="_blank"
           rel="noopener noreferrer"
           class="flex items-center gap-3 px-5 py-3 mx-2 rounded-lg text-sm font-medium transition-all duration-200 text-gray-700 hover:bg-gray-100"
@@ -39,11 +39,19 @@
 </template>
 
 <script setup lang="ts">
+import { computed } from 'vue';
 import { useRoute } from 'vue-router';
+import { useAuthStore } from '~/stores/auth';
+import { useRuntimeConfig } from '#app';
 import { MENU_ITEMS } from '~/constants/menu';
 
 const route = useRoute();
+const authStore = useAuthStore();
+const config = useRuntimeConfig();
 const menuItems = MENU_ITEMS;
+
+// Elearning Base URL
+const elearningBaseUrl = computed(() => config.public.baseUrlElearning || 'http://elearning.vanphuccare.com');
 
 const isExternalLink = (path: string) => {
   return path.startsWith('http://') || path.startsWith('https://');
@@ -57,5 +65,22 @@ const isActive = (path: string) => {
     return route.path === '/';
   }
   return route.path.startsWith(path);
+};
+
+// Get SSO URL for Elearning
+const getElearningSSOUrl = (path: string) => {
+  if (!isExternalLink(path)) return path;
+  
+  // If it's the "Khóa học của tôi" link, add SSO token
+  if (path.includes('my-learning') && authStore.isAuthenticated && authStore.token) {
+    try {
+      const { buildSSOUrl } = require('~/utils/sso');
+      return buildSSOUrl(elearningBaseUrl.value, '/my-learning');
+    } catch {
+      return path;
+    }
+  }
+  
+  return path;
 };
 </script>

@@ -20,16 +20,10 @@ function isLocalhost(): boolean {
  */
 export function setLogoutSyncCookie() {
   if (process.client) {
-    // Set cookie with expiration in 1 minute (just enough time for sync)
     const expires = new Date();
     expires.setMinutes(expires.getMinutes() + 1);
     
-    // On localhost, cookies cannot be shared between different ports
-    // So we use localStorage events as fallback
     if (isLocalhost()) {
-      // Use localStorage event to sync between tabs/windows on same origin
-      // Note: This only works for same origin (same port), not cross-port
-      // For cross-port on localhost, we'll use a polling mechanism with localStorage
       const syncKey = 'auth_logout_sync_' + Date.now();
       localStorage.setItem(syncKey, 'true');
       // Clean up old sync keys
@@ -43,7 +37,6 @@ export function setLogoutSyncCookie() {
         }
       });
     } else {
-      // Production: Use cookie with domain for subdomain sharing
       try {
         document.cookie = `${LOGOUT_SYNC_COOKIE}=${Date.now()}; expires=${expires.toUTCString()}; path=/; domain=${COOKIE_DOMAIN}; SameSite=Lax`;
       } catch (e) {

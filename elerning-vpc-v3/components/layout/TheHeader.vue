@@ -118,10 +118,73 @@
               <!-- User Dropdown Menu -->
               <div
                 v-if="showUserMenu"
-                class="user-dropdown absolute top-[calc(100%+8px)] right-0 min-w-[160px] bg-white border border-gray-200 rounded-xl shadow-lg overflow-hidden z-[100]"
+                class="user-dropdown absolute top-[calc(100%+8px)] right-0 min-w-[200px] bg-white border border-gray-200 rounded-xl shadow-lg overflow-hidden z-[100]"
               >
-                <button
+                <!-- Chỉnh sửa thông tin -->
+                <a
+                  :href="crmProfileUrl"
+                  target="_blank"
+                  rel="noopener noreferrer"
                   class="flex items-center gap-3 px-4 py-3 text-gray-700 text-sm transition-all hover:bg-gray-50 hover:text-blue-500 border-none bg-transparent w-full text-left cursor-pointer"
+                  @click="closeUserMenu"
+                >
+                  <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 16 16" fill="none">
+                    <g clip-path="url(#clip0_244_8848)">
+                      <path d="M14 2.66667H10V2C10 1.46957 9.78929 0.960859 9.41421 0.585786C9.03914 0.210714 8.53043 0 8 0C7.46957 0 6.96086 0.210714 6.58579 0.585786C6.21071 0.960859 6 1.46957 6 2V2.66667H2C1.46957 2.66667 0.960859 2.87738 0.585786 3.25245C0.210714 3.62753 0 4.13623 0 4.66667L0 16H16V4.66667C16 4.13623 15.7893 3.62753 15.4142 3.25245C15.0391 2.87738 14.5304 2.66667 14 2.66667ZM7.33333 2C7.33333 1.82319 7.40357 1.65362 7.5286 1.5286C7.65362 1.40357 7.82319 1.33333 8 1.33333C8.17681 1.33333 8.34638 1.40357 8.47141 1.5286C8.59643 1.65362 8.66667 1.82319 8.66667 2V4H7.33333V2ZM14.6667 14.6667H1.33333V4.66667C1.33333 4.48986 1.40357 4.32029 1.5286 4.19526C1.65362 4.07024 1.82319 4 2 4H6V5.33333H10V4H14C14.1768 4 14.3464 4.07024 14.4714 4.19526C14.5964 4.32029 14.6667 4.48986 14.6667 4.66667V14.6667ZM2.66667 13.3333H7.33333V6.66667H2.66667V13.3333ZM4 8H6V12H4V8ZM8.66667 9.33333H13.3333V10.6667H8.66667V9.33333ZM8.66667 6.66667H13.3333V8H8.66667V6.66667ZM8.66667 12H12V13.3333H8.66667V12Z" fill="currentColor"/>
+                    </g>
+                    <defs>
+                      <clipPath id="clip0_244_8848">
+                        <rect width="16" height="16" fill="white"/>
+                      </clipPath>
+                    </defs>
+                  </svg>
+                  <span>Chỉnh sửa thông tin</span>
+                </a>
+                <!-- Lịch sử giao dịch -->
+                <a
+                  :href="crmTransactionsUrl"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  class="flex items-center gap-3 px-4 py-3 text-gray-700 text-sm transition-all hover:bg-gray-50 hover:text-blue-500 border-none bg-transparent w-full text-left cursor-pointer"
+                  @click="closeUserMenu"
+                >
+                  <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 16 16" fill="none">
+                    <g clip-path="url(#clip0_244_8854)">
+                      <path d="M6.66667 16H0V14.6667H6.66667V16ZM5.33333 12H0V13.3333H5.33333V12ZM4 9.33333H0V10.6667H4V9.33333ZM8 0C5.87897 0.00229405 3.84547 0.845885 2.34568 2.34568C0.845885 3.84547 0.00229405 5.87897 0 8H1.33333C1.33333 6.68146 1.72433 5.39253 2.45687 4.2962C3.18941 3.19987 4.2306 2.34539 5.44878 1.8408C6.66695 1.33622 8.0074 1.2042 9.3006 1.46143C10.5938 1.71867 11.7817 2.3536 12.714 3.28595C13.6464 4.21831 14.2813 5.40619 14.5386 6.6994C14.7958 7.9926 14.6638 9.33305 14.1592 10.5512C13.6546 11.7694 12.8001 12.8106 11.7038 13.5431C10.6075 14.2757 9.31854 14.6667 8 14.6667V16C10.1217 16 12.1566 15.1571 13.6569 13.6569C15.1571 12.1566 16 10.1217 16 8C16 5.87827 15.1571 3.84344 13.6569 2.34315C12.1566 0.842855 10.1217 0 8 0V0ZM7.33333 4.66667V8.276L9.52867 10.4713L10.4713 9.52867L8.66667 7.724V4.66667H7.33333Z" fill="currentColor"/>
+                    </g>
+                    <defs>
+                      <clipPath id="clip0_244_8854">
+                        <rect width="16" height="16" fill="white"/>
+                      </clipPath>
+                    </defs>
+                  </svg>
+                  <span>Lịch sử giao dịch</span>
+                </a>
+                <!-- Sổ sức khỏe điện tử -->
+                <a
+                  :href="crmHealthBookUrl"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  class="flex items-center gap-3 px-4 py-3 text-gray-700 text-sm transition-all hover:bg-gray-50 hover:text-blue-500 border-none bg-transparent w-full text-left cursor-pointer"
+                  @click="closeUserMenu"
+                >
+                  <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 16 16" fill="none">
+                    <g clip-path="url(#clip0_244_8859)">
+                      <path d="M13.3332 0H1.99984V2H0.666504V3.33333H1.99984V4.66667H0.666504V6H1.99984V7.33333H0.666504V8.66667H1.99984V10H0.666504V11.3333H1.99984V12.6667H0.666504V14H1.99984V16H13.3332C13.8636 16 14.3723 15.7893 14.7474 15.4142C15.1225 15.0391 15.3332 14.5304 15.3332 14V2C15.3332 1.46957 15.1225 0.960859 14.7474 0.585786C14.3723 0.210714 13.8636 0 13.3332 0V0ZM13.9998 14C13.9998 14.1768 13.9296 14.3464 13.8046 14.4714C13.6796 14.5964 13.51 14.6667 13.3332 14.6667H3.33317V1.33333H13.3332C13.51 1.33333 13.6796 1.40357 13.8046 1.5286C13.9296 1.65362 13.9998 1.82319 13.9998 2V14ZM8.6665 8C9.06207 8 9.44875 7.8827 9.77764 7.66294C10.1065 7.44318 10.3629 7.13082 10.5143 6.76537C10.6656 6.39991 10.7052 5.99778 10.6281 5.60982C10.5509 5.22186 10.3604 4.86549 10.0807 4.58579C9.80101 4.30608 9.44465 4.1156 9.05668 4.03843C8.66872 3.96126 8.26659 4.00087 7.90114 4.15224C7.53569 4.30362 7.22333 4.55996 7.00357 4.88886C6.7838 5.21776 6.6665 5.60444 6.6665 6C6.6665 6.53043 6.87722 7.03914 7.25229 7.41421C7.62736 7.78929 8.13607 8 8.6665 8ZM11.9998 10.6667V12H10.6665V10.6667C10.6665 10.4899 10.5963 10.3203 10.4712 10.1953C10.3462 10.0702 10.1766 10 9.99984 10H7.33317C7.15636 10 6.98679 10.0702 6.86177 10.1953C6.73674 10.3203 6.6665 10.4899 6.6665 10.6667V12H5.33317V10.6667C5.33317 10.1362 5.54388 9.62753 5.91896 9.25245C6.29403 8.87738 6.80274 8.66667 7.33317 8.66667H9.99984C10.5303 8.66667 11.039 8.87738 11.4141 9.25245C11.7891 9.62753 11.9998 10.1362 11.9998 10.6667Z" fill="currentColor"/>
+                    </g>
+                    <defs>
+                      <clipPath id="clip0_244_8859">
+                        <rect width="16" height="16" fill="currentColor"/>
+                      </clipPath>
+                    </defs>
+                  </svg>
+                  <span>Sổ sức khỏe điện tử</span>
+                </a>
+                <!-- Divider -->
+                <div class="border-t border-gray-200"></div>
+                <!-- Đăng xuất -->
+                <button
+                  class="flex items-center gap-3 px-4 py-3 text-gray-700 text-sm transition-all hover:bg-gray-50 hover:text-red-500 border-none bg-transparent w-full text-left cursor-pointer"
                   @click="handleLogout"
                 >
                   <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none">
@@ -290,6 +353,7 @@ const props = defineProps<{
 
 const cartStore = useCartStore();
 const authStore = useAuthStore();
+const config = useRuntimeConfig();
 
 // Reactive data
 const mobileMenuOpen = ref(false);
@@ -302,6 +366,44 @@ const user = computed(() => authStore.user);
 const userName = computed(() => authStore.userName || 'User');
 const userEmail = computed(() => authStore.userEmail || 'user@example.com');
 const userAvatar = computed(() => authStore.user?.avatar || '/images/avatar-fallback.png');
+
+// CRM Base URL
+const crmBaseUrl = computed(() => config.public.baseUrlCrm || 'http://localhost:3101');
+
+// SSO URLs for CRM - use functions to avoid require in computed
+const getCrmProfileUrl = () => {
+  if (!isLoggedIn.value) return '#';
+  try {
+    const { buildSSOUrl } = require('~/utils/sso');
+    return buildSSOUrl(crmBaseUrl.value, '/profile');
+  } catch {
+    return crmBaseUrl.value + '/profile';
+  }
+};
+
+const getCrmTransactionsUrl = () => {
+  if (!isLoggedIn.value) return '#';
+  try {
+    const { buildSSOUrl } = require('~/utils/sso');
+    return buildSSOUrl(crmBaseUrl.value, '/transactions');
+  } catch {
+    return crmBaseUrl.value + '/transactions';
+  }
+};
+
+const getCrmHealthBookUrl = () => {
+  if (!isLoggedIn.value) return '#';
+  try {
+    const { buildSSOUrl } = require('~/utils/sso');
+    return buildSSOUrl(crmBaseUrl.value, '/');
+  } catch {
+    return crmBaseUrl.value + '/';
+  }
+};
+
+const crmProfileUrl = computed(() => getCrmProfileUrl());
+const crmTransactionsUrl = computed(() => getCrmTransactionsUrl());
+const crmHealthBookUrl = computed(() => getCrmHealthBookUrl());
 
 // Watch for user changes
 watch(() => authStore.user, (newUser) => {

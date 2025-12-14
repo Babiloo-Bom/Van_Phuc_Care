@@ -3,8 +3,8 @@
     :class="[
       'flex flex-col bg-white shadow-lg z-[100]',
       isMobile 
-        ? 'fixed left-0 top-0 w-[280px] h-screen' 
-        : 'hidden lg:flex lg:fixed lg:left-0 lg:top-0 lg:w-[280px] lg:h-screen'
+        ? 'fixed left-0 top-0 w-[280px] h-[100dvh] max-h-[100dvh]' 
+        : 'hidden lg:flex lg:fixed lg:left-0 lg:top-0 lg:w-[280px] lg:h-screen lg:max-h-screen'
     ]"
   >
     <!-- User Profile Section -->
@@ -40,7 +40,7 @@
     <div class="mx-6 border-t border-gray-200"></div>
 
     <!-- Menu Items Group 1 -->
-    <nav class="flex-1 py-4 overflow-y-auto">
+    <nav class="flex-1 py-4 overflow-y-auto min-h-0 overscroll-contain">
       <div class="space-y-1">
         <NuxtLink 
           v-for="item in menuGroup1"
@@ -108,20 +108,19 @@
       </div>
     </nav>
 
-    <!-- Auth Buttons -->
-    <div class="px-6 pb-8 space-y-3">
-      <template v-if="isLoggedIn">
-        <button 
-          @click="handleLogout"
-          class="w-full py-3 px-4 bg-[#1A75BB] hover:bg-[#2568B0] text-white text-md font-bold rounded-lg transition-colors duration-200"
-        >
-          Đăng xuất
-        </button>
-      </template>
+    <!-- Auth Buttons - Always visible at bottom, outside scrollable area -->
+    <div class="px-6 pb-4 pt-4 flex-shrink-0 border-t border-gray-200 bg-white">
+      <button 
+        v-if="isLoggedIn"
+        @click="handleLogout"
+        class="w-full py-3 px-4 bg-[#1A75BB] hover:bg-[#2568B0] text-white text-md font-bold rounded-lg transition-colors duration-200"
+      >
+        Đăng xuất
+      </button>
       <template v-else>
         <NuxtLink 
           to="/register"
-          class="block w-full py-3 px-4 bg-[#1A75BB] hover:bg-[#2568B0] text-white text-md font-bold rounded-lg transition-colors duration-200 text-center"
+          class="block w-full py-3 px-4 bg-[#1A75BB] hover:bg-[#2568B0] text-white text-md font-bold rounded-lg transition-colors duration-200 text-center mb-3"
           @click="handleMenuClick"
         >
           Đăng ký
