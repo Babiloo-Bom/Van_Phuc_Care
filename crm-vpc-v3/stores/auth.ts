@@ -466,7 +466,8 @@ export const useAuthStore = defineStore('auth', {
         const token = localStorage.getItem('auth_token');
         const tokenExpireAt = localStorage.getItem('token_expire_at');
         const userStr = localStorage.getItem('user');
-        const authDataStr = localStorage.getItem('auth_data');
+        // Check both 'authData' (new format) and 'auth_data' (old format) for compatibility
+        const authDataStr = localStorage.getItem('authData') || localStorage.getItem('auth_data');
 
         // Try to restore from authData first (new format), then fallback to old format
         let authData = null;
@@ -545,6 +546,7 @@ export const useAuthStore = defineStore('auth', {
                 const now = Date.now();
                 if (!isNaN(expireTime) && now >= expireTime) {
                   // Token expired, clear data
+                  console.log('⚠️ Token expired, logging out');
                   this.logout();
                   return;
                 }
@@ -562,6 +564,11 @@ export const useAuthStore = defineStore('auth', {
               this.logout();
             }
           } else {
+            // Check if we're already authenticated (might be from SSO)
+            if (this.isAuthenticated && this.token && this.user) {
+              console.log('ℹ️ Already authenticated, skipping initAuth');
+              return;
+            }
             console.log('ℹ️ No auth data found in localStorage');
           }
         }

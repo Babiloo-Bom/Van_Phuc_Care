@@ -267,6 +267,12 @@ export async function handleSSOLogin(): Promise<boolean> {
         console.log('[SSO] SSO login successful!');
         console.log('[SSO] User authenticated:', authStore.isAuthenticated);
         console.log('[SSO] User data:', authStore.user);
+        console.log('[SSO] Token:', authStore.token ? 'Present' : 'Missing');
+        console.log('[SSO] AuthData in localStorage:', localStorage.getItem('authData') ? 'Present' : 'Missing');
+        
+        // Ensure authData is saved (call saveAuth to be safe)
+        authStore.saveAuth();
+        console.log('[SSO] AuthData saved again via saveAuth()');
         
         // Clear SSO flag
         authStore.isSSOLoginInProgress = false;
