@@ -151,6 +151,18 @@ export const useAuthStore = defineStore('auth', {
         this.justLoggedIn = true;
         this.loginTimestamp = Date.now();
         console.log('[Login] Set justLoggedIn flag, timestamp:', this.loginTimestamp);
+        
+        // Clear any leftover logout sync cookie when logging in
+        if (process.client) {
+          try {
+            const { clearLogoutSyncCookie } = await import('~/utils/authSync');
+            clearLogoutSyncCookie();
+            console.log('[Login] Cleared logout sync cookie');
+          } catch (e) {
+            console.warn('[Login] Failed to clear logout sync cookie:', e);
+          }
+        }
+        
         setTimeout(() => {
           this.justLoggedIn = false;
           console.log('[Login] Cleared justLoggedIn flag after 15 seconds');
@@ -762,6 +774,18 @@ export const useAuthStore = defineStore('auth', {
         this.justLoggedIn = true;
         this.loginTimestamp = Date.now();
         console.log('[Google Login] Set justLoggedIn flag, timestamp:', this.loginTimestamp);
+        
+        // Clear any leftover logout sync cookie when logging in
+        if (process.client) {
+          try {
+            const { clearLogoutSyncCookie } = await import('~/utils/authSync');
+            clearLogoutSyncCookie();
+            console.log('[Google Login] Cleared logout sync cookie');
+          } catch (e) {
+            console.warn('[Google Login] Failed to clear logout sync cookie:', e);
+          }
+        }
+        
         setTimeout(() => {
           this.justLoggedIn = false;
           console.log('[Google Login] Cleared justLoggedIn flag after 15 seconds');

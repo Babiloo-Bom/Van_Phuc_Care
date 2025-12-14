@@ -138,9 +138,17 @@ onMounted(async () => {
   if (process.client) {
     const { startLogoutSyncMonitor } = await import('~/utils/authSync');
     stopLogoutMonitor = startLogoutSyncMonitor(async () => {
-      // Logout if sync cookie detected
-      if (authStore.isAuthenticated) {
-        await authStore.logout();
+      // Logout if sync cookie detected, but not immediately after login
+      if (authStore.isAuthenticated && !authStore.justLoggedIn) {
+        const timeSinceLogin = authStore.loginTimestamp 
+          ? Date.now() - authStore.loginTimestamp 
+          : Infinity;
+        if (timeSinceLogin >= 15000) {
+          console.log('[Logout Sync] Detected logout sync cookie, logging out');
+          await authStore.logout();
+        } else {
+          console.log('[Logout Sync] Detected logout sync cookie but login was recent (', timeSinceLogin, 'ms ago), skipping logout');
+        }
       }
     });
   }

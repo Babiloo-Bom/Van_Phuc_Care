@@ -63,6 +63,21 @@ export default defineNuxtPlugin(nuxtApp => {
           return;
         }
         
+        // Don't logout immediately after login
+        if (authStore.justLoggedIn) {
+          console.warn('[Auth] 401 immediately after login, skipping logout');
+          return;
+        }
+        
+        // Check if login was recent (within last 15 seconds)
+        const timeSinceLogin = authStore.loginTimestamp 
+          ? Date.now() - authStore.loginTimestamp 
+          : Infinity;
+        if (timeSinceLogin < 15000) {
+          console.warn('[Auth] 401 but login was recent (', timeSinceLogin, 'ms ago), skipping logout');
+          return;
+        }
+        
         // Don't logout on profile refresh errors - session might still be valid
         if (isProfileRequest) {
           console.warn('[Auth] 401 on profile request, skipping logout (non-critical)');
@@ -71,6 +86,7 @@ export default defineNuxtPlugin(nuxtApp => {
         
         console.warn('[Auth] Unauthorized (401), logging out...');
         console.warn('[Auth] Request URL:', requestUrl);
+        console.warn('[Auth] Time since login:', timeSinceLogin, 'ms');
         isLoggingOut = true;
         
         // Clear auth state directly without calling logout API
