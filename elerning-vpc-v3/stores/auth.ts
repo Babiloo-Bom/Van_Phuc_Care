@@ -22,6 +22,8 @@ export interface AuthState {
   isAuthenticated: boolean;
   isLoading: boolean;
   rememberAccount: boolean;
+  justLoggedIn: boolean; // Flag to disable auto-logout immediately after login
+  loginTimestamp: number | null; // Timestamp of last login
 }
 
 export const useAuthStore = defineStore("auth", {
@@ -32,6 +34,8 @@ export const useAuthStore = defineStore("auth", {
     isAuthenticated: false,
     isLoading: false,
     rememberAccount: false,
+    justLoggedIn: false,
+    loginTimestamp: null,
   }),
 
   getters: {
@@ -82,6 +86,13 @@ export const useAuthStore = defineStore("auth", {
           username: username,
           fullname: response.fullname || username,
         };
+
+        // Set justLoggedIn flag to prevent auto-logout for 15 seconds
+        this.justLoggedIn = true;
+        this.loginTimestamp = Date.now();
+        setTimeout(() => {
+          this.justLoggedIn = false;
+        }, 15000); // 15 seconds grace period
 
         // Save to localStorage
         if (process.client) {

@@ -327,7 +327,7 @@ export async function handleSSOLogin(): Promise<boolean> {
  * Build SSO URL and set cookie
  * This sets the SSO cookie before navigation
  */
-export function buildSSOUrl(baseUrl: string, path: string): string {
+export async function buildSSOUrl(baseUrl: string, path: string): Promise<string> {
   if (!process.client) return baseUrl + path;
   
   const authStore = useAuthStore();
@@ -339,8 +339,18 @@ export function buildSSOUrl(baseUrl: string, path: string): string {
   }
   
   console.log('[SSO] Building SSO URL for:', baseUrl + path);
+  
+  // Clear any leftover logout sync cookie when setting SSO (we're logging in, not out)
+  try {
+    const { clearLogoutSyncCookie } = await import('~/utils/authSync');
+    clearLogoutSyncCookie();
+    console.log('[SSO] Cleared logout sync cookie before setting SSO');
+  } catch (e) {
+    console.warn('[SSO] Failed to clear logout sync cookie:', e);
+  }
+  
   // Set SSO cookie before navigation
-  setSSOCookie(token);
+  await setSSOCookie(token);
   console.log('[SSO] SSO cookie set, navigating...');
   
   // Return clean URL without token parameter

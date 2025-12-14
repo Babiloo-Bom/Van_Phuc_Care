@@ -227,7 +227,25 @@ export async function handleSSOLogin(): Promise<boolean> {
         // Save user to localStorage (token already saved above)
         if (process.client) {
           localStorage.setItem('user', JSON.stringify(authStore.user));
+          // Also save authData for initAuth compatibility
+          const authData = {
+            user: authStore.user,
+            token: authStore.token,
+            tokenExpireAt: authStore.tokenExpireAt || new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString(),
+            rememberAccount: authStore.rememberAccount,
+          };
+          localStorage.setItem('authData', JSON.stringify(authData));
+          console.log('[SSO] Auth data saved to localStorage');
         }
+        
+        // Set justLoggedIn flag to prevent auto-logout for 15 seconds
+        authStore.justLoggedIn = true;
+        authStore.loginTimestamp = Date.now();
+        console.log('[SSO] Set justLoggedIn flag, timestamp:', authStore.loginTimestamp);
+        setTimeout(() => {
+          authStore.justLoggedIn = false;
+          console.log('[SSO] Cleared justLoggedIn flag after 15 seconds');
+        }, 15000); // 15 seconds grace period
         
         console.log('[SSO] SSO login successful!');
         
