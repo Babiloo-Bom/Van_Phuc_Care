@@ -108,6 +108,7 @@ export interface HealthRecord {
   
   // Lịch sinh hoạt
   schedule?: string;
+  scheduleNote?: string;
   
   // Ghi chú
   notes?: string;
@@ -340,18 +341,22 @@ export interface HealthBook {
   weight?: string;
   height?: string;
   skinConditions?: string;
+  skinConditionNote?: string;
   tooth?: {
     count: string;
     descriptions: string;
   };
+  oralHealthNote?: string;
   nutrition?: {
     count: string;
     descriptions: string;
   };
+  nutritionNote?: string;
   sleep?: {
     time: string;
     descriptions: string;
   };
+  sleepNote?: string;
   frequencyOfDefecation?: string;
   fecalCondition?: string;
   digestiveProblems?: string;
@@ -364,6 +369,15 @@ export interface HealthBook {
     status: string;
     descriptions: string;
   };
+  schedule?: string;
+  scheduleNote?: string;
+  notes?: string;
+  developmentMilestone?: string;
+  grossMotorSkills?: string;
+  fineMotorSkills?: string;
+  visualCognition?: string;
+  communicationEmotion?: string;
+  earlyWarning?: string;
   note?: string;
   temperature?: string;
   recordedAt?: string;

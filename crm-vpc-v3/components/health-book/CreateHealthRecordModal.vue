@@ -285,8 +285,8 @@
           </a-select>
         </a-form-item>
 
-        <!-- Vận động tinh -->
-        <a-form-item label="Vận động tinh" name="fineMotorSkills">
+        <!-- Vận động tĩnh -->
+        <a-form-item label="Vận động tĩnh" name="fineMotorSkills">
           <a-select 
             v-model:value="formState.fineMotorSkills" 
             placeholder="Bé bò, ngồi, vỗ, dũng" 
