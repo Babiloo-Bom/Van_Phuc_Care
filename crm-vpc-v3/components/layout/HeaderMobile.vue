@@ -93,7 +93,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed } from 'vue';
+import { ref, computed, onMounted, onUnmounted } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 import { MENU_ITEMS } from '~/constants/menu';
 
@@ -109,6 +109,27 @@ const menuItems = MENU_ITEMS;
 const userName = computed(() => authStore.user?.fullname || authStore.user?.name || 'User');
 const userEmail = computed(() => authStore.user?.email || 'user@example.com');
 const userAvatar = computed(() => authStore.user?.avatar || '/images/avatar-fallback.png');
+
+// Auto refresh user data on mount and window focus
+const handleFocus = async () => {
+  if (authStore.isAuthenticated && authStore.token) {
+    await authStore.refreshUserData();
+  }
+};
+
+onMounted(async () => {
+  // Refresh user data on component mount if authenticated
+  if (authStore.isAuthenticated && authStore.token) {
+    await authStore.refreshUserData();
+  }
+
+  // Refresh user data when window gains focus (user switches back to this tab)
+  window.addEventListener('focus', handleFocus);
+});
+
+onUnmounted(() => {
+  window.removeEventListener('focus', handleFocus);
+});
 
 // Methods
 const toggleMenu = () => {

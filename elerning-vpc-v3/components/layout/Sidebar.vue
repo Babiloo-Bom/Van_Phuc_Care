@@ -139,7 +139,7 @@
 </template>
 
 <script setup lang="ts">
-import { computed } from 'vue';
+import { computed, onMounted, onUnmounted } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 import { useAuthStore } from '~/stores/auth';
 import { useCartStore } from '~/stores/cart';
@@ -227,4 +227,25 @@ const handleLogout = async () => {
   await authStore.logout();
   router.push('/login');
 };
+
+// Auto refresh user data on mount and window focus
+const handleFocus = async () => {
+  if (authStore.isAuthenticated && authStore.token) {
+    await authStore.refreshUserData();
+  }
+};
+
+onMounted(async () => {
+  // Refresh user data on component mount if authenticated
+  if (authStore.isAuthenticated && authStore.token) {
+    await authStore.refreshUserData();
+  }
+
+  // Refresh user data when window gains focus (user switches back to this tab)
+  window.addEventListener('focus', handleFocus);
+});
+
+onUnmounted(() => {
+  window.removeEventListener('focus', handleFocus);
+});
 </script>

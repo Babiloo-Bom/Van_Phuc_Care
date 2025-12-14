@@ -70,61 +70,29 @@
               Khóa học của tôi
             </NuxtLink>
             <span class="w-[1px] h-3 bg-white"></span>
-            <NuxtLink
-              to="/"
-              class="hover:text-gray-200 transition-colors rounded p-2 flex items-center justify-center gap-2"
-            >
-              <svg
-                xmlns="http://www.w3.org/2000/svg"
-                width="16"
-                height="16"
-                viewBox="0 0 16 16"
-                fill="none"
-              >
-                <g clip-path="url(#clip0_644_774)">
-                  <path
-                    d="M8.892 0.555391C8.64716 0.335015 8.32941 0.213074 8 0.213074C7.67059 0.213074 7.35284 0.335015 7.108 0.555391L0 6.95272V13.8861C0 14.4519 0.224761 14.9945 0.624839 15.3946C1.02492 15.7946 1.56754 16.0194 2.13333 16.0194H13.8667C14.4325 16.0194 14.9751 15.7946 15.3752 15.3946C15.7752 14.9945 16 14.4519 16 13.8861V6.95272L8.892 0.555391ZM10 14.6841H6V11.3334C6 10.803 6.21071 10.2943 6.58579 9.91918C6.96086 9.54411 7.46957 9.33339 8 9.33339C8.53043 9.33339 9.03914 9.54411 9.41421 9.91918C9.78929 10.2943 10 10.803 10 11.3334V14.6841ZM14.6667 13.8841C14.6667 14.0962 14.5824 14.2997 14.4324 14.4497C14.2823 14.5998 14.0788 14.6841 13.8667 14.6841H11.3333V11.3334C11.3333 10.4493 10.9821 9.60149 10.357 8.97637C9.7319 8.35125 8.88406 8.00006 8 8.00006C7.11595 8.00006 6.2681 8.35125 5.64298 8.97637C5.01786 9.60149 4.66667 10.4493 4.66667 11.3334V14.6841H2.13333C1.92116 14.6841 1.71768 14.5998 1.56765 14.4497C1.41762 14.2997 1.33333 14.0962 1.33333 13.8841V7.54606L8 1.54606L14.6667 7.54606V13.8841Z"
-                    fill="white"
-                  />
-                </g>
-                <defs>
-                  <clipPath id="clip0_644_774">
-                    <rect width="16" height="16" fill="white" />
-                  </clipPath>
-                </defs>
-              </svg>
-              Trang chủ
-            </NuxtLink>
-            <button
-              class="flex items-center justify-center gap-2 hover:text-gray-200 px-2 py-1"
-              @click="handleLogout"
+            <!-- User Info Banner (only show when logged in) -->
+            <div
               v-if="isLoggedIn"
+              class="flex items-center gap-4 px-4 py-2"
             >
-              <svg
-                xmlns="http://www.w3.org/2000/svg"
-                width="16"
-                height="16"
-                viewBox="0 0 16 16"
-                fill="none"
-              >
-                <g clip-path="url(#clip0_644_1855)">
-                  <path
-                    d="M1.33333 14V2C1.33333 1.82319 1.40357 1.65362 1.5286 1.5286C1.65362 1.40357 1.82319 1.33333 2 1.33333H5.33333V0H2C1.46957 0 0.960859 0.210714 0.585786 0.585786C0.210714 0.960859 0 1.46957 0 2L0 14C0 14.5304 0.210714 15.0391 0.585786 15.4142C0.960859 15.7893 1.46957 16 2 16H5.33333V14.6667H2C1.82319 14.6667 1.65362 14.5964 1.5286 14.4714C1.40357 14.3464 1.33333 14.1768 1.33333 14Z"
-                    fill="white"
-                  />
-                  <path
-                    d="M16 8.66626V7.33293L5.0373 7.35359L7.9193 4.47093L6.9753 3.52826L3.91797 6.58559C3.54303 6.96065 3.3324 7.46926 3.3324 7.99959C3.3324 8.52992 3.54303 9.03854 3.91797 9.41359L6.9753 12.4709L7.91797 11.5283L5.07597 8.68626L16 8.66626Z"
-                    fill="white"
-                  />
-                </g>
-                <defs>
-                  <clipPath id="clip0_644_1855">
-                    <rect width="16" height="16" fill="white" />
-                  </clipPath>
-                </defs>
-              </svg>
-              Đăng xuất
-            </button>
+              <!-- Avatar -->
+              <img
+                :src="userAvatar || '/images/avatar-fallback.png'"
+                :alt="userName"
+                class="w-12 h-12 rounded-full object-cover border-2 border-white"
+                @error="(e) => (e.target as HTMLImageElement).src = '/images/avatar-fallback.png'"
+              />
+              <!-- User Info -->
+              <div class="flex flex-col">
+                <div class="text-white font-semibold text-base leading-tight">
+                  {{ userName }}
+                </div>
+                <div class="text-white text-sm opacity-90 leading-tight">
+                  {{ userEmail }}
+                </div>
+              </div>
+            </div>
+            <!-- Login Link (only show when not logged in) -->
             <NuxtLink
               v-else
               to="/login"
@@ -158,7 +126,7 @@
             <!-- Cart Icon -->
             <NuxtLink
               to="/cart"
-              class="relative hover:bg-white/10 rounded-lg transition-colors shrink-0"
+              class="relative hover:bg-white/10 rounded-lg transition-colors shrink-0 p-2 flex items-center justify-center"
             >
               <svg
                 xmlns="http://www.w3.org/2000/svg"
@@ -198,7 +166,6 @@
                 </defs>
               </svg>
               <span
-                v-if="cartCount > 0"
                 class="absolute -top-1 -right-1 bg-red-500 text-white text-xs rounded-full h-5 w-5 flex items-center justify-center font-bold"
               >
                 {{ cartCount }}
@@ -253,7 +220,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, watch } from "vue";
+import { ref, computed, watch, onMounted, onUnmounted } from "vue";
 import { useCartStore } from "~/stores/cart";
 import { useAuthStore } from "~/stores/auth";
 import Sidebar from "~/components/layout/Sidebar.vue";
@@ -272,10 +239,34 @@ const mobileMenuOpen = ref(false);
 const cartCount = computed(() => cartStore.cartCount);
 const isLoggedIn = computed(() => authStore.isLoggedIn);
 const user = computed(() => authStore.user);
+const userName = computed(() => authStore.userName || 'User');
+const userEmail = computed(() => authStore.userEmail || 'user@example.com');
+const userAvatar = computed(() => authStore.user?.avatar || '/images/avatar-fallback.png');
 
 // Watch for user changes
 watch(() => authStore.user, (newUser) => {
 }, { immediate: true })
+
+// Auto refresh user data on mount and window focus
+const handleFocus = async () => {
+  if (authStore.isAuthenticated && authStore.token) {
+    await authStore.refreshUserData();
+  }
+};
+
+onMounted(async () => {
+  // Refresh user data on component mount if authenticated
+  if (authStore.isAuthenticated && authStore.token) {
+    await authStore.refreshUserData();
+  }
+
+  // Refresh user data when window gains focus (user switches back to this tab)
+  window.addEventListener('focus', handleFocus);
+});
+
+onUnmounted(() => {
+  window.removeEventListener('focus', handleFocus);
+});
 
 // Methods
 const handleLogout = async () => {

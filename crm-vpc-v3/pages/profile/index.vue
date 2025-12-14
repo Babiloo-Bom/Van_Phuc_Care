@@ -302,8 +302,12 @@ async function fetchUserInfo() {
   }
 }
 
-onMounted(() => {
-  fetchUserInfo();
+onMounted(async () => {
+  await fetchUserInfo();
+  // Refresh auth store to sync with header/menu
+  if (authStore.isAuthenticated && authStore.token) {
+    await authStore.refreshUserData();
+  }
 });
 
 // Handle avatar change

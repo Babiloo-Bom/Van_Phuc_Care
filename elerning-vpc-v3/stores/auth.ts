@@ -208,15 +208,25 @@ export const useAuthStore = defineStore("auth", {
       }
 
       try {
-        
         const authApi = useAuthApi()
         const response = await authApi.getUserProfile() as any
+        const userData = response?.data?.user || response?.data?.data || response?.data;
         
-        if (response.data?.user) {
-          // Update user data with fresh data from backend
+        if (userData) {
+          // Update user data with fresh data from backend (same mapping as CRM)
           this.user = {
-            ...response.data.user,
-            id: response.data.user?._id
+            id: userData?._id || userData?.id || this.user.id,
+            email: userData?.email || this.user.email,
+            username: userData?.username || this.user.username,
+            fullname: userData?.fullname || userData?.name || this.user.fullname,
+            name: userData?.name || userData?.fullname,
+            phone: userData?.phoneNumber || userData?.phone,
+            avatar: userData?.avatar,
+            role: userData?.role || userData?.type,
+            verified: userData?.verified,
+            status: userData?.status,
+            courseRegister: userData?.courseRegister || [],
+            courseCompleted: userData?.courseCompleted || [],
           }
           this.saveAuth()
         }
