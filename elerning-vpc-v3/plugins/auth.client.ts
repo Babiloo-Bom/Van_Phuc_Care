@@ -46,6 +46,7 @@ export default defineNuxtPlugin(nuxtApp => {
         const requestUrl = typeof request === 'string' ? request : request?.url || '';
         const isLogoutRequest = requestUrl.includes('/logout') || requestUrl.includes('/auth/logout');
         const isProfileRequest = requestUrl.includes('/users/profile') || requestUrl.includes('/profile');
+        const isCoursesRequest = requestUrl.includes('/courses/my-courses');
         
         // Don't logout immediately after login
         if (authStore.justLoggedIn) {
@@ -62,9 +63,37 @@ export default defineNuxtPlugin(nuxtApp => {
           return;
         }
         
+        // Check if SSO cookie exists (user might be in the middle of SSO login)
+        if (process.client) {
+          try {
+            const { checkSSOCookie } = require('~/utils/sso');
+            const hasSSOCookie = checkSSOCookie();
+            if (hasSSOCookie) {
+              console.warn('[Auth] 401 but SSO cookie exists, skipping logout (SSO in progress)');
+              // Set justLoggedIn to protect against further 401s
+              if (!authStore.justLoggedIn) {
+                authStore.justLoggedIn = true;
+                authStore.loginTimestamp = Date.now();
+                setTimeout(() => {
+                  authStore.justLoggedIn = false;
+                }, 15000);
+              }
+              return;
+            }
+          } catch (e) {
+            // Ignore if sso utils not available
+          }
+        }
+        
         // Don't logout on profile refresh errors - session might still be valid
         if (isProfileRequest) {
           console.warn('[Auth] 401 on profile request, skipping logout (non-critical)');
+          return;
+        }
+        
+        // Don't logout on courses request if login was very recent (might be SSO in progress)
+        if (isCoursesRequest && timeSinceLogin < 30000) {
+          console.warn('[Auth] 401 on courses request but login was recent (', timeSinceLogin, 'ms ago), skipping logout');
           return;
         }
         
