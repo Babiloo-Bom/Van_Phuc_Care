@@ -50,11 +50,24 @@
                   />
                 </a-form-item>
                 <div class="flex flex-col gap-0 lg:flex-row lg:gap-4 w-full">
-                  <a-form-item label="Số điện thoại" name="phone" class="flex-1">
+                  <a-form-item 
+                    label="Số điện thoại" 
+                    name="phone" 
+                    class="flex-1"
+                    :rules="[
+                      { 
+                        required: false,
+                        validator: validatePhoneNumber,
+                        trigger: 'blur'
+                      }
+                    ]"
+                  >
                     <a-input
                       v-model:value="infoForm.phone"
                       placeholder="092 333 3389"
                       size="large"
+                      maxlength="10"
+                      @input="handlePhoneInput"
                     />
                   </a-form-item>
                   <a-form-item label="Email" name="email" class="flex-1">
@@ -225,6 +238,39 @@ const { user } = useAuth();
 const authStore = useAuthStore();
 const apiClient = useApiClient();
 const { uploadImage } = useUploadsApi();
+
+const validatePhoneNumber = (_rule: any, value: string) => {
+  return new Promise<void>((resolve, reject) => {
+    if (!value || value.trim() === '') {
+      resolve();
+      return;
+    }
+    
+    const digitsOnly = value.replace(/\D/g, '');
+    
+    if (digitsOnly.length !== value.length) {
+      reject(new Error('Số điện thoại chỉ được chứa số, không được có chữ cái'));
+      return;
+    }
+    
+    if (digitsOnly.length !== 10) {
+      reject(new Error('Số điện thoại phải có đúng 10 chữ số'));
+      return;
+    }
+    
+    resolve();
+  });
+};
+
+// Handle phone input - only allow digits
+const handlePhoneInput = (event: Event) => {
+  const input = event.target as HTMLInputElement;
+  const value = input.value;
+  // Remove all non-digit characters
+  const digitsOnly = value.replace(/\D/g, '');
+  // Update form value
+  infoForm.phone = digitsOnly;
+};
 
 async function fetchUserInfo() {
   try {
