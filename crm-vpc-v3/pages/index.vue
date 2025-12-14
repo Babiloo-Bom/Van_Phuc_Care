@@ -517,6 +517,58 @@
         @finish="handleEditInfoSubmit"
         class="edit-info-form"
       >
+        <!-- Avatar Upload Section -->
+        <a-form-item label="Ảnh đại diện" class="edit-info-form-item mb-6">
+          <div class="flex flex-col items-center gap-4">
+            <!-- Avatar Preview -->
+            <div class="relative">
+              <img
+                :src="editInfoAvatarPreview || profileInfo.avatar || healthBook?.avatar || '/images/avatar-fallback.png'"
+                alt="Avatar preview"
+                class="w-32 h-32 rounded-full object-cover border-2 border-gray-200"
+                @error="(e) => (e.target as HTMLImageElement).src = '/images/avatar-fallback.png'"
+              />
+              <!-- Remove button (only show if there's a preview or existing avatar) -->
+              <button
+                v-if="editInfoAvatarPreview || profileInfo.avatar || healthBook?.avatar"
+                type="button"
+                @click="handleRemoveEditInfoAvatar"
+                class="absolute -top-2 -right-2 w-8 h-8 bg-red-500 text-white rounded-full flex items-center justify-center hover:bg-red-600 transition-colors"
+              >
+                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                  <line x1="18" y1="6" x2="6" y2="18"></line>
+                  <line x1="6" y1="6" x2="18" y2="18"></line>
+                </svg>
+              </button>
+            </div>
+            
+            <!-- Upload Button -->
+            <div class="flex gap-2">
+              <input
+                ref="editInfoAvatarFileInput"
+                type="file"
+                accept="image/*"
+                class="hidden"
+                @change="handleEditInfoAvatarChange"
+              />
+              <a-button
+                type="default"
+                @click="editInfoAvatarFileInput?.click()"
+                :disabled="isUpdatingInfo"
+                size="large"
+              >
+                <template #icon>
+                  <CameraOutlined />
+                </template>
+                Tải ảnh lên
+              </a-button>
+            </div>
+            <p class="text-xs text-gray-500 text-center">
+              Chấp nhận: JPG, PNG, GIF, WebP (tối đa 5MB)
+            </p>
+          </div>
+        </a-form-item>
+
         <!-- Họ và tên bé -->
         <a-form-item 
           label="Họ và tên bé" 
@@ -634,6 +686,11 @@ const { getHealthBook, getHealthBooks, getCurrentHealthBook, updateUserHealthBoo
 // Avatar upload state
 const avatarFileInput = ref<HTMLInputElement | null>(null);
 const isUploadingAvatar = ref(false);
+
+// Edit Info Modal avatar state
+const editInfoAvatarFileInput = ref<HTMLInputElement | null>(null);
+const editInfoAvatarFile = ref<File | null>(null);
+const editInfoAvatarPreview = ref<string>("");
 
 // State
 const healthBook = ref<HealthBook | null>(null);
@@ -1009,6 +1066,51 @@ const handleRecordCreated = async () => {
   }
 };
 
+// Handle edit info avatar change
+const handleEditInfoAvatarChange = (event: Event) => {
+  const input = event.target as HTMLInputElement;
+  const file = input.files?.[0];
+
+  if (!file) return;
+
+  // Validate file type
+  if (!file.type.startsWith("image/")) {
+    message.error("Vui lòng chọn file ảnh");
+    return;
+  }
+
+  // Validate file size (max 5MB)
+  if (file.size > 5 * 1024 * 1024) {
+    message.error("Kích thước ảnh tối đa là 5MB");
+    return;
+  }
+
+  // Store file
+  editInfoAvatarFile.value = file;
+
+  // Create preview
+  const reader = new FileReader();
+  reader.onload = (e) => {
+    editInfoAvatarPreview.value = e.target?.result as string;
+  };
+  reader.readAsDataURL(file);
+
+  // Reset input value to allow selecting the same file again
+  if (input) {
+    input.value = "";
+  }
+};
+
+// Handle remove edit info avatar
+const handleRemoveEditInfoAvatar = () => {
+  editInfoAvatarFile.value = null;
+  editInfoAvatarPreview.value = "";
+  // Reset input
+  if (editInfoAvatarFileInput.value) {
+    editInfoAvatarFileInput.value.value = "";
+  }
+};
+
 // Handle edit info modal open
 watch(showEditInfoModal, (visible) => {
   if (visible && healthBook.value) {
@@ -1018,6 +1120,9 @@ watch(showEditInfoModal, (visible) => {
       dob: profileInfo.value.dob ? dayjs(profileInfo.value.dob) : (healthBook.value.dob ? dayjs(healthBook.value.dob) : null),
       gender: genderValue,
     };
+    // Reset avatar state
+    editInfoAvatarFile.value = null;
+    editInfoAvatarPreview.value = "";
   }
 });
 
@@ -1040,13 +1145,28 @@ const handleEditInfoSubmit = async () => {
       name?: string;
       dob?: string;
       gender?: string;
+      avatar?: File;
     } = {
       name: editInfoForm.value.name,
       dob: editInfoForm.value.dob.format('YYYY-MM-DD'),
       gender: editInfoForm.value.gender,
     };
 
-    await updateUserHealthBook(healthBook.value._id, updateData);
+    // Include avatar file if selected
+    if (editInfoAvatarFile.value) {
+      updateData.avatar = editInfoAvatarFile.value;
+    }
+
+    const result = await updateUserHealthBook(healthBook.value._id, updateData);
+
+    // Get updated avatar URL from response if avatar was uploaded
+    let avatarUrl = profileInfo.value.avatar || healthBook.value?.avatar;
+    if (editInfoAvatarFile.value) {
+      const responseAvatarUrl = result?.data?.data?.avatar || result?.data?.avatar;
+      if (responseAvatarUrl) {
+        avatarUrl = responseAvatarUrl;
+      }
+    }
 
     // Update local state
     profileInfo.value = {
@@ -1054,13 +1174,21 @@ const handleEditInfoSubmit = async () => {
       name: editInfoForm.value.name,
       dob: editInfoForm.value.dob.format('YYYY-MM-DD'),
       gender: editInfoForm.value.gender,
+      avatar: avatarUrl,
     };
 
     if (healthBook.value) {
       healthBook.value.name = editInfoForm.value.name;
       healthBook.value.dob = editInfoForm.value.dob.format('YYYY-MM-DD');
       healthBook.value.gender = editInfoForm.value.gender;
+      if (avatarUrl) {
+        healthBook.value.avatar = avatarUrl;
+      }
     }
+
+    // Reset avatar state
+    editInfoAvatarFile.value = null;
+    editInfoAvatarPreview.value = "";
 
     message.success("Cập nhật thông tin thành công!");
     showEditInfoModal.value = false;

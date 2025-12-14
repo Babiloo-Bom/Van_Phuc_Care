@@ -48,21 +48,32 @@
 
         <!-- Menu Items -->
         <nav class="flex-1 py-4 overflow-y-auto">
-          <component
-            v-for="item in menuItems"
-            :key="item.path"
-            :is="isExternalLink(item.path) ? 'a' : 'NuxtLink'"
-            :to="isExternalLink(item.path) ? undefined : item.path"
-            :href="isExternalLink(item.path) ? item.path : undefined"
-            :target="isExternalLink(item.path) ? '_blank' : undefined"
-            :rel="isExternalLink(item.path) ? 'noopener noreferrer' : undefined"
-            class="flex items-center gap-3 px-5 py-3.5 text-gray-700 text-[15px] font-medium transition-all active:bg-gray-50"
-            :class="isActive(item.path) ? 'bg-blue-50 text-blue-500 border-l-4 border-blue-500 pl-4' : ''"
-            @click="closeMenu"
-          >
-            <div v-html="item.icon" />
-            <span>{{ item.label }}</span>
-          </component>
+          <template v-for="item in menuItems" :key="item.path">
+            <!-- External Link -->
+            <a
+              v-if="isExternalLink(item.path)"
+              :href="item.path"
+              target="_blank"
+              rel="noopener noreferrer"
+              class="flex items-center gap-3 px-5 py-3.5 text-gray-700 text-[15px] font-medium transition-all active:bg-gray-50"
+              :class="isActive(item.path) ? 'bg-blue-50 text-blue-500 border-l-4 border-blue-500 pl-4' : ''"
+              @click="closeMenu"
+            >
+              <div v-html="item.icon" />
+              <span>{{ item.label }}</span>
+            </a>
+            <!-- Internal Link -->
+            <NuxtLink
+              v-else
+              :to="item.path"
+              class="flex items-center gap-3 px-5 py-3.5 text-gray-700 text-[15px] font-medium transition-all active:bg-gray-50"
+              :class="isActive(item.path) ? 'bg-blue-50 text-blue-500 border-l-4 border-blue-500 pl-4' : ''"
+              @click="closeMenu"
+            >
+              <div v-html="item.icon" />
+              <span>{{ item.label }}</span>
+            </NuxtLink>
+          </template>
         </nav>
 
         <!-- Logout Button -->

@@ -14,11 +14,19 @@
         <a-spin v-if="loading" />
         <template v-else>
           <img
-            :src="userInfo?.avatar || '/images/avatar-fallback.png'"
+            :src="avatarPreview || userInfo?.avatar || '/images/avatar-fallback.png'"
             alt="Avatar"
             class="w-28 h-28 rounded-full mb-4 object-cover"
             @error="(e: Event) => (e.target as HTMLImageElement).src = '/images/avatar-fallback.png'"
           />
+          <button
+            type="button"
+            @click="avatarFileInput?.click()"
+            class="text-[#1A75BB] text-sm font-medium mb-4 hover:underline cursor-pointer"
+            :disabled="isUploadingAvatar"
+          >
+            {{ isUploadingAvatar ? 'Đang tải...' : 'Tải ảnh đại diện' }}
+          </button>
           <h2 class="text-xl font-bold mb-1">
             {{ userInfo?.name || userInfo?.fullname || "Chưa có tên" }}
           </h2>
@@ -169,6 +177,14 @@
         </a-spin>
       </div>
     </div>
+    <!-- Hidden file input for avatar upload -->
+    <input
+      ref="avatarFileInput"
+      type="file"
+      accept="image/*"
+      class="hidden"
+      @change="handleAvatarChange"
+    />
   </div>
 </template>
 
@@ -178,11 +194,16 @@ import { message } from "ant-design-vue";
 import { useAuth } from "~/composables/useAuth";
 import { useApiClient } from "~/composables/useApiClient";
 import { useAuthStore } from "~/stores/auth";
+import { useUploadsApi } from "~/composables/api/useUploadsApi";
 import type { UploadFile } from "ant-design-vue";
 
 const activeTab = ref("info");
 const loading = ref(false);
 const userInfo = ref<any>(null);
+const avatarFileInput = ref<HTMLInputElement | null>(null);
+const avatarPreview = ref<string>("");
+const avatarFile = ref<File | null>(null);
+const isUploadingAvatar = ref(false);
 
 const infoForm = reactive({
   name: "",
@@ -203,6 +224,7 @@ const errorForm = reactive({
 const { user } = useAuth();
 const authStore = useAuthStore();
 const apiClient = useApiClient();
+const { uploadImage } = useUploadsApi();
 
 async function fetchUserInfo() {
   try {
@@ -238,8 +260,134 @@ onMounted(() => {
   fetchUserInfo();
 });
 
+// Handle avatar change
+const handleAvatarChange = async (event: Event) => {
+  const input = event.target as HTMLInputElement;
+  const file = input.files?.[0];
+
+  if (!file) return;
+
+  // Validate file type
+  if (!file.type.startsWith("image/")) {
+    message.error("Vui lòng chọn file ảnh");
+    return;
+  }
+
+  // Validate file size (max 5MB)
+  if (file.size > 5 * 1024 * 1024) {
+    message.error("Kích thước ảnh tối đa là 5MB");
+    return;
+  }
+
+  try {
+    isUploadingAvatar.value = true;
+
+    // Store file for later use
+    avatarFile.value = file;
+
+    // Create preview
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      avatarPreview.value = e.target?.result as string;
+    };
+    reader.readAsDataURL(file);
+
+    // Upload image and update profile immediately
+    const uploadResult = await uploadImage(file);
+    console.log('Upload result:', uploadResult);
+    
+    // Response structure from /api/uploads: 
+    // Backend: { status: true, data: { fileAttributes: [{ source: string }] } }
+    // After apiClient.upload: { status: true, data: { status: true, data: { fileAttributes: [...] } } }
+    const responseData = uploadResult.data as any;
+    const avatarUrl = 
+      responseData?.data?.fileAttributes?.[0]?.source || 
+      responseData?.fileAttributes?.[0]?.source ||
+      responseData?.data?.url || 
+      responseData?.url || 
+      responseData?.data?.urls?.[0] || 
+      responseData?.urls?.[0];
+
+    console.log('Extracted avatar URL:', avatarUrl);
+
+    if (!avatarUrl) {
+      console.error('No avatar URL found in response:', responseData);
+      throw new Error("Không thể tải ảnh lên");
+    }
+
+    // Update profile with new avatar URL
+    const response = await apiClient.put(
+      "/api/users/profile",
+      {
+        fullname: infoForm.name || userInfo.value?.fullname || userInfo.value?.name,
+        phoneNumber: infoForm.phone || userInfo.value?.phoneNumber,
+        email: infoForm.email || userInfo.value?.email,
+        fullAddress: infoForm.address || userInfo.value?.fullAddress,
+        avatar: avatarUrl,
+      },
+      {
+        showError: false,
+      }
+    );
+
+    if (response.status) {
+      message.success("Cập nhật ảnh đại diện thành công!");
+      // Refresh user info
+      await fetchUserInfo();
+      // Refresh auth store
+      await authStore.refreshUserData();
+      // Clear file
+      avatarFile.value = null;
+    } else {
+      throw new Error(response.message || "Không thể cập nhật ảnh đại diện");
+    }
+  } catch (err: any) {
+    console.error("Error uploading avatar:", err);
+    message.error(err.message || "Không thể cập nhật ảnh đại diện");
+    // Reset preview on error
+    avatarPreview.value = "";
+    avatarFile.value = null;
+  } finally {
+    isUploadingAvatar.value = false;
+    // Reset input value
+    if (input) {
+      input.value = "";
+    }
+  }
+};
+
 async function handleInfoSubmit() {
   try {
+    let avatarUrl = userInfo.value?.avatar;
+    if (avatarFile.value) {
+      isUploadingAvatar.value = true;
+      try {
+        const uploadResult = await uploadImage(avatarFile.value);
+        console.log('Upload result in form submit:', uploadResult);
+    
+        const responseData = uploadResult.data as any;
+        avatarUrl = 
+          responseData?.data?.fileAttributes?.[0]?.source || 
+          responseData?.fileAttributes?.[0]?.source ||
+          responseData?.data?.url || 
+          responseData?.url || 
+          responseData?.data?.urls?.[0] || 
+          responseData?.urls?.[0];
+        
+        console.log('Extracted avatar URL in form submit:', avatarUrl);
+        
+        if (!avatarUrl) {
+          console.error('No avatar URL found in response:', responseData);
+          throw new Error("Không thể tải ảnh lên");
+        }
+      } catch (uploadErr: any) {
+        message.error(uploadErr.message || "Không thể tải ảnh lên");
+        return;
+      } finally {
+        isUploadingAvatar.value = false;
+      }
+    }
+
     // Uses Nuxt server proxy: /api/users/profile -> backend /api/u/users/profile
     const response = await apiClient.put(
       "/api/users/profile",
@@ -248,6 +396,7 @@ async function handleInfoSubmit() {
         phoneNumber: infoForm.phone,
         email: infoForm.email,
         fullAddress: infoForm.address,
+        ...(avatarUrl ? { avatar: avatarUrl } : {}),
       },
       {
         showError: false, // Disable automatic error toast
@@ -256,6 +405,9 @@ async function handleInfoSubmit() {
 
     if (response.status) {
       message.success("Cập nhật thông tin thành công!");
+      // Clear avatar file and preview
+      avatarFile.value = null;
+      avatarPreview.value = "";
       // Refresh user info in local state
       await fetchUserInfo();
       // Refresh auth store so header/sidebar also updates

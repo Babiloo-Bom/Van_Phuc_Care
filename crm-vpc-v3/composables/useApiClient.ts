@@ -18,7 +18,7 @@ export const useApiClient = () => {
   const baseURL = config.public.apiHost;
 
   // List of API paths that should go through Nuxt server (no baseURL prefix)
-  const nuxtServerPaths = ['/api/healthbooks', '/api/tickets', '/api/auth', '/api/users', '/api/vaccinations', '/api/transactions', '/api/sessions', '/api/feedbacks', '/api/services', '/api/_health'];
+  const nuxtServerPaths = ['/api/healthbooks', '/api/tickets', '/api/auth', '/api/users', '/api/vaccinations', '/api/transactions', '/api/sessions', '/api/feedbacks', '/api/services', '/api/uploaders', '/api/uploads', '/api/_health'];
 
   /**
    * Check if URL should use Nuxt server (relative path)
