@@ -229,9 +229,14 @@ export async function handleSSOLogin(): Promise<boolean> {
           localStorage.setItem('user', JSON.stringify(authStore.user));
         }
         
-        // Clear SSO cookie after successful login
-        clearSSOCookie();
         console.log('[SSO] SSO login successful!');
+        
+        // Clear SSO cookie after a short delay to ensure it's been read
+        // This prevents the cookie from being cleared too early
+        setTimeout(() => {
+          clearSSOCookie();
+          console.log('[SSO] SSO cookie cleared after successful login');
+        }, 1000);
         
         return true;
       } else {
