@@ -207,6 +207,16 @@ export async function handleSSOLogin(): Promise<boolean> {
       console.log('[SSO] Token saved to localStorage');
     }
     
+    // Set justLoggedIn flag IMMEDIATELY to protect against auto-logout
+    // This must be set BEFORE verifying with backend, as API calls might happen during verification
+    authStore.justLoggedIn = true;
+    authStore.loginTimestamp = Date.now();
+    console.log('[SSO] Set justLoggedIn flag IMMEDIATELY, timestamp:', authStore.loginTimestamp);
+    setTimeout(() => {
+      authStore.justLoggedIn = false;
+      console.log('[SSO] Cleared justLoggedIn flag after 15 seconds');
+    }, 15000); // 15 seconds grace period
+    
     // Verify token with backend
     const authApi = useAuthApi();
     try {
@@ -249,15 +259,8 @@ export async function handleSSOLogin(): Promise<boolean> {
           console.log('[SSO] Auth data saved to localStorage');
         }
         
-        // Set justLoggedIn flag to prevent auto-logout for 15 seconds
-        authStore.justLoggedIn = true;
-        authStore.loginTimestamp = Date.now();
-        console.log('[SSO] Set justLoggedIn flag, timestamp:', authStore.loginTimestamp);
-        setTimeout(() => {
-          authStore.justLoggedIn = false;
-          console.log('[SSO] Cleared justLoggedIn flag after 15 seconds');
-        }, 15000); // 15 seconds grace period
-        
+        // justLoggedIn flag was already set above, before verification
+        // This ensures API calls during verification are protected
         console.log('[SSO] SSO login successful!');
         
         // Clear SSO cookie after a short delay to ensure it's been read
@@ -281,6 +284,8 @@ export async function handleSSOLogin(): Promise<boolean> {
       // Clear token if verification failed
       authStore.token = null;
       authStore.isAuthenticated = false;
+      authStore.justLoggedIn = false;
+      authStore.loginTimestamp = null;
       if (process.client) {
         localStorage.removeItem('auth_token');
       }
@@ -291,6 +296,8 @@ export async function handleSSOLogin(): Promise<boolean> {
     // If no userData, clear everything
     authStore.token = null;
     authStore.isAuthenticated = false;
+    authStore.justLoggedIn = false;
+    authStore.loginTimestamp = null;
     if (process.client) {
       localStorage.removeItem('auth_token');
     }
