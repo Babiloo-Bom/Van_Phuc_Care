@@ -182,6 +182,9 @@ export async function handleSSOLogin(): Promise<boolean> {
     }
     
     console.log('[SSO] Setting token to authStore...');
+    // Set SSO flag to disable auto-logout during SSO process
+    authStore.isSSOLoginInProgress = true;
+    
     // Set token FIRST before calling API (so API can use it)
     authStore.token = ssoData.token;
     if (process.client) {
@@ -254,6 +257,9 @@ export async function handleSSOLogin(): Promise<boolean> {
         
         console.log('[SSO] SSO login successful!');
         
+        // Clear SSO flag
+        authStore.isSSOLoginInProgress = false;
+        
         // Clear SSO cookie after a short delay to ensure it's been read
         // This prevents the cookie from being cleared too early
         setTimeout(() => {
@@ -272,6 +278,8 @@ export async function handleSSOLogin(): Promise<boolean> {
         status: error?.statusCode || error?.status,
         data: error?.data,
       });
+      // Clear SSO flag
+      authStore.isSSOLoginInProgress = false;
       // Clear token if verification failed
       authStore.token = null;
       authStore.isAuthenticated = false;
@@ -283,6 +291,7 @@ export async function handleSSOLogin(): Promise<boolean> {
     }
     
     // If no userData, clear everything
+    authStore.isSSOLoginInProgress = false;
     authStore.token = null;
     authStore.isAuthenticated = false;
     if (process.client) {

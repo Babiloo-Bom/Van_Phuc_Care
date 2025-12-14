@@ -81,9 +81,14 @@ export const useApiClient = () => {
       switch (status) {
         case 401:
           errorMessage = 'Phiên đăng nhập hết hạn, vui lòng đăng nhập lại';
-          // Auto logout and redirect
-          authStore.logout();
-          router.push('/login');
+          // Don't auto logout during SSO login process
+          if (!authStore.isSSOLoginInProgress) {
+            // Auto logout and redirect
+            authStore.logout();
+            router.push('/login');
+          } else {
+            console.log('[API] 401 error during SSO login, skipping auto-logout');
+          }
           break;
         case 403:
           errorMessage = 'Bạn không có quyền thực hiện thao tác này';

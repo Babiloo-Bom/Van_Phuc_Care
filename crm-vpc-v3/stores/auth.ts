@@ -24,6 +24,7 @@ export interface AuthState {
   isAuthenticated: boolean;
   isLoading: boolean;
   rememberAccount: boolean;
+  isSSOLoginInProgress: boolean; // Flag to disable auto-logout during SSO
 }
 
 export const useAuthStore = defineStore('auth', {
@@ -34,6 +35,7 @@ export const useAuthStore = defineStore('auth', {
     isAuthenticated: false,
     isLoading: false,
     rememberAccount: false,
+    isSSOLoginInProgress: false,
   }),
 
   getters: {
