@@ -55,9 +55,10 @@ export default defineNuxtPlugin(nuxtApp => {
         }
         
         // Check if login was recent (within last 15 seconds)
+        // If loginTimestamp is null but justLoggedIn is true, still skip logout
         const timeSinceLogin = authStore.loginTimestamp 
           ? Date.now() - authStore.loginTimestamp 
-          : Infinity;
+          : (authStore.justLoggedIn ? 0 : Infinity); // If justLoggedIn but no timestamp, treat as just logged in
         if (timeSinceLogin < 15000) {
           console.warn('[Auth] 401 but login was recent (', timeSinceLogin, 'ms ago), skipping logout');
           return;

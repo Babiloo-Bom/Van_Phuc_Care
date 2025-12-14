@@ -101,6 +101,8 @@ export const useAuthStore = defineStore("auth", {
           localStorage.setItem("auth_token", token);
           localStorage.setItem("token_expire_at", this.tokenExpireAt || "");
           localStorage.setItem("user", JSON.stringify(this.user));
+          // Save loginTimestamp to localStorage for initAuth restoration
+          localStorage.setItem("login_timestamp", String(this.loginTimestamp));
 
           if (remindAccount) {
             localStorage.setItem(
@@ -112,6 +114,16 @@ export const useAuthStore = defineStore("auth", {
               })
             );
           }
+          
+          // Also save authData for initAuth compatibility
+          const authData = {
+            user: this.user,
+            token: this.token,
+            tokenExpireAt: this.tokenExpireAt,
+            rememberAccount: this.rememberAccount,
+            loginTimestamp: this.loginTimestamp,
+          };
+          localStorage.setItem("authData", JSON.stringify(authData));
           
           // Clear logout sync cookie on successful login
           const { clearLogoutSyncCookie } = await import('~/utils/authSync');
@@ -486,7 +498,7 @@ export const useAuthStore = defineStore("auth", {
         const authDataStr = localStorage.getItem("auth_data");
 
         // Try to restore from authData first (new format), then fallback to old format
-        let authData = null;
+        let authData: any = null;
         if (authDataStr) {
           try {
             authData = JSON.parse(authDataStr)
@@ -514,6 +526,20 @@ export const useAuthStore = defineStore("auth", {
             this.tokenExpireAt = authData.tokenExpireAt;
             this.user = authData.user;
             this.isAuthenticated = true;
+            // Restore loginTimestamp if available
+            if (authData.loginTimestamp) {
+              this.loginTimestamp = authData.loginTimestamp;
+              // Check if login was recent (within 15 seconds)
+              if (this.loginTimestamp) {
+                const timeSinceLogin = Date.now() - this.loginTimestamp;
+                if (timeSinceLogin < 15000) {
+                  this.justLoggedIn = true;
+                  setTimeout(() => {
+                    this.justLoggedIn = false;
+                  }, 15000 - timeSinceLogin);
+                }
+              }
+            }
 
           } catch (e) {
             this.logout()
@@ -538,6 +564,22 @@ export const useAuthStore = defineStore("auth", {
             this.tokenExpireAt = tokenExpireAt;
             this.user = JSON.parse(userStr);
             this.isAuthenticated = true;
+            // Try to restore loginTimestamp from localStorage
+            const loginTimestampStr = localStorage.getItem("login_timestamp");
+            if (loginTimestampStr) {
+              const loginTimestamp = parseInt(loginTimestampStr);
+              if (!isNaN(loginTimestamp)) {
+                this.loginTimestamp = loginTimestamp;
+                // Check if login was recent (within 15 seconds)
+                const timeSinceLogin = Date.now() - this.loginTimestamp;
+                if (timeSinceLogin < 15000) {
+                  this.justLoggedIn = true;
+                  setTimeout(() => {
+                    this.justLoggedIn = false;
+                  }, 15000 - timeSinceLogin);
+                }
+              }
+            }
 
             // Check for remember account
             if (authDataStr) {
@@ -650,17 +692,29 @@ export const useAuthStore = defineStore("auth", {
           console.log('[Google Login] Cleared justLoggedIn flag after 15 seconds');
         }, 15000); // 15 seconds grace period
 
-        // Save to localStorage
-        if (process.client) {
-          localStorage.setItem("auth_token", accessToken);
-          localStorage.setItem("token_expire_at", this.tokenExpireAt);
-          localStorage.setItem("user", JSON.stringify(userData));
-          
-          // Clear logout sync cookie on successful login
-          const { clearLogoutSyncCookie } = await import('~/utils/authSync');
-          clearLogoutSyncCookie();
-          console.log('[Google Login] Cleared logout sync cookie');
-        }
+          // Save to localStorage
+          if (process.client) {
+            localStorage.setItem("auth_token", accessToken);
+            localStorage.setItem("token_expire_at", this.tokenExpireAt);
+            localStorage.setItem("user", JSON.stringify(userData));
+            // Save loginTimestamp to localStorage for initAuth restoration
+            localStorage.setItem("login_timestamp", String(this.loginTimestamp));
+            
+            // Also save authData for initAuth compatibility
+            const authData = {
+              user: this.user,
+              token: this.token,
+              tokenExpireAt: this.tokenExpireAt,
+              rememberAccount: false,
+              loginTimestamp: this.loginTimestamp,
+            };
+            localStorage.setItem("authData", JSON.stringify(authData));
+            
+            // Clear logout sync cookie on successful login
+            const { clearLogoutSyncCookie } = await import('~/utils/authSync');
+            clearLogoutSyncCookie();
+            console.log('[Google Login] Cleared logout sync cookie');
+          }
 
         return { success: true };
       } catch (error: any) {
