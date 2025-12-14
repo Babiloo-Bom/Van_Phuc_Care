@@ -101,8 +101,11 @@ export function checkSSOCookie(): string | null {
     // Production: Check cookie
     const cookies = document.cookie.split(';');
     console.log('[SSO] Checking cookies, total:', cookies.length);
+    console.log('[SSO] Looking for cookie name:', SSO_COOKIE);
+    console.log('[SSO] All cookies:', cookies.map(c => c.trim().split('=')[0]));
     for (let cookie of cookies) {
       const [name, value] = cookie.trim().split('=');
+      console.log('[SSO] Checking cookie:', name, '===', SSO_COOKIE, '?', name === SSO_COOKIE);
       if (name === SSO_COOKIE && value) {
         console.log('[SSO] Found SSO cookie:', name, 'value length:', value.length);
         return value;

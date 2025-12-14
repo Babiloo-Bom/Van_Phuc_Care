@@ -126,7 +126,7 @@
                   target="_blank"
                   rel="noopener noreferrer"
                   class="flex items-center gap-3 px-4 py-3 text-gray-700 text-sm transition-all hover:bg-gray-50 hover:text-blue-500 border-none bg-transparent w-full text-left cursor-pointer"
-                  @click="closeUserMenu"
+                  @click="handleCrmLinkClick($event, crmProfileUrl)"
                 >
                   <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 16 16" fill="none">
                     <g clip-path="url(#clip0_244_8848)">
@@ -146,7 +146,7 @@
                   target="_blank"
                   rel="noopener noreferrer"
                   class="flex items-center gap-3 px-4 py-3 text-gray-700 text-sm transition-all hover:bg-gray-50 hover:text-blue-500 border-none bg-transparent w-full text-left cursor-pointer"
-                  @click="closeUserMenu"
+                  @click="handleCrmLinkClick($event, crmTransactionsUrl)"
                 >
                   <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 16 16" fill="none">
                     <g clip-path="url(#clip0_244_8854)">
@@ -166,7 +166,7 @@
                   target="_blank"
                   rel="noopener noreferrer"
                   class="flex items-center gap-3 px-4 py-3 text-gray-700 text-sm transition-all hover:bg-gray-50 hover:text-blue-500 border-none bg-transparent w-full text-left cursor-pointer"
-                  @click="closeUserMenu"
+                  @click="handleCrmLinkClick($event, crmHealthBookUrl)"
                 >
                   <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 16 16" fill="none">
                     <g clip-path="url(#clip0_244_8859)">
@@ -457,6 +457,40 @@ const toggleUserMenu = () => {
 
 const closeUserMenu = () => {
   showUserMenu.value = false;
+};
+
+const handleCrmLinkClick = async (event: MouseEvent, url: string | undefined) => {
+  event.preventDefault();
+  closeUserMenu();
+  
+  if (!url || url === '#') {
+    return;
+  }
+  
+  try {
+    // Extract path from URL
+    let path = '/';
+    try {
+      const urlObj = new URL(url);
+      path = urlObj.pathname;
+    } catch {
+      const match = url.match(/https?:\/\/[^\/]+(\/.*)?$/);
+      path = match && match[1] ? match[1] : '/';
+    }
+    
+    const { buildSSOUrl } = await import('~/utils/sso');
+    const baseUrl = String(crmBaseUrl.value || 'http://localhost:3101');
+    const ssoUrl = buildSSOUrl(baseUrl, path);
+    
+    await new Promise(resolve => setTimeout(resolve, 100));
+    
+    window.open(ssoUrl, '_blank', 'noopener,noreferrer');
+  } catch (error) {
+    console.error('[SSO] Error setting SSO cookie:', error);
+    if (url) {
+      window.open(url, '_blank', 'noopener,noreferrer');
+    }
+  }
 };
 
 const handleLogout = async () => {
