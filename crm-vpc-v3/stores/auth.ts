@@ -25,6 +25,8 @@ export interface AuthState {
   isLoading: boolean;
   rememberAccount: boolean;
   isSSOLoginInProgress: boolean; // Flag to disable auto-logout during SSO
+  justLoggedIn: boolean; // Flag to disable auto-logout immediately after login
+  loginTimestamp: number | null; // Timestamp of last login
 }
 
 export const useAuthStore = defineStore('auth', {
@@ -36,6 +38,8 @@ export const useAuthStore = defineStore('auth', {
     isLoading: false,
     rememberAccount: false,
     isSSOLoginInProgress: false,
+    justLoggedIn: false,
+    loginTimestamp: null,
   }),
 
   getters: {
@@ -122,6 +126,14 @@ export const useAuthStore = defineStore('auth', {
           localStorage.setItem('auth_token', token);
           localStorage.setItem('token_expire_at', this.tokenExpireAt || '');
           localStorage.setItem('user', JSON.stringify(this.user));
+          // Also save authData for initAuth compatibility
+          const authData = {
+            user: this.user,
+            token: this.token,
+            tokenExpireAt: this.tokenExpireAt,
+            rememberAccount: this.rememberAccount,
+          };
+          localStorage.setItem('authData', JSON.stringify(authData));
 
           if (remindAccount) {
             localStorage.setItem(
@@ -134,6 +146,13 @@ export const useAuthStore = defineStore('auth', {
             );
           }
         }
+
+        // Set justLoggedIn flag to prevent auto-logout for 5 seconds
+        this.justLoggedIn = true;
+        this.loginTimestamp = Date.now();
+        setTimeout(() => {
+          this.justLoggedIn = false;
+        }, 5000); // 5 seconds grace period
 
         return { success: true, user: this.user, token };
       } catch (error: any) {
@@ -726,7 +745,23 @@ export const useAuthStore = defineStore('auth', {
         if (process.client) {
           localStorage.setItem('token_expire_at', this.tokenExpireAt);
           localStorage.setItem('user', JSON.stringify(userData));
+          // Also save authData for initAuth compatibility
+          const authData = {
+            user: userData,
+            token: accessToken,
+            tokenExpireAt: this.tokenExpireAt,
+            rememberAccount: false,
+          };
+          localStorage.setItem('authData', JSON.stringify(authData));
+          console.log('[Google Login] Auth data saved to localStorage');
         }
+
+        // Set justLoggedIn flag to prevent auto-logout for 5 seconds
+        this.justLoggedIn = true;
+        this.loginTimestamp = Date.now();
+        setTimeout(() => {
+          this.justLoggedIn = false;
+        }, 5000); // 5 seconds grace period
 
         return { success: true };
       } catch (error: any) {

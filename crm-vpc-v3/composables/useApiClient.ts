@@ -81,13 +81,26 @@ export const useApiClient = () => {
       switch (status) {
         case 401:
           errorMessage = 'Phiên đăng nhập hết hạn, vui lòng đăng nhập lại';
-          // Don't auto logout during SSO login process
-          if (!authStore.isSSOLoginInProgress) {
-            // Auto logout and redirect
-            authStore.logout();
-            router.push('/login');
+          // Don't auto logout during SSO login process or immediately after login
+          if (!authStore.isSSOLoginInProgress && !authStore.justLoggedIn) {
+            // Check if login was recent (within last 10 seconds)
+            const timeSinceLogin = authStore.loginTimestamp 
+              ? Date.now() - authStore.loginTimestamp 
+              : Infinity;
+            if (timeSinceLogin > 10000) {
+              // Auto logout and redirect
+              console.warn('[API] 401 error, logging out (login was', timeSinceLogin, 'ms ago)');
+              authStore.logout();
+              router.push('/login');
+            } else {
+              console.warn('[API] 401 error but login was recent (', timeSinceLogin, 'ms ago), skipping auto-logout');
+            }
           } else {
-            console.log('[API] 401 error during SSO login, skipping auto-logout');
+            if (authStore.isSSOLoginInProgress) {
+              console.log('[API] 401 error during SSO login, skipping auto-logout');
+            } else if (authStore.justLoggedIn) {
+              console.log('[API] 401 error immediately after login, skipping auto-logout');
+            }
           }
           break;
         case 403:
