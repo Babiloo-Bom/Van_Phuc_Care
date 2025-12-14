@@ -10,6 +10,12 @@ export default defineNuxtRouteMiddleware((to, from) => {
   // Skip middleware on server-side
   if (process.server) return;
   const authStore = useAuthStore();
+  
+  // Don't run auth checks during SSO login
+  if (authStore.isSSOLoginInProgress) {
+    return;
+  }
+  
   // Initialize auth if not already done
   if (!authStore.isAuthenticated && process.client) {
     authStore.initAuth();
@@ -22,6 +28,8 @@ export default defineNuxtRouteMiddleware((to, from) => {
 
     if (now >= expireTime) {
       console.warn("[Auth Global] Token expired, logging out...");
+      console.warn("[Auth Global] Expire time:", new Date(expireTime).toISOString());
+      console.warn("[Auth Global] Current time:", new Date(now).toISOString());
       authStore.logout();
 
       // Redirect to login if trying to access protected route

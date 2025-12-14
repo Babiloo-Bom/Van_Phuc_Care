@@ -50,13 +50,27 @@ export default defineNuxtPlugin(nuxtApp => {
         // Check if this is a logout request - don't trigger logout again
         const requestUrl = typeof request === 'string' ? request : request?.url || '';
         const isLogoutRequest = requestUrl.includes('/logout') || requestUrl.includes('/auth/logout');
+        const isProfileRequest = requestUrl.includes('/users/profile') || requestUrl.includes('/profile');
         
         // Prevent infinite loop: don't logout if already logging out or if this is logout request
         if (isLoggingOut || isLogoutRequest) {
           return;
         }
         
+        // Don't logout if SSO login is in progress
+        if (authStore.isSSOLoginInProgress) {
+          console.warn('[Auth] 401 during SSO login, skipping logout');
+          return;
+        }
+        
+        // Don't logout on profile refresh errors - session might still be valid
+        if (isProfileRequest) {
+          console.warn('[Auth] 401 on profile request, skipping logout (non-critical)');
+          return;
+        }
+        
         console.warn('[Auth] Unauthorized (401), logging out...');
+        console.warn('[Auth] Request URL:', requestUrl);
         isLoggingOut = true;
         
         // Clear auth state directly without calling logout API

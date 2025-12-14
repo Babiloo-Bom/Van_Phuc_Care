@@ -405,6 +405,8 @@ export const useAuthStore = defineStore('auth', {
      * Migrated from admin-vpc/api/auth.js
      */
     async logout() {
+      console.log('[Auth] Logout called');
+      console.trace('[Auth] Logout stack trace');
       this.isLoading = true;
 
       try {
@@ -430,6 +432,7 @@ export const useAuthStore = defineStore('auth', {
         if (process.client) {
           localStorage.removeItem('auth_token');
           localStorage.removeItem('user');
+          localStorage.removeItem('authData');
 
           // Keep auth_data if rememberAccount was true
           if (!this.rememberAccount) {
