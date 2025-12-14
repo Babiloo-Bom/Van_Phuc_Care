@@ -32,6 +32,7 @@ export function setLogoutSyncCookie() {
       // For cross-port on localhost, we'll use a polling mechanism with localStorage
       const syncKey = 'auth_logout_sync_' + Date.now();
       localStorage.setItem(syncKey, 'true');
+      console.log('[Logout Sync] Set logout sync key in localStorage:', syncKey);
       // Clean up old sync keys
       Object.keys(localStorage).forEach(key => {
         if (key.startsWith('auth_logout_sync_') && key !== syncKey) {
@@ -44,11 +45,24 @@ export function setLogoutSyncCookie() {
       });
     } else {
       // Production: Use cookie with domain for subdomain sharing
+      const cookieValue = Date.now().toString();
       try {
-        document.cookie = `${LOGOUT_SYNC_COOKIE}=${Date.now()}; expires=${expires.toUTCString()}; path=/; domain=${COOKIE_DOMAIN}; SameSite=Lax`;
+        const cookieString = `${LOGOUT_SYNC_COOKIE}=${cookieValue}; expires=${expires.toUTCString()}; path=/; domain=${COOKIE_DOMAIN}; SameSite=Lax`;
+        document.cookie = cookieString;
+        console.log('[Logout Sync] Set logout sync cookie with domain:', COOKIE_DOMAIN, 'cookie:', cookieString);
+        // Verify cookie was set
+        const cookies = document.cookie.split(';');
+        const found = cookies.some(c => c.trim().startsWith(LOGOUT_SYNC_COOKIE + '='));
+        if (found) {
+          console.log('[Logout Sync] Cookie verified, found in document.cookie');
+        } else {
+          console.warn('[Logout Sync] Cookie not found in document.cookie after setting!');
+        }
       } catch (e) {
+        console.error('[Logout Sync] Error setting cookie with domain, trying without domain:', e);
         // Fallback if domain setting fails
-        document.cookie = `${LOGOUT_SYNC_COOKIE}=${Date.now()}; expires=${expires.toUTCString()}; path=/; SameSite=Lax`;
+        document.cookie = `${LOGOUT_SYNC_COOKIE}=${cookieValue}; expires=${expires.toUTCString()}; path=/; SameSite=Lax`;
+        console.log('[Logout Sync] Set logout sync cookie without domain');
       }
     }
   }
@@ -69,6 +83,7 @@ export function checkLogoutSyncCookie(): boolean {
         const timestamp = parts[3] ? parseInt(parts[3]) : 0;
         // Check if sync key is recent (within 1 minute)
         if (timestamp && Date.now() - timestamp < 60000) {
+          console.log('[Logout Sync] Found logout sync key in localStorage:', key);
           return true;
         }
       }
@@ -80,6 +95,7 @@ export function checkLogoutSyncCookie(): boolean {
     for (let cookie of cookies) {
       const [name, value] = cookie.trim().split('=');
       if (name === LOGOUT_SYNC_COOKIE && value) {
+        console.log('[Logout Sync] Found logout sync cookie:', name, 'value:', value);
         return true;
       }
     }

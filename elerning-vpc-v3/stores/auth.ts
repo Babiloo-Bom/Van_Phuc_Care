@@ -438,7 +438,9 @@ export const useAuthStore = defineStore("auth", {
         // Set logout sync cookie to notify CRM site
         if (process.client) {
           const { setLogoutSyncCookie } = await import('~/utils/authSync');
+          console.log('[Logout] [Elearning] Setting logout sync cookie to notify CRM...');
           setLogoutSyncCookie();
+          console.log('[Logout] [Elearning] Logout sync cookie set');
         }
 
         // Clear state
