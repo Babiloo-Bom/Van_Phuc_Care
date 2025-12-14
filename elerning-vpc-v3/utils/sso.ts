@@ -179,21 +179,24 @@ export async function handleSSOLogin(): Promise<boolean> {
     
     const authStore = useAuthStore();
     
+    // Set justLoggedIn flag IMMEDIATELY when SSO cookie is detected
+    // This protects against API calls that might happen before we finish processing
+    // This must be set BEFORE checking if already logged in
+    if (!authStore.justLoggedIn) {
+      authStore.justLoggedIn = true;
+      authStore.loginTimestamp = Date.now();
+      console.log('[SSO] Set justLoggedIn flag IMMEDIATELY when SSO cookie detected, timestamp:', authStore.loginTimestamp);
+      setTimeout(() => {
+        authStore.justLoggedIn = false;
+        console.log('[SSO] Cleared justLoggedIn flag after 15 seconds');
+      }, 15000); // 15 seconds grace period
+    }
+    
     // If already logged in, don't clear cookie immediately
     // Let the other site read it first, then it will be cleared
     if (authStore.isAuthenticated) {
       console.log('[SSO] Already logged in on this site, but keeping cookie for other site');
-      // Set justLoggedIn flag to protect against immediate logout
-      // This handles the case where user navigates from CRM to Elearning
-      if (!authStore.justLoggedIn) {
-        authStore.justLoggedIn = true;
-        authStore.loginTimestamp = Date.now();
-        console.log('[SSO] Set justLoggedIn flag for already logged in user, timestamp:', authStore.loginTimestamp);
-        setTimeout(() => {
-          authStore.justLoggedIn = false;
-          console.log('[SSO] Cleared justLoggedIn flag after 15 seconds');
-        }, 15000); // 15 seconds grace period
-      }
+      // justLoggedIn flag was already set above
       // Don't clear cookie immediately - let other site read it first
       // Cookie will expire in 1 minute anyway
       return true;
