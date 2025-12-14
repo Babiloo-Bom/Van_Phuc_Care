@@ -172,10 +172,28 @@ export async function handleSSOLogin(): Promise<boolean> {
     
     const authStore = useAuthStore();
     
+    // Set justLoggedIn flag IMMEDIATELY when SSO cookie is detected
+    // This protects against API calls that might happen before we finish processing
+    // This must be set BEFORE checking if already logged in
+    if (!authStore.justLoggedIn) {
+      authStore.justLoggedIn = true;
+      authStore.loginTimestamp = Date.now();
+      console.log('[SSO] Set justLoggedIn flag IMMEDIATELY when SSO cookie detected, timestamp:', authStore.loginTimestamp);
+      // Save to localStorage immediately for restoration after refresh
+      if (process.client) {
+        localStorage.setItem('login_timestamp', String(authStore.loginTimestamp));
+      }
+      setTimeout(() => {
+        authStore.justLoggedIn = false;
+        console.log('[SSO] Cleared justLoggedIn flag after 30 seconds');
+      }, 30000); // 30 seconds grace period (increased from 15)
+    }
+    
     // If already logged in, don't clear cookie immediately
     // Let the other site read it first, then it will be cleared
     if (authStore.isAuthenticated) {
       console.log('[SSO] Already logged in on this site, but keeping cookie for other site');
+      // justLoggedIn flag was already set above
       // Don't clear cookie immediately - let other site read it first
       // Cookie will expire in 1 minute anyway
       return true;
@@ -191,6 +209,20 @@ export async function handleSSOLogin(): Promise<boolean> {
       localStorage.setItem('auth_token', ssoData.token);
       console.log('[SSO] Token saved to localStorage');
     }
+    
+    // Set justLoggedIn flag IMMEDIATELY to protect against auto-logout
+    // This must be set BEFORE verifying with backend, as API calls might happen during verification
+    authStore.justLoggedIn = true;
+    authStore.loginTimestamp = Date.now();
+    console.log('[SSO] Set justLoggedIn flag IMMEDIATELY, timestamp:', authStore.loginTimestamp);
+    // Save loginTimestamp to localStorage immediately for restoration after refresh
+    if (process.client) {
+      localStorage.setItem('login_timestamp', String(authStore.loginTimestamp));
+    }
+    setTimeout(() => {
+      authStore.justLoggedIn = false;
+      console.log('[SSO] Cleared justLoggedIn flag after 30 seconds');
+    }, 30000); // 30 seconds grace period
     
     // Use $fetch directly to avoid auto-logout on 401 from useApiClient
     // We'll handle errors manually during SSO
@@ -258,10 +290,15 @@ export async function handleSSOLogin(): Promise<boolean> {
             user: authStore.user,
             token: authStore.token,
             tokenExpireAt: authStore.tokenExpireAt || new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString(),
-            rememberAccount: authStore.rememberAccount,
+            rememberAccount: authStore.rememberAccount || false,
+            loginTimestamp: authStore.loginTimestamp, // Include loginTimestamp for restoration
           };
           localStorage.setItem('authData', JSON.stringify(authData));
-          console.log('[SSO] Auth data saved to localStorage');
+          // Also save loginTimestamp separately for fallback
+          if (authStore.loginTimestamp) {
+            localStorage.setItem('login_timestamp', String(authStore.loginTimestamp));
+          }
+          console.log('[SSO] Auth data saved to localStorage with loginTimestamp:', authStore.loginTimestamp);
         }
         
         console.log('[SSO] SSO login successful!');
@@ -287,6 +324,13 @@ export async function handleSSOLogin(): Promise<boolean> {
         return true;
       } else {
         console.warn('[SSO] No user data in response');
+        // Clear flags if no user data
+        authStore.justLoggedIn = false;
+        authStore.loginTimestamp = null;
+        authStore.isSSOLoginInProgress = false;
+        if (process.client) {
+          localStorage.removeItem('login_timestamp');
+        }
       }
     } catch (error: any) {
       console.error('[SSO] Failed to verify token:', error);
@@ -300,8 +344,11 @@ export async function handleSSOLogin(): Promise<boolean> {
       // Clear token if verification failed
       authStore.token = null;
       authStore.isAuthenticated = false;
+      authStore.justLoggedIn = false;
+      authStore.loginTimestamp = null;
       if (process.client) {
         localStorage.removeItem('auth_token');
+        localStorage.removeItem('login_timestamp');
       }
       clearSSOCookie();
       return false;
