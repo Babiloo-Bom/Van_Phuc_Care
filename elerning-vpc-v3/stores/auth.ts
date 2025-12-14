@@ -446,11 +446,16 @@ export const useAuthStore = defineStore("auth", {
         this.token = null;
         this.isAuthenticated = false;
         this.rememberAccount = false;
+        this.justLoggedIn = false;
+        this.loginTimestamp = null;
 
         // Clear localStorage
         if (process.client) {
           localStorage.removeItem("auth_token");
           localStorage.removeItem("user");
+          localStorage.removeItem("login_timestamp");
+          localStorage.removeItem("authData"); // Clear authData (camelCase)
+          localStorage.removeItem("token_expire_at");
 
           // Keep auth_data if rememberAccount was true
           if (!this.rememberAccount) {
@@ -492,6 +497,13 @@ export const useAuthStore = defineStore("auth", {
      */
     async initAuth() {
       if (process.client) {
+        // Skip if already authenticated (might be from a fresh login)
+        // This prevents initAuth from overriding state after a successful login
+        if (this.isAuthenticated && this.token && this.user) {
+          console.log('ℹ️ Already authenticated, skipping initAuth');
+          return;
+        }
+        
         const token = localStorage.getItem("auth_token");
         const tokenExpireAt = localStorage.getItem("token_expire_at");
         const userStr = localStorage.getItem("user");

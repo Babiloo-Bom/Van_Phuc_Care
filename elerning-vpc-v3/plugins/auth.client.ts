@@ -8,7 +8,11 @@ export default defineNuxtPlugin(nuxtApp => {
   const authStore = useAuthStore();
 
   // Initialize auth state from localStorage
-  authStore.initAuth();
+  // Only init if not already authenticated (to avoid overriding fresh login)
+  // This prevents initAuth from running after a successful login
+  if (!authStore.isAuthenticated || !authStore.token) {
+    authStore.initAuth();
+  }
 
   // Handle navigation after login
   nuxtApp.hook('app:mounted', () => {
