@@ -102,16 +102,21 @@ export function checkSSOCookie(): string | null {
     const cookies = document.cookie.split(';');
     console.log('[SSO] Checking cookies, total:', cookies.length);
     console.log('[SSO] Looking for cookie name:', SSO_COOKIE);
-    console.log('[SSO] All cookies:', cookies.map(c => c.trim().split('=')[0]));
+    console.log('[SSO] Current hostname:', window.location.hostname);
+    console.log('[SSO] All cookies:', cookies.map(c => {
+      const parts = c.trim().split('=');
+      return parts[0];
+    }));
     for (let cookie of cookies) {
       const [name, value] = cookie.trim().split('=');
       console.log('[SSO] Checking cookie:', name, '===', SSO_COOKIE, '?', name === SSO_COOKIE);
       if (name === SSO_COOKIE && value) {
-        console.log('[SSO] Found SSO cookie:', name, 'value length:', value.length);
+        console.log('[SSO] ✅ Found SSO cookie:', name, 'value length:', value.length);
         return value;
       }
     }
-    console.log('[SSO] No SSO cookie found');
+    console.log('[SSO] ❌ No SSO cookie found on', window.location.hostname);
+    console.log('[SSO] Note: Cookie with domain=.vanphuccare.com set on elearning.vanphuccare.com should be readable on crm.vanphuccare.com');
     return null;
   }
 }
@@ -167,10 +172,12 @@ export async function handleSSOLogin(): Promise<boolean> {
     
     const authStore = useAuthStore();
     
-    // If already logged in, clear cookie and skip
+    // If already logged in, don't clear cookie immediately
+    // Let the other site read it first, then it will be cleared
     if (authStore.isAuthenticated) {
-      console.log('[SSO] Already logged in, clearing cookie');
-      clearSSOCookie();
+      console.log('[SSO] Already logged in on this site, but keeping cookie for other site');
+      // Don't clear cookie immediately - let other site read it first
+      // Cookie will expire in 1 minute anyway
       return true;
     }
     

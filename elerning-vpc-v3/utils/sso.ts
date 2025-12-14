@@ -179,10 +179,12 @@ export async function handleSSOLogin(): Promise<boolean> {
     
     const authStore = useAuthStore();
     
-    // If already logged in, clear cookie and skip
+    // If already logged in, don't clear cookie immediately
+    // Let the other site read it first, then it will be cleared
     if (authStore.isAuthenticated) {
-      console.log('[SSO] Already logged in, clearing cookie');
-      clearSSOCookie();
+      console.log('[SSO] Already logged in on this site, but keeping cookie for other site');
+      // Don't clear cookie immediately - let other site read it first
+      // Cookie will expire in 1 minute anyway
       return true;
     }
     
