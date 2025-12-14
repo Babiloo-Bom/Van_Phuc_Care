@@ -133,9 +133,12 @@ export function clearLogoutSyncCookie() {
 export function startLogoutSyncMonitor(callback: () => void, intervalMs: number = 2000) {
   if (!process.client) return () => {};
   
+  console.log('[Logout Sync] [Elearning] Starting logout sync monitor, interval:', intervalMs, 'ms');
+  
   const interval = setInterval(() => {
-    if (checkLogoutSyncCookie()) {
-      console.log('[Logout Sync] Monitor detected logout sync cookie, calling callback...');
+    const hasCookie = checkLogoutSyncCookie();
+    if (hasCookie) {
+      console.log('[Logout Sync] [Elearning] Monitor detected logout sync cookie, calling callback...');
       // Clear cookie AFTER calling callback to ensure it's processed
       // But clear it to prevent multiple triggers
       clearLogoutSyncCookie();
@@ -143,6 +146,9 @@ export function startLogoutSyncMonitor(callback: () => void, intervalMs: number 
     }
   }, intervalMs);
   
-  return () => clearInterval(interval);
+  return () => {
+    console.log('[Logout Sync] [Elearning] Stopping logout sync monitor');
+    clearInterval(interval);
+  };
 }
 
