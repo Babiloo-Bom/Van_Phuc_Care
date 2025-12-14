@@ -82,25 +82,37 @@ export const useApiClient = () => {
         case 401:
           errorMessage = 'Phiên đăng nhập hết hạn, vui lòng đăng nhập lại';
           // Don't auto logout during SSO login process or immediately after login
-          if (!authStore.isSSOLoginInProgress && !authStore.justLoggedIn) {
-            // Check if login was recent (within last 10 seconds)
-            const timeSinceLogin = authStore.loginTimestamp 
-              ? Date.now() - authStore.loginTimestamp 
-              : Infinity;
-            if (timeSinceLogin > 10000) {
-              // Auto logout and redirect
-              console.warn('[API] 401 error, logging out (login was', timeSinceLogin, 'ms ago)');
-              authStore.logout();
-              router.push('/login');
-            } else {
-              console.warn('[API] 401 error but login was recent (', timeSinceLogin, 'ms ago), skipping auto-logout');
-            }
+          const requestUrl = error.request?.url || error.url || '';
+          const isProfileRequest = requestUrl.includes('/users/profile') || requestUrl.includes('/profile');
+          
+          // Check if login was recent (within last 15 seconds)
+          const timeSinceLogin = authStore.loginTimestamp 
+            ? Date.now() - authStore.loginTimestamp 
+            : Infinity;
+          
+          console.log('[API] 401 error details:', {
+            isSSOLoginInProgress: authStore.isSSOLoginInProgress,
+            justLoggedIn: authStore.justLoggedIn,
+            loginTimestamp: authStore.loginTimestamp,
+            timeSinceLogin: timeSinceLogin + 'ms',
+            isProfileRequest,
+            requestUrl,
+            willLogout: !authStore.isSSOLoginInProgress && !authStore.justLoggedIn && timeSinceLogin >= 15000 && !isProfileRequest,
+          });
+          
+          if (authStore.isSSOLoginInProgress) {
+            console.log('[API] 401 error during SSO login, skipping auto-logout');
+          } else if (authStore.justLoggedIn) {
+            console.log('[API] 401 error immediately after login, skipping auto-logout');
+          } else if (timeSinceLogin < 15000) {
+            console.warn('[API] 401 error but login was recent (', timeSinceLogin, 'ms ago), skipping auto-logout');
+          } else if (isProfileRequest) {
+            console.warn('[API] 401 error on profile request, skipping auto-logout (non-critical)');
           } else {
-            if (authStore.isSSOLoginInProgress) {
-              console.log('[API] 401 error during SSO login, skipping auto-logout');
-            } else if (authStore.justLoggedIn) {
-              console.log('[API] 401 error immediately after login, skipping auto-logout');
-            }
+            // Auto logout and redirect
+            console.warn('[API] 401 error, logging out (login was', timeSinceLogin, 'ms ago)');
+            authStore.logout();
+            router.push('/login');
           }
           break;
         case 403:

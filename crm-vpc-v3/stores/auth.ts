@@ -147,12 +147,14 @@ export const useAuthStore = defineStore('auth', {
           }
         }
 
-        // Set justLoggedIn flag to prevent auto-logout for 5 seconds
+        // Set justLoggedIn flag to prevent auto-logout for 15 seconds
         this.justLoggedIn = true;
         this.loginTimestamp = Date.now();
+        console.log('[Login] Set justLoggedIn flag, timestamp:', this.loginTimestamp);
         setTimeout(() => {
           this.justLoggedIn = false;
-        }, 5000); // 5 seconds grace period
+          console.log('[Login] Cleared justLoggedIn flag after 15 seconds');
+        }, 15000); // 15 seconds grace period
 
         return { success: true, user: this.user, token };
       } catch (error: any) {
@@ -756,12 +758,14 @@ export const useAuthStore = defineStore('auth', {
           console.log('[Google Login] Auth data saved to localStorage');
         }
 
-        // Set justLoggedIn flag to prevent auto-logout for 5 seconds
+        // Set justLoggedIn flag to prevent auto-logout for 15 seconds
         this.justLoggedIn = true;
         this.loginTimestamp = Date.now();
+        console.log('[Google Login] Set justLoggedIn flag, timestamp:', this.loginTimestamp);
         setTimeout(() => {
           this.justLoggedIn = false;
-        }, 5000); // 5 seconds grace period
+          console.log('[Google Login] Cleared justLoggedIn flag after 15 seconds');
+        }, 15000); // 15 seconds grace period
 
         return { success: true };
       } catch (error: any) {
