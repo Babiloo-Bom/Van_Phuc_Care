@@ -433,7 +433,6 @@ export const useAuthStore = defineStore("auth", {
         if (process.client) {
           const { clearSSOCookie } = await import('~/utils/sso');
           clearSSOCookie();
-          console.log('[Logout] [Elearning] Cleared SSO cookie to prevent auto-login after logout');
         }
         
         // Call logout API to clear server session
@@ -446,9 +445,7 @@ export const useAuthStore = defineStore("auth", {
         // Do this BEFORE clearing state to ensure cookie is set while still authenticated
         if (process.client) {
           const { setLogoutSyncCookie } = await import('~/utils/authSync');
-          console.log('[Logout] [Elearning] Setting logout sync cookie to notify CRM...');
           setLogoutSyncCookie();
-          console.log('[Logout] [Elearning] Logout sync cookie set');
           // Add a small delay to ensure cookie is propagated before clearing state
           await new Promise(resolve => setTimeout(resolve, 100));
         }

@@ -405,8 +405,6 @@ const handleFocus = async () => {
 let stopLogoutMonitor: (() => void) | null = null;
 
 onMounted(async () => {
-  console.log('[SSO] TheHeader mounted, checking if handleCrmLinkClick is defined:', typeof handleCrmLinkClick);
-  console.log('[SSO] crmProfileUrl:', crmProfileUrl.value);
   
   // Refresh user data on component mount if authenticated
   if (authStore.isAuthenticated && authStore.token) {
@@ -431,10 +429,7 @@ onMounted(async () => {
         // Only skip logout if login was VERY recent (within 2 seconds) - this protects against SSO race conditions
         // But allow logout sync for normal logouts from other site
         if (timeSinceLogin >= 2000) { // Only skip if login was less than 2 seconds ago
-          console.log('[Logout Sync] Detected logout sync cookie, logging out (login was', timeSinceLogin, 'ms ago)');
           await authStore.logout();
-        } else {
-          console.log('[Logout Sync] Detected logout sync cookie but login was very recent (', timeSinceLogin, 'ms ago), skipping logout (likely SSO in progress)');
         }
       }
     });
@@ -459,11 +454,6 @@ const closeUserMenu = () => {
 };
 
 const handleCrmLinkClick = async (event: MouseEvent, url: string | undefined) => {
-  console.log('[SSO] ========== handleCrmLinkClick CALLED ==========');
-  console.log('[SSO] Event:', event);
-  console.log('[SSO] URL:', url);
-  console.log('[SSO] URL type:', typeof url);
-  
   if (event) {
     event.preventDefault();
     event.stopPropagation();
@@ -471,41 +461,29 @@ const handleCrmLinkClick = async (event: MouseEvent, url: string | undefined) =>
   closeUserMenu();
   
   if (!url || url === '#') {
-    console.warn('[SSO] Invalid URL, skipping SSO');
     return;
   }
   
   try {
-    console.log('[SSO] Extracting path from URL:', url);
     // Extract path from URL
     let path = '/';
     try {
       const urlObj = new URL(url);
       path = urlObj.pathname;
-      console.log('[SSO] Extracted path:', path);
     } catch (e) {
-      console.warn('[SSO] URL parsing failed, trying regex:', e);
       const match = url.match(/https?:\/\/[^\/]+(\/.*)?$/);
       path = match && match[1] ? match[1] : '/';
-      console.log('[SSO] Extracted path (regex):', path);
     }
     
-    console.log('[SSO] Importing buildSSOUrl...');
     const { buildSSOUrl } = await import('~/utils/sso');
     const baseUrl = String(crmBaseUrl.value || 'http://localhost:3101');
-    console.log('[SSO] Base URL:', baseUrl, 'Path:', path);
     const ssoUrl = await buildSSOUrl(baseUrl, path);
-    console.log('[SSO] SSO URL generated:', ssoUrl);
     
-    console.log('[SSO] Waiting 200ms for cookie to be set and propagated...');
     await new Promise(resolve => setTimeout(resolve, 200));
     
-    console.log('[SSO] Opening new tab with URL:', ssoUrl);
     window.open(ssoUrl, '_blank', 'noopener,noreferrer');
   } catch (error) {
-    console.error('[SSO] Error setting SSO cookie:', error);
     if (url) {
-      console.log('[SSO] Fallback: opening URL without SSO:', url);
       window.open(url, '_blank', 'noopener,noreferrer');
     }
   }

@@ -163,7 +163,6 @@ onMounted(async () => {
 
   // Monitor logout sync cookie from Elearning site
   if (process.client) {
-    console.log('[Logout Sync] [CRM] HeaderDesktop: Starting logout sync monitor...');
     const { startLogoutSyncMonitor } = await import('~/utils/authSync');
       stopLogoutMonitor = startLogoutSyncMonitor(async () => {
         // Logout if sync cookie detected, but not immediately after SSO login
@@ -174,16 +173,11 @@ onMounted(async () => {
           // Only skip logout if login was VERY recent (within 2 seconds) - this protects against SSO race conditions
           // But allow logout sync for normal logouts from other site
           if (timeSinceLogin < 2000) {
-            console.log('[Logout Sync] [CRM] Detected logout sync cookie but login was very recent (', timeSinceLogin, 'ms ago), skipping logout (likely SSO in progress)');
             return;
           }
-          console.log('[Logout Sync] [CRM] Detected logout sync cookie, logging out (login was', timeSinceLogin, 'ms ago)');
           await authStore.logout();
-        } else {
-          console.log('[Logout Sync] [CRM] Detected logout sync cookie but user is not authenticated, skipping');
         }
       });
-    console.log('[Logout Sync] [CRM] HeaderDesktop: Logout sync monitor started');
   }
 });
 

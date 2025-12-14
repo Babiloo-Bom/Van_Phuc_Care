@@ -257,10 +257,7 @@ onMounted(async () => {
         // Only skip logout if login was VERY recent (within 2 seconds) - this protects against SSO race conditions
         // But allow logout sync for normal logouts from other site
         if (timeSinceLogin >= 2000) { // Only skip if login was less than 2 seconds ago
-          console.log('[Logout Sync] Detected logout sync cookie, logging out (login was', timeSinceLogin, 'ms ago)');
           await authStore.logout();
-        } else {
-          console.log('[Logout Sync] Detected logout sync cookie but login was very recent (', timeSinceLogin, 'ms ago), skipping logout (likely SSO in progress)');
         }
       }
     });

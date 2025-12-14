@@ -73,7 +73,6 @@ export function checkLogoutSyncCookie(): boolean {
     for (let cookie of cookies) {
       const [name, value] = cookie.trim().split('=');
       if (name === LOGOUT_SYNC_COOKIE && value) {
-        console.log('[Logout Sync] [CRM] Found logout sync cookie:', name, 'value:', value);
         return true;
       }
     }
@@ -111,26 +110,17 @@ export function clearLogoutSyncCookie() {
 export function startLogoutSyncMonitor(callback: () => void, intervalMs: number = 2000) {
   if (!process.client) return () => {};
   
-  console.log('[Logout Sync] [CRM] Starting logout sync monitor, interval:', intervalMs, 'ms');
-  
-  let checkCount = 0;
   const interval = setInterval(() => {
-    checkCount++;
     const hasCookie = checkLogoutSyncCookie();
     if (hasCookie) {
-      console.log('[Logout Sync] [CRM] Monitor detected logout sync cookie (check #' + checkCount + '), calling callback...');
       // Clear cookie AFTER calling callback to ensure it's processed
       // But clear it to prevent multiple triggers
       clearLogoutSyncCookie();
       callback();
-    } else if (checkCount % 10 === 0) {
-      // Log every 10 checks to confirm monitor is running (every 20 seconds)
-      console.log('[Logout Sync] [CRM] Monitor running, check #' + checkCount + ', no logout sync cookie found');
     }
   }, intervalMs);
   
   return () => {
-    console.log('[Logout Sync] [CRM] Stopping logout sync monitor');
     clearInterval(interval);
   };
 }

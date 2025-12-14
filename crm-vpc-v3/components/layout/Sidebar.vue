@@ -78,7 +78,6 @@ const handleElearningLinkClick = async (path: string) => {
       const { buildSSOUrl } = await import('~/utils/sso');
       const baseUrl = String(elearningBaseUrl.value || 'http://elearning.vanphuccare.com');
       const ssoUrl = await buildSSOUrl(baseUrl, '/my-learning');
-      console.log('[SSO] Opening Elearning with SSO:', ssoUrl);
       // Wait a bit for cookie to be set
       await new Promise(resolve => setTimeout(resolve, 200));
       window.open(ssoUrl, '_blank', 'noopener,noreferrer');

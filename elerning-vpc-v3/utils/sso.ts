@@ -21,7 +21,6 @@ function isLocalhost(): boolean {
  */
 export async function setSSOCookie(token: string): Promise<void> {
   if (!process.client || !token) {
-    console.warn('[SSO] Cannot set SSO cookie: not client or no token');
     return;
   }
   
@@ -34,18 +33,15 @@ export async function setSSOCookie(token: string): Promise<void> {
   
   // Encode to base64
   const encodedToken = btoa(JSON.stringify(ssoData));
-  console.log('[SSO] Setting SSO cookie, token length:', token.length, 'encoded length:', encodedToken.length);
   
   // Set cookie with expiration in 1 minute
   const expires = new Date();
   expires.setMinutes(expires.getMinutes() + 1);
   
   if (isLocalhost()) {
-    console.log('[SSO] Using localStorage for localhost');
     // On localhost, use localStorage as fallback (same as logout sync)
     const syncKey = 'auth_sso_token_' + Date.now();
     localStorage.setItem(syncKey, encodedToken);
-    console.log('[SSO] Saved to localStorage with key:', syncKey);
     // Clean up old sync keys
     Object.keys(localStorage).forEach(key => {
       if (key.startsWith('auth_sso_token_') && key !== syncKey) {
@@ -57,35 +53,13 @@ export async function setSSOCookie(token: string): Promise<void> {
       }
     });
   } else {
-    console.log('[SSO] Using cookie with domain:', COOKIE_DOMAIN);
-    console.log('[SSO] Current hostname:', window.location.hostname);
     // Production: Use cookie with domain for subdomain sharing
     try {
       const cookieString = `${SSO_COOKIE}=${encodedToken}; expires=${expires.toUTCString()}; path=/; domain=${COOKIE_DOMAIN}; SameSite=Lax`;
       document.cookie = cookieString;
-      console.log('[SSO] Cookie set command executed');
-      console.log('[SSO] Cookie string (first 150 chars):', cookieString.substring(0, 150));
-      
-      // Note: Cookie with domain=.vanphuccare.com will NOT appear in document.cookie
-      // on the subdomain that set it, but it WILL be accessible on other subdomains
-      // This is expected browser behavior
-      
-      // Verify cookie was set - check both with and without domain
-      const allCookies = document.cookie;
-      console.log('[SSO] All cookies after setting:', allCookies);
-      const cookies = allCookies.split(';');
-      const found = cookies.some(c => c.trim().startsWith(SSO_COOKIE + '='));
-      console.log('[SSO] Cookie verification on current domain:', found ? 'SUCCESS' : 'FAILED');
-      
-      if (!found) {
-        console.warn('[SSO] Cookie not found on current domain, but it may be set for parent domain');
-        console.warn('[SSO] This is expected - cookie with domain=.vanphuccare.com will not appear in document.cookie on subdomain');
-      }
     } catch (e) {
-      console.error('[SSO] Error setting cookie with domain, using fallback:', e);
       // Fallback if domain setting fails
       document.cookie = `${SSO_COOKIE}=${encodedToken}; expires=${expires.toUTCString()}; path=/; SameSite=Lax`;
-      console.log('[SSO] Fallback cookie set (without domain)');
     }
   }
 }
@@ -106,7 +80,6 @@ export function checkSSOCookie(): string | null {
         // Check if sync key is recent (within 1 minute)
         if (timestamp && Date.now() - timestamp < 60000) {
           const value = localStorage.getItem(key);
-          console.log('[SSO] Found SSO token in localStorage:', key);
           return value;
         }
       }
@@ -115,15 +88,12 @@ export function checkSSOCookie(): string | null {
   } else {
     // Production: Check cookie
     const cookies = document.cookie.split(';');
-    console.log('[SSO] Checking cookies, total:', cookies.length);
     for (let cookie of cookies) {
       const [name, value] = cookie.trim().split('=');
       if (name === SSO_COOKIE && value) {
-        console.log('[SSO] Found SSO cookie:', name, 'value length:', value.length);
         return value;
       }
     }
-    console.log('[SSO] No SSO cookie found');
     return null;
   }
 }
@@ -157,22 +127,17 @@ export function clearSSOCookie(): void {
 export async function handleSSOLogin(): Promise<boolean> {
   if (!process.client) return false;
   
-  console.log('[SSO] Checking for SSO cookie...');
   const encodedToken = checkSSOCookie();
   if (!encodedToken) {
-    console.log('[SSO] No SSO cookie found');
     return false;
   }
   
-  console.log('[SSO] SSO cookie found, decoding...');
   try {
     // Decode token
     const ssoData = JSON.parse(atob(encodedToken));
-    console.log('[SSO] Token decoded, timestamp:', ssoData.timestamp, 'age:', Date.now() - ssoData.timestamp, 'ms');
     
     // Check if token is expired
     if (Date.now() - ssoData.timestamp > ssoData.expiresIn) {
-      console.warn('[SSO] Token expired');
       clearSSOCookie();
       return false;
     }
@@ -185,33 +150,28 @@ export async function handleSSOLogin(): Promise<boolean> {
     if (!authStore.justLoggedIn) {
       authStore.justLoggedIn = true;
       authStore.loginTimestamp = Date.now();
-      console.log('[SSO] Set justLoggedIn flag IMMEDIATELY when SSO cookie detected, timestamp:', authStore.loginTimestamp);
       // Save to localStorage immediately for restoration after refresh
       if (process.client) {
         localStorage.setItem('login_timestamp', String(authStore.loginTimestamp));
       }
       setTimeout(() => {
         authStore.justLoggedIn = false;
-        console.log('[SSO] Cleared justLoggedIn flag after 30 seconds');
       }, 30000); // 30 seconds grace period (increased from 15)
     }
     
     // If already logged in, don't clear cookie immediately
     // Let the other site read it first, then it will be cleared
     if (authStore.isAuthenticated) {
-      console.log('[SSO] Already logged in on this site, but keeping cookie for other site');
       // justLoggedIn flag was already set above
       // Don't clear cookie immediately - let other site read it first
       // Cookie will expire in 1 minute anyway
       return true;
     }
     
-    console.log('[SSO] Setting token to authStore...');
     // Set token FIRST before calling API (so API can use it)
     authStore.token = ssoData.token;
     if (process.client) {
       localStorage.setItem('auth_token', ssoData.token);
-      console.log('[SSO] Token saved to localStorage');
     }
     
     // Set justLoggedIn flag IMMEDIATELY to protect against auto-logout
@@ -220,19 +180,16 @@ export async function handleSSOLogin(): Promise<boolean> {
     if (!authStore.justLoggedIn) {
       authStore.justLoggedIn = true;
       authStore.loginTimestamp = Date.now();
-      console.log('[SSO] Set justLoggedIn flag IMMEDIATELY, timestamp:', authStore.loginTimestamp);
       // Save to localStorage immediately for restoration after refresh
       if (process.client) {
         localStorage.setItem('login_timestamp', String(authStore.loginTimestamp));
       }
       setTimeout(() => {
         authStore.justLoggedIn = false;
-        console.log('[SSO] Cleared justLoggedIn flag after 30 seconds');
       }, 30000); // 30 seconds grace period (increased from 15)
     } else {
       // Update timestamp if already set (to extend grace period)
       authStore.loginTimestamp = Date.now();
-      console.log('[SSO] Updated loginTimestamp, timestamp:', authStore.loginTimestamp);
       if (process.client) {
         localStorage.setItem('login_timestamp', String(authStore.loginTimestamp));
       }
@@ -241,14 +198,11 @@ export async function handleSSOLogin(): Promise<boolean> {
     // Verify token with backend
     const authApi = useAuthApi();
     try {
-      console.log('[SSO] Verifying token with backend...');
       // Verify token by getting user profile
       const profileResponse: any = await authApi.getUserProfile();
-      console.log('[SSO] Profile response received:', profileResponse);
       const userData = profileResponse?.data?.user || profileResponse?.data?.data || profileResponse?.data;
       
       if (userData) {
-        console.log('[SSO] User data found, setting auth state...');
         // Set auth state
         authStore.isAuthenticated = true;
         authStore.user = {
@@ -282,31 +236,20 @@ export async function handleSSOLogin(): Promise<boolean> {
           if (authStore.loginTimestamp) {
             localStorage.setItem('login_timestamp', String(authStore.loginTimestamp));
           }
-          console.log('[SSO] Auth data saved to localStorage with loginTimestamp:', authStore.loginTimestamp);
         }
         
         // justLoggedIn flag was already set above, before verification
         // This ensures API calls during verification are protected
-        console.log('[SSO] SSO login successful!');
         
         // Clear SSO cookie after a short delay to ensure it's been read
         // This prevents the cookie from being cleared too early
         setTimeout(() => {
           clearSSOCookie();
-          console.log('[SSO] SSO cookie cleared after successful login');
         }, 1000);
         
         return true;
-      } else {
-        console.warn('[SSO] No user data in response');
       }
     } catch (error: any) {
-      console.error('[SSO] Failed to verify token:', error);
-      console.error('[SSO] Error details:', {
-        message: error?.message,
-        status: error?.statusCode || error?.status,
-        data: error?.data,
-      });
       // Clear token if verification failed
       authStore.token = null;
       authStore.isAuthenticated = false;
@@ -330,7 +273,6 @@ export async function handleSSOLogin(): Promise<boolean> {
     clearSSOCookie();
     return false;
   } catch (error) {
-    console.error('[SSO] Failed to parse SSO token:', error);
     clearSSOCookie();
     return false;
   }
@@ -347,14 +289,11 @@ export async function buildSSOUrl(baseUrl: string, path: string): Promise<string
   const token = authStore.token;
   
   if (!token) {
-    console.warn('[SSO] No token available for SSO, returning URL without SSO');
     return baseUrl + path;
   }
   
-  console.log('[SSO] Building SSO URL for:', baseUrl + path);
   // Set SSO cookie before navigation
   await setSSOCookie(token);
-  console.log('[SSO] SSO cookie set, navigating...');
   
   // Return clean URL without token parameter
   return baseUrl + path;
