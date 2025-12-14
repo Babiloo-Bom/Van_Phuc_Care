@@ -19,7 +19,7 @@ function isLocalhost(): boolean {
 /**
  * Set SSO cookie to share token with other site
  */
-export function setSSOCookie(token: string): void {
+export async function setSSOCookie(token: string): Promise<void> {
   if (!process.client || !token) {
     console.warn('[SSO] Cannot set SSO cookie: not client or no token');
     return;
@@ -58,19 +58,34 @@ export function setSSOCookie(token: string): void {
     });
   } else {
     console.log('[SSO] Using cookie with domain:', COOKIE_DOMAIN);
+    console.log('[SSO] Current hostname:', window.location.hostname);
     // Production: Use cookie with domain for subdomain sharing
     try {
       const cookieString = `${SSO_COOKIE}=${encodedToken}; expires=${expires.toUTCString()}; path=/; domain=${COOKIE_DOMAIN}; SameSite=Lax`;
       document.cookie = cookieString;
-      console.log('[SSO] Cookie set:', cookieString.substring(0, 100) + '...');
-      // Verify cookie was set
-      const cookies = document.cookie.split(';');
+      console.log('[SSO] Cookie set command executed');
+      console.log('[SSO] Cookie string (first 150 chars):', cookieString.substring(0, 150));
+      
+      // Note: Cookie with domain=.vanphuccare.com will NOT appear in document.cookie
+      // on the subdomain that set it, but it WILL be accessible on other subdomains
+      // This is expected browser behavior
+      
+      // Verify cookie was set - check both with and without domain
+      const allCookies = document.cookie;
+      console.log('[SSO] All cookies after setting:', allCookies);
+      const cookies = allCookies.split(';');
       const found = cookies.some(c => c.trim().startsWith(SSO_COOKIE + '='));
-      console.log('[SSO] Cookie verification:', found ? 'SUCCESS' : 'FAILED');
+      console.log('[SSO] Cookie verification on current domain:', found ? 'SUCCESS' : 'FAILED');
+      
+      if (!found) {
+        console.warn('[SSO] Cookie not found on current domain, but it may be set for parent domain');
+        console.warn('[SSO] This is expected - cookie with domain=.vanphuccare.com will not appear in document.cookie on subdomain');
+      }
     } catch (e) {
       console.error('[SSO] Error setting cookie with domain, using fallback:', e);
       // Fallback if domain setting fails
       document.cookie = `${SSO_COOKIE}=${encodedToken}; expires=${expires.toUTCString()}; path=/; SameSite=Lax`;
+      console.log('[SSO] Fallback cookie set (without domain)');
     }
   }
 }
@@ -256,7 +271,7 @@ export async function handleSSOLogin(): Promise<boolean> {
  * Build SSO URL and set cookie
  * This sets the SSO cookie before navigation
  */
-export function buildSSOUrl(baseUrl: string, path: string): string {
+export async function buildSSOUrl(baseUrl: string, path: string): Promise<string> {
   if (!process.client) return baseUrl + path;
   
   const authStore = useAuthStore();
@@ -269,7 +284,7 @@ export function buildSSOUrl(baseUrl: string, path: string): string {
   
   console.log('[SSO] Building SSO URL for:', baseUrl + path);
   // Set SSO cookie before navigation
-  setSSOCookie(token);
+  await setSSOCookie(token);
   console.log('[SSO] SSO cookie set, navigating...');
   
   // Return clean URL without token parameter

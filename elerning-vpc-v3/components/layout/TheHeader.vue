@@ -371,34 +371,20 @@ const userAvatar = computed(() => authStore.user?.avatar || '/images/avatar-fall
 const crmBaseUrl = computed(() => config.public.baseUrlCrm || 'http://localhost:3101');
 
 // SSO URLs for CRM - use functions to avoid require in computed
+// Note: These return base URLs, SSO cookie will be set when link is clicked
 const getCrmProfileUrl = () => {
   if (!isLoggedIn.value) return '#';
-  try {
-    const { buildSSOUrl } = require('~/utils/sso');
-    return buildSSOUrl(crmBaseUrl.value, '/profile');
-  } catch {
-    return crmBaseUrl.value + '/profile';
-  }
+  return crmBaseUrl.value + '/profile';
 };
 
 const getCrmTransactionsUrl = () => {
   if (!isLoggedIn.value) return '#';
-  try {
-    const { buildSSOUrl } = require('~/utils/sso');
-    return buildSSOUrl(crmBaseUrl.value, '/transactions');
-  } catch {
-    return crmBaseUrl.value + '/transactions';
-  }
+  return crmBaseUrl.value + '/transactions';
 };
 
 const getCrmHealthBookUrl = () => {
   if (!isLoggedIn.value) return '#';
-  try {
-    const { buildSSOUrl } = require('~/utils/sso');
-    return buildSSOUrl(crmBaseUrl.value, '/');
-  } catch {
-    return crmBaseUrl.value + '/';
-  }
+  return crmBaseUrl.value + '/';
 };
 
 const crmProfileUrl = computed(() => getCrmProfileUrl());
@@ -419,6 +405,9 @@ const handleFocus = async () => {
 let stopLogoutMonitor: (() => void) | null = null;
 
 onMounted(async () => {
+  console.log('[SSO] TheHeader mounted, checking if handleCrmLinkClick is defined:', typeof handleCrmLinkClick);
+  console.log('[SSO] crmProfileUrl:', crmProfileUrl.value);
+  
   // Refresh user data on component mount if authenticated
   if (authStore.isAuthenticated && authStore.token) {
     await authStore.refreshUserData();
@@ -495,11 +484,11 @@ const handleCrmLinkClick = async (event: MouseEvent, url: string | undefined) =>
     const { buildSSOUrl } = await import('~/utils/sso');
     const baseUrl = String(crmBaseUrl.value || 'http://localhost:3101');
     console.log('[SSO] Base URL:', baseUrl, 'Path:', path);
-    const ssoUrl = buildSSOUrl(baseUrl, path);
+    const ssoUrl = await buildSSOUrl(baseUrl, path);
     console.log('[SSO] SSO URL generated:', ssoUrl);
     
-    console.log('[SSO] Waiting 100ms for cookie to be set...');
-    await new Promise(resolve => setTimeout(resolve, 100));
+    console.log('[SSO] Waiting 200ms for cookie to be set and propagated...');
+    await new Promise(resolve => setTimeout(resolve, 200));
     
     console.log('[SSO] Opening new tab with URL:', ssoUrl);
     window.open(ssoUrl, '_blank', 'noopener,noreferrer');
