@@ -58,12 +58,12 @@ export default defineNuxtPlugin(nuxtApp => {
           return;
         }
         
-        // Check if login was recent (within last 15 seconds)
+        // Check if login was recent (within last 30 seconds)
         // If loginTimestamp is null but justLoggedIn is true, still skip logout
         const timeSinceLogin = authStore.loginTimestamp 
           ? Date.now() - authStore.loginTimestamp 
           : (authStore.justLoggedIn ? 0 : Infinity); // If justLoggedIn but no timestamp, treat as just logged in
-        if (timeSinceLogin < 15000) {
+        if (timeSinceLogin < 30000) {
           console.warn('[Auth] 401 but login was recent (', timeSinceLogin, 'ms ago), skipping logout');
           return;
         }
@@ -97,7 +97,8 @@ export default defineNuxtPlugin(nuxtApp => {
         }
         
         // Don't logout on courses request if login was very recent (might be SSO in progress)
-        if (isCoursesRequest && timeSinceLogin < 30000) {
+        // Increase grace period for courses request to 60 seconds
+        if (isCoursesRequest && timeSinceLogin < 60000) {
           console.warn('[Auth] 401 on courses request but login was recent (', timeSinceLogin, 'ms ago), skipping logout');
           return;
         }

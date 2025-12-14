@@ -186,10 +186,14 @@ export async function handleSSOLogin(): Promise<boolean> {
       authStore.justLoggedIn = true;
       authStore.loginTimestamp = Date.now();
       console.log('[SSO] Set justLoggedIn flag IMMEDIATELY when SSO cookie detected, timestamp:', authStore.loginTimestamp);
+      // Save to localStorage immediately for restoration after refresh
+      if (process.client) {
+        localStorage.setItem('login_timestamp', String(authStore.loginTimestamp));
+      }
       setTimeout(() => {
         authStore.justLoggedIn = false;
-        console.log('[SSO] Cleared justLoggedIn flag after 15 seconds');
-      }, 15000); // 15 seconds grace period
+        console.log('[SSO] Cleared justLoggedIn flag after 30 seconds');
+      }, 30000); // 30 seconds grace period (increased from 15)
     }
     
     // If already logged in, don't clear cookie immediately
@@ -212,13 +216,27 @@ export async function handleSSOLogin(): Promise<boolean> {
     
     // Set justLoggedIn flag IMMEDIATELY to protect against auto-logout
     // This must be set BEFORE verifying with backend, as API calls might happen during verification
-    authStore.justLoggedIn = true;
-    authStore.loginTimestamp = Date.now();
-    console.log('[SSO] Set justLoggedIn flag IMMEDIATELY, timestamp:', authStore.loginTimestamp);
-    setTimeout(() => {
-      authStore.justLoggedIn = false;
-      console.log('[SSO] Cleared justLoggedIn flag after 15 seconds');
-    }, 15000); // 15 seconds grace period
+    // Only set if not already set (might have been set above when detecting SSO cookie)
+    if (!authStore.justLoggedIn) {
+      authStore.justLoggedIn = true;
+      authStore.loginTimestamp = Date.now();
+      console.log('[SSO] Set justLoggedIn flag IMMEDIATELY, timestamp:', authStore.loginTimestamp);
+      // Save to localStorage immediately for restoration after refresh
+      if (process.client) {
+        localStorage.setItem('login_timestamp', String(authStore.loginTimestamp));
+      }
+      setTimeout(() => {
+        authStore.justLoggedIn = false;
+        console.log('[SSO] Cleared justLoggedIn flag after 30 seconds');
+      }, 30000); // 30 seconds grace period (increased from 15)
+    } else {
+      // Update timestamp if already set (to extend grace period)
+      authStore.loginTimestamp = Date.now();
+      console.log('[SSO] Updated loginTimestamp, timestamp:', authStore.loginTimestamp);
+      if (process.client) {
+        localStorage.setItem('login_timestamp', String(authStore.loginTimestamp));
+      }
+    }
     
     // Verify token with backend
     const authApi = useAuthApi();

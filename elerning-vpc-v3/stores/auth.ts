@@ -87,14 +87,14 @@ export const useAuthStore = defineStore("auth", {
           fullname: response.fullname || username,
         };
 
-        // Set justLoggedIn flag to prevent auto-logout for 15 seconds
+        // Set justLoggedIn flag to prevent auto-logout for 30 seconds
         this.justLoggedIn = true;
         this.loginTimestamp = Date.now();
         console.log('[Login] Set justLoggedIn flag, timestamp:', this.loginTimestamp);
         setTimeout(() => {
           this.justLoggedIn = false;
-          console.log('[Login] Cleared justLoggedIn flag after 15 seconds');
-        }, 15000); // 15 seconds grace period
+          console.log('[Login] Cleared justLoggedIn flag after 30 seconds');
+        }, 30000); // 30 seconds grace period (increased from 15)
 
         // Save to localStorage
         if (process.client) {
@@ -545,14 +545,16 @@ export const useAuthStore = defineStore("auth", {
             // Restore loginTimestamp if available
             if (authData.loginTimestamp) {
               this.loginTimestamp = authData.loginTimestamp;
-              // Check if login was recent (within 15 seconds)
+              // Check if login was recent (within 30 seconds)
               if (this.loginTimestamp) {
                 const timeSinceLogin = Date.now() - this.loginTimestamp;
-                if (timeSinceLogin < 15000) {
+                if (timeSinceLogin < 30000) {
                   this.justLoggedIn = true;
+                  console.log('[InitAuth] Restored justLoggedIn flag, timeSinceLogin:', timeSinceLogin, 'ms');
                   setTimeout(() => {
                     this.justLoggedIn = false;
-                  }, 15000 - timeSinceLogin);
+                    console.log('[InitAuth] Cleared justLoggedIn flag after grace period');
+                  }, 30000 - timeSinceLogin);
                 }
               }
             }
@@ -586,13 +588,15 @@ export const useAuthStore = defineStore("auth", {
               const loginTimestamp = parseInt(loginTimestampStr);
               if (!isNaN(loginTimestamp)) {
                 this.loginTimestamp = loginTimestamp;
-                // Check if login was recent (within 15 seconds)
+                // Check if login was recent (within 30 seconds)
                 const timeSinceLogin = Date.now() - this.loginTimestamp;
-                if (timeSinceLogin < 15000) {
+                if (timeSinceLogin < 30000) {
                   this.justLoggedIn = true;
+                  console.log('[InitAuth] Restored justLoggedIn flag from login_timestamp, timeSinceLogin:', timeSinceLogin, 'ms');
                   setTimeout(() => {
                     this.justLoggedIn = false;
-                  }, 15000 - timeSinceLogin);
+                    console.log('[InitAuth] Cleared justLoggedIn flag after grace period');
+                  }, 30000 - timeSinceLogin);
                 }
               }
             }
@@ -717,14 +721,14 @@ export const useAuthStore = defineStore("auth", {
         this.user = userData;
         this.isAuthenticated = true;
 
-        // Set justLoggedIn flag to prevent auto-logout for 15 seconds
+        // Set justLoggedIn flag to prevent auto-logout for 30 seconds
         this.justLoggedIn = true;
         this.loginTimestamp = Date.now();
         console.log('[Google Login] Set justLoggedIn flag, timestamp:', this.loginTimestamp);
         setTimeout(() => {
           this.justLoggedIn = false;
-          console.log('[Google Login] Cleared justLoggedIn flag after 15 seconds');
-        }, 15000); // 15 seconds grace period
+          console.log('[Google Login] Cleared justLoggedIn flag after 30 seconds');
+        }, 30000); // 30 seconds grace period (increased from 15)
 
           // Save to localStorage
           if (process.client) {
