@@ -145,16 +145,21 @@ export async function handleSSOLogin(): Promise<boolean> {
       return true;
     }
     
-    // Set token and verify with backend
+    // Set token FIRST before calling API (so API can use it)
+    authStore.token = ssoData.token;
+    if (process.client) {
+      localStorage.setItem('auth_token', ssoData.token);
+    }
+    
+    // Verify token with backend
     const authApi = useAuthApi();
     try {
       // Verify token by getting user profile
-      const profileResponse = await authApi.getUserProfile();
+      const profileResponse: any = await authApi.getUserProfile();
       const userData = profileResponse?.data?.user || profileResponse?.data?.data || profileResponse?.data;
       
       if (userData) {
         // Set auth state
-        authStore.token = ssoData.token;
         authStore.isAuthenticated = true;
         authStore.user = {
           id: userData?._id || userData?.id || 'temp-id',
@@ -171,9 +176,8 @@ export async function handleSSOLogin(): Promise<boolean> {
           courseCompleted: userData?.courseCompleted || [],
         };
         
-        // Save to localStorage
+        // Save user to localStorage (token already saved above)
         if (process.client) {
-          localStorage.setItem('auth_token', ssoData.token);
           localStorage.setItem('user', JSON.stringify(authStore.user));
         }
         
@@ -184,10 +188,22 @@ export async function handleSSOLogin(): Promise<boolean> {
       }
     } catch (error) {
       console.error('[SSO] Failed to verify token:', error);
+      // Clear token if verification failed
+      authStore.token = null;
+      authStore.isAuthenticated = false;
+      if (process.client) {
+        localStorage.removeItem('auth_token');
+      }
       clearSSOCookie();
       return false;
     }
     
+    // If no userData, clear everything
+    authStore.token = null;
+    authStore.isAuthenticated = false;
+    if (process.client) {
+      localStorage.removeItem('auth_token');
+    }
     clearSSOCookie();
     return false;
   } catch (error) {
