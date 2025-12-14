@@ -535,7 +535,35 @@ export const useAuthStore = defineStore('auth', {
             this.logout();
           }
         } else {
-          console.log('ℹ️ No auth data found in localStorage');
+          // Check if we have token and user from SSO (they might be set separately)
+          if (token && userStr) {
+            try {
+              const user = JSON.parse(userStr);
+              // Check if token is expired
+              if (tokenExpireAt) {
+                const expireTime = new Date(tokenExpireAt).getTime();
+                const now = Date.now();
+                if (!isNaN(expireTime) && now >= expireTime) {
+                  // Token expired, clear data
+                  this.logout();
+                  return;
+                }
+              }
+              
+              this.token = token;
+              this.tokenExpireAt = tokenExpireAt;
+              this.user = user;
+              this.isAuthenticated = true;
+              console.log('ℹ️ Restored auth from token and user (SSO format)');
+              // Save as authData for future compatibility
+              this.saveAuth();
+            } catch (e) {
+              console.error('❌ Error restoring from token/user:', e);
+              this.logout();
+            }
+          } else {
+            console.log('ℹ️ No auth data found in localStorage');
+          }
         }
       }
     },

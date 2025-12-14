@@ -253,9 +253,20 @@ export async function handleSSOLogin(): Promise<boolean> {
         // Save user to localStorage (token already saved above)
         if (process.client) {
           localStorage.setItem('user', JSON.stringify(authStore.user));
+          // Also save authData for initAuth compatibility
+          const authData = {
+            user: authStore.user,
+            token: authStore.token,
+            tokenExpireAt: authStore.tokenExpireAt || new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString(),
+            rememberAccount: authStore.rememberAccount,
+          };
+          localStorage.setItem('authData', JSON.stringify(authData));
+          console.log('[SSO] Auth data saved to localStorage');
         }
         
         console.log('[SSO] SSO login successful!');
+        console.log('[SSO] User authenticated:', authStore.isAuthenticated);
+        console.log('[SSO] User data:', authStore.user);
         
         // Clear SSO flag
         authStore.isSSOLoginInProgress = false;
