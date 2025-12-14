@@ -499,8 +499,52 @@ export const useAuthStore = defineStore("auth", {
       if (process.client) {
         // Skip if already authenticated (might be from a fresh login)
         // This prevents initAuth from overriding state after a successful login
+        // But still restore loginTimestamp if missing
         if (this.isAuthenticated && this.token && this.user) {
-          console.log('ℹ️ Already authenticated, skipping initAuth');
+          console.log('ℹ️ Already authenticated, but checking loginTimestamp...');
+          // Still restore loginTimestamp if missing (might have been lost)
+          if (!this.loginTimestamp) {
+            const loginTimestampStr = localStorage.getItem("login_timestamp");
+            if (loginTimestampStr) {
+              const loginTimestamp = parseInt(loginTimestampStr);
+              if (!isNaN(loginTimestamp)) {
+                this.loginTimestamp = loginTimestamp;
+                // Check if login was recent (within 30 seconds)
+                const timeSinceLogin = Date.now() - this.loginTimestamp;
+                if (timeSinceLogin < 30000) {
+                  this.justLoggedIn = true;
+                  console.log('[InitAuth] Restored loginTimestamp for already authenticated user, timeSinceLogin:', timeSinceLogin, 'ms');
+                  setTimeout(() => {
+                    this.justLoggedIn = false;
+                    console.log('[InitAuth] Cleared justLoggedIn flag after grace period');
+                  }, 30000 - timeSinceLogin);
+                }
+              }
+            }
+            // Also try to restore from authData
+            const authDataStr = localStorage.getItem("authData");
+            if (authDataStr && !this.loginTimestamp) {
+              try {
+                const authData = JSON.parse(authDataStr);
+                if (authData && authData.loginTimestamp) {
+                  this.loginTimestamp = authData.loginTimestamp;
+                  if (this.loginTimestamp) {
+                    const timeSinceLogin = Date.now() - this.loginTimestamp;
+                    if (timeSinceLogin < 30000) {
+                      this.justLoggedIn = true;
+                      console.log('[InitAuth] Restored loginTimestamp from authData, timeSinceLogin:', timeSinceLogin, 'ms');
+                      setTimeout(() => {
+                        this.justLoggedIn = false;
+                        console.log('[InitAuth] Cleared justLoggedIn flag after grace period');
+                      }, 30000 - timeSinceLogin);
+                    }
+                  }
+                }
+              } catch (e) {
+                // Ignore parse error
+              }
+            }
+          }
           return;
         }
         
