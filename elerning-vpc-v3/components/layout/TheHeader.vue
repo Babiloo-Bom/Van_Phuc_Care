@@ -126,7 +126,7 @@
                   target="_blank"
                   rel="noopener noreferrer"
                   class="flex items-center gap-3 px-4 py-3 text-gray-700 text-sm transition-all hover:bg-gray-50 hover:text-blue-500 border-none bg-transparent w-full text-left cursor-pointer"
-                  @click="handleCrmLinkClick($event, crmProfileUrl)"
+                  @click.stop.prevent="handleCrmLinkClick($event, crmProfileUrl)"
                 >
                   <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 16 16" fill="none">
                     <g clip-path="url(#clip0_244_8848)">
@@ -146,7 +146,7 @@
                   target="_blank"
                   rel="noopener noreferrer"
                   class="flex items-center gap-3 px-4 py-3 text-gray-700 text-sm transition-all hover:bg-gray-50 hover:text-blue-500 border-none bg-transparent w-full text-left cursor-pointer"
-                  @click="handleCrmLinkClick($event, crmTransactionsUrl)"
+                  @click.stop.prevent="handleCrmLinkClick($event, crmTransactionsUrl)"
                 >
                   <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 16 16" fill="none">
                     <g clip-path="url(#clip0_244_8854)">
@@ -166,7 +166,7 @@
                   target="_blank"
                   rel="noopener noreferrer"
                   class="flex items-center gap-3 px-4 py-3 text-gray-700 text-sm transition-all hover:bg-gray-50 hover:text-blue-500 border-none bg-transparent w-full text-left cursor-pointer"
-                  @click="handleCrmLinkClick($event, crmHealthBookUrl)"
+                  @click.stop.prevent="handleCrmLinkClick($event, crmHealthBookUrl)"
                 >
                   <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 16 16" fill="none">
                     <g clip-path="url(#clip0_244_8859)">
@@ -460,8 +460,15 @@ const closeUserMenu = () => {
 };
 
 const handleCrmLinkClick = async (event: MouseEvent, url: string | undefined) => {
-  console.log('[SSO] handleCrmLinkClick called with URL:', url);
-  event.preventDefault();
+  console.log('[SSO] ========== handleCrmLinkClick CALLED ==========');
+  console.log('[SSO] Event:', event);
+  console.log('[SSO] URL:', url);
+  console.log('[SSO] URL type:', typeof url);
+  
+  if (event) {
+    event.preventDefault();
+    event.stopPropagation();
+  }
   closeUserMenu();
   
   if (!url || url === '#') {
