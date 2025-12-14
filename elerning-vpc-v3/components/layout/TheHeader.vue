@@ -73,23 +73,82 @@
             <!-- User Info Banner (only show when logged in) -->
             <div
               v-if="isLoggedIn"
-              class="flex items-center gap-4 px-4 py-2"
+              class="relative"
             >
-              <!-- Avatar -->
-              <img
-                :src="userAvatar || '/images/avatar-fallback.png'"
-                :alt="userName"
-                class="w-12 h-12 rounded-full object-cover border-2 border-white"
-                @error="(e) => (e.target as HTMLImageElement).src = '/images/avatar-fallback.png'"
-              />
-              <!-- User Info -->
-              <div class="flex flex-col">
-                <div class="text-white font-semibold text-base leading-tight">
-                  {{ userName }}
+              <div
+                class="user-profile flex items-center gap-4 px-4 py-2 cursor-pointer hover:bg-white/10 rounded-lg transition-all"
+                @click.stop="toggleUserMenu"
+              >
+                <!-- Avatar -->
+                <img
+                  :src="userAvatar || '/images/avatar-fallback.png'"
+                  :alt="userName"
+                  class="w-12 h-12 rounded-full object-cover border-2 border-white"
+                  @error="(e) => (e.target as HTMLImageElement).src = '/images/avatar-fallback.png'"
+                />
+                <!-- User Info -->
+                <div class="flex flex-col">
+                  <div class="text-white font-semibold text-base leading-tight">
+                    {{ userName }}
+                  </div>
+                  <div class="text-white text-sm opacity-90 leading-tight">
+                    {{ userEmail }}
+                  </div>
                 </div>
-                <div class="text-white text-sm opacity-90 leading-tight">
-                  {{ userEmail }}
-                </div>
+                <svg
+                  class="text-white/80 transition-transform"
+                  :class="{ 'rotate-180': showUserMenu }"
+                  xmlns="http://www.w3.org/2000/svg"
+                  width="20"
+                  height="20"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                >
+                  <path
+                    d="M19.92 8.95L13.4 15.47C12.63 16.24 11.37 16.24 10.6 15.47L4.08 8.95"
+                    stroke="currentColor"
+                    stroke-width="1.5"
+                    stroke-miterlimit="10"
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                  />
+                </svg>
+              </div>
+
+              <!-- User Dropdown Menu -->
+              <div
+                v-if="showUserMenu"
+                class="user-dropdown absolute top-[calc(100%+8px)] right-0 min-w-[160px] bg-white border border-gray-200 rounded-xl shadow-lg overflow-hidden z-[100]"
+              >
+                <button
+                  class="flex items-center gap-3 px-4 py-3 text-gray-700 text-sm transition-all hover:bg-gray-50 hover:text-blue-500 border-none bg-transparent w-full text-left cursor-pointer"
+                  @click="handleLogout"
+                >
+                  <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none">
+                    <path
+                      d="M8.9 7.56C9.21 3.96 11.06 2.49 15.11 2.49H15.24C19.71 2.49 21.5 4.28 21.5 8.75V15.27C21.5 19.74 19.71 21.53 15.24 21.53H15.11C11.09 21.53 9.24 20.08 8.91 16.54"
+                      stroke="currentColor"
+                      stroke-width="1.5"
+                      stroke-linecap="round"
+                      stroke-linejoin="round"
+                    />
+                    <path
+                      d="M15 12H3.62"
+                      stroke="currentColor"
+                      stroke-width="1.5"
+                      stroke-linecap="round"
+                      stroke-linejoin="round"
+                    />
+                    <path
+                      d="M5.85 8.65L2.5 12L5.85 15.35"
+                      stroke="currentColor"
+                      stroke-width="1.5"
+                      stroke-linecap="round"
+                      stroke-linejoin="round"
+                    />
+                  </svg>
+                  <span>Đăng xuất</span>
+                </button>
               </div>
             </div>
             <!-- Login Link (only show when not logged in) -->
@@ -234,6 +293,7 @@ const authStore = useAuthStore();
 
 // Reactive data
 const mobileMenuOpen = ref(false);
+const showUserMenu = ref(false);
 
 // Computed properties
 const cartCount = computed(() => cartStore.cartCount);
@@ -254,6 +314,8 @@ const handleFocus = async () => {
   }
 };
 
+let stopLogoutMonitor: (() => void) | null = null;
+
 onMounted(async () => {
   // Refresh user data on component mount if authenticated
   if (authStore.isAuthenticated && authStore.token) {
@@ -262,19 +324,54 @@ onMounted(async () => {
 
   // Refresh user data when window gains focus (user switches back to this tab)
   window.addEventListener('focus', handleFocus);
+
+  // Click outside to close user menu
+  document.addEventListener('click', handleClickOutside);
+
+  // Monitor logout sync cookie from CRM site
+  if (process.client) {
+    const { startLogoutSyncMonitor } = await import('~/utils/authSync');
+    stopLogoutMonitor = startLogoutSyncMonitor(async () => {
+      // Logout if sync cookie detected
+      if (authStore.isAuthenticated) {
+        await authStore.logout();
+      }
+    });
+  }
 });
 
 onUnmounted(() => {
   window.removeEventListener('focus', handleFocus);
+  document.removeEventListener('click', handleClickOutside);
+  if (stopLogoutMonitor) {
+    stopLogoutMonitor();
+  }
 });
 
 // Methods
+const toggleUserMenu = () => {
+  showUserMenu.value = !showUserMenu.value;
+};
+
+const closeUserMenu = () => {
+  showUserMenu.value = false;
+};
+
 const handleLogout = async () => {
   try {
+    closeUserMenu();
     await authStore.logout();
     navigateTo("/");
   } catch (error) {
     console.error("❌ Logout failed:", error);
+  }
+};
+
+// Click outside to close dropdown
+const handleClickOutside = (event: MouseEvent) => {
+  const target = event.target as HTMLElement;
+  if (!target.closest(".user-profile") && !target.closest(".user-dropdown")) {
+    showUserMenu.value = false;
   }
 };
 </script>

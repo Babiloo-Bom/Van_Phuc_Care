@@ -235,6 +235,8 @@ const handleFocus = async () => {
   }
 };
 
+let stopLogoutMonitor: (() => void) | null = null;
+
 onMounted(async () => {
   // Refresh user data on component mount if authenticated
   if (authStore.isAuthenticated && authStore.token) {
@@ -243,9 +245,23 @@ onMounted(async () => {
 
   // Refresh user data when window gains focus (user switches back to this tab)
   window.addEventListener('focus', handleFocus);
+
+  // Monitor logout sync cookie from CRM site
+  if (process.client) {
+    const { startLogoutSyncMonitor } = await import('~/utils/authSync');
+    stopLogoutMonitor = startLogoutSyncMonitor(async () => {
+      // Logout if sync cookie detected
+      if (authStore.isAuthenticated) {
+        await authStore.logout();
+      }
+    });
+  }
 });
 
 onUnmounted(() => {
   window.removeEventListener('focus', handleFocus);
+  if (stopLogoutMonitor) {
+    stopLogoutMonitor();
+  }
 });
 </script>

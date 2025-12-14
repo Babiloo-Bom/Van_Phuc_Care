@@ -405,6 +405,12 @@ export const useAuthStore = defineStore("auth", {
           // Ignore logout API errors
         });
 
+        // Set logout sync cookie to notify CRM site
+        if (process.client) {
+          const { setLogoutSyncCookie } = await import('~/utils/authSync');
+          setLogoutSyncCookie();
+        }
+
         // Clear state
         this.user = null;
         this.token = null;
