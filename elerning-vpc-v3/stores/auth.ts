@@ -495,16 +495,20 @@ export const useAuthStore = defineStore("auth", {
         const token = localStorage.getItem("auth_token");
         const tokenExpireAt = localStorage.getItem("token_expire_at");
         const userStr = localStorage.getItem("user");
-        const authDataStr = localStorage.getItem("auth_data");
+        // Check both authData (camelCase) and auth_data (snake_case) for compatibility
+        const authDataStr = localStorage.getItem("authData") || localStorage.getItem("auth_data");
 
         // Try to restore from authData first (new format), then fallback to old format
         let authData: any = null;
         if (authDataStr) {
           try {
             authData = JSON.parse(authDataStr)
+            console.log("ℹ️ Found authData in localStorage, restoring...");
           } catch (e) {
             console.log("⚠️ Failed to parse authData:", e);
           }
+        } else {
+          console.log("ℹ️ No authData found in localStorage");
         }
 
         if (authData && authData.user && authData.token) {
@@ -583,14 +587,32 @@ export const useAuthStore = defineStore("auth", {
 
             // Check for remember account
             if (authDataStr) {
-              const authData = JSON.parse(authDataStr);
-              this.rememberAccount = authData.remindAccount || false;
+              try {
+                const authData = JSON.parse(authDataStr);
+                this.rememberAccount = authData.remindAccount || false;
+              } catch (e) {
+                // Ignore parse error for auth_data
+              }
             }
 
             // Refresh user data from backend to get latest courseRegister
-            await this.refreshUserData();
+            // Skip refresh if login was very recent (within 5 seconds) to avoid 401 errors
+            const timeSinceLogin = this.loginTimestamp 
+              ? Date.now() - this.loginTimestamp 
+              : Infinity;
+            if (timeSinceLogin > 5000) {
+              try {
+                await this.refreshUserData();
+              } catch (error) {
+                // Don't logout on refresh error - session might still be valid
+                console.warn('⚠️ Failed to refresh user data during initAuth, but keeping session:', error);
+              }
+            } else {
+              console.log('ℹ️ Skipping refreshUserData during initAuth (login was', timeSinceLogin, 'ms ago)');
+            }
           } catch (error) {
-            // Clear corrupted data
+            // Clear corrupted data only if it's a critical error
+            console.error('❌ Critical error in initAuth:', error);
             this.logout();
           }
         } else {

@@ -253,10 +253,15 @@ export async function handleSSOLogin(): Promise<boolean> {
             user: authStore.user,
             token: authStore.token,
             tokenExpireAt: authStore.tokenExpireAt || new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString(),
-            rememberAccount: authStore.rememberAccount,
+            rememberAccount: authStore.rememberAccount || false,
+            loginTimestamp: authStore.loginTimestamp, // Include loginTimestamp for restoration
           };
           localStorage.setItem('authData', JSON.stringify(authData));
-          console.log('[SSO] Auth data saved to localStorage');
+          // Also save loginTimestamp separately for fallback
+          if (authStore.loginTimestamp) {
+            localStorage.setItem('login_timestamp', String(authStore.loginTimestamp));
+          }
+          console.log('[SSO] Auth data saved to localStorage with loginTimestamp:', authStore.loginTimestamp);
         }
         
         // justLoggedIn flag was already set above, before verification
