@@ -189,10 +189,41 @@ export async function handleSSOLogin(): Promise<boolean> {
       console.log('[SSO] Token saved to localStorage');
     }
     
-    const authApi = useAuthApi();
+    // Use $fetch directly to avoid auto-logout on 401 from useApiClient
+    // We'll handle errors manually during SSO
     try {
       console.log('[SSO] Verifying token with backend...');
-      const profileResponse: any = await authApi.getUserProfile();
+      let profileResponse: any;
+      
+      try {
+        // First attempt
+        profileResponse = await $fetch('/api/users/profile', {
+          method: 'GET',
+          headers: {
+            Authorization: `Bearer ${ssoData.token}`,
+          },
+        });
+      } catch (error: any) {
+        // If 401, wait a bit and retry (token might need time to propagate)
+        if (error.statusCode === 401 || error.status === 401) {
+          console.log('[SSO] Got 401 on first attempt, waiting 300ms and retrying...');
+          await new Promise(resolve => setTimeout(resolve, 300));
+          try {
+            profileResponse = await $fetch('/api/users/profile', {
+              method: 'GET',
+              headers: {
+                Authorization: `Bearer ${ssoData.token}`,
+              },
+            });
+          } catch (retryError: any) {
+            console.error('[SSO] Retry also failed:', retryError);
+            throw retryError;
+          }
+        } else {
+          throw error;
+        }
+      }
+      
       console.log('[SSO] Profile response received:', profileResponse);
       const userData = profileResponse?.data?.user || profileResponse?.data?.data || profileResponse?.data;
       
