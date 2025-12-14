@@ -165,15 +165,15 @@ onMounted(async () => {
   if (process.client) {
     const { startLogoutSyncMonitor } = await import('~/utils/authSync');
     stopLogoutMonitor = startLogoutSyncMonitor(async () => {
-      // Logout if sync cookie detected, but not immediately after login (within 5 seconds)
+      // Logout if sync cookie detected, but not immediately after SSO login
       if (authStore.isAuthenticated) {
         const timeSinceLogin = authStore.loginTimestamp 
           ? Date.now() - authStore.loginTimestamp 
           : Infinity;
-        // Only skip logout if login was VERY recent (within 5 seconds)
-        // This prevents false positives from leftover cookies after logout->login
-        if (timeSinceLogin < 5000) {
-          console.log('[Logout Sync] Detected logout sync cookie but login was very recent (', timeSinceLogin, 'ms ago), skipping logout');
+        // Only skip logout if login was VERY recent (within 2 seconds) - this protects against SSO race conditions
+        // But allow logout sync for normal logouts from other site
+        if (timeSinceLogin < 2000) {
+          console.log('[Logout Sync] Detected logout sync cookie but login was very recent (', timeSinceLogin, 'ms ago), skipping logout (likely SSO in progress)');
           return;
         }
         console.log('[Logout Sync] Detected logout sync cookie, logging out (login was', timeSinceLogin, 'ms ago)');
