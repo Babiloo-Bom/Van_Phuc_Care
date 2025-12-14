@@ -48,17 +48,21 @@
 
         <!-- Menu Items -->
         <nav class="flex-1 py-4 overflow-y-auto">
-          <NuxtLink 
+          <component
             v-for="item in menuItems"
             :key="item.path"
-            :to="item.path" 
+            :is="isExternalLink(item.path) ? 'a' : 'NuxtLink'"
+            :to="isExternalLink(item.path) ? undefined : item.path"
+            :href="isExternalLink(item.path) ? item.path : undefined"
+            :target="isExternalLink(item.path) ? '_blank' : undefined"
+            :rel="isExternalLink(item.path) ? 'noopener noreferrer' : undefined"
             class="flex items-center gap-3 px-5 py-3.5 text-gray-700 text-[15px] font-medium transition-all active:bg-gray-50"
             :class="isActive(item.path) ? 'bg-blue-50 text-blue-500 border-l-4 border-blue-500 pl-4' : ''"
             @click="closeMenu"
           >
             <div v-html="item.icon" />
             <span>{{ item.label }}</span>
-          </NuxtLink>
+          </component>
         </nav>
 
         <!-- Logout Button -->
@@ -110,7 +114,14 @@ const closeMenu = () => {
   document.body.style.overflow = '';
 };
 
+const isExternalLink = (path: string) => {
+  return path.startsWith('http://') || path.startsWith('https://');
+};
+
 const isActive = (path: string) => {
+  if (isExternalLink(path)) {
+    return false;
+  }
   if (path === '/') {
     return route.path === '/';
   }

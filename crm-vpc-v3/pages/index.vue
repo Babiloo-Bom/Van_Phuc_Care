@@ -254,21 +254,29 @@
                 {{ profileInfo.name || healthBook?.name }}
               </h2>
 
-              <!-- Date of Birth & Age -->
               <div
                 v-if="profileInfo.dob || healthBook?.dob"
-                class="text-gray-600 text-sm mb-3"
+                class="text-gray-600 text-sm mb-3 flex flex-col items-center gap-2"
               >
-                <span
-                  >Ngày sinh:
-                  {{
-                    formatDate(profileInfo.dob || healthBook?.dob || "")
-                  }}</span
+                <div class="flex items-center gap-2">
+                  <span
+                    >Ngày sinh:
+                    {{
+                      formatDate(profileInfo.dob || healthBook?.dob || "")
+                    }}</span
+                  >
+                  <span>—</span>
+                  <span>{{
+                    calculateAge(profileInfo.dob || healthBook?.dob || "")
+                  }}</span>
+                </div>
+                <!-- Dòng 2: Nút chỉnh sửa thông tin -->
+                <span class="flex items-center gap-1 text-[#1A75BB] cursor-pointer hover:opacity-80"
+                  @click="showEditInfoModal = true"
                 >
-                <span class="mx-2">—</span>
-                <span>{{
-                  calculateAge(profileInfo.dob || healthBook?.dob || "")
-                }}</span>
+                  <EditOutlined class="text-sm" />
+                  <span class="text-sm font-normal">Chỉnh sửa thông tin</span>
+                </span>
               </div>
             </div>
           </div>
@@ -316,6 +324,12 @@
                   <span>{{
                     calculateAge(profileInfo.dob || healthBook?.dob || "")
                   }}</span>
+                  <span class="ml-2 flex items-center gap-1 text-[#1A75BB] cursor-pointer hover:opacity-80"
+                    @click="showEditInfoModal = true"
+                  >
+                    <EditOutlined class="text-sm" />
+                    <span class="text-sm font-normal">Chỉnh sửa thông tin</span>
+                  </span>
                 </div>
               </div>
             </div>
@@ -481,10 +495,95 @@
         <p class="mt-4 text-gray-600">Đang tải ảnh lên...</p>
       </div>
     </a-modal>
+
+    <!-- Edit Info Modal -->
+    <a-modal
+      v-model:open="showEditInfoModal"
+      :title="null"
+      :width="1088"
+      :footer="null"
+      :maskClosable="true"
+      :closable="true"
+      :centered="true"
+      class="edit-info-modal"
+    >
+      <template #title>
+        <div class="edit-info-modal-title">CHỈNH SỬA THÔNG TIN</div>
+      </template>
+      
+      <a-form
+        :model="editInfoForm"
+        layout="vertical"
+        @finish="handleEditInfoSubmit"
+        class="edit-info-form"
+      >
+        <!-- Họ và tên bé -->
+        <a-form-item 
+          label="Họ và tên bé" 
+          name="name" 
+          :rules="[{ required: true, message: 'Vui lòng nhập họ và tên bé' }]"
+          class="edit-info-form-item mb-6"
+        >
+          <a-input 
+            v-model:value="editInfoForm.name" 
+            placeholder="Nhập họ và tên bé"
+            size="large"
+          />
+        </a-form-item>
+
+        <!-- Ngày sinh và Giới tính - Same Row -->
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
+          <a-form-item 
+            label="Ngày sinh" 
+            name="dob" 
+            :rules="[{ required: true, message: 'Vui lòng chọn ngày sinh' }]"
+            class="edit-info-form-item"
+          >
+            <a-date-picker
+              v-model:value="editInfoForm.dob"
+              format="DD/MM/YYYY"
+              placeholder="Chọn ngày sinh"
+              class="w-full"
+              size="large"
+            />
+          </a-form-item>
+
+          <a-form-item 
+            label="Giới tính" 
+            name="gender" 
+            :rules="[{ required: true, message: 'Vui lòng chọn giới tính' }]"
+            class="edit-info-form-item"
+          >
+            <a-select
+              v-model:value="editInfoForm.gender"
+              placeholder="Chọn giới tính"
+              size="large"
+            >
+              <a-select-option value="male">Nam</a-select-option>
+              <a-select-option value="female">Nữ</a-select-option>
+            </a-select>
+          </a-form-item>
+        </div>
+
+        <!-- Save Button -->
+        <div class="flex justify-center mt-8">
+          <a-button 
+            type="primary" 
+            html-type="submit" 
+            :loading="isUpdatingInfo"
+            size="large"
+            class="edit-info-save-btn"
+          >
+            Lưu thông tin
+          </a-button>
+        </div>
+      </a-form>
+    </a-modal>
   </div>
 </template>
 
 <script setup lang="ts">
+import { ref, computed, watch, onMounted, onUnmounted } from "vue";
 import {
   UserOutlined,
   CalendarOutlined,
@@ -547,12 +646,23 @@ const selectedDate = ref<Dayjs>(dayjs());
 const activeTab = ref("overview");
 const showCreateHealthBookModal = ref(false);
 const showCreateRecordModal = ref(false);
+const showEditInfoModal = ref(false);
+const isUpdatingInfo = ref(false);
 const profileInfo = ref<{
   name?: string;
   dob?: string;
   gender?: string;
   avatar?: string;
 }>({});
+const editInfoForm = ref<{
+  name?: string;
+  dob?: Dayjs | null;
+  gender?: 'male' | 'female';
+}>({
+  name: '',
+  dob: null,
+  gender: 'male',
+});
 
 // Responsive state for screen size
 const isMobile = ref(true);
@@ -896,6 +1006,69 @@ const handleRecordCreated = async () => {
     // Otherwise just reload the health record for the selected date
     const formattedDate = selectedDate.value.format("DD/MM/YYYY");
     await fetchHealthRecordByDate(formattedDate);
+  }
+};
+
+// Handle edit info modal open
+watch(showEditInfoModal, (visible) => {
+  if (visible && healthBook.value) {
+    const genderValue = (profileInfo.value.gender || healthBook.value.gender || 'male') as 'male' | 'female';
+    editInfoForm.value = {
+      name: profileInfo.value.name || healthBook.value.name || '',
+      dob: profileInfo.value.dob ? dayjs(profileInfo.value.dob) : (healthBook.value.dob ? dayjs(healthBook.value.dob) : null),
+      gender: genderValue,
+    };
+  }
+});
+
+// Handle edit info submit
+const handleEditInfoSubmit = async () => {
+  if (!healthBook.value?._id) {
+    message.error("Không tìm thấy thông tin sổ sức khỏe");
+    return;
+  }
+
+  if (!editInfoForm.value.name || !editInfoForm.value.dob || !editInfoForm.value.gender) {
+    message.error("Vui lòng điền đầy đủ thông tin");
+    return;
+  }
+
+  try {
+    isUpdatingInfo.value = true;
+
+    const updateData: {
+      name?: string;
+      dob?: string;
+      gender?: string;
+    } = {
+      name: editInfoForm.value.name,
+      dob: editInfoForm.value.dob.format('YYYY-MM-DD'),
+      gender: editInfoForm.value.gender,
+    };
+
+    await updateUserHealthBook(healthBook.value._id, updateData);
+
+    // Update local state
+    profileInfo.value = {
+      ...profileInfo.value,
+      name: editInfoForm.value.name,
+      dob: editInfoForm.value.dob.format('YYYY-MM-DD'),
+      gender: editInfoForm.value.gender,
+    };
+
+    if (healthBook.value) {
+      healthBook.value.name = editInfoForm.value.name;
+      healthBook.value.dob = editInfoForm.value.dob.format('YYYY-MM-DD');
+      healthBook.value.gender = editInfoForm.value.gender;
+    }
+
+    message.success("Cập nhật thông tin thành công!");
+    showEditInfoModal.value = false;
+  } catch (err: any) {
+    console.error("Error updating info:", err);
+    message.error(err.message || "Không thể cập nhật thông tin");
+  } finally {
+    isUpdatingInfo.value = false;
   }
 };
 
@@ -1262,5 +1435,114 @@ onMounted(async () => {
 
 :deep(.ant-btn.ant-btn-primary:hover) {
   opacity: 0.8;
+}
+
+/* Edit Info Modal Styling */
+:deep(.edit-info-modal .ant-modal) {
+  width: 1088px !important;
+  max-width: 90vw;
+}
+
+:deep(.edit-info-modal .ant-modal-content) {
+  border-radius: 14px;
+  min-height: 754px;
+}
+
+:deep(.edit-info-modal .ant-modal-body) {
+  padding: 32px 40px;
+}
+
+/* Modal Title */
+.edit-info-modal-title {
+  text-align: center;
+  font-size: 20px;
+  font-weight: 700;
+  color: #1A75BB;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  margin-bottom: 0;
+}
+
+/* Form Styling */
+.edit-info-form {
+  width: 100%;
+}
+
+:deep(.edit-info-form-item .ant-form-item-label > label) {
+  font-weight: 500;
+  color: #333;
+  font-size: 14px;
+}
+
+:deep(.edit-info-form-item .ant-form-item-label > label::before) {
+  content: '*';
+  color: #ff4d4f;
+  margin-right: 4px;
+}
+
+
+/* Save Button */
+.edit-info-save-btn {
+  min-width: 200px;
+  height: 48px;
+  font-size: 16px;
+  font-weight: 500;
+  border-radius: 8px;
+}
+
+:deep(.edit-info-save-btn.ant-btn-primary) {
+  background-color: #1A75BB;
+  border-color: #1A75BB;
+}
+
+:deep(.edit-info-save-btn.ant-btn-primary:hover) {
+  background-color: #1565A0;
+  border-color: #1565A0;
+}
+
+/* Input and Select Styling */
+:deep(.edit-info-form .ant-input),
+:deep(.edit-info-form .ant-picker),
+:deep(.edit-info-form .ant-select-selector) {
+  border-radius: 8px;
+  border: 1px solid #d9d9d9;
+}
+
+:deep(.edit-info-form .ant-input:focus),
+:deep(.edit-info-form .ant-picker:focus),
+:deep(.edit-info-form .ant-select-focused .ant-select-selector) {
+  border-color: #1A75BB;
+  box-shadow: 0 0 0 2px rgba(26, 117, 187, 0.1);
+}
+
+/* Responsive */
+@media (max-width: 1200px) {
+  :deep(.edit-info-modal .ant-modal) {
+    width: 90vw !important;
+    max-width: 90vw;
+  }
+  
+  :deep(.edit-info-modal .ant-modal-body) {
+    padding: 24px;
+  }
+}
+
+@media (max-width: 768px) {
+  :deep(.edit-info-modal .ant-modal) {
+    width: 95vw !important;
+    max-width: 95vw;
+  }
+  
+  :deep(.edit-info-modal .ant-modal-content) {
+    min-height: auto;
+  }
+  
+  :deep(.edit-info-modal .ant-modal-body) {
+    padding: 20px;
+  }
+  
+  .edit-info-modal-title {
+    font-size: 18px;
+  }
 }
 </style>

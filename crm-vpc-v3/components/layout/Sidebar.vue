@@ -11,16 +11,20 @@
 
     <!-- Menu Items -->
     <nav class="flex-1 py-4 overflow-y-auto">
-      <NuxtLink 
+      <component
         v-for="item in menuItems"
         :key="item.path"
-        :to="item.path" 
+        :is="isExternalLink(item.path) ? 'a' : 'NuxtLink'"
+        :to="isExternalLink(item.path) ? undefined : item.path"
+        :href="isExternalLink(item.path) ? item.path : undefined"
+        :target="isExternalLink(item.path) ? '_blank' : undefined"
+        :rel="isExternalLink(item.path) ? 'noopener noreferrer' : undefined"
         class="flex items-center gap-3 px-5 py-3 mx-2 rounded-lg text-sm font-medium transition-all duration-200"
         :class="isActive(item.path) ? 'bg-blue-500 text-white hover:bg-blue-600' : 'text-gray-700 hover:bg-gray-100'"
       >
         <div v-html="item.icon" />
         <span>{{ item.label }}</span>
-      </NuxtLink>
+      </component>
     </nav>
   </aside>
 </template>
@@ -32,7 +36,14 @@ import { MENU_ITEMS } from '~/constants/menu';
 const route = useRoute();
 const menuItems = MENU_ITEMS;
 
+const isExternalLink = (path: string) => {
+  return path.startsWith('http://') || path.startsWith('https://');
+};
+
 const isActive = (path: string) => {
+  if (isExternalLink(path)) {
+    return false;
+  }
   if (path === '/') {
     return route.path === '/';
   }
