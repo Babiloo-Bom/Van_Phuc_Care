@@ -436,11 +436,14 @@ export const useAuthStore = defineStore("auth", {
         });
 
         // Set logout sync cookie to notify CRM site
+        // Do this BEFORE clearing state to ensure cookie is set while still authenticated
         if (process.client) {
           const { setLogoutSyncCookie } = await import('~/utils/authSync');
           console.log('[Logout] [Elearning] Setting logout sync cookie to notify CRM...');
           setLogoutSyncCookie();
           console.log('[Logout] [Elearning] Logout sync cookie set');
+          // Add a small delay to ensure cookie is propagated before clearing state
+          await new Promise(resolve => setTimeout(resolve, 100));
         }
 
         // Clear state

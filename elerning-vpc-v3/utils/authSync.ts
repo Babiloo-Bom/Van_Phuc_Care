@@ -135,6 +135,9 @@ export function startLogoutSyncMonitor(callback: () => void, intervalMs: number 
   
   const interval = setInterval(() => {
     if (checkLogoutSyncCookie()) {
+      console.log('[Logout Sync] Monitor detected logout sync cookie, calling callback...');
+      // Clear cookie AFTER calling callback to ensure it's processed
+      // But clear it to prevent multiple triggers
       clearLogoutSyncCookie();
       callback();
     }

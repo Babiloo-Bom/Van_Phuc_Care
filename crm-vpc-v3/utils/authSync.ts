@@ -73,6 +73,7 @@ export function checkLogoutSyncCookie(): boolean {
     for (let cookie of cookies) {
       const [name, value] = cookie.trim().split('=');
       if (name === LOGOUT_SYNC_COOKIE && value) {
+        console.log('[Logout Sync] [CRM] Found logout sync cookie:', name, 'value:', value);
         return true;
       }
     }
@@ -112,6 +113,9 @@ export function startLogoutSyncMonitor(callback: () => void, intervalMs: number 
   
   const interval = setInterval(() => {
     if (checkLogoutSyncCookie()) {
+      console.log('[Logout Sync] [CRM] Monitor detected logout sync cookie, calling callback...');
+      // Clear cookie AFTER calling callback to ensure it's processed
+      // But clear it to prevent multiple triggers
       clearLogoutSyncCookie();
       callback();
     }
