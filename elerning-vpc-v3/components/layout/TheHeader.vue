@@ -460,34 +460,46 @@ const closeUserMenu = () => {
 };
 
 const handleCrmLinkClick = async (event: MouseEvent, url: string | undefined) => {
+  console.log('[SSO] handleCrmLinkClick called with URL:', url);
   event.preventDefault();
   closeUserMenu();
   
   if (!url || url === '#') {
+    console.warn('[SSO] Invalid URL, skipping SSO');
     return;
   }
   
   try {
+    console.log('[SSO] Extracting path from URL:', url);
     // Extract path from URL
     let path = '/';
     try {
       const urlObj = new URL(url);
       path = urlObj.pathname;
-    } catch {
+      console.log('[SSO] Extracted path:', path);
+    } catch (e) {
+      console.warn('[SSO] URL parsing failed, trying regex:', e);
       const match = url.match(/https?:\/\/[^\/]+(\/.*)?$/);
       path = match && match[1] ? match[1] : '/';
+      console.log('[SSO] Extracted path (regex):', path);
     }
     
+    console.log('[SSO] Importing buildSSOUrl...');
     const { buildSSOUrl } = await import('~/utils/sso');
     const baseUrl = String(crmBaseUrl.value || 'http://localhost:3101');
+    console.log('[SSO] Base URL:', baseUrl, 'Path:', path);
     const ssoUrl = buildSSOUrl(baseUrl, path);
+    console.log('[SSO] SSO URL generated:', ssoUrl);
     
+    console.log('[SSO] Waiting 100ms for cookie to be set...');
     await new Promise(resolve => setTimeout(resolve, 100));
     
+    console.log('[SSO] Opening new tab with URL:', ssoUrl);
     window.open(ssoUrl, '_blank', 'noopener,noreferrer');
   } catch (error) {
     console.error('[SSO] Error setting SSO cookie:', error);
     if (url) {
+      console.log('[SSO] Fallback: opening URL without SSO:', url);
       window.open(url, '_blank', 'noopener,noreferrer');
     }
   }
