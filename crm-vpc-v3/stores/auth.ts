@@ -222,7 +222,15 @@ export const useAuthStore = defineStore('auth', {
           this.saveAuth();
         }
       } catch (error) {
-        console.error('❌ Error refreshing user data:', error);
+        // Don't throw error - just log it. This is a non-critical operation.
+        // The session is still valid even if refresh fails.
+        console.warn('⚠️ Error refreshing user data (non-critical):', error);
+        // Re-throw only if it's a critical error (not 401, not network error)
+        const status = (error as any)?.statusCode || (error as any)?.status;
+        if (status && status !== 401 && status !== 0) {
+          // Only re-throw for unexpected server errors (500, 403, etc.)
+          throw error;
+        }
       }
     },
 
@@ -524,16 +532,42 @@ export const useAuthStore = defineStore('auth', {
 
             // Check for remember account
             if (authDataStr) {
-              const authData = JSON.parse(authDataStr);
-              this.rememberAccount = authData.remindAccount || false;
+              try {
+                const authData = JSON.parse(authDataStr);
+                this.rememberAccount = authData.remindAccount || false;
+              } catch (e) {
+                // Ignore parse error for authData, it's optional
+                console.warn('⚠️ Failed to parse authData, continuing:', e);
+              }
             }
 
             // Refresh user data from backend to get latest courseRegister
-            await this.refreshUserData();
+            // Skip refresh if SSO login is in progress to avoid race condition
+            if (!this.isSSOLoginInProgress) {
+              try {
+                await this.refreshUserData();
+              } catch (refreshError) {
+                console.warn('⚠️ Failed to refresh user data during initAuth, but keeping session:', refreshError);
+                // Don't logout on refresh error - session might still be valid
+              }
+            } else {
+              console.log('ℹ️ Skipping refreshUserData during SSO login');
+            }
           } catch (error) {
-            console.error('❌ Init auth error:', error);
-            // Clear corrupted data
-            this.logout();
+            console.error('❌ Init auth error (critical):', error);
+            // Only logout on critical errors (parse errors, etc.), not on refresh errors
+            // Check if error is from refreshUserData (it should not throw for non-critical errors)
+            const isCriticalError = !(error as any)?.isRefreshError;
+            if (isCriticalError) {
+              // Only logout if not during SSO login
+              if (!this.isSSOLoginInProgress) {
+                this.logout();
+              } else {
+                console.warn('⚠️ Init auth error during SSO, skipping logout');
+              }
+            } else {
+              console.warn('⚠️ Non-critical error during initAuth, keeping session');
+            }
           }
         } else {
           // Check if we have token and user from SSO (they might be set separately)
