@@ -90,8 +90,10 @@ export const useAuthStore = defineStore("auth", {
         // Set justLoggedIn flag to prevent auto-logout for 15 seconds
         this.justLoggedIn = true;
         this.loginTimestamp = Date.now();
+        console.log('[Login] Set justLoggedIn flag, timestamp:', this.loginTimestamp);
         setTimeout(() => {
           this.justLoggedIn = false;
+          console.log('[Login] Cleared justLoggedIn flag after 15 seconds');
         }, 15000); // 15 seconds grace period
 
         // Save to localStorage
@@ -110,6 +112,11 @@ export const useAuthStore = defineStore("auth", {
               })
             );
           }
+          
+          // Clear logout sync cookie on successful login
+          const { clearLogoutSyncCookie } = await import('~/utils/authSync');
+          clearLogoutSyncCookie();
+          console.log('[Login] Cleared logout sync cookie');
         }
 
         return { success: true, user: this.user, token };
@@ -634,11 +641,25 @@ export const useAuthStore = defineStore("auth", {
         this.user = userData;
         this.isAuthenticated = true;
 
+        // Set justLoggedIn flag to prevent auto-logout for 15 seconds
+        this.justLoggedIn = true;
+        this.loginTimestamp = Date.now();
+        console.log('[Google Login] Set justLoggedIn flag, timestamp:', this.loginTimestamp);
+        setTimeout(() => {
+          this.justLoggedIn = false;
+          console.log('[Google Login] Cleared justLoggedIn flag after 15 seconds');
+        }, 15000); // 15 seconds grace period
+
         // Save to localStorage
         if (process.client) {
           localStorage.setItem("auth_token", accessToken);
           localStorage.setItem("token_expire_at", this.tokenExpireAt);
           localStorage.setItem("user", JSON.stringify(userData));
+          
+          // Clear logout sync cookie on successful login
+          const { clearLogoutSyncCookie } = await import('~/utils/authSync');
+          clearLogoutSyncCookie();
+          console.log('[Google Login] Cleared logout sync cookie');
         }
 
         return { success: true };
