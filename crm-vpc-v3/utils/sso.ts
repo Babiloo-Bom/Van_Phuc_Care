@@ -20,7 +20,10 @@ function isLocalhost(): boolean {
  * Set SSO cookie to share token with other site
  */
 export function setSSOCookie(token: string): void {
-  if (!process.client || !token) return;
+  if (!process.client || !token) {
+    console.warn('[SSO] Cannot set SSO cookie: not client or no token');
+    return;
+  }
   
   // Create SSO data
   const ssoData = {
@@ -31,15 +34,18 @@ export function setSSOCookie(token: string): void {
   
   // Encode to base64
   const encodedToken = btoa(JSON.stringify(ssoData));
+  console.log('[SSO] Setting SSO cookie, token length:', token.length, 'encoded length:', encodedToken.length);
   
   // Set cookie with expiration in 1 minute
   const expires = new Date();
   expires.setMinutes(expires.getMinutes() + 1);
   
   if (isLocalhost()) {
+    console.log('[SSO] Using localStorage for localhost');
     // On localhost, use localStorage as fallback (same as logout sync)
     const syncKey = 'auth_sso_token_' + Date.now();
     localStorage.setItem(syncKey, encodedToken);
+    console.log('[SSO] Saved to localStorage with key:', syncKey);
     // Clean up old sync keys
     Object.keys(localStorage).forEach(key => {
       if (key.startsWith('auth_sso_token_') && key !== syncKey) {
@@ -51,10 +57,18 @@ export function setSSOCookie(token: string): void {
       }
     });
   } else {
+    console.log('[SSO] Using cookie with domain:', COOKIE_DOMAIN);
     // Production: Use cookie with domain for subdomain sharing
     try {
-      document.cookie = `${SSO_COOKIE}=${encodedToken}; expires=${expires.toUTCString()}; path=/; domain=${COOKIE_DOMAIN}; SameSite=Lax`;
+      const cookieString = `${SSO_COOKIE}=${encodedToken}; expires=${expires.toUTCString()}; path=/; domain=${COOKIE_DOMAIN}; SameSite=Lax`;
+      document.cookie = cookieString;
+      console.log('[SSO] Cookie set:', cookieString.substring(0, 100) + '...');
+      // Verify cookie was set
+      const cookies = document.cookie.split(';');
+      const found = cookies.some(c => c.trim().startsWith(SSO_COOKIE + '='));
+      console.log('[SSO] Cookie verification:', found ? 'SUCCESS' : 'FAILED');
     } catch (e) {
+      console.error('[SSO] Error setting cookie with domain, using fallback:', e);
       // Fallback if domain setting fails
       document.cookie = `${SSO_COOKIE}=${encodedToken}; expires=${expires.toUTCString()}; path=/; SameSite=Lax`;
     }
@@ -76,7 +90,9 @@ export function checkSSOCookie(): string | null {
         const timestamp = parts[3] ? parseInt(parts[3]) : 0;
         // Check if sync key is recent (within 1 minute)
         if (timestamp && Date.now() - timestamp < 60000) {
-          return localStorage.getItem(key);
+          const value = localStorage.getItem(key);
+          console.log('[SSO] Found SSO token in localStorage:', key);
+          return value;
         }
       }
     }
@@ -84,12 +100,15 @@ export function checkSSOCookie(): string | null {
   } else {
     // Production: Check cookie
     const cookies = document.cookie.split(';');
+    console.log('[SSO] Checking cookies, total:', cookies.length);
     for (let cookie of cookies) {
       const [name, value] = cookie.trim().split('=');
       if (name === SSO_COOKIE && value) {
+        console.log('[SSO] Found SSO cookie:', name, 'value length:', value.length);
         return value;
       }
     }
+    console.log('[SSO] No SSO cookie found');
     return null;
   }
 }
@@ -123,12 +142,18 @@ export function clearSSOCookie(): void {
 export async function handleSSOLogin(): Promise<boolean> {
   if (!process.client) return false;
   
+  console.log('[SSO] Checking for SSO cookie...');
   const encodedToken = checkSSOCookie();
-  if (!encodedToken) return false;
+  if (!encodedToken) {
+    console.log('[SSO] No SSO cookie found');
+    return false;
+  }
   
+  console.log('[SSO] SSO cookie found, decoding...');
   try {
     // Decode token
     const ssoData = JSON.parse(atob(encodedToken));
+    console.log('[SSO] Token decoded, timestamp:', ssoData.timestamp, 'age:', Date.now() - ssoData.timestamp, 'ms');
     
     // Check if token is expired
     if (Date.now() - ssoData.timestamp > ssoData.expiresIn) {
@@ -141,22 +166,28 @@ export async function handleSSOLogin(): Promise<boolean> {
     
     // If already logged in, clear cookie and skip
     if (authStore.isAuthenticated) {
+      console.log('[SSO] Already logged in, clearing cookie');
       clearSSOCookie();
       return true;
     }
     
+    console.log('[SSO] Setting token to authStore...');
     // Set token FIRST before calling API (so API can use it)
     authStore.token = ssoData.token;
     if (process.client) {
       localStorage.setItem('auth_token', ssoData.token);
+      console.log('[SSO] Token saved to localStorage');
     }
     
     const authApi = useAuthApi();
     try {
+      console.log('[SSO] Verifying token with backend...');
       const profileResponse: any = await authApi.getUserProfile();
+      console.log('[SSO] Profile response received:', profileResponse);
       const userData = profileResponse?.data?.user || profileResponse?.data?.data || profileResponse?.data;
       
       if (userData) {
+        console.log('[SSO] User data found, setting auth state...');
         authStore.isAuthenticated = true;
         authStore.user = {
           id: userData?._id || userData?.id || 'temp-id',
@@ -182,11 +213,19 @@ export async function handleSSOLogin(): Promise<boolean> {
         
         // Clear SSO cookie after successful login
         clearSSOCookie();
+        console.log('[SSO] SSO login successful!');
         
         return true;
+      } else {
+        console.warn('[SSO] No user data in response');
       }
-    } catch (error) {
+    } catch (error: any) {
       console.error('[SSO] Failed to verify token:', error);
+      console.error('[SSO] Error details:', {
+        message: error?.message,
+        status: error?.statusCode || error?.status,
+        data: error?.data,
+      });
       // Clear token if verification failed
       authStore.token = null;
       authStore.isAuthenticated = false;
@@ -222,10 +261,15 @@ export function buildSSOUrl(baseUrl: string, path: string): string {
   const authStore = useAuthStore();
   const token = authStore.token;
   
-  if (!token) return baseUrl + path;
+  if (!token) {
+    console.warn('[SSO] No token available for SSO, returning URL without SSO');
+    return baseUrl + path;
+  }
   
+  console.log('[SSO] Building SSO URL for:', baseUrl + path);
   // Set SSO cookie before navigation
   setSSOCookie(token);
+  console.log('[SSO] SSO cookie set, navigating...');
   
   // Return clean URL without token parameter
   return baseUrl + path;
@@ -235,15 +279,36 @@ export function buildSSOUrl(baseUrl: string, path: string): string {
  * Start monitoring SSO cookie
  * Call this in onMounted to check periodically
  */
-export function startSSOMonitor(callback: () => void, intervalMs: number = 2000) {
+export function startSSOMonitor(callback: () => void, intervalMs: number = 1000) {
   if (!process.client) return () => {};
   
+  // Check immediately
+  if (checkSSOCookie()) {
+    callback();
+  }
+  
+  // Check more frequently in the first 5 seconds (every 500ms)
+  let fastCheckCount = 0;
+  const fastInterval = setInterval(() => {
+    fastCheckCount++;
+    if (checkSSOCookie()) {
+      callback();
+    }
+    if (fastCheckCount >= 10) { // 10 * 500ms = 5 seconds
+      clearInterval(fastInterval);
+    }
+  }, 500);
+  
+  // Then check at normal interval
   const interval = setInterval(() => {
     if (checkSSOCookie()) {
       callback();
     }
   }, intervalMs);
   
-  return () => clearInterval(interval);
+  return () => {
+    clearInterval(fastInterval);
+    clearInterval(interval);
+  };
 }
 
