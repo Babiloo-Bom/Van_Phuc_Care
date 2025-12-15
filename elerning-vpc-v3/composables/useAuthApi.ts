@@ -25,13 +25,6 @@ export const useAuthApi = () => {
   const { apiUser, apiAdmin, baseUrl } = useApiBase()
   let apiBase = apiUser
 
-  // Debug: Log API base URL
-  console.log("🔍 API Base URL:", apiBase);
-  console.log("🔍 Base URL:", baseUrl);
-
-  // Debug: Log final API base URL
-  console.log("🔍 Final API Base URL:", apiBase);
-
   /**
    * Exponential backoff delay
    */

@@ -510,7 +510,6 @@ export const useAuthStore = defineStore("auth", {
         // This prevents initAuth from overriding state after a successful login
         // But still restore loginTimestamp if missing
         if (this.isAuthenticated && this.token && this.user) {
-          console.log('ℹ️ Already authenticated, but checking loginTimestamp...');
           // Still restore loginTimestamp if missing (might have been lost)
           if (!this.loginTimestamp) {
             const loginTimestampStr = localStorage.getItem("login_timestamp");
@@ -522,10 +521,8 @@ export const useAuthStore = defineStore("auth", {
                 const timeSinceLogin = Date.now() - this.loginTimestamp;
                 if (timeSinceLogin < 30000) {
                   this.justLoggedIn = true;
-                  console.log('[InitAuth] Restored loginTimestamp for already authenticated user, timeSinceLogin:', timeSinceLogin, 'ms');
                   setTimeout(() => {
                     this.justLoggedIn = false;
-                    console.log('[InitAuth] Cleared justLoggedIn flag after grace period');
                   }, 30000 - timeSinceLogin);
                 }
               }

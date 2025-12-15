@@ -894,7 +894,6 @@ const setupVideoSecurity = () => {
     }
   };
 
-  // Detect DevTools opening (basic detection)
   let devtools = { open: false };
   const detectDevTools = () => {
     const threshold = 160;
@@ -904,21 +903,17 @@ const setupVideoSecurity = () => {
     ) {
       if (!devtools.open) {
         devtools.open = true;
-        // Optionally show warning or redirect
-        console.warn('Developer tools detected');
       }
     } else {
       devtools.open = false;
     }
   };
 
-  // Add event listeners
   document.addEventListener('keydown', blockShortcuts);
   document.addEventListener('contextmenu', blockContextMenu);
   document.addEventListener('selectstart', blockSelection);
   const intervalId = setInterval(detectDevTools, 500);
 
-  // Cleanup function
   return () => {
     document.removeEventListener('keydown', blockShortcuts);
     document.removeEventListener('contextmenu', blockContextMenu);
