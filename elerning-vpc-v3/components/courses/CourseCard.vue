@@ -151,7 +151,7 @@
         </button>
       </div>
       <div v-else class="flex-grow flex flex-col justify-end w-full gap-4">
-        <!-- Trường hợp 1: Đã từng hoàn thành (có chứng chỉ) nhưng tiến trình hiện tại < 100% -->
+        <!-- Trường hợp 1: Đã từng hoàn thành (có chứng chỉ) nhưng tiến trình hiện tại < 100% (đang học lại) -->
         <div
           class="course-actions"
           v-if="everCompleted && !isCurrentlyCompleted"
@@ -164,10 +164,10 @@
           </button>
         </div>
 
-        <!-- Trường hợp 2: Đã từng hoàn thành và tiến trình hiện tại = 100% -->
+        <!-- Trường hợp 2: Tiến trình hiện tại = 100% (đã hoàn thành khóa, dù là lần đầu hay học lại) -->
         <div
           class="course-actions"
-          v-else-if="everCompleted && isCurrentlyCompleted"
+          v-else-if="isCurrentlyCompleted"
         >
           <button class="btn-completed" @click.stop="goToCertificate">
             Đã hoàn thành
