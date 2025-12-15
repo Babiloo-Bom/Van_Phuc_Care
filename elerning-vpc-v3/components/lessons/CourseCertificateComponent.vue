@@ -172,11 +172,11 @@ const handleReLearn = async () => {
     return;
   }
 
+  // Gọi API reset tiến trình/quizzes trên backend (thông qua server route /api/progress)
   try {
-    // Reset toàn bộ tiến trình + quiz của khóa học này trên backend & local state
     await progressTracking.resetProgress(courseId);
   } catch (error) {
-    // Nếu reset thất bại vẫn cho phép vào lại khóa học, backend sẽ quyết định trạng thái
+    // Nếu backend chưa hỗ trợ hoặc trả lỗi, vẫn tiếp tục reset trên FE như bình thường
   }
 
   // Đánh dấu trạng thái học lại trên store để client render lại tiến trình về 0%

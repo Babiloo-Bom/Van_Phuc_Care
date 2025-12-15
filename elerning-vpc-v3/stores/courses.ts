@@ -326,8 +326,6 @@ export const useCoursesStore = defineStore('courses', {
         const response: any = await courseApi.getMyCourseBySlug(slug)
 
         const responseCourse = response.data?.course || response.data || response.course || response;
-
-        // Chế độ "Học lại từ đầu": luôn reset tiến trình về 0%, mở lại toàn bộ module/bài học
         if (this.isRepeatLearn && responseCourse) {
           let totalLessons = 0;
 
@@ -336,7 +334,6 @@ export const useCoursesStore = defineStore('courses', {
               totalLessons += 1;
               return {
                 ...lesson,
-                // Xóa trạng thái hoàn thành để người học làm lại từ đầu
                 isCompleted: false,
               };
             });
