@@ -357,6 +357,8 @@ export const useCoursesStore = defineStore('courses', {
             },
             chapters: resetChapters,
           });
+          // Sau lần reset đầu tiên, tắt cờ học lại để các lần fetch tiếp theo dùng tiến trình thật từ backend
+          this.isRepeatLearn = false;
         } else {
           this.course = responseCourse;
         }
