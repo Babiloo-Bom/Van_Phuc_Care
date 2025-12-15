@@ -202,7 +202,19 @@ const handleCopyCoupon = async () => {
   const code = coupon.value?.code;
   if (!code) return;
   try {
-    await navigator.clipboard.writeText(code);
+    if (navigator.clipboard?.writeText) {
+      await navigator.clipboard.writeText(code);
+    } else {
+      const textarea = document.createElement('textarea');
+      textarea.value = code;
+      textarea.style.position = 'fixed';
+      textarea.style.opacity = '0';
+      document.body.appendChild(textarea);
+      textarea.focus();
+      textarea.select();
+      document.execCommand('copy');
+      document.body.removeChild(textarea);
+    }
     copied.value = true;
     message.success({
       content: "Đã sao chép mã",
