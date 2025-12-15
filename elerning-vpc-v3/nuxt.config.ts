@@ -15,7 +15,7 @@ export default defineNuxtConfig({
     '@pinia/nuxt',
     '@nuxtjs/seo'
   ],
-  
+  // Enable pages module for routing
   // Enable pages module for routing
   pages: true,
   

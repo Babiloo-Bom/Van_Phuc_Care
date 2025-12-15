@@ -63,19 +63,23 @@
                 class="relative w-full rounded-lg overflow-hidden shadow-lg bg-gray-900"
                 :style="{ aspectRatio: '16/9' }"
               >
-                <!-- Video Element -->
+                <!-- Video Element với chặn tải xuống và context menu -->
                 <video
                   v-if="currentVideoUrl"
                   ref="videoRef"
                   :src="currentVideoUrl"
                   :poster="currentThumbnail"
-                  class="w-full h-full object-cover"
-                  controls
+                  class="w-full h-full object-cover video-element"
                   preload="metadata"
-                  crossorigin="anonymous"
-                />
+                  playsinline
+                  controlslist="nodownload noplaybackrate"
+                  disablePictureInPicture
+                  @timeupdate="onTimeUpdate"
+                  @loadedmetadata="onLoadedMetadata"
+                  @contextmenu.prevent
+                ></video>
 
-                <!-- Thumbnail with Play Button (nếu không có video) -->
+                <!-- Thumbnail với nút Play (nếu chưa có currentVideoUrl) -->
                 <div
                   v-else-if="currentThumbnail"
                   class="relative w-full h-full"
@@ -133,6 +137,58 @@
                       />
                     </svg>
                     <p class="text-lg font-semibold">Không có video</p>
+                  </div>
+                </div>
+
+                <!-- Custom Controls -->
+                <div
+                  v-if="currentVideoUrl"
+                  class="absolute inset-x-0 bottom-0 bg-black bg-opacity-60 px-4 py-3 flex items-center gap-3"
+                >
+                  <!-- Play / Pause -->
+                  <button
+                    class="w-8 h-8 flex items-center justify-center rounded-full bg-white bg-opacity-90 hover:bg-opacity-100 transition"
+                    @click.stop="togglePlay"
+                  >
+                    <svg
+                      v-if="!playerState.playing"
+                      xmlns="http://www.w3.org/2000/svg"
+                      width="18"
+                      height="18"
+                      viewBox="0 0 24 24"
+                      class="fill-gray-800 ml-0.5"
+                    >
+                      <path d="M8 5v14l11-7z" />
+                    </svg>
+                    <svg
+                      v-else
+                      xmlns="http://www.w3.org/2000/svg"
+                      width="18"
+                      height="18"
+                      viewBox="0 0 24 24"
+                      class="fill-gray-800"
+                    >
+                      <path d="M6 5h4v14H6zM14 5h4v14h-4z" />
+                    </svg>
+                  </button>
+
+                  <!-- Progress / Seek bar -->
+                  <div class="flex-1 flex items-center gap-3">
+                    <span class="text-xs text-gray-200 whitespace-nowrap">
+                      {{ formatTime(playerState.currentTime) }}
+                    </span>
+                    <input
+                      type="range"
+                      min="0"
+                      :max="playerState.duration || 0"
+                      step="0.1"
+                      v-model.number="playerState.currentTime"
+                      @input.stop="onSeek"
+                      class="flex-1 h-1 bg-gray-500 rounded-lg appearance-none cursor-pointer custom-range"
+                    />
+                    <span class="text-xs text-gray-200 whitespace-nowrap">
+                      {{ formatTime(playerState.duration) }}
+                    </span>
                   </div>
                 </div>
               </div>
@@ -337,6 +393,12 @@ const videoRef = ref<HTMLVideoElement | null>(null);
 const activeTab = ref("modules"); // Default to "Học phần" tab
 const markingCompleted = ref(false);
 
+const playerState = ref({
+  duration: 0,
+  currentTime: 0,
+  playing: false,
+});
+
 // Computed
 const course = computed<Course | null>(() => coursesStore.course);
 const isRepeat = computed<boolean>(() => coursesStore.isRepeatLearn);
@@ -448,6 +510,7 @@ const downloadDocument = (docType: string) => {
 const playVideo = () => {
   if (videoRef.value) {
     videoRef.value.play();
+    playerState.value.playing = true;
   }
 };
 
@@ -632,6 +695,41 @@ const handleFinishQuiz = async (quizResult: any) => {
     `/my-learning/${slug.value}?chapter=${chapterParam || 0}&lesson=${lessonParam || 0}`
   );
   fetchCourseDetail();
+};
+
+const onLoadedMetadata = () => {
+  if (!videoRef.value) return;
+  playerState.value.duration = videoRef.value.duration || 0;
+};
+
+const onTimeUpdate = () => {
+  if (!videoRef.value) return;
+  playerState.value.currentTime = videoRef.value.currentTime || 0;
+};
+
+const onSeek = () => {
+  if (!videoRef.value) return;
+  videoRef.value.currentTime = playerState.value.currentTime;
+};
+
+const togglePlay = () => {
+  if (!videoRef.value) return;
+  if (playerState.value.playing) {
+    videoRef.value.pause();
+    playerState.value.playing = false;
+  } else {
+    videoRef.value.play();
+    playerState.value.playing = true;
+  }
+};
+
+const formatTime = (seconds: number) => {
+  if (!seconds || isNaN(seconds)) return "00:00";
+  const m = Math.floor(seconds / 60);
+  const s = Math.floor(seconds % 60);
+  const mm = m < 10 ? `0${m}` : `${m}`;
+  const ss = s < 10 ? `0${s}` : `${s}`;
+  return `${mm}:${ss}`;
 };
 
 watch(
