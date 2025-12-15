@@ -560,32 +560,23 @@ export const useAuthStore = defineStore("auth", {
         const token = localStorage.getItem("auth_token");
         const tokenExpireAt = localStorage.getItem("token_expire_at");
         const userStr = localStorage.getItem("user");
-        // Check both authData (camelCase) and auth_data (snake_case) for compatibility
         const authDataStr = localStorage.getItem("authData") || localStorage.getItem("auth_data");
 
-        // Try to restore from authData first (new format), then fallback to old format
         let authData: any = null;
-        if (authDataStr) {
-          try {
-            authData = JSON.parse(authDataStr)
-            console.log("ℹ️ Found authData in localStorage, restoring...");
-          } catch (e) {
-            console.log("⚠️ Failed to parse authData:", e);
-          }
-        } else {
-          console.log("ℹ️ No authData found in localStorage");
-        }
+            if (authDataStr) {
+              try {
+                authData = JSON.parse(authDataStr)
+              } catch (e) {
+              }
+            }
 
         if (authData && authData.user && authData.token) {
-          // Use new format (authData)
           try {
-            // Check if token is expired
             if (authData.tokenExpireAt) {
               const expireTime = new Date(authData.tokenExpireAt).getTime()
               const now = Date.now()
               
               if (now >= expireTime) {
-                // Token expired, clear data
                 this.logout();
                 return;
               }

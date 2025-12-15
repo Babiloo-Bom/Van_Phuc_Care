@@ -29,8 +29,17 @@ export const useCourseApi = () => {
    */
   const getMyCourses = async (params?: any) => {
     try {
+      const authStore = useAuthStore()
+      // Đảm bảo token đã được init (client-side)
+      if (!authStore.token && process.client) {
+        await authStore.initAuth()
+      }
+
       const response = await $fetch(`${apiUserBase}/courses/my-courses`, {
-        params
+        params,
+        headers: authStore.token
+          ? { Authorization: `Bearer ${authStore.token}` }
+          : undefined,
       })
       return response
     } catch (error: any) {
@@ -43,7 +52,16 @@ export const useCourseApi = () => {
    */
   const getMyCourseBySlug = async (slug: string) => {
     try {
-      const response = await $fetch(`${apiUserBase}/courses/my-courses/${slug}`)
+      const authStore = useAuthStore()
+      if (!authStore.token && process.client) {
+        await authStore.initAuth()
+      }
+
+      const response = await $fetch(`${apiUserBase}/courses/my-courses/${slug}`, {
+        headers: authStore.token
+          ? { Authorization: `Bearer ${authStore.token}` }
+          : undefined,
+      })
       return response
     } catch (error: any) {
       throw error

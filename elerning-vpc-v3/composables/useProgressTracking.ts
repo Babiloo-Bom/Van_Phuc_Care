@@ -60,6 +60,9 @@ export const useProgressTracking = () => {
     try {
       const { apiUser } = useApiBase()
       const apiBase = apiUser
+      if (!authStore.token && process.client) {
+        await authStore.initAuth()
+      }
       loading.value = true
       error.value = null
       // Check if already completed
@@ -85,6 +88,7 @@ export const useProgressTracking = () => {
         },
         headers: {
           'Content-Type': 'application/json',
+          ...(authStore.token ? { Authorization: `Bearer ${authStore.token}` } : {}),
         }
       })
 

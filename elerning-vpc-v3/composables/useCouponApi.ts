@@ -4,6 +4,7 @@
  */
 
 import { useApiBase } from "./useApiBase";
+import { useAuthStore } from "~/stores/auth";
 
 export const useCouponApi = () => {
   const { apiUser } = useApiBase()
@@ -11,11 +12,14 @@ export const useCouponApi = () => {
 
   const getCouponValid = async (courseId: string) => {
     try {
+      const authStore = useAuthStore()
+      if (!authStore.token && process.client) {
+        await authStore.initAuth()
+      }
       const response = await $fetch(`${apiUserBase}/coupons/valid`, {
         method: 'POST',
-        params: {
-          courseId
-        }
+        headers: authStore.token ? { Authorization: `Bearer ${authStore.token}` } : undefined,
+        params: { courseId }
       })
       return response
     } catch (error: any) {
@@ -23,8 +27,25 @@ export const useCouponApi = () => {
     }
   };
 
-  
+  const createCompletionCoupon = async (courseId: string) => {
+    try {
+      const authStore = useAuthStore()
+      if (!authStore.token && process.client) {
+        await authStore.initAuth()
+      }
+      const response = await $fetch(`${apiUserBase}/coupons/completion`, {
+        method: 'POST',
+        headers: authStore.token ? { Authorization: `Bearer ${authStore.token}` } : undefined,
+        body: { courseId }
+      })
+      return response
+    } catch (error: any) {
+      throw error
+    }
+  };
+ 
   return {
-    getCouponValid
+    getCouponValid,
+    createCompletionCoupon
   };
 };

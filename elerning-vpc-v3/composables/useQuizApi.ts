@@ -4,6 +4,7 @@
  */
 
 import { useApiBase } from "./useApiBase";
+import { useAuthStore } from "~/stores/auth";
 
 export const useQuizApi = () => {
   const { apiAdmin, apiUser } = useApiBase()
@@ -19,7 +20,13 @@ export const useQuizApi = () => {
     lessonId
   }: {courseId: string, chapterId: string, lessonId: string}) => {
     try {
-      const response = await $fetch(`${apiBase}/quizzes/course/${courseId}/chapter/${chapterId}/lesson/${lessonId}`)
+      const authStore = useAuthStore()
+      if (!authStore.token && process.client) {
+        await authStore.initAuth()
+      }
+      const response = await $fetch(`${apiBase}/quizzes/course/${courseId}/chapter/${chapterId}/lesson/${lessonId}`, {
+        headers: authStore.token ? { Authorization: `Bearer ${authStore.token}` } : undefined,
+      })
       return response
     } catch (error: any) {
       throw error
@@ -38,8 +45,13 @@ export const useQuizApi = () => {
     timeSpent
   }: {quizId: string, courseId: string, chapterId: string, lessonId: string, answers: any, timeSpent: number}) => {
     try {
+      const authStore = useAuthStore()
+      if (!authStore.token && process.client) {
+        await authStore.initAuth()
+      }
       const response = await $fetch(`${apiBaseUser}/quizzes/submit`, {
         method: 'POST',
+        headers: authStore.token ? { Authorization: `Bearer ${authStore.token}` } : undefined,
         body: {
           quizId,
           courseId,

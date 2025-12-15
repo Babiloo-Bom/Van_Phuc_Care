@@ -1,4 +1,6 @@
 import { defineStore } from 'pinia';
+import { useAuthStore } from './auth';
+import { useApiBase } from '~/composables/useApiBase';
 
 export interface Course {
   _id: string
@@ -262,7 +264,16 @@ export const useCoursesStore = defineStore('courses', {
       try {
         const courseApi = useCourseApi()
         const response: any = await courseApi.getAllCourses(params)
-        this.courses = response.data?.courses || response.data || response.courses || response
+        const raw = response.data?.courses || response.data || response.courses || response || []
+        const authStore = useAuthStore()
+        const purchasedSet = new Set(authStore.user?.courseRegister || [])
+        this.courses = raw.map((c: any) => {
+          const id = c?._id?.toString?.()
+          return {
+            ...c,
+            isPurchased: c?.isPurchased === true || (id ? purchasedSet.has(id) : false)
+          }
+        })
         if (response.pagination) {
           this.pagination = response.pagination;
         }
@@ -279,6 +290,28 @@ export const useCoursesStore = defineStore('courses', {
         const courseApi = useCourseApi()
         const response: any = await courseApi.getMyCourses(params)
         this.myCourses = response.data?.courses || response.data || response.courses || response
+
+        // Cập nhật courseRegister vào authStore để UI “Mua ngay / Vào học” hiển thị đúng
+        try {
+          const authStore = useAuthStore()
+          const purchasedIds = (this.myCourses || []).map((c: any) => c._id?.toString()).filter(Boolean)
+          if (authStore.user) {
+            authStore.user.courseRegister = purchasedIds
+            // Persist vào localStorage (giữ nguyên các field khác)
+            const userData = { ...authStore.user, courseRegister: purchasedIds }
+            if (process.client) {
+              localStorage.setItem('user', JSON.stringify(userData))
+              localStorage.setItem('authData', JSON.stringify({
+                user: userData,
+                token: authStore.token,
+                tokenExpireAt: authStore.tokenExpireAt,
+                loginTimestamp: authStore.loginTimestamp,
+              }))
+            }
+          }
+        } catch (e) {
+          console.warn('Không thể đồng bộ courseRegister vào authStore:', e)
+        }
       } catch (error) {
         throw error
       } finally {
