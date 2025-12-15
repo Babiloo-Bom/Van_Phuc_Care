@@ -12,7 +12,7 @@
             {{ props.course?.title }}
         </div>
         <div class="absolute font-bold text-[8px] sm:text-[14px] top-[86%] text-[#1F3466] certificate-date">
-            {{ (new Date()).toLocaleDateString('en-GB') }}
+            {{ certificateDate }}
         </div>
       </div>
       <div class="cursor-pointer text-[#1A75BB] text-[15px] mt-5 underline underline-offset-2 md:text-xl text-center" @click="handleDownloadDocuments">
@@ -159,6 +159,18 @@ const copied = ref(false)
 
 const user = authStore.currentUser
 
+const certificateDate = computed(() => {
+  const raw = (props.course as any)?.progress?.completedAt;
+  if (raw) {
+    try {
+      return new Date(raw).toLocaleDateString("en-GB");
+    } catch {
+      return new Date().toLocaleDateString("en-GB");
+    }
+  }
+  return new Date().toLocaleDateString("en-GB");
+});
+
 const filteredCourses = computed(() => {
   return courseStore.courses.filter(c => c.isPurchased === false && c._id !== props.course?._id)
 })
@@ -181,6 +193,40 @@ const handleReLearn = async () => {
 
   // Đánh dấu trạng thái học lại trên store để client render lại tiến trình về 0%
   courseStore.setIsRepeatLearn(true);
+  // Cập nhật ngay course hiện tại trên FE để ẩn trang chứng chỉ và quay về màn hình học
+  if (courseStore.currentCourse) {
+    const current = courseStore.currentCourse as any;
+    const totalLessons =
+      current.progress?.totalLessons ??
+      current.chapters?.reduce(
+        (sum: number, ch: any) => sum + (ch.lessons?.length || 0),
+        0
+      ) ?? 0;
+    const resetChapters = (current.chapters || []).map((ch: any, chIdx: number) => ({
+      ...ch,
+      lessons: (ch.lessons || []).map((lesson: any, lesIdx: number) => ({
+        ...lesson,
+        // Đánh dấu hoàn thành ngay bài đầu tiên (chỉ FE) để tiến trình > 0% sau khi học lại
+        isCompleted: chIdx === 0 && lesIdx === 0 ? true : false,
+      })),
+    }));
+
+    const completedLessons = totalLessons > 0 ? 1 : 0;
+    const progressPercentage =
+      totalLessons > 0 ? Math.round((completedLessons / totalLessons) * 100) : 0;
+
+    courseStore.setCurrentCourse({
+      ...current,
+      chapters: resetChapters,
+      progress: {
+        ...(current.progress || {}),
+          progressPercentage,
+          completedLessons,
+        totalLessons,
+        isCompleted: false,
+      },
+    });
+  }
 
   // Điều hướng về bài học đầu tiên của khóa học
   await navigateTo(`/my-learning/${slug}?chapter=0&lesson=0`);

@@ -43,7 +43,7 @@
     <!-- Main Content Area -->
     <div class="container mx-auto px-4 py-4 md:py-6">
       <div class="flex flex-col lg:flex-row gap-4 lg:gap-6">
-        <div v-if="!isQuiz && !course?.progress?.isCompleted" class="flex-1 lg:w-[65%] bg-white rounded-lg shadow-lg p-4 md:p-8">
+        <div v-if="!isQuiz && !showCertificate" class="flex-1 lg:w-[65%] bg-white rounded-lg shadow-lg p-4 md:p-8">
           <!-- Lesson Title -->
           <h1
             class="text-xl md:text-2xl lg:text-3xl font-bold text-gray-800 mb-4"
@@ -288,7 +288,7 @@
             @completed="(quizResult) => handleFinishQuiz(quizResult)"
           />
         </div>
-        <div v-if="course?.progress?.isCompleted === true" class="flex-1">
+        <div v-if="showCertificate" class="flex-1">
           <CourseCertificateComponent
             :course="course"
             @is-repeating="handleRepeat"
@@ -307,9 +307,10 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, onMounted, watch } from "vue";
+import { ref, computed, onMounted, watch, nextTick } from "vue";
 import { useRoute } from "vue-router";
 import { useCoursesStore } from "~/stores/courses";
+import { useAuthStore } from "~/stores/auth";
 import NavCourse from "~/components/courses/NavCourse.vue";
 import DocumentsComponent from "~/components/lessons/DocumentsComponent.vue";
 import QuizzesComponent from "~/components/lessons/QuizzesComponent.vue";
@@ -325,6 +326,7 @@ definePageMeta({
 const route = useRoute();
 const coursesStore = useCoursesStore();
 const progressTracking = useProgressTracking();
+const authStore = useAuthStore();
 
 // State
 const loading = ref(false);
@@ -339,6 +341,17 @@ const markingCompleted = ref(false);
 const course = computed<Course | null>(() => coursesStore.course);
 const isRepeat = computed<boolean>(() => coursesStore.isRepeatLearn);
 const slug = computed(() => route.params.slug as string);
+
+const hasCertificate = computed(() => {
+  const id = course.value?._id?.toString?.();
+  return !!(id && authStore.user?.courseCompleted?.includes(id));
+});
+
+const showCertificate = computed(() => {
+  if (course.value?.progress?.isCompleted === true) return true;
+  const certQuery = route.query.certificate === "true";
+  return certQuery && hasCertificate.value;
+});
 const currentChapter = computed<Chapter | null>(() => {
   if (!course.value?.chapters || course.value.chapters.length === 0)
     return null;
@@ -483,11 +496,49 @@ const canMarkLessonCompleted = (
   return true;
 };
 
-const handleRepeat = () => {
-  navigateTo(
-    `/my-learning/${slug.value}?chapter=0&lesson=0`
-  );
-  fetchCourseDetail();
+const handleRepeat = async () => {
+  // Điều hướng về bài học đầu tiên
+  await navigateTo(`/my-learning/${slug.value}?chapter=0&lesson=0`);
+
+  // Load lại dữ liệu khóa học sau khi backend đã reset progress
+  await fetchCourseDetail();
+
+  // Đợi computed/currentLesson cập nhật xong
+  await nextTick();
+
+  // Tự động đánh dấu hoàn thành bài đầu tiên nếu không có quiz (để tiến trình nhảy ngay)
+  const courseVal = course.value;
+  const chapterVal = currentChapter.value;
+  const lessonVal = currentLesson.value as any;
+
+  if (
+    courseVal &&
+    chapterVal &&
+    lessonVal &&
+    !lessonVal.isCompleted &&
+    !(lessonVal.hasQuiz || lessonVal.quizId || lessonVal.quiz)
+  ) {
+    try {
+      markingCompleted.value = true;
+
+      await progressTracking.markLessonCompleted(
+        courseVal._id,
+        chapterVal._id,
+        lessonVal._id,
+        0
+      );
+
+      await coursesStore.fetchMyCourseBySlug(
+        slug.value,
+        currentChapterIndex.value,
+        currentLessonIndex.value
+      );
+    } catch (error) {
+      // ignore, để watcher hiện tại xử lý tiếp nếu cần
+    } finally {
+      markingCompleted.value = false;
+    }
+  }
 }
 const findValidLesson = (): {
   chapterIndex: number;
@@ -575,13 +626,13 @@ const fetchCourseDetail = async () => {
 
 
 const handleFinishQuiz = async (quizResult: any) => {
-    const chapterParam = route.query.chapter;
-    const lessonParam = route.query.lesson;
-    navigateTo(
-      `/my-learning/${slug.value}?chapter=${chapterParam || 0}&lesson=${lessonParam || 0}`
-    );
-    fetchCourseDetail();
-  }
+  const chapterParam = route.query.chapter;
+  const lessonParam = route.query.lesson;
+  navigateTo(
+    `/my-learning/${slug.value}?chapter=${chapterParam || 0}&lesson=${lessonParam || 0}`
+  );
+  fetchCourseDetail();
+};
 
 watch(
   currentLesson,
@@ -590,12 +641,19 @@ watch(
       !lesson ||
       !course.value ||
       !currentChapter.value ||
-      markingCompleted.value ||
-      lesson.isCompleted
+      markingCompleted.value
     )
       return;
 
+    const isFirstLesson =
+      currentChapterIndex.value === 0 && currentLessonIndex.value === 0;
+
+    // Nếu bài đã hoàn thành rồi và không phải bài đầu sau khi học lại thì bỏ qua
+    if (lesson.isCompleted && !isFirstLesson) return;
+
+    // Với bài đầu tiên sau khi "Học lại từ đầu" thì bỏ qua check bài trước
     if (
+      !isFirstLesson &&
       !canMarkLessonCompleted(
         currentChapterIndex.value,
         currentLessonIndex.value
@@ -623,7 +681,11 @@ watch(
           0
         );
 
-        await coursesStore.fetchMyCourseBySlug(slug.value, currentChapterIndex.value, currentLessonIndex.value);
+        await coursesStore.fetchMyCourseBySlug(
+          slug.value,
+          currentChapterIndex.value,
+          currentLessonIndex.value
+        );
       } catch (error) {
       } finally {
         markingCompleted.value = false;

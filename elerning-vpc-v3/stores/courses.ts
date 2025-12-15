@@ -375,7 +375,26 @@ export const useCoursesStore = defineStore('courses', {
       try {
         const courseApi = useCourseApi()
         const response: any = await courseApi.getDetail(courseId)
-        this.course = response.data?.course || response.data || response.course || response
+        const rawCourse = response.data?.course || response.data || response.course || response
+
+        // Bổ sung trạng thái purchased/completed dựa trên thông tin user
+        const authStore = useAuthStore()
+        const id = rawCourse?._id?.toString?.()
+        const isPurchased =
+          rawCourse?.isPurchased === true ||
+          (id ? authStore.user?.courseRegister?.includes(id) : false)
+        const isCompletedFlag =
+          rawCourse?.progress?.isCompleted === true ||
+          (id ? authStore.user?.courseCompleted?.includes(id) : false)
+
+        this.course = {
+          ...(rawCourse || {}),
+          isPurchased,
+          progress: {
+            ...(rawCourse?.progress || {}),
+            isCompleted: isCompletedFlag,
+          },
+        }
       } catch (error) {
         throw error
       } finally {

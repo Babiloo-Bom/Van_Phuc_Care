@@ -200,7 +200,13 @@ const getProgress = (courseId: string) => {
 };
 
 const handleViewDetail = (course: any) => {
-  // Navigate to the course learning page
+  // Nếu click vào card (_forceDetail) -> về trang chi tiết khóa học
+  if ((course as any)._forceDetail) {
+    navigateTo(`/courses/${course.slug}`);
+    return;
+  }
+
+  // Các nút bên trong card (Học ngay / Đã hoàn thành) mới vào trang học
   navigateTo(`/my-learning/${course.slug}`);
 };
 

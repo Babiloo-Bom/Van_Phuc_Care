@@ -364,10 +364,11 @@ export default class ProgressController {
         courseId
       });
 
-      // Delete course progress
-      await CourseProgress.deleteMany({
+      // Delete quiz attempts for this course (so lessons with quiz are not considered completed)
+      const MongoDbQuizAttempts = (await import('@mongodb/quiz-attempts')).default;
+      await MongoDbQuizAttempts.deleteMany({
         userId: userId.toString(),
-        courseId
+        courseId: courseId.toString(),
       });
 
       sendSuccess(res, { message: 'Progress reset successfully' });

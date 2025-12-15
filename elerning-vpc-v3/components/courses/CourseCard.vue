@@ -1,5 +1,5 @@
 <template>
-  <div class="course-card" @click="viewDetail">
+  <div class="course-card" @click="goToCourseDetail">
     <div class="course-thumbnail">
       <img
         :src="course.thumbnail || '/images/courses/default-course.jpg'"
@@ -150,14 +150,35 @@
           </svg>
         </button>
       </div>
-      <div  v-else-if="!course?.isCompleted" class="flex-grow flex flex-col justify-end w-full gap-4">
-        <div class="course-actions">
-          <button class="btn-access" @click.stop="viewDetail">Học ngay</button>
+      <div v-else class="flex-grow flex flex-col justify-end w-full gap-4">
+        <!-- Trường hợp 1: Đã từng hoàn thành (có chứng chỉ) nhưng tiến trình hiện tại < 100% -->
+        <div
+          class="course-actions"
+          v-if="everCompleted && !isCurrentlyCompleted"
+        >
+          <button class="btn-access" @click.stop="goToLearning">
+            Học ngay
+          </button>
+          <button class="btn-completed" @click.stop="goToCertificate">
+            Đã hoàn thành
+          </button>
         </div>
-      </div>
-      <div  v-else class="flex-grow flex flex-col justify-end w-full gap-4">
-        <div class="course-actions">
-          <button class="btn-completed" @click.stop="viewDetail">Đã hoàn thành</button>
+
+        <!-- Trường hợp 2: Đã từng hoàn thành và tiến trình hiện tại = 100% -->
+        <div
+          class="course-actions"
+          v-else-if="everCompleted && isCurrentlyCompleted"
+        >
+          <button class="btn-completed" @click.stop="goToCertificate">
+            Đã hoàn thành
+          </button>
+        </div>
+
+        <!-- Các trường hợp còn lại: đã mua nhưng chưa từng hoàn thành -->
+        <div class="course-actions" v-else>
+          <button class="btn-access" @click.stop="goToLearningOrCertificate">
+            Học ngay
+          </button>
         </div>
       </div>
     </div>
@@ -167,6 +188,9 @@
 <script setup lang="ts">
 // Import Rating component explicitly if auto-import doesn't work
 import Rating from "~/components/courses/Rating.vue";
+import { useRouter } from "vue-router";
+import { computed } from "vue";
+import { useAuthStore } from "~/stores/auth";
 
 interface Course {
   _id: string;
@@ -217,6 +241,28 @@ const emit = defineEmits<{
   viewDetail: [course: Course];
 }>();
 
+const router = useRouter();
+const authStore = useAuthStore();
+
+// % tiến trình hiện tại của khóa học (ưu tiên prop progress, fallback course.progress)
+const progressPct = computed(() => {
+  const pctFromProp = props.progress ?? 0;
+  const pctFromCourse =
+    (props.course as any)?.progress?.progressPercentage ?? 0;
+  return Math.max(pctFromProp, pctFromCourse) || 0;
+});
+
+// Đã từng hoàn thành (có chứng chỉ) - dựa trên user.courseCompleted
+const everCompleted = computed(() => {
+  const id = props.course?._id?.toString?.();
+  return !!(id && authStore.user?.courseCompleted?.includes(id));
+});
+
+// Tiến trình hiện tại đã hoàn thành hay chưa
+const isCurrentlyCompleted = computed(() => {
+  return props.course.isCompleted === true || progressPct.value >= 100;
+});
+
 const formatPrice = (price: number): string => {
   return new Intl.NumberFormat("vi-VN", {
     style: "currency",
@@ -234,6 +280,40 @@ const buyNow = () => {
 
 const viewDetail = () => {
   emit("viewDetail", props.course);
+};
+
+const goToCourseDetail = () => {
+  if (!props.course?.slug) return;
+  router.push(`/courses/${props.course.slug}`);
+};
+
+const goToLearning = () => {
+  if (!props.course?.slug) return;
+  router.push(`/my-learning/${props.course.slug}`);
+};
+
+const goToCertificate = () => {
+  if (!props.course?.slug) return;
+  router.push(`/my-learning/${props.course.slug}?certificate=true`);
+};
+
+const goToLearningOrCertificate = () => {
+  if (!props.course?.slug) return;
+
+  if (props.isPurchased) {
+    // Người dùng đã mua nhưng chưa từng hoàn thành -> vào trang học
+    router.push(`/my-learning/${props.course.slug}`);
+    return;
+  }
+
+  // Chưa mua -> về trang chi tiết
+  router.push(`/courses/${props.course.slug}`);
+};
+
+const handleCardClick = () => {
+  // Card click luôn điều hướng về trang chi tiết khóa học;
+  // các hành động "Học ngay", "Đã hoàn thành" dùng nút riêng.
+  emit("viewDetail", { ...props.course, _forceDetail: true } as any);
 };
 </script>
 

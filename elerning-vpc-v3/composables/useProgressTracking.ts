@@ -230,7 +230,10 @@ export const useProgressTracking = () => {
     try {
       // Call backend API to reset progress
       const response: any = await $fetch(`/api/progress?courseId=${courseId}`, {
-        method: 'DELETE'
+        method: 'DELETE',
+        headers: {
+          Authorization: authStore.token ? `Bearer ${authStore.token}` : undefined,
+        },
       })
 
       if (response.success) {

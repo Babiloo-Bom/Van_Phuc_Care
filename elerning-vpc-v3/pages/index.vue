@@ -573,7 +573,13 @@ const handleBuyNow = async (course: any) => {
 
 const handleViewDetail = (course: any) => {
   try {
-    // Nếu đã hoàn thành -> trang chứng chỉ; đã mua -> trang học; chưa mua -> chi tiết khóa học
+    // Nếu card click gửi _forceDetail -> luôn về trang chi tiết khóa học
+    if ((course as any)._forceDetail) {
+      navigateTo(`/courses/${course.slug}`);
+      return;
+    }
+
+    // Các nút Học ngay / Đã hoàn thành mới điều hướng vào trang học/chứng chỉ
     if (course.isCompleted) {
       navigateTo(`/my-learning/${course.slug}?certificate=true`);
       return;
