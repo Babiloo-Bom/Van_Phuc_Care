@@ -23,24 +23,7 @@
           <p class="subtitle">Cập nhật thay đổi mật khẩu</p>
         </div>
         <!-- Reset Password Form -->
-        <form v-if="step === 'otp'" @submit.prevent="handleOtpSubmit" class="reset-password-form">
-          <div class="form-group">
-            <label class="form-label">Email</label>
-            <div class="input-container">
-              <input v-model="form.email" type="text" placeholder="Email" class="form-input" required />
-            </div>
-          </div>
-          <div class="form-group">
-            <label class="form-label">Mã OTP</label>
-            <div class="input-container">
-              <input v-model="form.otp" type="text" placeholder="Nhập mã OTP" class="form-input" required />
-            </div>
-          </div>
-          <button type="submit" :disabled="loading" class="submit-btn">
-            {{ loading ? "Đang kiểm tra..." : "Xác nhận OTP" }}
-          </button>
-        </form>
-        <form v-else @submit.prevent="handlePasswordSubmit" class="reset-password-form">
+        <form @submit.prevent="handlePasswordSubmit" class="reset-password-form" v-if="canReset">
           <div class="form-group">
             <label class="form-label">Mật khẩu mới</label>
             <div class="input-container">
@@ -118,7 +101,7 @@ const authStore = useAuthStore();
 const loading = ref(false);
 const showNewPassword = ref(false);
 const showConfirmPassword = ref(false);
-const step = ref<'otp' | 'password'>('otp');
+const canReset = ref(false);
 
 const form = reactive({
   email: '',
@@ -127,9 +110,23 @@ const form = reactive({
   confirmPassword: '',
 });
 
-onMounted(() => {
-  if (route.query.email) {
+onMounted(async () => {
+  // Get email and otp from query params
+  if (route.query.email && route.query.otp) {
     form.email = route.query.email as string;
+    form.otp = route.query.otp as string;
+    loading.value = true;
+    // Call API verify OTP
+    const result = await authStore.verifyOtp(form.email, form.otp);
+    loading.value = false;
+    if (result.success) {
+      canReset.value = true;
+    } else {
+      message.error(result.error || 'OTP không hợp lệ hoặc đã hết hạn');
+      router.push('/login');
+    }
+  } else {
+    router.push('/login');
   }
 });
 
@@ -141,24 +138,6 @@ const isFormValid = computed(() => {
   );
 });
 
-const handleOtpSubmit = async () => {
-  loading.value = true;
-  try {
-    // Call API verify OTP
-    const result = await authStore.verifyOtp(form.email, form.otp);
-    if (result.success) {
-      step.value = 'password';
-      message.success('Xác thực OTP thành công, hãy nhập mật khẩu mới');
-    } else {
-      message.error(result.error || 'OTP không hợp lệ');
-    }
-  } catch (error: any) {
-    message.error('Lỗi xác thực OTP');
-  } finally {
-    loading.value = false;
-  }
-};
-
 const handlePasswordSubmit = async () => {
   if (!isFormValid.value) {
     message.error('Mật khẩu phải có ít nhất 6 ký tự và khớp nhau');
@@ -167,7 +146,7 @@ const handlePasswordSubmit = async () => {
   loading.value = true;
   try {
     // Call API reset password
-    const result = await authStore.resetPasswordWithEmail(form.email, form.newPassword, form.otp);
+    const result = await authStore.resetPassword(form.email, form.otp, form.newPassword);
     if (result.success) {
       message.success('Mật khẩu đã được cập nhật thành công');
       router.push('/login');

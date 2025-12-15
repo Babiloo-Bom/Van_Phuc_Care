@@ -126,8 +126,8 @@ const handleSubmit = async () => {
   try {
     loading.value = true;
 
-    // Call forgot password API
-    const result = await authStore.forgotPassword(form.emailOrPhone);
+    // Call forgot password API (include source so backend builds per-site link)
+    const result = await authStore.forgotPassword(form.emailOrPhone, 'crm');
 
     if (result.success) {
       // Show success modal instead of message

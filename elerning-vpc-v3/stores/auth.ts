@@ -323,6 +323,25 @@ export const useAuthStore = defineStore("auth", {
     },
 
     /**
+     * Verify OTP from reset link (email + otp)
+     */
+    async verifyOtp(email: string, otp: string) {
+      this.isLoading = true;
+      try {
+        const authApi = useAuthApi();
+        await authApi.verifyOtp(email, otp);
+        return { success: true };
+      } catch (error: any) {
+        return {
+          success: false,
+          error: error.data?.message || error.message || 'Xác thực thất bại',
+        };
+      } finally {
+        this.isLoading = false;
+      }
+    },
+
+    /**
      * Reset password with token
      * Migrated from admin-vpc/components/auth/forms/NewPassword.vue
      */

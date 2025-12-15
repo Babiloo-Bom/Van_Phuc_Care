@@ -337,13 +337,13 @@ export const useAuthStore = defineStore('auth', {
      * Forgot password - Send OTP
      * Migrated from admin-vpc/components/auth/forms/GetOtp.vue
      */
-    async forgotPassword(email: string) {
+    async forgotPassword(email: string, source?: string) {
       this.isLoading = true;
 
       try {
         const authApi = useAuthApi();
 
-        await authApi.forgotPassword(email);
+        await authApi.forgotPassword(email, source);
 
         return { success: true };
       } catch (error: any) {
@@ -361,13 +361,13 @@ export const useAuthStore = defineStore('auth', {
      * Reset password with token
      * Migrated from admin-vpc/components/auth/forms/NewPassword.vue
      */
-    async resetPassword(token: string, newPassword: string) {
+    async resetPassword(email: string, token: string, newPassword: string) {
       this.isLoading = true;
 
       try {
         const authApi = useAuthApi();
 
-        await authApi.resetPassword(token, newPassword);
+        await authApi.resetPasswordWithEmail(email, token, newPassword);
 
         return { success: true };
       } catch (error: any) {
@@ -377,6 +377,20 @@ export const useAuthStore = defineStore('auth', {
           error:
             error.data?.message || error.message || 'Đổi mật khẩu thất bại',
         };
+      } finally {
+        this.isLoading = false;
+      }
+    },
+
+    async verifyOtp(email: string, otp: string) {
+      this.isLoading = true;
+      try {
+        const authApi = useAuthApi();
+        await authApi.verifyOtp(email, otp);
+        return { success: true };
+      } catch (error: any) {
+        console.error('Verify OTP error:', error);
+        return { success: false, error: error.data?.message || error.message || 'Xác thực OTP thất bại' };
       } finally {
         this.isLoading = false;
       }

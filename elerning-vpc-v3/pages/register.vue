@@ -32,7 +32,7 @@
                 <input
                   v-model="form.fullname"
                   type="text"
-                  placeholder="Email/SĐT"
+                  placeholder="Họ và tên"
                   class="form-input"
                   required
                 />
@@ -42,7 +42,7 @@
             <!-- Email Field -->
             <div class="form-group">
               <label class="form-label">Email</label>
-              <div class="input-container">
+              <div class="input-container" :class="{'input-error': errors.email}">
                 <input
                   v-model="form.email"
                   type="email"
@@ -50,6 +50,10 @@
                   class="form-input"
                   required
                 />
+              </div>
+              <div v-if="errors.email" style="color: #e53935; font-size: 16px; margin-top: 4px; display: flex; align-items: center; gap: 4px;">
+                <span style="font-size: 18px;">&#10006;</span>
+                <span>{{ errors.email }}</span>
               </div>
             </div>
 
@@ -60,17 +64,24 @@
                 <input
                   v-model="form.phone"
                   type="tel"
-                  placeholder="Email/SĐT"
+                    inputmode="numeric"
+                    pattern="[0-9]*"
+                    maxlength="10"
+                  placeholder="Số điện thoại"
                   class="form-input"
                   required
                 />
               </div>
+                <div v-if="errors.phone" style="color: #e53935; font-size: 16px; margin-top: 4px; display: flex; align-items: center; gap: 4px;">
+                  <span style="font-size: 18px;">&#10006;</span>
+                  <span>{{ errors.phone }}</span>
+                </div>
             </div>
 
             <!-- Password Field -->
             <div class="form-group">
               <label class="form-label">Mật khẩu</label>
-              <div class="input-container">
+              <div class="input-container" :class="{'input-error': errors.password}">
                 <input
                   v-model="form.password"
                   :type="showPassword ? 'text' : 'password'"
@@ -85,6 +96,10 @@
                 >
                   {{ showPassword ? "👁️" : "👁️‍🗨️" }}
                 </button>
+              </div>
+              <div v-if="errors.password" style="color: #e53935; font-size: 16px; margin-top: 4px; display: flex; align-items: center; gap: 4px;">
+                <span style="font-size: 18px;">&#10006;</span>
+                <span>{{ errors.password }}</span>
               </div>
             </div>
 
@@ -109,9 +124,21 @@
               </div>
             </div>
 
+            <!-- Agreement Checkbox -->
+            <div class="form-group" style="margin-top: 4px;">
+              <label class="form-label register-agree-label">
+                <input type="checkbox" v-model="agree" class="register-checkbox" />
+                <span class="font-semibold text-sm">
+                  Tôi đã đọc và đồng ý với
+                  <a href="/terms" target="_blank" class="register-link">Điều khoản sử dụng</a>
+                  của VPC
+                </span>
+              </label>
+            </div>
+
             <!-- Register Button -->
-            <button type="submit" :disabled="loading" class="register-btn">
-              {{ loading ? "Đang đăng ký..." : "Đăng ký" }}
+            <button type="submit" :disabled="loading || !agree" class="register-btn">
+              {{ loading ? "Đang tạo tài khoản..." : "Tạo tài khoản" }}
             </button>
 
             <!-- Login Link -->
@@ -191,6 +218,7 @@ const loading = ref(false);
 const showPassword = ref(false);
 const showConfirmPassword = ref(false);
 const showSuccessModal = ref(false);
+const agree = ref(false);
 
 const form = reactive({
   fullname: "",
@@ -199,6 +227,17 @@ const form = reactive({
   password: "",
   confirmPassword: "",
 });
+
+const errors = reactive({
+  email: "",
+  phone: "",
+});
+
+const onPhoneInput = (e: Event) => {
+  const target = e.target as HTMLInputElement;
+  target.value = target.value.replace(/\D/g, '').slice(0, 10);
+  form.phone = target.value;
+};
 
 const togglePassword = () => {
   showPassword.value = !showPassword.value;
@@ -210,17 +249,25 @@ const toggleConfirmPassword = () => {
 
 const handleSubmit = async () => {
   try {
-    // Debug password values
-     
-    
-    // Validate passwords match
+    // Clear previous errors
+    errors.email = "";
+    errors.phone = "";
+
+    // Require agreement
+    if (!agree.value) {
+      return;
+    }
     if (form.password !== form.confirmPassword) {
-      message.error("Mật khẩu xác nhận không khớp");
+      errors.password = "Mật khẩu xác nhận không khớp";
       return;
     }
 
+    // Validate phone
+    if (!/^[0-9]{10}$/.test(form.phone)) {
+      errors.phone = 'Số điện thoại không hợp lệ, phải gồm 10 chữ số';
+      return;
+    }
     loading.value = true;
-
     const result = await authStore.register(
       form.email,
       form.password,
@@ -228,12 +275,19 @@ const handleSubmit = async () => {
       form.fullname,
       form.phone
     );
-
-    if (result.success) {
-      // Show success modal instead of message
+    if (result && result.success) {
       showSuccessModal.value = true;
     } else {
-      message.error("Đăng ký thất bại");
+      // Parse server response for duplicate account/email
+      const serverMsg = result?.data?.error?.message ?? result?.message ?? (typeof result?.error === 'string' ? result.error : result?.error?.message);
+      const serverMsgStr = serverMsg ? String(serverMsg).toLowerCase() : "";
+      if (serverMsgStr.includes('account') || serverMsgStr.includes('account exists') || serverMsgStr.includes('accountexists') || serverMsgStr.includes('email')) {
+        errors.email = 'Email này đã được đăng ký';
+      } else {
+        if (result?.error) {
+          message.error(typeof result.error === 'string' ? result.error : 'Đăng ký thất bại');
+        }
+      }
     }
   } catch (error: any) {
     message.error('Đăng ký thất bại')
@@ -645,7 +699,6 @@ const handleSuccessClose = () => {
 
 .form-input::placeholder {
   color: #8c8c8c;
-  text-align: left;
 }
 
 .password-toggle {
@@ -727,11 +780,6 @@ const handleSuccessClose = () => {
   text-decoration: none;
 }
 
-.login-text:hover {
-  text-decoration: underline;
-}
-
-/* Right Side - Marketing Section */
 .marketing-section {
   position: relative;
   width: 50%;
@@ -1157,7 +1205,6 @@ const handleSuccessClose = () => {
 
   .form-group {
     width: 343px;
-    height: 80px;
     display: flex;
     flex-direction: column;
     align-items: flex-start;
@@ -1302,5 +1349,30 @@ const handleSuccessClose = () => {
     width: 100%;
     justify-content: center;
   }
+}
+</style>
+<style scoped>
+.register-agree-label {
+  display: flex;
+  align-items: center;
+  font-weight: 700;
+  font-size: 22px;
+  color: #444;
+  gap: 8px;
+}
+.register-checkbox {
+  width: 32px;
+  height: 32px;
+  accent-color: #bdbdbd;
+  margin-right: 12px;
+}
+.register-link {
+  color: #1A75BB;
+  text-decoration: underline;
+  margin: 0 2px;
+}
+.input-error {
+  border: 1.5px solid #e53935 !important;
+  border-radius: 12px;
 }
 </style>

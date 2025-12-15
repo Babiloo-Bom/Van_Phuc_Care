@@ -23,7 +23,11 @@
           <p class="subtitle">Cập nhật thay đổi mật khẩu</p>
         </div>
         <!-- Reset Password Form -->
-        <form @submit.prevent="handleSubmit" class="reset-password-form">
+        <div v-if="!isVerified" class="reset-password-form" style="min-height:120px; display:flex; align-items:center; justify-content:center;">
+          <div>Đang kiểm tra liên kết...</div>
+        </div>
+
+        <form v-if="isVerified" @submit.prevent="handleSubmit" class="reset-password-form">
           <!-- New Password Field -->
           <div class="form-group">
             <label class="form-label">Mật khẩu</label>
@@ -195,9 +199,10 @@
 </template>
 
 <script setup lang="ts">
-import { ref, reactive, computed } from "vue";
+import { ref, reactive, computed, onMounted } from "vue";
 import { useAuthStore } from "~/stores/auth";
 import { message } from "ant-design-vue";
+import { useApiBase } from "~/composables/useApiBase";
 
 // Use auth layout
 definePageMeta({
@@ -219,6 +224,9 @@ const authStore = useAuthStore();
 const loading = ref(false);
 const showNewPassword = ref(false);
 const showConfirmPassword = ref(false);
+const isVerified = ref(false);
+const verifiedToken = ref<string | null>(null);
+const { apiUser } = useApiBase();
 
 const form = reactive({
   newPassword: "",
@@ -234,6 +242,40 @@ const isFormValid = computed(() => {
   );
 });
 
+const route = useRoute();
+
+onMounted(async () => {
+  // Verify email + otp from query params (if present)
+  const email = route.query.email as string | undefined;
+  const otp = route.query.otp as string | undefined;
+
+  // If token param exists (legacy), allow it
+  const tokenParam = route.query.token as string | undefined;
+
+  if (email && otp) {
+    try {
+      // Use auth store helper to verify
+      const result = await authStore.verifyOtp(email, otp);
+      if (result.success) {
+        isVerified.value = true;
+        verifiedToken.value = otp;
+      } else {
+        message.error(result.error || "Liên kết không hợp lệ hoặc đã hết hạn");
+        await navigateTo("/login");
+      }
+    } catch (err: any) {
+      message.error("Liên kết không hợp lệ hoặc đã hết hạn");
+      await navigateTo("/login");
+    }
+  } else if (tokenParam) {
+    isVerified.value = true;
+    verifiedToken.value = tokenParam;
+  } else {
+    // No token or otp provided — redirect to login
+    await navigateTo("/login");
+  }
+});
+
 const handleSubmit = async () => {
   if (!isFormValid.value) {
     message.error("Mật khẩu phải có ít nhất 6 ký tự và khớp nhau");
@@ -243,9 +285,9 @@ const handleSubmit = async () => {
   try {
     loading.value = true;
 
-    // Get token from URL params
-    const route = useRoute();
-    const token = route.query.token as string;
+    // Determine token: prefer verifiedToken (from email+otp), fallback to URL token
+    const tokenFromRoute = route.query.token as string | undefined;
+    const token = (verifiedToken.value as string) || tokenFromRoute;
 
     if (!token) {
       message.error("Token không hợp lệ");

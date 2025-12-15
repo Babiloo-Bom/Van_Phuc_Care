@@ -9,12 +9,12 @@
             <img
               src="/images/logo-vanphuc-new-mobile.png"
               alt="Van Phuc Care"
-              class="lg:hidden logo"
+              class="lg:hidden logo mobile-logo"
             />
             <img
               src="/images/logo-vanphuc-new.png"
               alt="Van Phuc Care"
-              class="hidden lg:block logo"
+              class="hidden lg:block logo desktop-logo"
             />
           </div>
 
@@ -32,7 +32,7 @@
                 <input
                   v-model="form.fullname"
                   type="text"
-                  placeholder="Email/SĐT"
+                  placeholder="Họ và tên"
                   class="form-input"
                   required
                 />
@@ -42,7 +42,7 @@
             <!-- Email Field -->
             <div class="form-group">
               <label class="form-label">Email</label>
-              <div class="input-container">
+              <div class="input-container" :class="{'input-error': errors.email}">
                 <input
                   v-model="form.email"
                   type="email"
@@ -51,19 +51,31 @@
                   required
                 />
               </div>
+              <div v-if="errors.email" style="color: #e53935; font-size: 16px; margin-top: 4px; display: flex; align-items: center; gap: 4px;">
+                <span style="font-size: 18px;">&#10006;</span>
+                <span>{{ errors.email }}</span>
+              </div>
             </div>
 
             <!-- Phone Field -->
             <div class="form-group">
               <label class="form-label">Số điện thoại</label>
-              <div class="input-container">
+              <div class="input-container" :class="{'input-error': errors.phone}">
                 <input
                   v-model="form.phone"
                   type="tel"
-                  placeholder="Email/SĐT"
+                  inputmode="numeric"
+                  pattern="[0-9]*"
+                  maxlength="10"
+                  placeholder="Số điện thoại"
                   class="form-input"
+                  @input="onPhoneInput"
                   required
                 />
+              </div>
+              <div v-if="errors.phone" style="color: #e53935; font-size: 16px; margin-top: 4px; display: flex; align-items: center; gap: 4px;">
+                <span style="font-size: 18px;">&#10006;</span>
+                <span>{{ errors.phone }}</span>
               </div>
             </div>
 
@@ -109,9 +121,21 @@
               </div>
             </div>
 
+            <!-- Agreement Checkbox -->
+            <div class="form-group" style="margin-top: 4px;">
+              <label class="form-label register-agree-label">
+                <input type="checkbox" v-model="agree" class="register-checkbox" />
+                <span class="font-semibold text-sm">
+                  Tôi đã đọc và đồng ý với
+                  <a href="/terms" target="_blank" class="register-link">Điều khoản sử dụng</a>
+                  của VPC
+                </span>
+              </label>
+            </div>
+
             <!-- Register Button -->
-            <button type="submit" :disabled="loading" class="register-btn">
-              {{ loading ? "Đang đăng ký..." : "Đăng ký" }}
+            <button type="submit" :disabled="loading || !agree" class="register-btn">
+              {{ loading ? "Đang tạo tài khoản..." : "Tạo tài khoản" }}
             </button>
 
             <!-- Login Link -->
@@ -191,6 +215,7 @@ const loading = ref(false);
 const showPassword = ref(false);
 const showConfirmPassword = ref(false);
 const showSuccessModal = ref(false);
+const agree = ref(false);
 
 const form = reactive({
   fullname: "",
@@ -199,6 +224,18 @@ const form = reactive({
   password: "",
   confirmPassword: "",
 });
+
+const errors = reactive({
+  email: "",
+  phone: "",
+});
+
+const onPhoneInput = (e: Event) => {
+  const target = e.target as HTMLInputElement;
+  // remove non-digits and limit to 10 chars
+  target.value = target.value.replace(/\D/g, '').slice(0, 10);
+  form.phone = target.value;
+};
 
 const togglePassword = () => {
   showPassword.value = !showPassword.value;
@@ -210,23 +247,25 @@ const toggleConfirmPassword = () => {
 
 const handleSubmit = async () => {
   try {
-    // Debug password values
-    console.log("🔍 Password validation:", {
-      password: form.password,
-      confirmPassword: form.confirmPassword,
-      passwordLength: form.password.length,
-      confirmPasswordLength: form.confirmPassword.length,
-      areEqual: form.password === form.confirmPassword,
-    });
+    // Clear previous errors
+    errors.email = "";
+    errors.phone = "";
 
-    // Validate passwords match
+    // Require agreement
+    if (!agree.value) {
+      return;
+    }
     if (form.password !== form.confirmPassword) {
-      message.error("Mật khẩu xác nhận không khớp");
+      // Password mismatch error handling (if needed)
       return;
     }
 
+    // Validate phone: only digits and exactly 10 numbers
+    if (!/^[0-9]{10}$/.test(form.phone)) {
+      errors.phone = 'Số điện thoại không hợp lệ, phải gồm 10 chữ số';
+      return;
+    }
     loading.value = true;
-
     const result = await authStore.register(
       form.email,
       form.password,
@@ -234,12 +273,19 @@ const handleSubmit = async () => {
       form.fullname,
       form.phone
     );
-
-    if (result.success) {
-      // Show success modal instead of message
+    if (result && result.success) {
       showSuccessModal.value = true;
     } else {
-      message.error(result.error || "Đăng ký thất bại");
+      // Parse server response for duplicate account/email
+      const serverMsg = result?.data?.error?.message ?? result?.message ?? (typeof result?.error === 'string' ? result.error : result?.error?.message);
+      const serverMsgStr = serverMsg ? String(serverMsg).toLowerCase() : "";
+      if (serverMsgStr.includes('account') || serverMsgStr.includes('account exists') || serverMsgStr.includes('accountexists') || serverMsgStr.includes('email')) {
+        errors.email = 'Email này đã được đăng ký';
+      } else {
+        if (result?.error) {
+          message.error(typeof result.error === 'string' ? result.error : 'Đăng ký thất bại');
+        }
+      }
     }
   } catch (error: any) {
     console.error("Register error:", error);
@@ -656,7 +702,6 @@ const handleSuccessClose = () => {
 
 .form-input::placeholder {
   color: #8c8c8c;
-  text-align: left;
 }
 
 .password-toggle {
@@ -736,10 +781,6 @@ const handleSuccessClose = () => {
   letter-spacing: 0.3px;
   color: #317bc4;
   text-decoration: none;
-}
-
-.login-text:hover {
-  text-decoration: underline;
 }
 
 /* Right Side - Marketing Section */
@@ -1125,6 +1166,75 @@ const handleSuccessClose = () => {
     gap: 0;
   }
 
+  /* Force mobile logo/title visibility and stacking on CRM page */
+  .logo-section {
+    z-index: 30;
+  }
+  .title-section {
+    z-index: 30;
+  }
+  .logo-section .mobile-logo {
+    display: block !important;
+  }
+  .logo-section .desktop-logo {
+    display: none !important;
+  }
+
+  .main-title {
+    width: 265px;
+    height: 32px;
+    font-family: "SVN-Gilroy";
+    font-style: normal;
+    font-weight: 700;
+    font-size: 24px;
+    line-height: 32px;
+    text-align: center;
+    letter-spacing: 0.3px;
+    text-transform: capitalize;
+    color: #000000;
+    margin: 0;
+  }
+
+  .subtitle {
+    width: 265px;
+    height: 24px;
+    font-family: "SVN-Gilroy";
+    font-style: normal;
+    font-weight: 500;
+    font-size: 16px;
+    line-height: 24px;
+    letter-spacing: 0.3px;
+    color: #4a4a4a;
+    margin: 0;
+    text-align: center;
+  }
+
+  .logo-section {
+    position: absolute;
+    width: 80.1px;
+    height: 62.09px;
+    left: calc(50% - 80.1px / 2 - 7.44px);
+    top: -186.31px;
+    text-align: center;
+  }
+
+  .logo {
+    width: 80.1px;
+    height: 62.09px;
+    object-fit: contain;
+  }
+
+  .title-section {
+    position: absolute;
+    width: 265px;
+    height: 56px;
+    top: -76.2px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0;
+  }
+
   .main-title {
     width: 265px;
     height: 32px;
@@ -1168,7 +1278,6 @@ const handleSuccessClose = () => {
 
   .form-group {
     width: 343px;
-    height: 80px;
     display: flex;
     flex-direction: column;
     align-items: flex-start;
@@ -1337,5 +1446,30 @@ const handleSuccessClose = () => {
 
 .register-form-section::-webkit-scrollbar-thumb:hover {
   background: rgba(0, 0, 0, 0.1);
+}
+</style>
+<style scoped>
+.register-agree-label {
+  display: flex;
+  align-items: center;
+  font-weight: 700;
+  font-size: 22px;
+  color: #444;
+  gap: 8px;
+}
+.register-checkbox {
+  width: 32px;
+  height: 32px;
+  accent-color: #bdbdbd;
+  margin-right: 12px;
+}
+.register-link {
+  color: #1A75BB;
+  text-decoration: underline;
+  margin: 0 2px;
+}
+.input-error {
+  border: 1.5px solid #e53935 !important;
+  border-radius: 12px;
 }
 </style>

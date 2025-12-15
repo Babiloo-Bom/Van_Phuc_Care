@@ -208,6 +208,24 @@ export const useAuthApi = () => {
     },
 
     /**
+     * Verify OTP (used for password reset links)
+     * @param email Email
+     * @param otp OTP token
+     */
+    async verifyOtp(email: string, otp: string) {
+      try {
+        return await withRetry(() =>
+          fetchWithTimeout(`${apiBase}/sessions/verify_otp`, {
+            method: "POST",
+            body: { email, otp },
+          })
+        );
+      } catch (error: any) {
+        throw transformError(error);
+      }
+    },
+
+    /**
      * Update profile
      * @param data Profile data
      */
