@@ -74,10 +74,25 @@
                   playsinline
                   controlslist="nodownload noplaybackrate"
                   disablePictureInPicture
+                  :controls="false"
                   @timeupdate="onTimeUpdate"
                   @loadedmetadata="onLoadedMetadata"
                   @contextmenu.prevent
+                  @dragstart.prevent
+                  @selectstart.prevent
+                  @copy.prevent
                 ></video>
+                
+                <!-- Watermark Overlay -->
+                <div
+                  v-if="currentVideoUrl"
+                  class="absolute top-4 right-4 pointer-events-none select-none"
+                  style="user-select: none; -webkit-user-select: none;"
+                >
+                  <div class="bg-black bg-opacity-50 text-white px-3 py-1 rounded text-xs font-semibold">
+                    {{ authStore.user?.email || 'Van Phuc Care' }}
+                  </div>
+                </div>
 
                 <!-- Thumbnail với nút Play (nếu chưa có currentVideoUrl) -->
                 <div
@@ -808,13 +823,122 @@ watch(
   { immediate: true }
 );
 
+// Video Security: Block keyboard shortcuts and DevTools
+const setupVideoSecurity = () => {
+  if (!process.client) return;
+
+  // Block common keyboard shortcuts
+  const blockShortcuts = (e: KeyboardEvent) => {
+    // Block F12 (DevTools)
+    if (e.key === 'F12') {
+      e.preventDefault();
+      return false;
+    }
+    
+    // Block Ctrl+Shift+I (DevTools)
+    if (e.ctrlKey && e.shiftKey && e.key === 'I') {
+      e.preventDefault();
+      return false;
+    }
+    
+    // Block Ctrl+Shift+J (Console)
+    if (e.ctrlKey && e.shiftKey && e.key === 'J') {
+      e.preventDefault();
+      return false;
+    }
+    
+    // Block Ctrl+U (View Source)
+    if (e.ctrlKey && e.key === 'u') {
+      e.preventDefault();
+      return false;
+    }
+    
+    // Block Ctrl+S (Save Page)
+    if (e.ctrlKey && e.key === 's') {
+      e.preventDefault();
+      return false;
+    }
+    
+    // Block Ctrl+P (Print)
+    if (e.ctrlKey && e.key === 'p') {
+      e.preventDefault();
+      return false;
+    }
+    
+    // Block Ctrl+Shift+C (Inspect Element)
+    if (e.ctrlKey && e.shiftKey && e.key === 'C') {
+      e.preventDefault();
+      return false;
+    }
+  };
+
+  // Block right-click context menu globally (already handled on video element)
+  const blockContextMenu = (e: MouseEvent) => {
+    const target = e.target as HTMLElement;
+    if (target?.closest('.video-wrapper') || target?.tagName === 'VIDEO') {
+      e.preventDefault();
+      return false;
+    }
+  };
+
+  // Block text selection on video
+  const blockSelection = () => {
+    if (window.getSelection) {
+      const selection = window.getSelection();
+      if (selection && selection.toString().length > 0) {
+        const target = selection.anchorNode?.parentElement;
+        if (target?.closest('.video-wrapper') || target?.tagName === 'VIDEO') {
+          selection.removeAllRanges();
+        }
+      }
+    }
+  };
+
+  // Detect DevTools opening (basic detection)
+  let devtools = { open: false };
+  const detectDevTools = () => {
+    const threshold = 160;
+    if (
+      window.outerHeight - window.innerHeight > threshold ||
+      window.outerWidth - window.innerWidth > threshold
+    ) {
+      if (!devtools.open) {
+        devtools.open = true;
+        // Optionally show warning or redirect
+        console.warn('Developer tools detected');
+      }
+    } else {
+      devtools.open = false;
+    }
+  };
+
+  // Add event listeners
+  document.addEventListener('keydown', blockShortcuts);
+  document.addEventListener('contextmenu', blockContextMenu);
+  document.addEventListener('selectstart', blockSelection);
+  const intervalId = setInterval(detectDevTools, 500);
+
+  // Cleanup function
+  return () => {
+    document.removeEventListener('keydown', blockShortcuts);
+    document.removeEventListener('contextmenu', blockContextMenu);
+    document.removeEventListener('selectstart', blockSelection);
+    clearInterval(intervalId);
+  };
+};
+
+let securityCleanup: (() => void) | null | undefined = null;
+
 // Lifecycle
 onMounted(async () => {
   await fetchCourseDetail();
+  securityCleanup = setupVideoSecurity() || null;
 });
+
 onUnmounted(() => {
+  securityCleanup?.();
   coursesStore.setIsRepeatLearn(false);
-})
+});
 </script>
 
 <style scoped>
@@ -904,11 +1028,78 @@ onUnmounted(() => {
 .video-wrapper {
   width: 100%;
   margin-bottom: 1rem;
+  position: relative;
 }
 
 @media (max-width: 640px) {
   .video-wrapper {
     margin-bottom: 0.75rem;
   }
+}
+
+/* Video Security Styles */
+.video-element {
+  user-select: none;
+  -webkit-user-select: none;
+  -moz-user-select: none;
+  -ms-user-select: none;
+  pointer-events: auto;
+  -webkit-touch-callout: none;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.video-wrapper * {
+  -webkit-user-select: none;
+  -moz-user-select: none;
+  -ms-user-select: none;
+  user-select: none;
+}
+
+/* Prevent drag on video */
+.video-element {
+  -webkit-user-drag: none;
+  -khtml-user-drag: none;
+  -moz-user-drag: none;
+  -o-user-drag: none;
+}
+
+/* Custom range input for seek bar */
+.custom-range {
+  -webkit-appearance: none;
+  appearance: none;
+  background: transparent;
+  cursor: pointer;
+}
+
+.custom-range::-webkit-slider-track {
+  background: #4b5563;
+  height: 4px;
+  border-radius: 2px;
+}
+
+.custom-range::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  background: #1a75bb;
+  height: 14px;
+  width: 14px;
+  border-radius: 50%;
+  cursor: pointer;
+  margin-top: -5px;
+}
+
+.custom-range::-moz-range-track {
+  background: #4b5563;
+  height: 4px;
+  border-radius: 2px;
+}
+
+.custom-range::-moz-range-thumb {
+  background: #1a75bb;
+  height: 14px;
+  width: 14px;
+  border-radius: 50%;
+  cursor: pointer;
+  border: none;
 }
 </style>
