@@ -304,6 +304,20 @@ export default class ProgressController {
         { upsert: true, new: true }
       );
 
+      // If course is completed (100%), add to user's courseCompleted array
+      if (progressPercentage === 100) {
+        const UserModel = (await import('@mongodb/users')).default;
+        const user = (await UserModel.model.findById(userId)) as any;
+        if (user && !user.courseCompleted?.includes(courseId.toString())) {
+          if (!user.courseCompleted) {
+            user.courseCompleted = [];
+          }
+          user.courseCompleted = [...user.courseCompleted, courseId.toString()];
+          user.updatedAt = new Date();
+          await user.save();
+        }
+      }
+
       return courseProgress;
     } catch (error: any) {
       console.error('Error updating course progress:', error);
