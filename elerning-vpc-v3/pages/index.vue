@@ -242,14 +242,11 @@ import { message } from "ant-design-vue";
 import CourseCard from "~/components/courses/CourseCard.vue";
 import CartToast from "~/components/cart/Toast.vue";
 
-// SEO Configuration for SPA mode
-// Function to update SEO meta tags
+
 const updateSEOMetaTags = () => {
-  // Update document title
   document.title =
     "Van Phuc Care E-Learning - Nền Tảng Học Trực Tuyến Hàng Đầu Việt Nam";
 
-  // Update meta description
   const metaDescription = document.querySelector('meta[name="description"]');
   if (metaDescription) {
     metaDescription.setAttribute(

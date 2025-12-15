@@ -133,6 +133,7 @@ import { Swiper, SwiperSlide } from 'swiper/vue';
 import 'swiper/css';
 import CourseCard from "~/components/courses/CourseCard.vue";
 import { message } from 'ant-design-vue';
+import { useProgressTracking } from '~/composables/useProgressTracking';
 
 interface ICoupon {
   _id: string;
@@ -151,6 +152,7 @@ const loading = ref(false)
 const courseStore = useCoursesStore();
 const authStore = useAuthStore();
 const cartStore = useCartStore();
+const progressTracking = useProgressTracking();
 
 const coupon = ref<ICoupon | null>(null)
 const copied = ref(false)
@@ -161,10 +163,30 @@ const filteredCourses = computed(() => {
   return courseStore.courses.filter(c => c.isPurchased === false && c._id !== props.course?._id)
 })
 
-const handleReLearn = () => {
-  courseStore.setIsRepeatLearn(true)
-  navigateTo(`/my-learning/${courseStore.currentCourse?.slug}`)
-  emit('isRepeating')
+const handleReLearn = async () => {
+  const currentCourse = courseStore.currentCourse || props.course as any;
+  const courseId = currentCourse?._id;
+  const slug = currentCourse?.slug || props.course?.slug;
+
+  if (!courseId || !slug) {
+    return;
+  }
+
+  try {
+    // Reset toàn bộ tiến trình + quiz của khóa học này trên backend & local state
+    await progressTracking.resetProgress(courseId);
+  } catch (error) {
+    // Nếu reset thất bại vẫn cho phép vào lại khóa học, backend sẽ quyết định trạng thái
+  }
+
+  // Đánh dấu trạng thái học lại trên store để client render lại tiến trình về 0%
+  courseStore.setIsRepeatLearn(true);
+
+  // Điều hướng về bài học đầu tiên của khóa học
+  await navigateTo(`/my-learning/${slug}?chapter=0&lesson=0`);
+
+  // Báo cho parent biết đang ở chế độ học lại
+  emit('isRepeating');
 }
 // Methods
 const fetchCourses = async () => {

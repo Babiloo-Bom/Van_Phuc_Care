@@ -326,49 +326,42 @@ export const useCoursesStore = defineStore('courses', {
         const response: any = await courseApi.getMyCourseBySlug(slug)
 
         const responseCourse = response.data?.course || response.data || response.course || response;
-        if (this.isRepeatLearn) {
+
+        // Chế độ "Học lại từ đầu": luôn reset tiến trình về 0%, mở lại toàn bộ module/bài học
+        if (this.isRepeatLearn && responseCourse) {
           let totalLessons = 0;
-          let completedLessons = 0;
-          if (responseCourse?.chapters && responseCourse?.chapters?.length > 0) {
-            for (const chapter of responseCourse?.chapters) {
-              const indexChaper = responseCourse?.chapters.findIndex((idc:any) => idc._id == chapter._id)
-              if (chapter.lessons && Array.isArray(chapter.lessons)) {
-                totalLessons += chapter.lessons.length;
-                completedLessons += chapter.lessons.filter(
-                  (lesson: any , index: number) => lesson.isCompleted === true && index <= lessonIndex && indexChaper <= chapterIndex
-                ).length;
-              }
-            }
-          }
-          const progressPercentage =
-            totalLessons > 0
-              ? Math.round((completedLessons / totalLessons) * 100)
-              : 0;
+
+          const resetChapters = (responseCourse.chapters || []).map((chapter: Chapter) => {
+            const lessons = (chapter.lessons || []).map((lesson) => {
+              totalLessons += 1;
+              return {
+                ...lesson,
+                // Xóa trạng thái hoàn thành để người học làm lại từ đầu
+                isCompleted: false,
+              };
+            });
+
+            return {
+              ...chapter,
+              lessons,
+            };
+          });
+
+          const progressPercentage = totalLessons > 0 ? 0 : 0;
+
           this.setCurrentCourse({
             ...(responseCourse || {}),
             progress: {
-              ...responseCourse?.progress,
-              progressPercentage: progressPercentage,
-              isCompleted: progressPercentage === 100 ? true : false,
-              completedLessons: completedLessons,
-              totalLessons: totalLessons,
+              ...(responseCourse?.progress || {}),
+              progressPercentage,
+              isCompleted: false,
+              completedLessons: 0,
+              totalLessons,
             },
-            chapters: responseCourse?.chapters?.map((chapter: Chapter, idxChapper:number) => {
-              return {
-                ...chapter,
-                lessons: chapter?.lessons?.map((lesson, idxLesson) => {
-                  console.log('idxLesson', idxLesson)
-                  console.log('indexChapper', idxChapper)
-                  return {
-                    ...lesson,
-                    isCompleted: idxLesson <= lessonIndex && idxChapper <= chapterIndex ? true : false
-                  }
-                })
-              }
-            })
-          })
-        }else{
-          this.course = response.data?.course || response.data || response.course || response
+            chapters: resetChapters,
+          });
+        } else {
+          this.course = responseCourse;
         }
       } catch (error) {
         throw error
