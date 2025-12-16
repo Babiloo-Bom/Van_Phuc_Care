@@ -332,10 +332,13 @@ export const useAuthStore = defineStore('auth', {
         // Verify OTP - API returns accessToken if successful
         const response: any = await authApi.verifyEmail(email, otp);
         
+        // Handle response - may be wrapped in { data: {...} } or direct
+        const responseData = response?.data || response;
+        
         // Auto login: Save token and user info from response (same as login flow)
-        if (response?.accessToken) {
-          const token = response.accessToken;
-          const tokenExpireAt = response.tokenExpireAt;
+        if (responseData?.accessToken) {
+          const token = responseData.accessToken;
+          const tokenExpireAt = responseData.tokenExpireAt;
           
           this.token = token;
           this.tokenExpireAt = tokenExpireAt
@@ -349,10 +352,10 @@ export const useAuthStore = defineStore('auth', {
             const userData = profileResponse?.data?.user || profileResponse?.data?.data || profileResponse?.data;
             
             this.user = {
-              id: userData?._id || userData?.id || response.id || 'temp-id',
-              email: userData?.email || response.email || email,
-              username: userData?.username || response.username || email,
-              fullname: userData?.fullname || userData?.name || response.fullname || email,
+              id: userData?._id || userData?.id || responseData.id || 'temp-id',
+              email: userData?.email || responseData.email || email,
+              username: userData?.username || responseData.username || email,
+              fullname: userData?.fullname || userData?.name || responseData.fullname || email,
               name: userData?.name || userData?.fullname,
               phone: userData?.phoneNumber || userData?.phone,
               avatar: userData?.avatar,
@@ -368,10 +371,10 @@ export const useAuthStore = defineStore('auth', {
             console.error('⚠️ Failed to fetch user profile after verify, using basic data:', profileError);
             // Fallback to basic user data if profile fetch fails
             this.user = {
-              id: response.id || 'temp-id',
-              email: response.email || email,
-              username: response.username || email,
-              fullname: response.fullname || email,
+              id: responseData.id || 'temp-id',
+              email: responseData.email || email,
+              username: responseData.username || email,
+              fullname: responseData.fullname || email,
               verified: true,
               status: 'active',
             };
