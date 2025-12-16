@@ -32,7 +32,7 @@
                 <input
                   v-model="form.fullname"
                   type="text"
-                  placeholder="Email/SĐT"
+                  placeholder="Họ và tên"
                   class="form-input"
                   required
                 />
@@ -42,7 +42,7 @@
             <!-- Email Field -->
             <div class="form-group">
               <label class="form-label">Email</label>
-              <div class="input-container">
+              <div class="input-container" :class="{'input-error': errors.email}">
                 <input
                   v-model="form.email"
                   type="email"
@@ -50,6 +50,10 @@
                   class="form-input"
                   required
                 />
+              </div>
+              <div v-if="errors.email" style="color: #DE4841; font-size: 12px; font-weight: 500; margin-top: 4px; display: flex; align-items: center; gap: 4px;">
+                <span>&#10006;</span>
+                <span>{{ errors.email }}</span>
               </div>
             </div>
 
@@ -60,17 +64,27 @@
                 <input
                   v-model="form.phone"
                   type="tel"
-                  placeholder="Email/SĐT"
+                  inputmode="numeric"
+                  pattern="[0-9]*"
+                  maxlength="10"
+                  placeholder="Số điện thoại"
                   class="form-input"
                   required
+                  @keypress="onPhoneKeypress"
+                  @input="onPhoneInput"
+                  @paste="onPhonePaste"
                 />
               </div>
+                <div v-if="errors.phone" style="color: #e53935; font-size: 16px; margin-top: 4px; display: flex; align-items: center; gap: 4px;">
+                  <span style="font-size: 18px;">&#10006;</span>
+                  <span>{{ errors.phone }}</span>
+                </div>
             </div>
 
             <!-- Password Field -->
             <div class="form-group">
               <label class="form-label">Mật khẩu</label>
-              <div class="input-container">
+              <div class="input-container" :class="{'input-error': errors.password}">
                 <input
                   v-model="form.password"
                   :type="showPassword ? 'text' : 'password'"
@@ -85,6 +99,10 @@
                 >
                   {{ showPassword ? "👁️" : "👁️‍🗨️" }}
                 </button>
+              </div>
+              <div v-if="errors.password" style="color: #e53935; font-size: 16px; margin-top: 4px; display: flex; align-items: center; gap: 4px;">
+                <span style="font-size: 18px;">&#10006;</span>
+                <span>{{ errors.password }}</span>
               </div>
             </div>
 
@@ -109,9 +127,21 @@
               </div>
             </div>
 
+            <!-- Agreement Checkbox -->
+            <div class="form-group" style="margin-top: 4px;">
+              <label class="form-label register-agree-label">
+                <input type="checkbox" v-model="agree" class="register-checkbox" />
+                <span class="font-semibold text-sm">
+                  Tôi đã đọc và đồng ý với
+                  <a href="/terms" target="_blank" class="register-link">Điều khoản sử dụng</a>
+                  của VPC
+                </span>
+              </label>
+            </div>
+
             <!-- Register Button -->
-            <button type="submit" :disabled="loading" class="register-btn">
-              {{ loading ? "Đang đăng ký..." : "Đăng ký" }}
+            <button type="submit" :disabled="loading || !agree" class="register-btn">
+              {{ loading ? "Đang tạo tài khoản..." : "Tạo tài khoản" }}
             </button>
 
             <!-- Login Link -->
@@ -191,6 +221,7 @@ const loading = ref(false);
 const showPassword = ref(false);
 const showConfirmPassword = ref(false);
 const showSuccessModal = ref(false);
+const agree = ref(false);
 
 const form = reactive({
   fullname: "",
@@ -199,6 +230,34 @@ const form = reactive({
   password: "",
   confirmPassword: "",
 });
+
+const errors = reactive({
+  email: "",
+  password: "",
+  phone: "",
+});
+
+const onPhoneKeypress = (e: KeyboardEvent) => {
+  // Only allow digits (0-9)
+  if (!/^[0-9]$/.test(e.key)) {
+    e.preventDefault();
+  }
+};
+
+const onPhoneInput = (e: Event) => {
+  const target = e.target as HTMLInputElement;
+  // Remove non-digits and limit to 10 chars
+  target.value = target.value.replace(/\D/g, '').slice(0, 10);
+  form.phone = target.value;
+};
+
+const onPhonePaste = (e: ClipboardEvent) => {
+  e.preventDefault();
+  const pastedText = e.clipboardData?.getData('text') || '';
+  // Only keep digits and limit to 10 chars
+  const digitsOnly = pastedText.replace(/\D/g, '').slice(0, 10);
+  form.phone = digitsOnly;
+};
 
 const togglePassword = () => {
   showPassword.value = !showPassword.value;
@@ -210,23 +269,26 @@ const toggleConfirmPassword = () => {
 
 const handleSubmit = async () => {
   try {
-    // Debug password values
-    console.log("🔍 Password validation:", {
-      password: form.password,
-      confirmPassword: form.confirmPassword,
-      passwordLength: form.password.length,
-      confirmPasswordLength: form.confirmPassword.length,
-      areEqual: form.password === form.confirmPassword,
-    });
+    // Clear previous errors
+    errors.email = "";
+    errors.password = "";
+    errors.phone = "";
 
-    // Validate passwords match
+    // Require agreement
+    if (!agree.value) {
+      return;
+    }
     if (form.password !== form.confirmPassword) {
-      message.error("Mật khẩu xác nhận không khớp");
+      // Password mismatch error handling (if needed)
       return;
     }
 
+    // Validate phone: only digits and exactly 10 numbers
+    if (!/^[0-9]{10}$/.test(form.phone)) {
+      errors.phone = 'Số điện thoại không hợp lệ, phải gồm 10 chữ số';
+      return;
+    }
     loading.value = true;
-
     const result = await authStore.register(
       form.email,
       form.password,
@@ -234,12 +296,45 @@ const handleSubmit = async () => {
       form.fullname,
       form.phone
     );
-
-    if (result.success) {
-      // Show success modal instead of message
+    if (result && result.success) {
       showSuccessModal.value = true;
     } else {
-      message.error(result.error || "Đăng ký thất bại");
+      // Parse server response for duplicate account/email
+      console.log("Register result:", result);
+      console.log("result.error:", result?.error);
+      console.log("typeof result.error:", typeof result?.error);
+      
+      // Extract error message from various possible formats
+      let serverMsg = '';
+      if (typeof result?.error === 'string') {
+        serverMsg = result.error;
+      } else if (typeof result?.error === 'object' && result?.error?.message) {
+        serverMsg = result.error.message;
+      } else if (result?.data?.error && typeof result.data.error === 'string') {
+        serverMsg = result.data.error;
+      } else if (result?.data?.message && typeof result.data.message === 'string') {
+        serverMsg = result.data.message;
+      }
+      
+      const serverMsgStr = serverMsg ? String(serverMsg).toLowerCase() : "";
+      console.log("Server message string:", serverMsgStr);
+      
+      // Check for duplicate email error patterns
+      const isDuplicateEmail = serverMsgStr.includes('duplicate') || 
+        serverMsgStr.includes('e11000') || 
+        serverMsgStr.includes('account exists') || 
+        serverMsgStr.includes('accountexists') || 
+        serverMsgStr.includes('email_1') ||
+        serverMsgStr.includes('email đã được sử dụng') ||
+        serverMsgStr.includes('đã được đăng ký');
+      
+      if (isDuplicateEmail) {
+        // Show error under email input for duplicate email
+        errors.email = 'Email này đã được đăng ký';
+      } else {
+        // For other errors, show toast notification
+        message.error(serverMsg || 'Đăng ký thất bại, vui lòng thử lại');
+      }
     }
   } catch (error: any) {
     console.error("Register error:", error);
@@ -273,7 +368,6 @@ const handleSuccessClose = () => {
 /* Base styles - will be overridden by media queries */
 .register-form-section {
   position: relative;
-  width: 100%;
   height: 100vh;
   background: #ffffff;
   display: flex;
@@ -282,7 +376,6 @@ const handleSuccessClose = () => {
   justify-content: center;
   padding: 0;
   flex: 0 0 50%;
-  overflow-y: auto;
 }
 
 .content-wrapper {
@@ -536,7 +629,6 @@ const handleSuccessClose = () => {
 /* Left Side - Registration Form */
 .register-form-section {
   position: relative;
-  width: 100%;
   height: 100vh;
   background: #ffffff;
   display: flex;
@@ -545,7 +637,6 @@ const handleSuccessClose = () => {
   justify-content: center;
   padding: 0;
   flex: 0 0 50%;
-  overflow-y: auto;
 }
 
 .content-wrapper {
@@ -656,7 +747,6 @@ const handleSuccessClose = () => {
 
 .form-input::placeholder {
   color: #8c8c8c;
-  text-align: left;
 }
 
 .password-toggle {
@@ -738,11 +828,6 @@ const handleSuccessClose = () => {
   text-decoration: none;
 }
 
-.login-text:hover {
-  text-decoration: underline;
-}
-
-/* Right Side - Marketing Section */
 .marketing-section {
   position: relative;
   width: 50%;
@@ -1168,7 +1253,6 @@ const handleSuccessClose = () => {
 
   .form-group {
     width: 343px;
-    height: 80px;
     display: flex;
     flex-direction: column;
     align-items: flex-start;
@@ -1314,28 +1398,31 @@ const handleSuccessClose = () => {
     justify-content: center;
   }
 }
-
-/* Custom Scrollbar - Transparent */
-.register-form-section {
-  scrollbar-width: thin;
-  scrollbar-color: transparent transparent;
+</style>
+<style scoped>
+.register-agree-label {
+  width: 100%;
+  display: flex;
+  align-items: self-start;
+  font-weight: 700;
+  font-size: 22px;
+  color: #444;
+  gap: 8px;
+  height: auto;
 }
-
-.register-form-section::-webkit-scrollbar {
-  width: 6px;
-  background: transparent;
+.register-checkbox {
+  width: 16px;
+  height: 16px;
+  accent-color: #bdbdbd;
+  flex-shrink: 0;
 }
-
-.register-form-section::-webkit-scrollbar-track {
-  background: transparent;
+.register-link {
+  color: #1A75BB;
+  text-decoration: underline;
+  margin: 0 2px;
 }
-
-.register-form-section::-webkit-scrollbar-thumb {
-  background: transparent;
-  border-radius: 3px;
-}
-
-.register-form-section::-webkit-scrollbar-thumb:hover {
-  background: rgba(0, 0, 0, 0.1);
+.input-error {
+  border: 1.5px solid #DE4841 !important;
+  border-radius: 12px;
 }
 </style>

@@ -26,12 +26,12 @@
         <form @submit.prevent="handleSubmit" class="forgot-password-form">
           <!-- Email/Phone Field -->
           <div class="form-group">
-            <label class="form-label">Email/ Số điện thoại</label>
+            <label class="form-label">Email</label>
             <div class="input-container">
               <input
                 v-model="form.emailOrPhone"
                 type="text"
-                placeholder="Email/SĐT"
+                placeholder="Email"
                 class="form-input"
                 required
               />
@@ -126,8 +126,8 @@ const handleSubmit = async () => {
   try {
     loading.value = true;
 
-    // Call forgot password API
-    const result = await authStore.forgotPassword(form.emailOrPhone);
+    // Call forgot password API (include source so backend builds per-site link)
+    const result = await authStore.forgotPassword(form.emailOrPhone, 'crm');
 
     if (result.success) {
       // Show success modal instead of message
@@ -145,7 +145,11 @@ const handleSubmit = async () => {
 
 const handleSuccessConfirm = () => {
   showSuccessModal.value = false;
-  navigateTo("/login");
+  // Redirect to reset-password page with email as query param
+  navigateTo({
+    path: '/reset-password',
+    query: { email: form.emailOrPhone }
+  });
 };
 
 const handleSuccessClose = () => {

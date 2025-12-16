@@ -26,12 +26,12 @@
         <form @submit.prevent="handleSubmit" class="forgot-password-form">
           <!-- Email/Phone Field -->
           <div class="form-group">
-            <label class="form-label">Email/ Số điện thoại</label>
+            <label class="form-label">Email</label>
             <div class="input-container">
               <input
                 v-model="form.emailOrPhone"
                 type="text"
-                placeholder="Email/SĐT"
+                placeholder="Email"
                 class="form-input"
                 required
               />

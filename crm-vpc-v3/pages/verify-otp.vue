@@ -69,9 +69,9 @@ const verifyOtp = async () => {
       verified.value = true;
       message.success("Xác minh tài khoản thành công!");
       
-      // Redirect to login page after 2 seconds
+      // Redirect to home page after 2 seconds (user is already logged in)
       setTimeout(() => {
-        navigateTo("/login");
+        navigateTo("/");
       }, 2000);
     } else {
       error.value = true;

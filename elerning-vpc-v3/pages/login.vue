@@ -155,6 +155,11 @@ import { ref, reactive, onMounted } from "vue";
 import { useAuthStore } from "~/stores/auth";
 import { message } from "ant-design-vue";
 
+// Constants for localStorage keys
+const REMEMBER_KEY = 'elearning_remember_account';
+const SAVED_EMAIL_KEY = 'elearning_saved_email';
+const SAVED_PASSWORD_KEY = 'elearning_saved_password';
+
 // SEO
 useHead({
   title: "Đăng nhập - Vạn Phúc Care",
@@ -185,6 +190,47 @@ const form = reactive({
 // Loading state
 const loading = ref(false);
 
+// Load saved credentials on mount
+const loadSavedCredentials = () => {
+  try {
+    const remembered = localStorage.getItem(REMEMBER_KEY);
+    if (remembered === 'true') {
+      const savedEmail = localStorage.getItem(SAVED_EMAIL_KEY);
+      const savedPassword = localStorage.getItem(SAVED_PASSWORD_KEY);
+      
+      if (savedEmail) {
+        form.email = atob(savedEmail); // Decode from base64
+      }
+      if (savedPassword) {
+        form.password = atob(savedPassword); // Decode from base64
+      }
+      form.remember = true;
+    }
+  } catch (error) {
+    console.error('Error loading saved credentials:', error);
+    // Clear corrupted data
+    clearSavedCredentials();
+  }
+};
+
+// Save credentials to localStorage
+const saveCredentials = () => {
+  try {
+    localStorage.setItem(REMEMBER_KEY, 'true');
+    localStorage.setItem(SAVED_EMAIL_KEY, btoa(form.email)); // Encode to base64
+    localStorage.setItem(SAVED_PASSWORD_KEY, btoa(form.password)); // Encode to base64
+  } catch (error) {
+    console.error('Error saving credentials:', error);
+  }
+};
+
+// Clear saved credentials
+const clearSavedCredentials = () => {
+  localStorage.removeItem(REMEMBER_KEY);
+  localStorage.removeItem(SAVED_EMAIL_KEY);
+  localStorage.removeItem(SAVED_PASSWORD_KEY);
+};
+
 // Handle Google OAuth callback
 const handleGoogleCallback = () => {
   const urlParams = new URLSearchParams(window.location.search);
@@ -202,9 +248,10 @@ const handleGoogleCallback = () => {
   }
 };
 
-// Check for Google callback on mount
+// Check for Google callback and load saved credentials on mount
 onMounted(() => {
   handleGoogleCallback();
+  loadSavedCredentials();
 });
 
 // Handle form submission
@@ -215,6 +262,13 @@ const handleSubmit = async () => {
     const result = await authStore.login(form.email, form.password);
 
     if (result.success) {
+      // Handle remember account
+      if (form.remember) {
+        saveCredentials();
+      } else {
+        clearSavedCredentials();
+      }
+      
       message.success("Đăng nhập thành công!");
       await navigateTo("/");
     } else {
@@ -987,7 +1041,6 @@ const handleGoogleLogin = async () => {
 
   .forgot-password {
     position: absolute;
-    width: 340.14px;
     height: 24px;
     right: 0px;
     top: 0px;

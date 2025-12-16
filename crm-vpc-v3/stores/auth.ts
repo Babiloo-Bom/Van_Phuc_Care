@@ -288,23 +288,30 @@ export const useAuthStore = defineStore('auth', {
         const authApi = useAuthApi();
 
         // Call API register
-        const response: any = await authApi.register(
-          email,
-          password,
-          repeatPassword,
-          fullname,
-          phone,
-        );
-
+        const response: any = await authApi.register(email, password, repeatPassword, fullname, phone);
         return { success: true, data: response };
       } catch (error: any) {
         console.error('Register error:', error);
+        console.error('Register error.data:', error.data);
+        console.error('Register error.message:', error.message);
+        console.error('Register error.statusMessage:', error.statusMessage);
+        
+        // Extract error message from various formats
+        let errorMessage = 'Email đã được sử dụng, vui lòng nhập email khác!';
+        
+        if (error.data?.message) {
+          errorMessage = error.data.message;
+        } else if (error.data?.error && typeof error.data.error === 'string') {
+          errorMessage = error.data.error;
+        } else if (error.statusMessage && typeof error.statusMessage === 'string') {
+          errorMessage = error.statusMessage;
+        } else if (error.message && typeof error.message === 'string') {
+          errorMessage = error.message;
+        }
+        
         return {
           success: false,
-          error:
-            error.data?.message ||
-            error.message ||
-            'Email đã được sử dụng, vui lòng nhập email khác!',
+          error: errorMessage,
         };
       } finally {
         this.isLoading = false;
@@ -314,6 +321,7 @@ export const useAuthStore = defineStore('auth', {
     /**
      * Verify email with OTP (after registration)
      * Migrated from crm-vpc/components/auth/forms/SignUp.vue
+     * Updated: Auto login after successful verification
      */
     async verifyEmail(email: string, otp: string) {
       this.isLoading = true;
@@ -321,8 +329,36 @@ export const useAuthStore = defineStore('auth', {
       try {
         const authApi = useAuthApi();
 
-        // Verify OTP
-        await authApi.verifyEmail(email, otp);
+        // Verify OTP - API returns accessToken if successful
+        const response: any = await authApi.verifyEmail(email, otp);
+        
+        // Auto login: Save token and user info from response
+        if (response?.accessToken) {
+          this.token = response.accessToken;
+          
+          // Handle tokenExpireAt from response
+          this.tokenExpireAt = response.tokenExpireAt
+            ? this.calculateExpireTime(response.tokenExpireAt)
+            : this.calculateExpireTime('7d');
+          
+          this.user = {
+            id: response.id,
+            email: response.email,
+            fullname: response.fullname,
+            username: response.username,
+          };
+          this.isAuthenticated = true;
+          
+          // Persist to localStorage
+          if (import.meta.client) {
+            localStorage.setItem('auth_token', response.accessToken);
+            localStorage.setItem('token_expire_at', this.tokenExpireAt || '');
+            localStorage.setItem('user', JSON.stringify(this.user));
+          }
+          
+          // Fetch full user profile
+          await this.refreshUserData();
+        }
 
         return { success: true };
       } catch (error: any) {
@@ -351,13 +387,13 @@ export const useAuthStore = defineStore('auth', {
      * Forgot password - Send OTP
      * Migrated from admin-vpc/components/auth/forms/GetOtp.vue
      */
-    async forgotPassword(email: string) {
+    async forgotPassword(email: string, source?: string) {
       this.isLoading = true;
 
       try {
         const authApi = useAuthApi();
 
-        await authApi.forgotPassword(email);
+        await authApi.forgotPassword(email, source);
 
         return { success: true };
       } catch (error: any) {
@@ -375,13 +411,13 @@ export const useAuthStore = defineStore('auth', {
      * Reset password with token
      * Migrated from admin-vpc/components/auth/forms/NewPassword.vue
      */
-    async resetPassword(token: string, newPassword: string) {
+    async resetPassword(email: string, token: string, newPassword: string) {
       this.isLoading = true;
 
       try {
         const authApi = useAuthApi();
 
-        await authApi.resetPassword(token, newPassword);
+        await authApi.resetPasswordWithEmail(email, token, newPassword);
 
         return { success: true };
       } catch (error: any) {
@@ -391,6 +427,20 @@ export const useAuthStore = defineStore('auth', {
           error:
             error.data?.message || error.message || 'Đổi mật khẩu thất bại',
         };
+      } finally {
+        this.isLoading = false;
+      }
+    },
+
+    async verifyOtp(email: string, otp: string) {
+      this.isLoading = true;
+      try {
+        const authApi = useAuthApi();
+        await authApi.verifyOtp(email, otp);
+        return { success: true };
+      } catch (error: any) {
+        console.error('Verify OTP error:', error);
+        return { success: false, error: error.data?.message || error.message || 'Xác thực OTP thất bại' };
       } finally {
         this.isLoading = false;
       }

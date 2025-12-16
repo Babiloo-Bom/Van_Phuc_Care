@@ -201,6 +201,24 @@ export const useAuthApi = () => {
     },
 
     /**
+     * Verify OTP (used for password reset links)
+     * @param email Email
+     * @param otp OTP token
+     */
+    async verifyOtp(email: string, otp: string) {
+      try {
+        return await withRetry(() =>
+          fetchWithTimeout(`${apiBase}/sessions/verify_otp`, {
+            method: "POST",
+            body: { email, otp },
+          })
+        );
+      } catch (error: any) {
+        throw transformError(error);
+      }
+    },
+
+    /**
      * Update profile
      * @param data Profile data
      */
@@ -245,7 +263,7 @@ export const useAuthApi = () => {
     async forgotPassword(email: string) {
       try {
         return await withRetry(() =>
-          fetchWithTimeout(`${apiBase}/passwords/forgot_password`, {
+          fetchWithTimeout(`${apiBase}/sessions/forgot_password`, {
             method: "POST",
             body: { email },
           })
@@ -263,7 +281,7 @@ export const useAuthApi = () => {
     async resetPassword(token: string, newPassword: string) {
       try {
         return await withRetry(() =>
-          fetchWithTimeout(`${apiBase}/passwords/reset`, {
+          fetchWithTimeout(`${apiBase}/sessions/reset_password`, {
             method: "POST",
             body: {
               token,
