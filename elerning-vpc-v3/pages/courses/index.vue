@@ -3,7 +3,7 @@
     <!-- Banner Section -->
     <div
       class="h-auto md:mb-[5rem] sm:h-[500px] py-10 sm:pt-20 sm:pb-20 md:pb-60 bg-cover bg-center bg-no-repeat bg-[url('https://cdn.synck.io.vn/vanphuccare/banner/main.webp')]
-              relative z-[0] after:absolute after:content-[''] after:top-0 after:left-0 after:w-full after:h-full after:opacity-60 after:bg-prim-100"
+              relative z-[1] after:absolute after:content-[''] after:top-0 after:left-0 after:w-full after:h-full after:opacity-60 after:bg-prim-100"
     >
       <div class="absolute inset-0 bg-[#1A75BBB2]"></div>
       <div class="container h-full">
@@ -82,17 +82,68 @@
               </template>
             </a-input>
           </div>
+
+          <!-- Filter Options (3 nút trắng giống trang chủ) -->
+          <div
+            class="w-full flex flex-col sm:flex-row items-center gap-4 justify-center md:justify-start mt-4 relative z-[2]"
+          >
+            <!-- Category Filter -->
+            <a-select
+              v-model:value="selectedCategory"
+              placeholder="Chọn danh mục"
+              class="!w-48 !bg-white/10 !border-white/30"
+              @change="handleCategoryChange"
+            >
+              <a-select-option value="">Tất cả danh mục</a-select-option>
+              <a-select-option
+                v-for="category in categories"
+                :key="category"
+                :value="category"
+              >
+                {{ category }}
+              </a-select-option>
+            </a-select>
+
+            <!-- Level Filter -->
+            <a-select
+              v-model:value="selectedLevel"
+              placeholder="Chọn cấp độ"
+              class="!w-48 !bg-white/10 !border-white/30"
+              @change="handleLevelChange"
+            >
+              <a-select-option value="">Tất cả cấp độ</a-select-option>
+              <a-select-option value="beginner">Cơ bản</a-select-option>
+              <a-select-option value="intermediate">Trung bình</a-select-option>
+              <a-select-option value="advanced">Nâng cao</a-select-option>
+            </a-select>
+
+            <!-- Sort Options -->
+            <a-select
+              v-model:value="sortBy"
+              placeholder="Sắp xếp theo"
+              class="!w-48 !bg-white/10 !border-white/30"
+              @change="handleSortChange"
+            >
+              <a-select-option value="priority"
+                >Ưu tiên (Đã mua → Chưa mua → Hoàn thành)</a-select-option
+              >
+              <a-select-option value="price-low">Giá thấp → cao</a-select-option>
+              <a-select-option value="price-high">Giá cao → thấp</a-select-option>
+              <a-select-option value="newest">Mới nhất</a-select-option>
+              <a-select-option value="rating">Đánh giá cao nhất</a-select-option>
+            </a-select>
+          </div>
         </div>
       </div>
     </div>
 
     <!-- Courses Section -->
-    <section class="pb-20 p-4 lg:pt-20 sm:pt-10 bg-[#f4f7f9]">
+    <section class="pb-20 p-4 lg:pt-20 sm:pt-10 bg-[#f4f7f9] relative z-10">
       <div class="container mx-auto !px-0 md:!px-auto">
         <div v-if="!loading">
           <div
             v-if="filteredCourses.length"
-            class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 xl:grid-cols-4 gap-6 -mt-80 sm:-mt-64 md:-mt-40 lg:-mt-60"
+            class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 xl:grid-cols-4 gap-6 mt-4 sm:-mt-32 md:-mt-40 lg:-mt-60"
           >
             <CourseCard
               v-for="(course, index) in filteredCourses"
@@ -112,7 +163,7 @@
         </div>
         <div
           v-else
-          class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 xl:grid-cols-4 gap-6 -mt-80 sm:-mt-64 md:-mt-40 lg:-mt-60"
+          class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 xl:grid-cols-4 gap-6 mt-4 sm:-mt-32 md:-mt-40 lg:-mt-60"
         >
           <div v-for="index in [1, 2, 3, 4]" :key="index" class="">
             <Skeleton />
@@ -143,9 +194,22 @@ const cartStore = useCartStore();
 // Reactive data
 const loading = ref(false);
 const searchKey = ref("");
+const selectedCategory = ref("");
+const selectedLevel = ref("");
+const sortBy = ref<"priority" | "price-low" | "price-high" | "newest" | "rating">(
+  "priority"
+);
 
 // Computed
 const courses = computed(() => courseStore.courses);
+
+const categories = computed(() => {
+  const sourceCourses = courses.value || [];
+  const cats = [
+    ...new Set(sourceCourses.map((course: any) => course.category).filter(Boolean)),
+  ];
+  return cats;
+});
 
 // Computed để xác định trạng thái khóa học dựa trên user
 const getCourseStatus = (courseId: string) => {
@@ -195,34 +259,61 @@ const getProgress = (courseId: string) => {
   }
   return 0;
 };
-// Computed để sắp xếp theo thứ tự ưu tiên
+// Computed để sắp xếp theo thứ tự ưu tiên / các tuỳ chọn sort
 const sortedCourses = computed(() => {
-  const authStore = useAuthStore();
-  if (!authStore.user) return courses.value;
+  let source = [...courses.value];
+  const authStoreLocal = useAuthStore();
 
-  return [...courses.value].sort((a, b) => {
-    const statusA = getCourseStatus(a._id);
-    const statusB = getCourseStatus(b._id);
+  // Sort theo tuỳ chọn
+  switch (sortBy.value) {
+    case "price-low":
+      source.sort((a: any, b: any) => (a.price || 0) - (b.price || 0));
+      break;
+    case "price-high":
+      source.sort((a: any, b: any) => (b.price || 0) - (a.price || 0));
+      break;
+    case "newest":
+      source.sort(
+        (a: any, b: any) =>
+          new Date(b.createdAt || "").getTime() -
+          new Date(a.createdAt || "").getTime()
+      );
+      break;
+    case "rating":
+      source.sort(
+        (a: any, b: any) =>
+          (b.rating?.average || 0) - (a.rating?.average || 0)
+      );
+      break;
+    case "priority":
+    default:
+      if (!authStoreLocal.user) return source;
+      source.sort((a: any, b: any) => {
+        const statusA = getCourseStatus(a._id);
+        const statusB = getCourseStatus(b._id);
 
-    // Thứ tự ưu tiên: purchased -> not_purchased -> completed
-    const priority: Record<string, number> = {
-      purchased: 1,
-      not_purchased: 2,
-      completed: 3,
-    };
+        // Thứ tự ưu tiên: purchased -> not_purchased -> completed
+        const priority: Record<string, number> = {
+          purchased: 1,
+          not_purchased: 2,
+          completed: 3,
+        };
 
-    return (priority[statusA] || 2) - (priority[statusB] || 2);
-  });
+        return (priority[statusA] || 2) - (priority[statusB] || 2);
+      });
+      break;
+  }
+
+  return source;
 });
 
 const filteredCourses = computed(() => {
-  if (!searchKey.value) return sortedCourses.value
-  
-  const searchTerm = searchKey.value.toLowerCase().trim()
-  if (!searchTerm) return sortedCourses.value
-  
-  
-  const results = sortedCourses.value.filter(course => {
+  let source = sortedCourses.value;
+
+  const searchTerm = searchKey.value.toLowerCase().trim();
+
+  if (searchTerm) {
+    source = source.filter((course: any) => {
     // Tìm kiếm theo title
     const titleMatch =
       course.title?.toLowerCase().includes(searchTerm) || false;
@@ -241,24 +332,48 @@ const filteredCourses = computed(() => {
 
     // Tìm kiếm theo tags
     const tagsMatch =
-      course.tags?.some((tag) => tag.toLowerCase().includes(searchTerm)) ||
-      false;
+      course.tags?.some((tag: string) =>
+        tag.toLowerCase().includes(searchTerm)
+      ) || false;
 
-    const isMatch =
-      titleMatch || shortDescMatch || descMatch || categoryMatch || tagsMatch;
+    return (
+      titleMatch || shortDescMatch || descMatch || categoryMatch || tagsMatch
+    );
+  });
+  }
 
-    if (isMatch) {
-    }
-    
-    return isMatch
-  })
-  
-  return results
-})
+  // Lọc theo category
+  if (selectedCategory.value) {
+    source = source.filter(
+      (course: any) => course.category === selectedCategory.value
+    );
+  }
+
+  // Lọc theo level
+  if (selectedLevel.value) {
+    source = source.filter(
+      (course: any) => course.level === selectedLevel.value
+    );
+  }
+
+  return source;
+});
 
 // Methods
 const handleSearch = (e: any) => {
   searchKey.value = e.target.value || "";
+};
+
+const handleCategoryChange = (value: string) => {
+  selectedCategory.value = value;
+};
+
+const handleLevelChange = (value: string) => {
+  selectedLevel.value = value;
+};
+
+const handleSortChange = (value: any) => {
+  sortBy.value = value;
 };
 
 const fetchCourses = async () => {

@@ -83,9 +83,9 @@
               stroke-linejoin="round"
             />
           </svg>
-          <span class="text-xs text-[#393939]"
-            >{{ course.lessons }} Tài liệu</span
-          >
+          <span class="text-xs text-[#393939]">
+            {{ course.documentCount ?? 0 }} Tài liệu
+          </span>
         </div>
         <div class="flex justify-between items-center gap-1">
           <svg
@@ -103,9 +103,9 @@
               stroke-linejoin="round"
             />
           </svg>
-          <span class="text-xs text-[#393939]"
-            >{{ course.students }} Bài trắc nghiệm</span
-          >
+          <span class="text-xs text-[#393939]">
+            {{ course.quizCount ?? 0 }} Bài trắc nghiệm
+          </span>
         </div>
       </div>
 
@@ -151,30 +151,17 @@
         </button>
       </div>
       <div v-else class="flex-grow flex flex-col justify-end w-full gap-4">
-        <!-- Trường hợp 1: Đã từng hoàn thành (có chứng chỉ) nhưng tiến trình hiện tại < 100% (đang học lại) -->
+        <!-- Nếu đã có chứng chỉ (everCompleted) hoặc đã hoàn thành 100% → chỉ hiển thị "Đã hoàn thành" -->
         <div
           class="course-actions"
-          v-if="everCompleted && !isCurrentlyCompleted"
-        >
-          <button class="btn-access" @click.stop="goToLearning">
-            Học ngay
-          </button>
-          <button class="btn-completed" @click.stop="goToCertificate">
-            Đã hoàn thành
-          </button>
-        </div>
-
-        <!-- Trường hợp 2: Tiến trình hiện tại = 100% (đã hoàn thành khóa, dù là lần đầu hay học lại) -->
-        <div
-          class="course-actions"
-          v-else-if="isCurrentlyCompleted"
+          v-if="everCompleted || isCurrentlyCompleted"
         >
           <button class="btn-completed" @click.stop="goToCertificate">
             Đã hoàn thành
           </button>
         </div>
 
-        <!-- Các trường hợp còn lại: đã mua nhưng chưa từng hoàn thành -->
+        <!-- Các trường hợp còn lại: đã mua nhưng chưa hoàn thành -->
         <div class="course-actions" v-else>
           <button class="btn-access" @click.stop="goToLearningOrCertificate">
             Học ngay

@@ -3,7 +3,7 @@
     <!-- Hero Banner -->
     <div
       class="h-auto md:mb-[5rem] sm:h-[400px] md:h-[500px] py-8 sm:py-10 sm:pt-16 sm:pb-20 md:pb-60 bg-cover bg-center bg-no-repeat bg-[url('https://cdn.synck.io.vn/vanphuccare/banner/main.webp')]
-             relative z-[0] after:absolute after:content-[''] after:top-0 after:left-0 after:w-full after:h-full after:opacity-60 after:bg-prim-100"
+             relative z-[1] after:absolute after:content-[''] after:top-0 after:left-0 after:w-full after:h-full after:opacity-60 after:bg-prim-100"
     >
       <div class="absolute inset-0 bg-[#1A75BBB2]"></div>
       <div class="container mx-auto !px-0 sm:!px-auto">
@@ -90,12 +90,12 @@
     </div>
 
     <!-- Courses Section -->
-    <section class="pb-10 sm:pb-20 pt-4 sm:pt-10 lg:pt-20 bg-[#f4f7f9] max-md:pt-[6rem]">
+    <section class="pb-10 sm:pb-20 pt-8 sm:pt-10 lg:pt-20 bg-[#f4f7f9] relative z-10">
       <div class="container mx-auto px-4 sm:px-4 md:px-0">
         <div v-if="!loading">
           <div
             v-if="filteredCourses.length"
-            class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 xl:grid-cols-4 gap-4 sm:gap-6 -mt-32 sm:-mt-48 md:-mt-40 lg:-mt-60"
+            class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 xl:grid-cols-4 gap-4 sm:gap-6 mt-4 sm:-mt-32 md:-mt-40 lg:-mt-60"
           >
             <PurchasedCourseCard
               v-for="(course, index) in filteredCourses"
@@ -113,7 +113,7 @@
         </div>
         <div
           v-else
-          class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 xl:grid-cols-4 gap-4 sm:gap-6 -mt-32 sm:-mt-48 md:-mt-40 lg:-mt-60"
+          class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 xl:grid-cols-4 gap-4 sm:gap-6 mt-4 sm:-mt-32 md:-mt-40 lg:-mt-60"
         >
           <div
             v-for="index in [1, 2, 3, 4]"

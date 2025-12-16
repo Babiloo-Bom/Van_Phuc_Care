@@ -96,18 +96,21 @@
               <div class="flex-1 min-w-0">
                 <h3 
                   v-if="!hasQuiz(lesson)"
-                    :class="`lesson-title ${
-                      lesson.isCompleted ? 'lesson-title-completed' : 'lesson-title-pending hover:!text-[#155a8f]'
-                      
-                  } ${lesson.isLocked ? 'lesson-title-locked' : ''}`
-                  " 
+                  :class="`lesson-title ${
+                    lesson.isCompleted ? 'lesson-title-completed' : 'lesson-title-pending hover:!text-[#155a8f]'
+                  }`"
                   @click="handleLessonClick(chapterIndex, lessonIndex)"
-                  :style="isLessonLocked(chapterIndex, lessonIndex) ? { cursor: 'not-allowed', opacity: 0.6 } : { cursor: 'pointer' }"
+                  style="cursor: pointer"
                 >
                   {{ lesson.title }}
                 </h3>
-                <h3 v-else :class="['lesson-title', {'lesson-title-completed': lesson.isCompleted, 'lesson-title-pending hover:!text-[#155a8f]': !lesson.isCompleted, 'lesson-title-locked': lesson.isLocked}]" @click="handleQuizClick(chapterIndex, lessonIndex, lesson)">
-                   {{ getQuizTitle(lesson) }}
+                <h3
+                  v-else
+                  :class="['lesson-title', { 'lesson-title-completed': lesson.isCompleted, 'lesson-title-pending hover:!text-[#155a8f]': !lesson.isCompleted }]"
+                  @click="handleQuizClick(chapterIndex, lessonIndex, lesson)"
+                  style="cursor: pointer"
+                >
+                  {{ getQuizTitle(lesson) }}
                 </h3>
               </div>
             </div>
@@ -149,16 +152,17 @@ const route = useRoute()
 const router = useRouter()
 const coursesStore = useCoursesStore()
 
-const activeKey = ref<string>('chapter_0')
+const activeKey = ref<string | string[]>('chapter_0')
 
 // Computed
 const course = computed(() => coursesStore.course)
 
-const isLessonLocked = (chapterIndex: number, lessonIndex: number) => {
-  if (!course.value) return false
-  
-  const lesson = course.value.chapters?.[chapterIndex]?.lessons?.[lessonIndex]
-  return lesson?.isLocked || false
+// Chế độ Review: cho phép xem lại tất cả bài mà không cần check locked
+const isReviewMode = computed(() => route.query.review === "true")
+
+// My-learning chỉ dành cho user đã mua nên luôn cho phép nhảy cóc, không lock bài nào
+const isLessonLocked = (_chapterIndex: number, _lessonIndex: number) => {
+  return false
 }
 
 const hasQuiz = (lesson: any) => {
@@ -211,30 +215,68 @@ const handlePanelClick = (chapter: number, event?: Event) => {
 }
 
 const handleLessonClick = (chapterIndex: number, lessonIndex: number) => {
-  // Check if lesson is locked
-  if (isLessonLocked(chapterIndex, lessonIndex)) {
-    // Show warning message
-    message.warning('Bạn cần hoàn thành bài học trước đó trước khi học bài này')
-    return
+  // Tự động expand chapter khi click vào lesson
+  const chapterKey = `chapter_${chapterIndex}`
+  if (Array.isArray(activeKey.value)) {
+    if (!activeKey.value.includes(chapterKey)) {
+      activeKey.value = [...activeKey.value, chapterKey]
+    }
+  } else {
+    if (activeKey.value !== chapterKey) {
+      activeKey.value = chapterKey
+    }
   }
   
   const slug = route.params.slug
   
-  // Navigate với query params cho chapter và lesson
-  const newPath = `/my-learning/${slug}?chapter=${chapterIndex}&lesson=${lessonIndex}`
+  // Nếu URL hiện tại đang ở chế độ review (đi vào từ nút Review / Xem lại)
+  // thì giữ lại review=true. Còn lại (đang học bình thường) thì KHÔNG set review,
+  // để hệ thống vẫn tính tiến độ như bình thường khi nhảy cóc.
+  const queryParams: any = {
+    chapter: chapterIndex.toString(),
+    lesson: lessonIndex.toString()
+  }
+  if (route.query.review === 'true') {
+    queryParams.review = 'true'
+  }
   
-  // Navigate to the new URL
-  router.push(newPath)
+  // Navigate với query params
+  router.push({
+    path: `/my-learning/${slug}`,
+    query: queryParams
+  })
 }
 
 const handleQuizClick = (chapterIndex: number, lessonIndex: number, lesson: any) => {
+  // Tự động expand chapter khi click vào quiz
+  const chapterKey = `chapter_${chapterIndex}`
+  if (Array.isArray(activeKey.value)) {
+    if (!activeKey.value.includes(chapterKey)) {
+      activeKey.value = [...activeKey.value, chapterKey]
+    }
+  } else {
+    if (activeKey.value !== chapterKey) {
+      activeKey.value = chapterKey
+    }
+  }
+  
   const slug = route.params.slug
   
-  // Navigate với query params cho chapter, lesson và quiz flag
-  const newPath = `/my-learning/${slug}?chapter=${chapterIndex}&lesson=${lessonIndex}&quiz=true`
+  // Tương tự lesson: chỉ giữ review=true nếu đang ở chế độ review sẵn
+  const queryParams: any = {
+    chapter: chapterIndex.toString(),
+    lesson: lessonIndex.toString(),
+    quiz: 'true'
+  }
+  if (route.query.review === 'true') {
+    queryParams.review = 'true'
+  }
   
-  // Navigate to the new URL
-  router.push(newPath)
+  // Navigate với query params
+  router.push({
+    path: `/my-learning/${slug}`,
+    query: queryParams
+  })
 }
 
 // Watch route query changes

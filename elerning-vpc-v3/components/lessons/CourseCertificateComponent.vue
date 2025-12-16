@@ -109,7 +109,7 @@
               @click="handleReLearn"
               class="bg-[#317BC4] border-none hover:bg-blue-600 rounded-[4px] h-[44px] font-semibold px-8 text-white w-full text-[13px]"
             >
-              Học lại từ đầu
+              Xem lại
             </a-button>
           </div>
         </div>
@@ -177,61 +177,17 @@ const filteredCourses = computed(() => {
 
 const handleReLearn = async () => {
   const currentCourse = courseStore.currentCourse || props.course as any;
-  const courseId = currentCourse?._id;
   const slug = currentCourse?.slug || props.course?.slug;
 
-  if (!courseId || !slug) {
+  if (!slug) {
     return;
   }
 
-  // Gọi API reset tiến trình/quizzes trên backend (thông qua server route /api/progress)
-  try {
-    await progressTracking.resetProgress(courseId);
-  } catch (error) {
-    // Nếu backend chưa hỗ trợ hoặc trả lỗi, vẫn tiếp tục reset trên FE như bình thường
-  }
+  // Chế độ Review: Không reset progress, không reset chứng chỉ
+  // Chỉ điều hướng về trang học tập với query review=true để bỏ qua check bài trước
+  await navigateTo(`/my-learning/${slug}?chapter=0&lesson=0&review=true`);
 
-  // Đánh dấu trạng thái học lại trên store để client render lại tiến trình về 0%
-  courseStore.setIsRepeatLearn(true);
-  // Cập nhật ngay course hiện tại trên FE để ẩn trang chứng chỉ và quay về màn hình học
-  if (courseStore.currentCourse) {
-    const current = courseStore.currentCourse as any;
-    const totalLessons =
-      current.progress?.totalLessons ??
-      current.chapters?.reduce(
-        (sum: number, ch: any) => sum + (ch.lessons?.length || 0),
-        0
-      ) ?? 0;
-    const resetChapters = (current.chapters || []).map((ch: any, chIdx: number) => ({
-      ...ch,
-      lessons: (ch.lessons || []).map((lesson: any, lesIdx: number) => ({
-        ...lesson,
-        // Đánh dấu hoàn thành ngay bài đầu tiên (chỉ FE) để tiến trình > 0% sau khi học lại
-        isCompleted: chIdx === 0 && lesIdx === 0 ? true : false,
-      })),
-    }));
-
-    const completedLessons = totalLessons > 0 ? 1 : 0;
-    const progressPercentage =
-      totalLessons > 0 ? Math.round((completedLessons / totalLessons) * 100) : 0;
-
-    courseStore.setCurrentCourse({
-      ...current,
-      chapters: resetChapters,
-      progress: {
-        ...(current.progress || {}),
-          progressPercentage,
-          completedLessons,
-        totalLessons,
-        isCompleted: false,
-      },
-    });
-  }
-
-  // Điều hướng về bài học đầu tiên của khóa học
-  await navigateTo(`/my-learning/${slug}?chapter=0&lesson=0`);
-
-  // Báo cho parent biết đang ở chế độ học lại
+  // Báo cho parent biết đang ở chế độ review
   emit('isRepeating');
 }
 // Methods

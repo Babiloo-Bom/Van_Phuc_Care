@@ -145,7 +145,7 @@
                               </div>
                               <!-- Plus/Minus Icon -->
                               <svg 
-                                v-if="expandedChapters[chapterIndex]"
+                                v-if="expandedChapters[chapterIndex] === true"
                                 xmlns="http://www.w3.org/2000/svg" 
                                 width="16" 
                                 height="16" 
@@ -169,11 +169,13 @@
                             </div>
                             
                             <!-- Chapter Lessons (Expanded) -->
-                            <div v-if="expandedChapters[chapterIndex]" class="pl-4 sm:pl-6 md:pl-8 pb-3 sm:pb-4 space-y-2 sm:space-y-3">
+                            <!-- Cho phép luôn hiển thị danh sách bài học để user có thể click (không phụ thuộc expand) -->
+                            <div class="pl-4 sm:pl-6 md:pl-8 pb-3 sm:pb-4 space-y-2 sm:space-y-3">
                               <div
                                 v-for="(lesson, lessonIndex) in chapter.lessons"
                                 :key="`lesson-${chapterIndex}-${lessonIndex}`"
-                                class="flex items-center justify-between py-2 gap-2"
+                                class="flex items-center justify-between py-2 gap-2 cursor-pointer"
+                                @click="handleLessonNavigate(chapterIndex, lessonIndex, lesson)"
                               >
                                 <div class="flex items-center gap-2 sm:gap-3 flex-1 min-w-0">
                                   <!-- Lesson Icon -->
@@ -216,9 +218,9 @@
                                     Học thử
                                   </button>
                                   
-                                  <!-- Lock Icon (for locked lessons) -->
+                                  <!-- Lock Icon (for locked lessons - only show if course not purchased) -->
                                   <img 
-                                    v-if="lesson.isLocked"
+                                    v-if="lesson.isLocked && !course?.isPurchased"
                                     src="/images/svg/lock.svg" 
                                     alt="locked" 
                                     class="w-3 h-3 sm:w-4 sm:h-4" 
@@ -521,9 +523,30 @@
 
                 <!-- Action Buttons -->
                 <div class="flex flex-col gap-2 sm:gap-3">
-                  <!-- Đã hoàn thành (đi tới trang chứng chỉ) -->
+                  <!-- Đã mua và có chứng chỉ: hiển thị 2 nút "Đã hoàn thành" và "Review" -->
+                  <template v-if="course?.isPurchased && hasCertificate">
+                    <!-- Nút Đã hoàn thành (đi tới trang chứng chỉ) -->
+                    <a-button
+                      class="!w-full !py-2 sm:!py-3 !h-[44px] sm:!h-[50px] !text-white !border-none !font-bold !text-sm sm:!text-base !rounded-lg !transition-all !duration-200 hover:!opacity-90"
+                      style="background: linear-gradient(88.69deg, #FFBE6A -1.04%, #EBBC46 23.61%, #FFDA7D 55.57%, #EBBC46 74.44%, #FFBE6A 97.91%) !important"
+                      @click="goToCertificate"
+                    >
+                      Đã hoàn thành
+                    </a-button>
+                    
+                    <!-- Nút Review (đi tới trang học tập mode review) -->
+                    <a-button
+                      class="!w-full !py-2 sm:!py-3 !h-[44px] sm:!h-[50px] !text-white !border-none !font-bold !text-sm sm:!text-base !rounded-lg !transition-all !duration-200 hover:!opacity-90"
+                      style="background-color: #317BC4 !important"
+                      @click="goToReview"
+                    >
+                      Review
+                    </a-button>
+                  </template>
+
+                  <!-- Đã hoàn thành nhưng chưa có chứng chỉ (tiến trình 100%) -->
                   <a-button
-                    v-if="course?.progress?.isCompleted"
+                    v-else-if="course?.progress?.isCompleted"
                     class="!w-full !py-2 sm:!py-3 !h-[44px] sm:!h-[50px] !text-white !border-none !font-bold !text-sm sm:!text-base !rounded-lg !transition-all !duration-200 hover:!opacity-90"
                     style="background: linear-gradient(88.69deg, #FFBE6A -1.04%, #EBBC46 23.61%, #FFDA7D 55.57%, #EBBC46 74.44%, #FFBE6A 97.91%) !important"
                     @click="goToCertificate"
@@ -749,6 +772,7 @@ import { useRoute, useRouter } from "vue-router";
 import { useCoursesStore } from "~/stores/courses";
 import { useCartStore } from "~/stores/cart";
 import { useAuthStore } from "~/stores/auth";
+import { message } from "ant-design-vue";
 import ContentCourse from "~/components/courses/ContentCourse.vue";
 import RecomentCourse from "~/components/courses/RecomentCourse.vue";
 import CartToast from "~/components/cart/Toast.vue";
@@ -986,12 +1010,22 @@ const isInCart = computed(() => {
 
 const currentVideoUrl = ref<string | null>(null);
 
-// Initialize with first lesson video if available
-watch(() => course.value, (newCourse) => {
-  if (newCourse && !currentVideoUrl.value) {
-    currentVideoUrl.value = newCourse.chapters?.[0]?.lessons?.[0]?.videoUrl || null;
-  }
-}, { immediate: true });
+// Initialize with introVideo (nếu có), nếu không có thì hiện luôn video demo
+watch(
+  () => course.value,
+  (newCourse) => {
+    if (!newCourse || currentVideoUrl.value) return;
+
+    // 1. Ưu tiên video giới thiệu riêng của course
+    if (newCourse.introVideo) {
+      currentVideoUrl.value = newCourse.introVideo;
+    } else {
+      // 2. Nếu không có introVideo, hiện luôn video demo
+      currentVideoUrl.value = "/videos/demo-intro.mp4";
+    }
+  },
+  { immediate: true }
+);
 
 // Methods
 const mapDifficulty = (level?: string) => {
@@ -1083,6 +1117,15 @@ const redirectCheckout = async () => {
   }
 };
 
+// Kiểm tra xem course đã có chứng chỉ chưa
+const hasCertificate = computed(() => {
+  const id = course.value?._id?.toString?.();
+  return !!(id && authStore.user?.courseCompleted?.includes(id));
+});
+
+// Chế độ Review: cho phép xem lại tất cả bài mà không cần check locked
+const isReviewMode = computed(() => route.query.review === "true");
+
 const goToLearning = () => {
   if (!course.value?.slug) return;
   router.push(`/my-learning/${course.value.slug}`);
@@ -1091,6 +1134,11 @@ const goToLearning = () => {
 const goToCertificate = () => {
   if (!course.value?.slug) return;
   router.push(`/my-learning/${course.value.slug}?certificate=true`);
+};
+
+const goToReview = () => {
+  if (!course.value?.slug) return;
+  router.push(`/my-learning/${course.value.slug}?chapter=0&lesson=0&review=true`);
 };
 
 const accessCourse = () => {
@@ -1113,9 +1161,51 @@ const handleTabChange = async (key: string) => {
   }
 };
 
+// Điều hướng sang trang học tập khi click vào lesson trong chi tiết khóa học
+const handleLessonNavigate = (
+  chapterIndex: number,
+  lessonIndex: number,
+  lesson: any
+) => {
+  // Nếu không có slug thì bỏ qua
+  if (!course.value?.slug) return;
+
+  // Nếu user chưa mua khóa học
+  if (!course.value.isPurchased) {
+    // Bài preview thì giữ hành vi xem thử ngay trên trang chi tiết
+    if (lesson.isPreview && !lesson.isLocked) {
+      handlePreviewLesson(lesson);
+    }
+    // Các bài bị khóa thì không làm gì thêm
+    return;
+  }
+
+  // Đã mua khóa học: luôn cho phép nhảy cóc tự do (không check locked)
+  const slug = course.value.slug;
+
+  // Giữ lại query review=true nếu đang ở chế độ review
+  const query: Record<string, string> = {
+    chapter: String(chapterIndex),
+    lesson: String(lessonIndex),
+  };
+
+  if (isReviewMode.value || hasCertificate.value || course.value.progress?.isCompleted) {
+    query.review = "true";
+  }
+
+  router.push({
+    path: `/my-learning/${slug}`,
+    query,
+  });
+};
+
 // Toggle chapter expand/collapse
 const toggleChapter = (chapterIndex: number) => {
-  expandedChapters.value[chapterIndex] = !expandedChapters.value[chapterIndex];
+  // Đảm bảo reactivity bằng cách tạo object mới
+  expandedChapters.value = {
+    ...expandedChapters.value,
+    [chapterIndex]: !expandedChapters.value[chapterIndex]
+  };
 };
 
 // Handle preview lesson

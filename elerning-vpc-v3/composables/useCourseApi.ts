@@ -74,7 +74,15 @@ export const useCourseApi = () => {
    */
   const getDetail = async (slug: string) => {
     try {
-      const response = await $fetch(`${apiUserBase}/courses/${slug}`)
+      const authStore = useAuthStore()
+      if (!authStore.token && process.client) {
+        await authStore.initAuth()
+      }
+      const response = await $fetch(`${apiUserBase}/courses/${slug}`, {
+        headers: authStore.token
+          ? { Authorization: `Bearer ${authStore.token}` }
+          : undefined,
+      })
       return response
     } catch (error: any) {
       throw error

@@ -147,7 +147,8 @@
         </div>
       </div>
     </template>
-    <div v-if="quizComplete" class="text-center py-8 w-full bg-white rounded-lg">
+    <!-- Chỉ hiển thị thông báo "đã hoàn thành" khi không ở chế độ review -->
+    <div v-if="quizComplete && !props.isReviewMode" class="text-center py-8 w-full bg-white rounded-lg">
       <div class="w-16 h-16 mx-auto mb-4 bg-gray-100 rounded-full flex items-center justify-center">
         <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" class="fill-none stroke-gray-400">
           <path d="M9 12l2 2 4-4" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
@@ -167,7 +168,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, onMounted, onUnmounted } from 'vue'
+import { ref, computed, onMounted, onUnmounted, nextTick } from 'vue'
 import QuizFinishModal from './QuizFinishModal.vue'
 import { useQuizStore, type IQuiz, type IQuizResult } from '~/stores/quiz';
 
@@ -176,6 +177,7 @@ const props = defineProps<{
   chapterId: string
   lessonId: string
   quizComplete: boolean
+  isReviewMode?: boolean
 }>()
 const quizStore = useQuizStore(); 
 
@@ -224,6 +226,13 @@ const init = async () => {
     chapterId: props.chapterId,
     lessonId: props.lessonId,
   })
+  
+  // Ở chế độ review, nếu quiz đã hoàn thành thì tự động hiển thị kết quả
+  // Đợi một chút để đảm bảo quizResult đã được set
+  await nextTick()
+  if (props.isReviewMode && props.quizComplete && quizResult.value?.quizCompleted) {
+    isShowQuizResult.value = true
+  }
 }
 
 const handleChoose = (questionId: string, answerId: string) => {
@@ -260,7 +269,12 @@ watch(quizResult,
   (value) => {
     if(!value) return;
     if (value.quizCompleted) {
-      isVisibleModal.value = true;
+      // Ở chế độ review, tự động hiển thị kết quả thay vì hiển thị modal
+      if (props.isReviewMode) {
+        isShowQuizResult.value = true;
+      } else {
+        isVisibleModal.value = true;
+      }
     }
   } 
 )

@@ -55,11 +55,10 @@
           <div class="mb-6">
             <ProgressBar :percentage="courseProgress" />
           </div>
-          <!-- Video Player -->
-          <div class="mb-4 md:mb-6">
-            <div v-if="currentLesson" class="video-wrapper">
+          <!-- Video Player - Chỉ hiển thị nếu lesson có video -->
+          <div v-if="(currentVideoUrl || currentThumbnail) && currentLesson" class="mb-4 md:mb-6">
+            <div class="video-wrapper">
               <div
-                v-if="currentVideoUrl || currentThumbnail"
                 class="relative w-full rounded-lg overflow-hidden shadow-lg bg-gray-900"
                 :style="{ aspectRatio: '16/9' }"
               >
@@ -68,7 +67,7 @@
                   v-if="currentVideoUrl"
                   ref="videoRef"
                   :src="currentVideoUrl"
-                  :poster="currentThumbnail"
+                  :poster="currentThumbnail || undefined"
                   class="w-full h-full object-cover video-element"
                   preload="metadata"
                   playsinline
@@ -349,13 +348,14 @@
             </a-tabs>
           </div>
         </div>
-        <div v-if="isQuiz && !course?.progress?.isCompleted" class="flex-1">
+        <div v-if="isQuiz && (!course?.progress?.isCompleted || isReviewMode)" class="flex-1">
           <QuizzesComponent
             v-if="currentLesson?._id"
             :course-id="course?._id || ''"
             :chapter-id="currentChapter?._id || ''"
             :lesson-id="currentLesson?._id || ''"
             :quiz-complete="currentLesson?.isCompleted || false"
+            :is-review-mode="isReviewMode"
             @completed="(quizResult) => handleFinishQuiz(quizResult)"
           />
         </div>
@@ -419,12 +419,17 @@ const course = computed<Course | null>(() => coursesStore.course);
 const isRepeat = computed<boolean>(() => coursesStore.isRepeatLearn);
 const slug = computed(() => route.params.slug as string);
 
+// Chế độ Review: cho phép xem lại tất cả bài mà không cần reset progress
+const isReviewMode = computed(() => route.query.review === "true");
+
 const hasCertificate = computed(() => {
   const id = course.value?._id?.toString?.();
   return !!(id && authStore.user?.courseCompleted?.includes(id));
 });
 
 const showCertificate = computed(() => {
+  // Ẩn chứng chỉ khi ở chế độ review
+  if (isReviewMode.value) return false;
   if (course.value?.progress?.isCompleted === true) return true;
   const certQuery = route.query.certificate === "true";
   return certQuery && hasCertificate.value;
@@ -475,7 +480,7 @@ const currentVideoUrl = computed(() => {
 
 // Get thumbnail from lesson
 const currentThumbnail = computed(() => {
-  if (!currentLesson.value) return course.value?.thumbnail || "";
+  if (!currentLesson.value) return null;
 
   // If lesson has videos array, get thumbnail from first video
   if (
@@ -484,7 +489,7 @@ const currentThumbnail = computed(() => {
     currentLesson.value.videos.length > 0
   ) {
     const firstVideo = currentLesson.value.videos[0];
-    return firstVideo?.thumbnail || course.value?.thumbnail || "";
+    return firstVideo?.thumbnail || null;
   }
 
   // If lesson has thumbnail directly
@@ -492,7 +497,12 @@ const currentThumbnail = computed(() => {
     return currentLesson.value.thumbnail;
   }
 
-  return course.value?.thumbnail || "";
+  // Chỉ trả về course thumbnail nếu lesson có video
+  if (currentLesson.value.videoUrl || (currentLesson.value.videos && currentLesson.value.videos.length > 0)) {
+    return course.value?.thumbnail || null;
+  }
+
+  return null;
 });
 
 // Course progress percentage from backend
@@ -533,6 +543,7 @@ const handleTabChange = (key: string) => {
   activeTab.value = key;
 };
 
+// Cho phép nhảy cóc: chỉ chặn mark completed cho quiz hoặc bài đã hoàn thành
 const canMarkLessonCompleted = (
   chapterIndex: number,
   lessonIndex: number
@@ -549,75 +560,22 @@ const canMarkLessonCompleted = (
 
   if (!currentLesson) return false;
 
-  if (currentLesson.isLocked) return false;
+  // Không tự động mark cho quiz
+  const hasQuiz = currentLesson.hasQuiz || !!currentLesson.quizId || !!currentLesson.quiz;
+  if (hasQuiz) return false;
 
+  // Không mark lại bài đã hoàn thành
   if (currentLesson.isCompleted) return false;
-
-  if (lessonIndex > 0) {
-    const prevLesson = lessons[lessonIndex - 1];
-    if (!prevLesson?.isCompleted) {
-      return false;
-    }
-  }
-
-  if (chapterIndex > 0 && lessonIndex === 0) {
-    const prevChapter = chapters[chapterIndex - 1];
-    if (prevChapter?.lessons && prevChapter.lessons.length > 0) {
-      const lastPrevLesson =
-        prevChapter.lessons[prevChapter.lessons.length - 1];
-      if (!lastPrevLesson?.isCompleted) {
-        return false;
-      }
-    }
-  }
 
   return true;
 };
 
 const handleRepeat = async () => {
-  // Điều hướng về bài học đầu tiên
-  await navigateTo(`/my-learning/${slug.value}?chapter=0&lesson=0`);
-
-  // Load lại dữ liệu khóa học sau khi backend đã reset progress
-  await fetchCourseDetail();
-
-  // Đợi computed/currentLesson cập nhật xong
-  await nextTick();
-
-  // Tự động đánh dấu hoàn thành bài đầu tiên nếu không có quiz (để tiến trình nhảy ngay)
-  const courseVal = course.value;
-  const chapterVal = currentChapter.value;
-  const lessonVal = currentLesson.value as any;
-
-  if (
-    courseVal &&
-    chapterVal &&
-    lessonVal &&
-    !lessonVal.isCompleted &&
-    !(lessonVal.hasQuiz || lessonVal.quizId || lessonVal.quiz)
-  ) {
-    try {
-      markingCompleted.value = true;
-
-      await progressTracking.markLessonCompleted(
-        courseVal._id,
-        chapterVal._id,
-        lessonVal._id,
-        0
-      );
-
-      await coursesStore.fetchMyCourseBySlug(
-        slug.value,
-        currentChapterIndex.value,
-        currentLessonIndex.value
-      );
-    } catch (error) {
-      // ignore, để watcher hiện tại xử lý tiếp nếu cần
-    } finally {
-      markingCompleted.value = false;
-    }
-  }
+  // Chế độ Review: chỉ điều hướng về bài học đầu tiên với query review=true
+  // Không reset progress, không reset chứng chỉ
+  await navigateTo(`/my-learning/${slug.value}?chapter=0&lesson=0&review=true`);
 }
+// Tìm bài học đầu tiên chưa hoàn thành (không cần check khóa hay bài trước)
 const findValidLesson = (): {
   chapterIndex: number;
   lessonIndex: number;
@@ -640,26 +598,6 @@ const findValidLesson = (): {
       if (!lesson) continue;
 
       if (lesson.isCompleted) continue;
-
-      if (lesson.isLocked) continue;
-
-      if (lesIdx > 0) {
-        const prevLesson = lessons[lesIdx - 1];
-        if (!prevLesson?.isCompleted) {
-          continue;
-        }
-      }
-
-      if (chIdx > 0 && lesIdx === 0) {
-        const prevChapter = chapters[chIdx - 1];
-        if (prevChapter?.lessons && prevChapter.lessons.length > 0) {
-          const lastPrevLesson =
-            prevChapter.lessons[prevChapter.lessons.length - 1];
-          if (!lastPrevLesson?.isCompleted) {
-            continue;
-          }
-        }
-      }
 
       return { chapterIndex: chIdx, lessonIndex: lesIdx };
     }
@@ -758,6 +696,40 @@ watch(
     )
       return;
 
+    // Nếu đã mua khóa học, cho phép nhảy cóc - bỏ qua check bài trước
+    if (course.value?.isPurchased) {
+      // Chỉ mark completed nếu chưa hoàn thành (kể cả khi ở chế độ review/jump ahead)
+      // Điều này đảm bảo khi nhảy cóc vẫn tính tiến độ
+      const hasQuiz = lesson.hasQuiz || !!lesson.quizId || !!lesson.quiz;
+      if (!hasQuiz && !lesson.isCompleted) {
+        try {
+          markingCompleted.value = true;
+          await progressTracking.markLessonCompleted(
+            course.value._id,
+            currentChapter.value._id,
+            lesson._id,
+            0
+          );
+          // Reload course để cập nhật UI (tick, progress %)
+          await coursesStore.fetchMyCourseBySlug(
+            slug.value,
+            currentChapterIndex.value,
+            currentLessonIndex.value
+          );
+        } catch (error) {
+          console.error('Error marking lesson completed:', error);
+        } finally {
+          markingCompleted.value = false;
+        }
+      }
+      // Nếu ở chế độ review (đã hoàn thành 100%), không làm gì thêm
+      // Nhưng vẫn cho phép mark completed nếu bài chưa hoàn thành (nhảy cóc)
+      return;
+    }
+
+    // Ở chế độ review (chưa mua), không tự động mark completed và không redirect
+    if (isReviewMode.value) return;
+
     const isFirstLesson =
       currentChapterIndex.value === 0 && currentLessonIndex.value === 0;
 
@@ -819,6 +791,10 @@ watch(
       currentLessonIndex.value = parseInt(query.lesson as string) || 0;
     }
     isQuiz.value = query.quiz === 'true' ? true : false;
+    // Khi vào chế độ review, load lại course để đảm bảo tất cả bài hiển thị đúng trạng thái
+    if (query.review === 'true') {
+      fetchCourseDetail();
+    }
   },
   { immediate: true }
 );

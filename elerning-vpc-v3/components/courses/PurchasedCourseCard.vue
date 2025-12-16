@@ -119,13 +119,8 @@
           </div>
 
           <!-- Action Buttons -->
-          <!-- Trường hợp 1: Đã từng hoàn thành (có chứng chỉ) nhưng tiến trình hiện tại < 100% (đang học lại) -->
-          <div class="course-actions" v-if="everCompleted && !isCurrentlyCompleted">
-            <button class="btn-access" @click.stop="goToLearning">Học ngay</button>
-            <button class="btn-completed" @click.stop="goToCertificate">Đã hoàn thành</button>
-          </div>
-          <!-- Trường hợp 2: Tiến trình hiện tại = 100% (đã hoàn thành khóa, dù là lần đầu hay học lại) -->
-          <div class="course-actions" v-else-if="isCurrentlyCompleted">
+          <!-- Nếu đã có chứng chỉ (everCompleted) hoặc đã hoàn thành 100% → chỉ hiển thị "Đã hoàn thành" -->
+          <div class="course-actions" v-if="everCompleted || isCurrentlyCompleted">
             <button class="btn-completed" @click.stop="goToCertificate">Đã hoàn thành</button>
           </div>
           <!-- Các trường hợp còn lại: đã mua nhưng chưa hoàn thành -->

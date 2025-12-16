@@ -9,6 +9,8 @@ export interface Course {
   description: string
   shortDescription: string
   thumbnail: string
+  // Video giới thiệu khóa học (intro), độc lập với lessons
+  introVideo?: string
   price: number
   originalPrice?: number
   discount?: number

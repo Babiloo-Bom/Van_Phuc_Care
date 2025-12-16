@@ -29,6 +29,10 @@ const courseSchema = new mongoose.Schema(
       type: String,
       required: true,
     },
+    introVideo: {
+      type: String,
+      default: null,
+    },
     price: {
       type: Number,
       required: true,
@@ -198,6 +202,11 @@ class CourseController {
             status: "active",
           });
 
+          // Convert introVideo from MinIO path to URL if exists
+          const convertedIntroVideo = courseData.introVideo
+            ? await CourseController.convertMinioPathToUrl(courseData.introVideo)
+            : null;
+
           return {
             _id: courseData._id.toString(),
             title: courseData.title,
@@ -205,6 +214,7 @@ class CourseController {
             description: courseData.description,
             shortDescription: courseData.shortDescription,
             thumbnail: courseData.thumbnail,
+            introVideo: convertedIntroVideo,
             price: courseData.price,
             originalPrice: courseData.originalPrice || courseData.price,
             discount: courseData.discount || 0,
@@ -581,6 +591,14 @@ class CourseController {
       courseData.quizCount = totalQuizCount;
       courseData.examCount = totalQuizCount; // Alias for consistency
       courseData.isPurchased = userHasPurchased; // Add purchase status
+      
+      // Convert introVideo from MinIO path to URL if exists
+      if (courseData.introVideo) {
+        courseData.introVideo = await CourseController.convertMinioPathToUrl(
+          courseData.introVideo
+        );
+      }
+      
       sendSuccess(res, { course: courseData });
     } catch (error: any) {
       sendError(res, 500, error.message, error as Error);
@@ -791,6 +809,11 @@ class CourseController {
               ? Math.round((completedLessons / totalLessons) * 100)
               : 0;
 
+          // Convert introVideo from MinIO path to URL if exists
+          const convertedIntroVideo = courseData.introVideo
+            ? await CourseController.convertMinioPathToUrl(courseData.introVideo)
+            : null;
+
           return {
             _id: courseData._id.toString(),
             title: courseData.title,
@@ -798,6 +821,7 @@ class CourseController {
             description: courseData.description,
             shortDescription: courseData.shortDescription,
             thumbnail: courseData.thumbnail,
+            introVideo: convertedIntroVideo,
             price: courseData.price,
             originalPrice: courseData.originalPrice || courseData.price,
             discount: courseData.discount || 0,
@@ -1163,6 +1187,13 @@ class CourseController {
       courseData.videoCount = totalVideoCount;
       courseData.documentCount = totalDocumentCount;
       courseData.quizCount = totalQuizCount;
+
+      // Convert introVideo from MinIO path to URL if exists
+      if (courseData.introVideo) {
+        courseData.introVideo = await CourseController.convertMinioPathToUrl(
+          courseData.introVideo
+        );
+      }
 
       sendSuccess(res, { course: courseData });
     } catch (error: any) {

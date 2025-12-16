@@ -30,6 +30,10 @@ const courseSchema = new mongoose.Schema(
       type: String,
       required: true,
     },
+    introVideo: {
+      type: String,
+      default: null,
+    },
     price: {
       type: Number,
       required: true,
