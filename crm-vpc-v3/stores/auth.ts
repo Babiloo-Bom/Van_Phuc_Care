@@ -321,7 +321,7 @@ export const useAuthStore = defineStore('auth', {
     /**
      * Verify email with OTP (after registration)
      * Migrated from crm-vpc/components/auth/forms/SignUp.vue
-     * Updated: Auto login after successful verification
+     * Updated: Auto login after successful verification (same logic as login)
      */
     async verifyEmail(email: string, otp: string) {
       this.isLoading = true;
@@ -332,35 +332,90 @@ export const useAuthStore = defineStore('auth', {
         // Verify OTP - API returns accessToken if successful
         const response: any = await authApi.verifyEmail(email, otp);
         
-        // Auto login: Save token and user info from response
+        // Auto login: Save token and user info from response (same as login flow)
         if (response?.accessToken) {
-          this.token = response.accessToken;
+          const token = response.accessToken;
+          const tokenExpireAt = response.tokenExpireAt;
           
-          // Handle tokenExpireAt from response
-          this.tokenExpireAt = response.tokenExpireAt
-            ? this.calculateExpireTime(response.tokenExpireAt)
+          this.token = token;
+          this.tokenExpireAt = tokenExpireAt
+            ? this.calculateExpireTime(tokenExpireAt)
             : this.calculateExpireTime('7d');
-          
-          this.user = {
-            id: response.id,
-            email: response.email,
-            fullname: response.fullname,
-            username: response.username,
-          };
           this.isAuthenticated = true;
           
-          // Persist to localStorage
-          if (import.meta.client) {
-            localStorage.setItem('auth_token', response.accessToken);
-            localStorage.setItem('token_expire_at', this.tokenExpireAt || '');
-            localStorage.setItem('user', JSON.stringify(this.user));
+          // Fetch full user profile data from API
+          try {
+            const profileResponse = (await authApi.getUserProfile()) as any;
+            const userData = profileResponse?.data?.user || profileResponse?.data?.data || profileResponse?.data;
+            
+            this.user = {
+              id: userData?._id || userData?.id || response.id || 'temp-id',
+              email: userData?.email || response.email || email,
+              username: userData?.username || response.username || email,
+              fullname: userData?.fullname || userData?.name || response.fullname || email,
+              name: userData?.name || userData?.fullname,
+              phone: userData?.phoneNumber || userData?.phone,
+              avatar: userData?.avatar,
+              role: userData?.role || userData?.type,
+              verified: true,
+              status: userData?.status || 'active',
+              fullAddress: userData?.fullAddress || '',
+              address: userData?.address || '',
+              courseRegister: userData?.courseRegister || [],
+              courseCompleted: userData?.courseCompleted || [],
+            };
+          } catch (profileError) {
+            console.error('⚠️ Failed to fetch user profile after verify, using basic data:', profileError);
+            // Fallback to basic user data if profile fetch fails
+            this.user = {
+              id: response.id || 'temp-id',
+              email: response.email || email,
+              username: response.username || email,
+              fullname: response.fullname || email,
+              verified: true,
+              status: 'active',
+            };
           }
           
-          // Fetch full user profile
-          await this.refreshUserData();
+          // Save to localStorage (same as login)
+          if (import.meta.client) {
+            localStorage.setItem('auth_token', token);
+            localStorage.setItem('token_expire_at', this.tokenExpireAt || '');
+            localStorage.setItem('user', JSON.stringify(this.user));
+            
+            // Also save authData for initAuth compatibility
+            const authData = {
+              user: this.user,
+              token: this.token,
+              tokenExpireAt: this.tokenExpireAt,
+              rememberAccount: false,
+            };
+            localStorage.setItem('authData', JSON.stringify(authData));
+          }
+          
+          // Set justLoggedIn flag to prevent auto-logout for 15 seconds (same as login)
+          this.justLoggedIn = true;
+          this.loginTimestamp = Date.now();
+          console.log('[VerifyEmail] Set justLoggedIn flag, timestamp:', this.loginTimestamp);
+          
+          // Clear any leftover logout sync cookie when logging in
+          if (process.client) {
+            try {
+              const { clearLogoutSyncCookie } = await import('~/utils/authSync');
+              clearLogoutSyncCookie();
+              console.log('[VerifyEmail] Cleared logout sync cookie');
+            } catch (e) {
+              console.warn('[VerifyEmail] Failed to clear logout sync cookie:', e);
+            }
+          }
+          
+          setTimeout(() => {
+            this.justLoggedIn = false;
+            console.log('[VerifyEmail] Cleared justLoggedIn flag after 15 seconds');
+          }, 15000); // 15 seconds grace period
         }
 
-        return { success: true };
+        return { success: true, user: this.user, token: this.token };
       } catch (error: any) {
         console.error('Verify email error:', error);
         return {

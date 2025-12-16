@@ -35,7 +35,7 @@ export default defineEventHandler(async (event) => {
         password: body.password,
         repeat_password: body.repeat_password,
         fullname: body.fullname || body.email.split('@')[0],
-        phone: body.phone || '',
+        phoneNumber: body.phone || body.phoneNumber || '', // Map 'phone' to 'phoneNumber' for backend
         domain: body.domain || 'vanphuccare.gensi.vn',
         origin: body.origin || 'vanphuccare.gensi.vn',
         source: 'crm', // Identify this is from CRM for email verification link

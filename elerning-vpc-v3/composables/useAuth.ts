@@ -138,8 +138,9 @@ export const useAuth = () => {
     email: string,
     token: string,
     newPassword: string,
+    confirmPassword: string,
   ) => {
-    return await authStore.resetPassword(email, token, newPassword);
+    return await authStore.resetPassword(email, token, newPassword, confirmPassword);
   };
 
   /**

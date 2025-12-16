@@ -385,13 +385,13 @@ export const useAuthStore = defineStore("auth", {
      * Reset password with token
      * Migrated from admin-vpc/components/auth/forms/NewPassword.vue
      */
-    async resetPassword(token: string, newPassword: string) {
+    async resetPassword(email: string, token: string, newPassword: string, confirmPassword: string) {
       this.isLoading = true;
 
       try {
         const authApi = useAuthApi();
 
-        await authApi.resetPassword(token, newPassword);
+        await authApi.resetPassword(email, token, newPassword, confirmPassword);
 
         return { success: true };
       } catch (error: any) {

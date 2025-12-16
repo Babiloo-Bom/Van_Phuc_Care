@@ -168,7 +168,8 @@ export const useAuthApi = () => {
               password,
               repeat_password,
               fullname: fullname || email.split("@")[0], // Use email prefix if no fullname
-              phone: phone || "",
+              phoneNumber: phone || "", // Backend expects 'phoneNumber' not 'phone'
+              source: 'elearning', // Identify this is from E-Learning for email verification link
             },
           })
         )
@@ -275,17 +276,21 @@ export const useAuthApi = () => {
 
     /**
      * Reset password with token
-     * @param token Token from OTP verification
+     * @param email User email
+     * @param token Token from forgot password email
      * @param newPassword New password
+     * @param confirmPassword Confirm new password
      */
-    async resetPassword(token: string, newPassword: string) {
+    async resetPassword(email: string, token: string, newPassword: string, confirmPassword: string) {
       try {
         return await withRetry(() =>
           fetchWithTimeout(`${apiBase}/sessions/reset_password`, {
             method: "POST",
             body: {
+              email,
               token,
-              password: newPassword,
+              newPassword,
+              confirmPassword,
             },
           })
         );

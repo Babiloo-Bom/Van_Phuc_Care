@@ -226,6 +226,7 @@ const showNewPassword = ref(false);
 const showConfirmPassword = ref(false);
 const isVerified = ref(false);
 const verifiedToken = ref<string | null>(null);
+const verifiedEmail = ref<string | null>(null);
 const { apiUser } = useApiBase();
 
 const form = reactive({
@@ -259,8 +260,9 @@ onMounted(async () => {
       if (result.success) {
         isVerified.value = true;
         verifiedToken.value = otp;
+        verifiedEmail.value = email; // Save email for reset password
       } else {
-        message.error(result.error || "Liên kết không hợp lệ hoặc đã hết hạn");
+        message.error("Liên kết không hợp lệ hoặc đã hết hạn");
         await navigateTo("/login");
       }
     } catch (err: any) {
@@ -285,17 +287,22 @@ const handleSubmit = async () => {
   try {
     loading.value = true;
 
+    // Get email from verified email or URL query
+    const emailFromRoute = route.query.email as string | undefined;
+    const email = verifiedEmail.value || emailFromRoute;
+    
     // Determine token: prefer verifiedToken (from email+otp), fallback to URL token
     const tokenFromRoute = route.query.token as string | undefined;
-    const token = (verifiedToken.value as string) || tokenFromRoute;
+    const otpFromRoute = route.query.otp as string | undefined;
+    const token = verifiedToken.value || otpFromRoute || tokenFromRoute;
 
-    if (!token) {
-      message.error("Token không hợp lệ");
+    if (!token || !email) {
+      message.error("Thông tin không hợp lệ");
       return;
     }
 
-    // Call reset password API
-    const result = await authStore.resetPassword(token, form.newPassword);
+    // Call reset password API with email, token, newPassword, confirmPassword
+    const result = await authStore.resetPassword(email, token, form.newPassword, form.confirmPassword);
 
     if (result.success) {
       message.success("Mật khẩu đã được cập nhật thành công");

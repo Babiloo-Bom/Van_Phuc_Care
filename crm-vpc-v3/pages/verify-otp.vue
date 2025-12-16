@@ -62,12 +62,16 @@ const verifyOtp = async () => {
   try {
     loading.value = true;
     
-    // Call verify email API
+    // Call verify email API - this also logs in the user
     const result = await authStore.verifyEmail(email, otp);
     
     if (result.success) {
       verified.value = true;
       message.success("Xác minh tài khoản thành công!");
+      
+      // Check if user is authenticated after verification
+      console.log('✅ User authenticated:', authStore.isAuthenticated);
+      console.log('✅ User info:', authStore.user);
       
       // Redirect to home page after 2 seconds (user is already logged in)
       setTimeout(() => {

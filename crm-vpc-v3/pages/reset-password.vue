@@ -122,10 +122,11 @@ onMounted(async () => {
     if (result.success) {
       canReset.value = true;
     } else {
-      message.error(result.error || 'OTP không hợp lệ hoặc đã hết hạn');
+      message.error('Liên kết không hợp lệ hoặc đã hết hạn');
       router.push('/login');
     }
   } else {
+    message.error('Liên kết không hợp lệ hoặc đã hết hạn');
     router.push('/login');
   }
 });
