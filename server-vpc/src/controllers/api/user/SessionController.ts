@@ -58,29 +58,12 @@ class SessionController {
 
   public async register (req: Request, res: Response) {
     try {
-      const _user = await MongoDbUsers.model.findOne({ email: req.params.email });
+      // Check if email already exists
+      const _user = await MongoDbUsers.model.findOne({ email: req.body.email });
       if (_user) {
-        sendError(res, 400, AccountExists);
-      } else {
-        const params = req.parameters.permit(MongoDbUsers.CREATABLE_PARAMETERS).value();
-        const salt = bcrypt.genSaltSync();
-        const passwordEncode = bcrypt.hashSync(params.password, salt);
-        const user = await MongoDbUsers.model.create({
-          ...params,
-          password: passwordEncode,
-          status: MongoDbUsers.STATUS_ENUM.INACTIVE,
-        });
-        // Generate OTP and send verification email
-        const otp = (Math.random() * (999999 - 100000) + 100000).toString().slice(0, 6);
-        await user.update({ verifyOtp: otp });
-        
-        // Get source from request body to determine which site the user registered from
-        const source = req.body.source || 'elearning';
-        MailerService.verifyAccountOTP(user.get('email'), otp, source, user.get('fullname'));
-        
-        user.set('verifyOtp', null);
-        sendSuccess(res, { user });
+        return sendError(res, 400, AccountExists);
       }
+      
       const params = req.parameters.permit(MongoDbUsers.CREATABLE_PARAMETERS).value();
       const salt = bcrypt.genSaltSync();
       const passwordEncode = bcrypt.hashSync(params.password, salt);
@@ -89,13 +72,22 @@ class SessionController {
         password: passwordEncode,
         status: MongoDbUsers.STATUS_ENUM.INACTIVE,
       });
+      
       // Generate OTP and send verification email
       const otp = (Math.random() * (999999 - 100000) + 100000).toString().slice(0, 6);
-      await user.update({ verifyOtp: otp });
+      await user.updateOne({ verifyOtp: otp });
+      
       // Get source from request body to determine which site the user registered from
-      const source = req.body.source || "elearning";
-      MailerService.verifyAccountOTP(user.get("email"), otp, source);
-      user.set("verifyOtp", null);
+      const source = req.body.source || 'elearning';
+      
+      try {
+        await MailerService.verifyAccountOTP(user.get('email'), otp, source, user.get('fullname'));
+        console.log('✅ Verification email sent to:', user.get('email'));
+      } catch (mailErr) {
+        console.error('❌ Failed to send verification email:', mailErr);
+        // Continue with registration even if email fails
+      }
+      
       sendSuccess(res, { user });
     } catch (error: any) {
       console.log("register", error)
@@ -222,13 +214,37 @@ class SessionController {
     try {
       const { email, otp } = req.body;
       const user = await MongoDbUsers.model.findOne({ email });
-      if (!user || !user.get('verifyOtp') === otp) return sendError(res, 404, NoData);
-      await MongoDbUsers.model.updateOne({ _id: user.get('_id') }, {
-        isVerify: true,
-        status: 'active',
-      });
-      const _user = await MongoDbUsers.model.findOne({ email });
-      sendSuccess(res, { user: _user });
+      
+      if (!user) {
+        return sendError(res, 404, NoData);
+      }
+      
+      // Check for forgot password OTP (forgotPasswordToken field)
+      const storedForgotPasswordToken = user.get('forgotPasswordToken');
+      if (storedForgotPasswordToken && storedForgotPasswordToken === otp) {
+        // Check if token expired
+        const expireAt = user.get('forgotPasswordExpireAt');
+        if (expireAt && dayjs().isAfter(dayjs(expireAt))) {
+          return sendError(res, 400, InvalidOtp);
+        }
+        // OTP is valid for password reset - don't clear it yet, let resetPassword handle that
+        return sendSuccess(res, { user, verified: true, type: 'forgot_password' });
+      }
+      
+      // Check for registration OTP (verifyOtp field)
+      const storedVerifyOtp = user.get('verifyOtp');
+      if (storedVerifyOtp && storedVerifyOtp === otp) {
+        await MongoDbUsers.model.updateOne({ _id: user.get('_id') }, {
+          isVerify: true,
+          status: 'active',
+          verifyOtp: null, // Clear OTP after verification
+        });
+        const _user = await MongoDbUsers.model.findOne({ email });
+        return sendSuccess(res, { user: _user, verified: true, type: 'registration' });
+      }
+      
+      // OTP doesn't match any stored OTP
+      return sendError(res, 400, InvalidOtp);
     } catch (error: any) {
       sendError(res, 500, error.message, error as Error);
     }
