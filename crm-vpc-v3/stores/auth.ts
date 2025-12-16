@@ -291,14 +291,27 @@ export const useAuthStore = defineStore('auth', {
         const response: any = await authApi.register(email, password, repeatPassword, fullname, phone);
         return { success: true, data: response };
       } catch (error: any) {
-        console.error('Register error.data?.message:', error.data?.message);
-        console.error('Register error?.message:', error?.message);
+        console.error('Register error:', error);
+        console.error('Register error.data:', error.data);
+        console.error('Register error.message:', error.message);
+        console.error('Register error.statusMessage:', error.statusMessage);
+        
+        // Extract error message from various formats
+        let errorMessage = 'Email đã được sử dụng, vui lòng nhập email khác!';
+        
+        if (error.data?.message) {
+          errorMessage = error.data.message;
+        } else if (error.data?.error && typeof error.data.error === 'string') {
+          errorMessage = error.data.error;
+        } else if (error.statusMessage && typeof error.statusMessage === 'string') {
+          errorMessage = error.statusMessage;
+        } else if (error.message && typeof error.message === 'string') {
+          errorMessage = error.message;
+        }
+        
         return {
           success: false,
-          error:
-            error.data?.message ||
-            error.message ||
-            'Email đã được sử dụng, vui lòng nhập email khác!',
+          error: errorMessage,
         };
       } finally {
         this.isLoading = false;

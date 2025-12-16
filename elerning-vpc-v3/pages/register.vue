@@ -51,8 +51,8 @@
                   required
                 />
               </div>
-              <div v-if="errors.email" style="color: #e53935; font-size: 16px; margin-top: 4px; display: flex; align-items: center; gap: 4px;">
-                <span style="font-size: 18px;">&#10006;</span>
+              <div v-if="errors.email" style="color: #DE4841; font-size: 12px; font-weight: 500; margin-top: 4px; display: flex; align-items: center; gap: 4px;">
+                <span>&#10006;</span>
                 <span>{{ errors.email }}</span>
               </div>
             </div>
@@ -64,12 +64,15 @@
                 <input
                   v-model="form.phone"
                   type="tel"
-                    inputmode="numeric"
-                    pattern="[0-9]*"
-                    maxlength="10"
+                  inputmode="numeric"
+                  pattern="[0-9]*"
+                  maxlength="10"
                   placeholder="Số điện thoại"
                   class="form-input"
                   required
+                  @keypress="onPhoneKeypress"
+                  @input="onPhoneInput"
+                  @paste="onPhonePaste"
                 />
               </div>
                 <div v-if="errors.phone" style="color: #e53935; font-size: 16px; margin-top: 4px; display: flex; align-items: center; gap: 4px;">
@@ -234,10 +237,26 @@ const errors = reactive({
   phone: "",
 });
 
+const onPhoneKeypress = (e: KeyboardEvent) => {
+  // Only allow digits (0-9)
+  if (!/^[0-9]$/.test(e.key)) {
+    e.preventDefault();
+  }
+};
+
 const onPhoneInput = (e: Event) => {
   const target = e.target as HTMLInputElement;
+  // Remove non-digits and limit to 10 chars
   target.value = target.value.replace(/\D/g, '').slice(0, 10);
   form.phone = target.value;
+};
+
+const onPhonePaste = (e: ClipboardEvent) => {
+  e.preventDefault();
+  const pastedText = e.clipboardData?.getData('text') || '';
+  // Only keep digits and limit to 10 chars
+  const digitsOnly = pastedText.replace(/\D/g, '').slice(0, 10);
+  form.phone = digitsOnly;
 };
 
 const togglePassword = () => {
@@ -281,14 +300,34 @@ const handleSubmit = async () => {
       showSuccessModal.value = true;
     } else {
       // Parse server response for duplicate account/email
-      const serverMsg = result?.data?.error?.message ?? result?.data?.message ?? (typeof result?.error === 'string' ? result.error : result?.error?.message);
+      let serverMsg = '';
+      if (typeof result?.error === 'string') {
+        serverMsg = result.error;
+      } else if (typeof result?.error === 'object' && result?.error?.message) {
+        serverMsg = result.error.message;
+      } else if (result?.data?.error && typeof result.data.error === 'string') {
+        serverMsg = result.data.error;
+      } else if (result?.data?.message && typeof result.data.message === 'string') {
+        serverMsg = result.data.message;
+      }
+      
       const serverMsgStr = serverMsg ? String(serverMsg).toLowerCase() : "";
-      if (serverMsgStr.includes('duplicate') || serverMsgStr.includes('account exists') || serverMsgStr.includes('accountexists') || serverMsgStr.includes('email')) {
+      
+      // Check for duplicate email error patterns
+      const isDuplicateEmail = serverMsgStr.includes('duplicate') || 
+        serverMsgStr.includes('e11000') || 
+        serverMsgStr.includes('account exists') || 
+        serverMsgStr.includes('accountexists') || 
+        serverMsgStr.includes('email_1') ||
+        serverMsgStr.includes('email đã được sử dụng') ||
+        serverMsgStr.includes('đã được đăng ký');
+      
+      if (isDuplicateEmail) {
+        // Show error under email input for duplicate email
         errors.email = 'Email này đã được đăng ký';
       } else {
-        if (result?.error) {
-          message.error(typeof result.error === 'string' ? result.error : 'Đăng ký thất bại');
-        }
+        // For other errors, show toast notification
+        message.error(serverMsg || 'Đăng ký thất bại, vui lòng thử lại');
       }
     }
   } catch (error: any) {

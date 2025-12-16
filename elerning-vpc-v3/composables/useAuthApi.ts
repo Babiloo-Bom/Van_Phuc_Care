@@ -263,7 +263,7 @@ export const useAuthApi = () => {
     async forgotPassword(email: string) {
       try {
         return await withRetry(() =>
-          fetchWithTimeout(`${apiBase}/passwords/forgot_password`, {
+          fetchWithTimeout(`${apiBase}/sessions/forgot_password`, {
             method: "POST",
             body: { email },
           })
@@ -281,7 +281,7 @@ export const useAuthApi = () => {
     async resetPassword(token: string, newPassword: string) {
       try {
         return await withRetry(() =>
-          fetchWithTimeout(`${apiBase}/passwords/reset`, {
+          fetchWithTimeout(`${apiBase}/sessions/reset_password`, {
             method: "POST",
             body: {
               token,
