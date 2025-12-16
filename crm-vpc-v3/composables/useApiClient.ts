@@ -18,7 +18,7 @@ export const useApiClient = () => {
   const baseURL = config.public.apiHost;
 
   // List of API paths that should go through Nuxt server (no baseURL prefix)
-  const nuxtServerPaths = ['/api/healthbooks', '/api/tickets', '/api/auth', '/api/users', '/api/vaccinations', '/api/transactions', '/api/sessions', '/api/feedbacks', '/api/services', '/api/_health'];
+  const nuxtServerPaths = ['/api/healthbooks', '/api/tickets', '/api/auth', '/api/users', '/api/vaccinations', '/api/transactions', '/api/sessions', '/api/feedbacks', '/api/services', '/api/uploaders', '/api/uploads', '/api/_health'];
 
   /**
    * Check if URL should use Nuxt server (relative path)
@@ -63,11 +63,15 @@ export const useApiClient = () => {
 
     let errorMessage = 'Có lỗi xảy ra, vui lòng thử lại';
     
-    // Extract error message from response
-    if (error.data) {
-      errorMessage = error.data.message || error.data.error || errorMessage;
-    } else if (error.message) {
-      errorMessage = error.message;
+    // Extract error message from response (check nested data structure)
+    if (error.data?.data?.error) {
+      errorMessage = error.data.data.error;
+    } else if (error.data?.data?.message) {
+      errorMessage = error.data.data.message;
+    } else if (error.data?.error) {
+      errorMessage = error.data.error;
+    } else if (error.data?.message) {
+      errorMessage = error.data.message;
     }
 
     // Handle specific status codes
@@ -77,9 +81,39 @@ export const useApiClient = () => {
       switch (status) {
         case 401:
           errorMessage = 'Phiên đăng nhập hết hạn, vui lòng đăng nhập lại';
-          // Auto logout and redirect
-          authStore.logout();
-          router.push('/login');
+          // Don't auto logout during SSO login process or immediately after login
+          const requestUrl = error.request?.url || error.url || '';
+          const isProfileRequest = requestUrl.includes('/users/profile') || requestUrl.includes('/profile');
+          
+          // Check if login was recent (within last 15 seconds)
+          const timeSinceLogin = authStore.loginTimestamp 
+            ? Date.now() - authStore.loginTimestamp 
+            : Infinity;
+          
+          console.log('[API] 401 error details:', {
+            isSSOLoginInProgress: authStore.isSSOLoginInProgress,
+            justLoggedIn: authStore.justLoggedIn,
+            loginTimestamp: authStore.loginTimestamp,
+            timeSinceLogin: timeSinceLogin + 'ms',
+            isProfileRequest,
+            requestUrl,
+            willLogout: !authStore.isSSOLoginInProgress && !authStore.justLoggedIn && timeSinceLogin >= 15000 && !isProfileRequest,
+          });
+          
+          if (authStore.isSSOLoginInProgress) {
+            console.log('[API] 401 error during SSO login, skipping auto-logout');
+          } else if (authStore.justLoggedIn) {
+            console.log('[API] 401 error immediately after login, skipping auto-logout');
+          } else if (timeSinceLogin < 15000) {
+            console.warn('[API] 401 error but login was recent (', timeSinceLogin, 'ms ago), skipping auto-logout');
+          } else if (isProfileRequest) {
+            console.warn('[API] 401 error on profile request, skipping auto-logout (non-critical)');
+          } else {
+            // Auto logout and redirect
+            console.warn('[API] 401 error, logging out (login was', timeSinceLogin, 'ms ago)');
+            authStore.logout();
+            router.push('/login');
+          }
           break;
         case 403:
           errorMessage = 'Bạn không có quyền thực hiện thao tác này';

@@ -43,7 +43,7 @@
     <!-- Main Content Area -->
     <div class="container mx-auto px-4 py-4 md:py-6">
       <div class="flex flex-col lg:flex-row gap-4 lg:gap-6">
-        <div v-if="!isQuiz && !course?.progress?.isCompleted" class="flex-1 lg:w-[65%] bg-white rounded-lg shadow-lg p-4 md:p-8">
+        <div v-if="!isQuiz && !showCertificate" class="flex-1 lg:w-[65%] bg-white rounded-lg shadow-lg p-4 md:p-8">
           <!-- Lesson Title -->
           <h1
             class="text-xl md:text-2xl lg:text-3xl font-bold text-gray-800 mb-4"
@@ -63,19 +63,38 @@
                 class="relative w-full rounded-lg overflow-hidden shadow-lg bg-gray-900"
                 :style="{ aspectRatio: '16/9' }"
               >
-                <!-- Video Element -->
+                <!-- Video Element với chặn tải xuống và context menu -->
                 <video
                   v-if="currentVideoUrl"
                   ref="videoRef"
                   :src="currentVideoUrl"
                   :poster="currentThumbnail"
-                  class="w-full h-full object-cover"
-                  controls
+                  class="w-full h-full object-cover video-element"
                   preload="metadata"
-                  crossorigin="anonymous"
-                />
+                  playsinline
+                  controlslist="nodownload noplaybackrate"
+                  disablePictureInPicture
+                  :controls="false"
+                  @timeupdate="onTimeUpdate"
+                  @loadedmetadata="onLoadedMetadata"
+                  @contextmenu.prevent
+                  @dragstart.prevent
+                  @selectstart.prevent
+                  @copy.prevent
+                ></video>
+                
+                <!-- Watermark Overlay -->
+                <div
+                  v-if="currentVideoUrl"
+                  class="absolute top-4 right-4 pointer-events-none select-none"
+                  style="user-select: none; -webkit-user-select: none;"
+                >
+                  <div class="bg-black bg-opacity-50 text-white px-3 py-1 rounded text-xs font-semibold">
+                    {{ authStore.user?.email || 'Van Phuc Care' }}
+                  </div>
+                </div>
 
-                <!-- Thumbnail with Play Button (nếu không có video) -->
+                <!-- Thumbnail với nút Play (nếu chưa có currentVideoUrl) -->
                 <div
                   v-else-if="currentThumbnail"
                   class="relative w-full h-full"
@@ -133,6 +152,58 @@
                       />
                     </svg>
                     <p class="text-lg font-semibold">Không có video</p>
+                  </div>
+                </div>
+
+                <!-- Custom Controls -->
+                <div
+                  v-if="currentVideoUrl"
+                  class="absolute inset-x-0 bottom-0 bg-black bg-opacity-60 px-4 py-3 flex items-center gap-3"
+                >
+                  <!-- Play / Pause -->
+                  <button
+                    class="w-8 h-8 flex items-center justify-center rounded-full bg-white bg-opacity-90 hover:bg-opacity-100 transition"
+                    @click.stop="togglePlay"
+                  >
+                    <svg
+                      v-if="!playerState.playing"
+                      xmlns="http://www.w3.org/2000/svg"
+                      width="18"
+                      height="18"
+                      viewBox="0 0 24 24"
+                      class="fill-gray-800 ml-0.5"
+                    >
+                      <path d="M8 5v14l11-7z" />
+                    </svg>
+                    <svg
+                      v-else
+                      xmlns="http://www.w3.org/2000/svg"
+                      width="18"
+                      height="18"
+                      viewBox="0 0 24 24"
+                      class="fill-gray-800"
+                    >
+                      <path d="M6 5h4v14H6zM14 5h4v14h-4z" />
+                    </svg>
+                  </button>
+
+                  <!-- Progress / Seek bar -->
+                  <div class="flex-1 flex items-center gap-3">
+                    <span class="text-xs text-gray-200 whitespace-nowrap">
+                      {{ formatTime(playerState.currentTime) }}
+                    </span>
+                    <input
+                      type="range"
+                      min="0"
+                      :max="playerState.duration || 0"
+                      step="0.1"
+                      v-model.number="playerState.currentTime"
+                      @input.stop="onSeek"
+                      class="flex-1 h-1 bg-gray-500 rounded-lg appearance-none cursor-pointer custom-range"
+                    />
+                    <span class="text-xs text-gray-200 whitespace-nowrap">
+                      {{ formatTime(playerState.duration) }}
+                    </span>
                   </div>
                 </div>
               </div>
@@ -288,7 +359,7 @@
             @completed="(quizResult) => handleFinishQuiz(quizResult)"
           />
         </div>
-        <div v-if="course?.progress?.isCompleted === true" class="flex-1">
+        <div v-if="showCertificate" class="flex-1">
           <CourseCertificateComponent
             :course="course"
             @is-repeating="handleRepeat"
@@ -307,9 +378,10 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, onMounted, watch } from "vue";
+import { ref, computed, onMounted, watch, nextTick } from "vue";
 import { useRoute } from "vue-router";
 import { useCoursesStore } from "~/stores/courses";
+import { useAuthStore } from "~/stores/auth";
 import NavCourse from "~/components/courses/NavCourse.vue";
 import DocumentsComponent from "~/components/lessons/DocumentsComponent.vue";
 import QuizzesComponent from "~/components/lessons/QuizzesComponent.vue";
@@ -325,6 +397,7 @@ definePageMeta({
 const route = useRoute();
 const coursesStore = useCoursesStore();
 const progressTracking = useProgressTracking();
+const authStore = useAuthStore();
 
 // State
 const loading = ref(false);
@@ -335,10 +408,27 @@ const videoRef = ref<HTMLVideoElement | null>(null);
 const activeTab = ref("modules"); // Default to "Học phần" tab
 const markingCompleted = ref(false);
 
+const playerState = ref({
+  duration: 0,
+  currentTime: 0,
+  playing: false,
+});
+
 // Computed
 const course = computed<Course | null>(() => coursesStore.course);
 const isRepeat = computed<boolean>(() => coursesStore.isRepeatLearn);
 const slug = computed(() => route.params.slug as string);
+
+const hasCertificate = computed(() => {
+  const id = course.value?._id?.toString?.();
+  return !!(id && authStore.user?.courseCompleted?.includes(id));
+});
+
+const showCertificate = computed(() => {
+  if (course.value?.progress?.isCompleted === true) return true;
+  const certQuery = route.query.certificate === "true";
+  return certQuery && hasCertificate.value;
+});
 const currentChapter = computed<Chapter | null>(() => {
   if (!course.value?.chapters || course.value.chapters.length === 0)
     return null;
@@ -435,6 +525,7 @@ const downloadDocument = (docType: string) => {
 const playVideo = () => {
   if (videoRef.value) {
     videoRef.value.play();
+    playerState.value.playing = true;
   }
 };
 
@@ -483,8 +574,49 @@ const canMarkLessonCompleted = (
   return true;
 };
 
-const handleRepeat = () => {
-  fetchCourseDetail();
+const handleRepeat = async () => {
+  // Điều hướng về bài học đầu tiên
+  await navigateTo(`/my-learning/${slug.value}?chapter=0&lesson=0`);
+
+  // Load lại dữ liệu khóa học sau khi backend đã reset progress
+  await fetchCourseDetail();
+
+  // Đợi computed/currentLesson cập nhật xong
+  await nextTick();
+
+  // Tự động đánh dấu hoàn thành bài đầu tiên nếu không có quiz (để tiến trình nhảy ngay)
+  const courseVal = course.value;
+  const chapterVal = currentChapter.value;
+  const lessonVal = currentLesson.value as any;
+
+  if (
+    courseVal &&
+    chapterVal &&
+    lessonVal &&
+    !lessonVal.isCompleted &&
+    !(lessonVal.hasQuiz || lessonVal.quizId || lessonVal.quiz)
+  ) {
+    try {
+      markingCompleted.value = true;
+
+      await progressTracking.markLessonCompleted(
+        courseVal._id,
+        chapterVal._id,
+        lessonVal._id,
+        0
+      );
+
+      await coursesStore.fetchMyCourseBySlug(
+        slug.value,
+        currentChapterIndex.value,
+        currentLessonIndex.value
+      );
+    } catch (error) {
+      // ignore, để watcher hiện tại xử lý tiếp nếu cần
+    } finally {
+      markingCompleted.value = false;
+    }
+  }
 }
 const findValidLesson = (): {
   chapterIndex: number;
@@ -543,7 +675,7 @@ const findValidLesson = (): {
 const fetchCourseDetail = async () => {
   try {
     loading.value = true;
-    await coursesStore.fetchMyCourseBySlug(slug.value);
+    await coursesStore.fetchMyCourseBySlug(slug.value, currentChapterIndex.value, currentLessonIndex.value);
 
     const chapterParam = route.query.chapter;
     const lessonParam = route.query.lesson;
@@ -562,46 +694,6 @@ const fetchCourseDetail = async () => {
     ) {
       currentLessonIndex.value = 0;
     }
-    if (isRepeat.value) {
-      let totalLessons = 0;
-      let completedLessons = 0;
-      if (course.value?.chapters && course.value?.chapters?.length > 0) {
-        for (const chapter of course.value?.chapters) {
-          if (chapter.lessons && Array.isArray(chapter.lessons)) {
-            totalLessons += chapter.lessons.length;
-            completedLessons += chapter.lessons.filter(
-              (lesson: any , index: number) => lesson.isCompleted === true && index <= currentLessonIndex.value
-            ).length;
-          }
-        }
-      }
-      
-      const progressPercentage =
-        totalLessons > 0
-          ? Math.round((completedLessons / totalLessons) * 100)
-          : 0;
-
-      coursesStore.setCurrentCourse({
-        ...(coursesStore?.currentCourse || {}),
-        progress: {
-          ...coursesStore?.currentCourse?.progress,
-          progressPercentage: progressPercentage,
-          isCompleted: progressPercentage === 100 ? true : false
-        },
-        chapters: coursesStore?.currentCourse?.chapters?.map((chapter: Chapter) => {
-          return {
-            ...chapter,
-            lessons: chapter?.lessons?.map((lesson, idxLesson) => {
-              return {
-                ...lesson,
-                isCompleted: idxLesson <= currentLessonIndex.value ? true : false
-              }
-            })
-          }
-        })
-      } as Course)
-    }
-
     
   } catch (error) {
     navigateTo("/my-learning");
@@ -609,16 +701,51 @@ const fetchCourseDetail = async () => {
     loading.value = false;
   }
 };
-console.log(coursesStore.isRepeatLearn)
+
 
 const handleFinishQuiz = async (quizResult: any) => {
-    const chapterParam = route.query.chapter;
-    const lessonParam = route.query.lesson;
-    navigateTo(
-      `/my-learning/${slug.value}?chapter=${chapterParam || 0}&lesson=${lessonParam || 0}`
-    );
-    fetchCourseDetail();
+  const chapterParam = route.query.chapter;
+  const lessonParam = route.query.lesson;
+  navigateTo(
+    `/my-learning/${slug.value}?chapter=${chapterParam || 0}&lesson=${lessonParam || 0}`
+  );
+  fetchCourseDetail();
+};
+
+const onLoadedMetadata = () => {
+  if (!videoRef.value) return;
+  playerState.value.duration = videoRef.value.duration || 0;
+};
+
+const onTimeUpdate = () => {
+  if (!videoRef.value) return;
+  playerState.value.currentTime = videoRef.value.currentTime || 0;
+};
+
+const onSeek = () => {
+  if (!videoRef.value) return;
+  videoRef.value.currentTime = playerState.value.currentTime;
+};
+
+const togglePlay = () => {
+  if (!videoRef.value) return;
+  if (playerState.value.playing) {
+    videoRef.value.pause();
+    playerState.value.playing = false;
+  } else {
+    videoRef.value.play();
+    playerState.value.playing = true;
   }
+};
+
+const formatTime = (seconds: number) => {
+  if (!seconds || isNaN(seconds)) return "00:00";
+  const m = Math.floor(seconds / 60);
+  const s = Math.floor(seconds % 60);
+  const mm = m < 10 ? `0${m}` : `${m}`;
+  const ss = s < 10 ? `0${s}` : `${s}`;
+  return `${mm}:${ss}`;
+};
 
 watch(
   currentLesson,
@@ -627,12 +754,19 @@ watch(
       !lesson ||
       !course.value ||
       !currentChapter.value ||
-      markingCompleted.value ||
-      lesson.isCompleted
+      markingCompleted.value
     )
       return;
 
+    const isFirstLesson =
+      currentChapterIndex.value === 0 && currentLessonIndex.value === 0;
+
+    // Nếu bài đã hoàn thành rồi và không phải bài đầu sau khi học lại thì bỏ qua
+    if (lesson.isCompleted && !isFirstLesson) return;
+
+    // Với bài đầu tiên sau khi "Học lại từ đầu" thì bỏ qua check bài trước
     if (
+      !isFirstLesson &&
       !canMarkLessonCompleted(
         currentChapterIndex.value,
         currentLessonIndex.value
@@ -660,7 +794,11 @@ watch(
           0
         );
 
-        await coursesStore.fetchMyCourseBySlug(slug.value);
+        await coursesStore.fetchMyCourseBySlug(
+          slug.value,
+          currentChapterIndex.value,
+          currentLessonIndex.value
+        );
       } catch (error) {
       } finally {
         markingCompleted.value = false;
@@ -685,13 +823,117 @@ watch(
   { immediate: true }
 );
 
+// Video Security: Block keyboard shortcuts and DevTools
+const setupVideoSecurity = () => {
+  if (!process.client) return;
+
+  // Block common keyboard shortcuts
+  const blockShortcuts = (e: KeyboardEvent) => {
+    // Block F12 (DevTools)
+    if (e.key === 'F12') {
+      e.preventDefault();
+      return false;
+    }
+    
+    // Block Ctrl+Shift+I (DevTools)
+    if (e.ctrlKey && e.shiftKey && e.key === 'I') {
+      e.preventDefault();
+      return false;
+    }
+    
+    // Block Ctrl+Shift+J (Console)
+    if (e.ctrlKey && e.shiftKey && e.key === 'J') {
+      e.preventDefault();
+      return false;
+    }
+    
+    // Block Ctrl+U (View Source)
+    if (e.ctrlKey && e.key === 'u') {
+      e.preventDefault();
+      return false;
+    }
+    
+    // Block Ctrl+S (Save Page)
+    if (e.ctrlKey && e.key === 's') {
+      e.preventDefault();
+      return false;
+    }
+    
+    // Block Ctrl+P (Print)
+    if (e.ctrlKey && e.key === 'p') {
+      e.preventDefault();
+      return false;
+    }
+    
+    // Block Ctrl+Shift+C (Inspect Element)
+    if (e.ctrlKey && e.shiftKey && e.key === 'C') {
+      e.preventDefault();
+      return false;
+    }
+  };
+
+  // Block right-click context menu globally (already handled on video element)
+  const blockContextMenu = (e: MouseEvent) => {
+    const target = e.target as HTMLElement;
+    if (target?.closest('.video-wrapper') || target?.tagName === 'VIDEO') {
+      e.preventDefault();
+      return false;
+    }
+  };
+
+  // Block text selection on video
+  const blockSelection = () => {
+    if (window.getSelection) {
+      const selection = window.getSelection();
+      if (selection && selection.toString().length > 0) {
+        const target = selection.anchorNode?.parentElement;
+        if (target?.closest('.video-wrapper') || target?.tagName === 'VIDEO') {
+          selection.removeAllRanges();
+        }
+      }
+    }
+  };
+
+  let devtools = { open: false };
+  const detectDevTools = () => {
+    const threshold = 160;
+    if (
+      window.outerHeight - window.innerHeight > threshold ||
+      window.outerWidth - window.innerWidth > threshold
+    ) {
+      if (!devtools.open) {
+        devtools.open = true;
+      }
+    } else {
+      devtools.open = false;
+    }
+  };
+
+  document.addEventListener('keydown', blockShortcuts);
+  document.addEventListener('contextmenu', blockContextMenu);
+  document.addEventListener('selectstart', blockSelection);
+  const intervalId = setInterval(detectDevTools, 500);
+
+  return () => {
+    document.removeEventListener('keydown', blockShortcuts);
+    document.removeEventListener('contextmenu', blockContextMenu);
+    document.removeEventListener('selectstart', blockSelection);
+    clearInterval(intervalId);
+  };
+};
+
+let securityCleanup: (() => void) | null | undefined = null;
+
 // Lifecycle
 onMounted(async () => {
   await fetchCourseDetail();
+  securityCleanup = setupVideoSecurity() || null;
 });
+
 onUnmounted(() => {
+  securityCleanup?.();
   coursesStore.setIsRepeatLearn(false);
-})
+});
 </script>
 
 <style scoped>
@@ -781,11 +1023,78 @@ onUnmounted(() => {
 .video-wrapper {
   width: 100%;
   margin-bottom: 1rem;
+  position: relative;
 }
 
 @media (max-width: 640px) {
   .video-wrapper {
     margin-bottom: 0.75rem;
   }
+}
+
+/* Video Security Styles */
+.video-element {
+  user-select: none;
+  -webkit-user-select: none;
+  -moz-user-select: none;
+  -ms-user-select: none;
+  pointer-events: auto;
+  -webkit-touch-callout: none;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.video-wrapper * {
+  -webkit-user-select: none;
+  -moz-user-select: none;
+  -ms-user-select: none;
+  user-select: none;
+}
+
+/* Prevent drag on video */
+.video-element {
+  -webkit-user-drag: none;
+  -khtml-user-drag: none;
+  -moz-user-drag: none;
+  -o-user-drag: none;
+}
+
+/* Custom range input for seek bar */
+.custom-range {
+  -webkit-appearance: none;
+  appearance: none;
+  background: transparent;
+  cursor: pointer;
+}
+
+.custom-range::-webkit-slider-track {
+  background: #4b5563;
+  height: 4px;
+  border-radius: 2px;
+}
+
+.custom-range::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  background: #1a75bb;
+  height: 14px;
+  width: 14px;
+  border-radius: 50%;
+  cursor: pointer;
+  margin-top: -5px;
+}
+
+.custom-range::-moz-range-track {
+  background: #4b5563;
+  height: 4px;
+  border-radius: 2px;
+}
+
+.custom-range::-moz-range-thumb {
+  background: #1a75bb;
+  height: 14px;
+  width: 14px;
+  border-radius: 50%;
+  cursor: pointer;
+  border: none;
 }
 </style>

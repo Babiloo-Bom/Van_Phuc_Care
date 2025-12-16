@@ -304,6 +304,20 @@ export default class ProgressController {
         { upsert: true, new: true }
       );
 
+      // If course is completed (100%), add to user's courseCompleted array
+      if (progressPercentage === 100) {
+        const UserModel = (await import('@mongodb/users')).default;
+        const user = (await UserModel.model.findById(userId)) as any;
+        if (user && !user.courseCompleted?.includes(courseId.toString())) {
+          if (!user.courseCompleted) {
+            user.courseCompleted = [];
+          }
+          user.courseCompleted = [...user.courseCompleted, courseId.toString()];
+          user.updatedAt = new Date();
+          await user.save();
+        }
+      }
+
       return courseProgress;
     } catch (error: any) {
       console.error('Error updating course progress:', error);
@@ -364,10 +378,11 @@ export default class ProgressController {
         courseId
       });
 
-      // Delete course progress
-      await CourseProgress.deleteMany({
+      // Delete quiz attempts for this course (so lessons with quiz are not considered completed)
+      const MongoDbQuizAttempts = (await import('@mongodb/quiz-attempts')).default;
+      await MongoDbQuizAttempts.deleteMany({
         userId: userId.toString(),
-        courseId
+        courseId: courseId.toString(),
       });
 
       sendSuccess(res, { message: 'Progress reset successfully' });

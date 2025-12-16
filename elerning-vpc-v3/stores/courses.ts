@@ -1,4 +1,6 @@
 import { defineStore } from 'pinia';
+import { useAuthStore } from './auth';
+import { useApiBase } from '~/composables/useApiBase';
 
 export interface Course {
   _id: string
@@ -262,7 +264,16 @@ export const useCoursesStore = defineStore('courses', {
       try {
         const courseApi = useCourseApi()
         const response: any = await courseApi.getAllCourses(params)
-        this.courses = response.data?.courses || response.data || response.courses || response
+        const raw = response.data?.courses || response.data || response.courses || response || []
+        const authStore = useAuthStore()
+        const purchasedSet = new Set(authStore.user?.courseRegister || [])
+        this.courses = raw.map((c: any) => {
+          const id = c?._id?.toString?.()
+          return {
+            ...c,
+            isPurchased: c?.isPurchased === true || (id ? purchasedSet.has(id) : false)
+          }
+        })
         if (response.pagination) {
           this.pagination = response.pagination;
         }
@@ -279,6 +290,28 @@ export const useCoursesStore = defineStore('courses', {
         const courseApi = useCourseApi()
         const response: any = await courseApi.getMyCourses(params)
         this.myCourses = response.data?.courses || response.data || response.courses || response
+
+        // Cập nhật courseRegister vào authStore để UI “Mua ngay / Vào học” hiển thị đúng
+        try {
+          const authStore = useAuthStore()
+          const purchasedIds = (this.myCourses || []).map((c: any) => c._id?.toString()).filter(Boolean)
+          if (authStore.user) {
+            authStore.user.courseRegister = purchasedIds
+            // Persist vào localStorage (giữ nguyên các field khác)
+            const userData = { ...authStore.user, courseRegister: purchasedIds }
+            if (process.client) {
+              localStorage.setItem('user', JSON.stringify(userData))
+              localStorage.setItem('authData', JSON.stringify({
+                user: userData,
+                token: authStore.token,
+                tokenExpireAt: authStore.tokenExpireAt,
+                loginTimestamp: authStore.loginTimestamp,
+              }))
+            }
+          }
+        } catch (e) {
+          console.warn('Không thể đồng bộ courseRegister vào authStore:', e)
+        }
       } catch (error) {
         throw error
       } finally {
@@ -286,13 +319,49 @@ export const useCoursesStore = defineStore('courses', {
       }
     },
 
-    async fetchMyCourseBySlug(slug: string) {
+    async fetchMyCourseBySlug(slug: string, chapterIndex: number, lessonIndex: number) {
       this.loadingDetail = true;
       try {
         const courseApi = useCourseApi()
         const response: any = await courseApi.getMyCourseBySlug(slug)
-        this.course = response.data?.course || response.data || response.course || response
-        
+
+        const responseCourse = response.data?.course || response.data || response.course || response;
+        if (this.isRepeatLearn && responseCourse) {
+          let totalLessons = 0;
+
+          const resetChapters = (responseCourse.chapters || []).map((chapter: Chapter) => {
+            const lessons = (chapter.lessons || []).map((lesson) => {
+              totalLessons += 1;
+              return {
+                ...lesson,
+                isCompleted: false,
+              };
+            });
+
+            return {
+              ...chapter,
+              lessons,
+            };
+          });
+
+          const progressPercentage = totalLessons > 0 ? 0 : 0;
+
+          this.setCurrentCourse({
+            ...(responseCourse || {}),
+            progress: {
+              ...(responseCourse?.progress || {}),
+              progressPercentage,
+              isCompleted: false,
+              completedLessons: 0,
+              totalLessons,
+            },
+            chapters: resetChapters,
+          });
+          // Sau lần reset đầu tiên, tắt cờ học lại để các lần fetch tiếp theo dùng tiến trình thật từ backend
+          this.isRepeatLearn = false;
+        } else {
+          this.course = responseCourse;
+        }
       } catch (error) {
         throw error
       } finally {
@@ -306,7 +375,26 @@ export const useCoursesStore = defineStore('courses', {
       try {
         const courseApi = useCourseApi()
         const response: any = await courseApi.getDetail(courseId)
-        this.course = response.data?.course || response.data || response.course || response
+        const rawCourse = response.data?.course || response.data || response.course || response
+
+        // Bổ sung trạng thái purchased/completed dựa trên thông tin user
+        const authStore = useAuthStore()
+        const id = rawCourse?._id?.toString?.()
+        const isPurchased =
+          rawCourse?.isPurchased === true ||
+          (id ? authStore.user?.courseRegister?.includes(id) : false)
+        const isCompletedFlag =
+          rawCourse?.progress?.isCompleted === true ||
+          (id ? authStore.user?.courseCompleted?.includes(id) : false)
+
+        this.course = {
+          ...(rawCourse || {}),
+          isPurchased,
+          progress: {
+            ...(rawCourse?.progress || {}),
+            isCompleted: isCompletedFlag,
+          },
+        }
       } catch (error) {
         throw error
       } finally {

@@ -60,6 +60,9 @@ export const useProgressTracking = () => {
     try {
       const { apiUser } = useApiBase()
       const apiBase = apiUser
+      if (!authStore.token && process.client) {
+        await authStore.initAuth()
+      }
       loading.value = true
       error.value = null
       // Check if already completed
@@ -85,6 +88,7 @@ export const useProgressTracking = () => {
         },
         headers: {
           'Content-Type': 'application/json',
+          ...(authStore.token ? { Authorization: `Bearer ${authStore.token}` } : {}),
         }
       })
 
@@ -226,7 +230,10 @@ export const useProgressTracking = () => {
     try {
       // Call backend API to reset progress
       const response: any = await $fetch(`/api/progress?courseId=${courseId}`, {
-        method: 'DELETE'
+        method: 'DELETE',
+        headers: {
+          Authorization: authStore.token ? `Bearer ${authStore.token}` : undefined,
+        },
       })
 
       if (response.success) {

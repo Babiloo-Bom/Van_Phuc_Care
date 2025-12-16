@@ -127,7 +127,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, onMounted, onBeforeUnmount } from "vue";
+import { ref, computed, onMounted, onBeforeUnmount, onUnmounted } from "vue";
 import { useRouter } from "vue-router";
 
 const router = useRouter();
@@ -142,6 +142,51 @@ const unreadNotifications = ref(3);
 const userName = computed(() => authStore.user?.fullname || authStore.user?.name || "User");
 const userEmail = computed(() => authStore.user?.email || "user@example.com");
 const userAvatar = computed(() => authStore.user?.avatar || "/images/avatar-fallback.png");
+
+// Auto refresh user data on mount and window focus
+const handleFocus = async () => {
+  if (authStore.isAuthenticated && authStore.token) {
+    await authStore.refreshUserData();
+  }
+};
+
+let stopLogoutMonitor: (() => void) | null = null;
+
+onMounted(async () => {
+  // Refresh user data on component mount if authenticated
+  if (authStore.isAuthenticated && authStore.token) {
+    await authStore.refreshUserData();
+  }
+
+  // Refresh user data when window gains focus (user switches back to this tab)
+  window.addEventListener('focus', handleFocus);
+
+  // Monitor logout sync cookie from Elearning site
+  if (process.client) {
+    const { startLogoutSyncMonitor } = await import('~/utils/authSync');
+      stopLogoutMonitor = startLogoutSyncMonitor(async () => {
+        // Logout if sync cookie detected, but not immediately after SSO login
+        if (authStore.isAuthenticated) {
+          const timeSinceLogin = authStore.loginTimestamp 
+            ? Date.now() - authStore.loginTimestamp 
+            : Infinity;
+          // Only skip logout if login was VERY recent (within 2 seconds) - this protects against SSO race conditions
+          // But allow logout sync for normal logouts from other site
+          if (timeSinceLogin < 2000) {
+            return;
+          }
+          await authStore.logout();
+        }
+      });
+  }
+});
+
+onUnmounted(() => {
+  window.removeEventListener('focus', handleFocus);
+  if (stopLogoutMonitor) {
+    stopLogoutMonitor();
+  }
+});
 
 // Methods
 const handleSearch = () => {

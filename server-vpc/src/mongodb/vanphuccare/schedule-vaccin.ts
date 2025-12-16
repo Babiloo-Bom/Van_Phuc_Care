@@ -34,6 +34,10 @@ class ScheduleVaccins {
       status: {
         type: String,
       },
+      detailLink: {
+        type: String,
+        default: '',
+      },
       domain: {
         type: String,
         require: true,

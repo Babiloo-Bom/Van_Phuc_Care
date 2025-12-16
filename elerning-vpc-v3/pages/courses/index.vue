@@ -147,7 +147,7 @@ const searchKey = ref("");
 // Computed
 const courses = computed(() => courseStore.courses);
 
-// Computed để xác định trạng thái khóa học
+// Computed để xác định trạng thái khóa học dựa trên user
 const getCourseStatus = (courseId: string) => {
   if (!authStore.user) return "not_purchased";
 
@@ -156,10 +156,38 @@ const getCourseStatus = (courseId: string) => {
   return "not_purchased";
 };
 
-// Check if course is purchased (use isPurchased from API response)
+// Check if course is purchased (ưu tiên dữ liệu user, sau đó tới flag từ API)
 const isPurchased = (course: any) => {
-  return course?.isPurchased || false
-}
+  if (!course?._id) return false;
+
+  const fromUser =
+    authStore.user?.courseRegister?.includes(course._id.toString()) || false;
+
+  return fromUser || course?.isPurchased || false;
+};
+
+// Lấy thông tin hoàn thành từ myCourses / user
+const isCompleted = (course: any) => {
+  if (!course?._id) return false;
+
+  const myCourse = courseStore.myCourses.find(
+    (c: any) => c._id?.toString() === course._id?.toString()
+  );
+
+  const progressPct =
+    myCourse?.progress?.progressPercentage ?? course?.progress?.progressPercentage ??
+    0;
+
+  const completedByUser =
+    authStore.user?.courseCompleted?.includes(course._id.toString()) || false;
+
+  return (
+    completedByUser ||
+    myCourse?.progress?.isCompleted === true ||
+    course?.progress?.isCompleted === true ||
+    progressPct === 100
+  );
+};
 const getProgress = (courseId: string) => {
   const course = courseStore.myCourses.find((c: any) => c._id === courseId);
   if (course && course.progress) {
@@ -268,7 +296,20 @@ const handleBuyNow = async (course: any) => {
 
 const handleViewDetail = (course: any) => {
   try {
-    navigateTo(`/courses/${course.slug}`)
+    // Nếu đã hoàn thành -> trang chứng chỉ
+    if (isCompleted(course)) {
+      navigateTo(`/my-learning/${course.slug}?certificate=true`);
+      return;
+    }
+
+    // Nếu đã mua -> trang học
+    if (isPurchased(course)) {
+      navigateTo(`/my-learning/${course.slug}`);
+      return;
+    }
+
+    // Chưa mua -> trang chi tiết khóa học
+    navigateTo(`/courses/${course.slug}`);
   } catch (error) {
     console.error("❌ Error viewing detail:", error);
   }

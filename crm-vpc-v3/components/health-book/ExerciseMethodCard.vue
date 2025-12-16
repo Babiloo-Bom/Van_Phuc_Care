@@ -2,47 +2,93 @@
   <div
     class="bg-white rounded-none lg:rounded-lg shadow-none lg:shadow-sm py-4"
   >
-    <div class="space-y-3">
-      <!-- Method -->
+    <div class="space-y-4">
+      <!-- Phương pháp (Lịch sinh hoạt) -->
       <div>
-        <h4 class="font-bold text-[#1A75BB] text-base mb-2">
-          Phương pháp:
-        </h4>
-        <div v-if="healthBook.method">
-          <div v-if="healthBook.method.status" class="mb-2">
-            <span class="font-medium text-gray-600">Trạng thái:</span>
-            <span class="ml-2 text-gray-800">{{
-              getHealthRecordOptionLabel(
-                healthBook.method.status,
-                methodOptions
-              )
-            }}</span>
-          </div>
-          <div
-            v-if="healthBook.method.descriptions"
-            class="text-sm text-gray-600 leading-relaxed"
-            v-html="healthBook.method.descriptions"
-          />
+        <div class="flex items-center justify-between mb-1">
+          <h4 class="font-bold text-[#1A75BB] text-base">
+            Phương pháp:
+          </h4>
+          <span v-if="healthBook.schedule" class="font-semibold text-[#4A4A4A] text-sm">
+            {{ getHealthRecordOptionLabel(healthBook.schedule, scheduleOptions) }}
+          </span>
+          <span v-else-if="healthBook.method?.status" class="font-semibold text-[#4A4A4A] text-sm">
+            {{ getHealthRecordOptionLabel(healthBook.method.status, methodOptions) }}
+          </span>
+          <span v-else class="text-sm text-[#4A4A4A] opacity-60">Đang cập nhật</span>
         </div>
-        <p v-else class="text-sm text-gray-400">Đang cập nhật</p>
+        <div class="text-xs text-[#4A4A4A] opacity-60">
+          {{ healthBook.scheduleNote || healthBook.method?.descriptions || 'Bé tự chuyển giấc tốt' }}
+        </div>
+        <div class="text-xs text-[#4A4A4A] opacity-60">
+          {{ healthBook.notes || 'Cần theo dõi thêm' }}
+        </div>
       </div>
-      <!-- Exercise & Skills -->
+
+      <!-- Mốc phát triển -->
       <div>
-        <h4 class="font-bold text-[#1A75BB] text-base mb-2">
-          Tập vận động và kỹ năng:
-        </h4>
-        <div
-          v-if="healthBook.exerciseAndSkills"
-          class="text-sm text-gray-600 leading-relaxed"
-        >
-          {{
-            getHealthRecordOptionLabel(
-              healthBook.exerciseAndSkills,
-              motorSkillsOptions
-            )
-          }}
+        <div class="flex items-center justify-between mb-2">
+          <h4 class="font-bold text-[#1A75BB] text-base">
+            Mốc phát triển
+          </h4>
+          <span v-if="healthBook.developmentMilestone" class="font-semibold text-[#4A4A4A] text-sm">
+            {{ getHealthRecordOptionLabel(healthBook.developmentMilestone, developmentMilestoneOptions) }}
+          </span>
+          <span v-else class="text-sm text-[#4A4A4A] opacity-60">0-3 tháng</span>
         </div>
-        <p v-else class="text-sm text-gray-400">Đang cập nhật</p>
+        
+        <div class="mb-2">
+          <h5 class="font-semibold text-[#4A4A4A] text-sm mb-1">Vận động thô</h5>
+          <div v-if="healthBook.grossMotorSkills" class="text-xs text-[#4A4A4A] opacity-60">
+            {{ getHealthRecordOptionLabel(healthBook.grossMotorSkills, grossMotorSkillsOptions) }}
+          </div>
+          <div v-else class="text-xs text-[#4A4A4A] opacity-60">
+            Không có
+          </div>
+        </div>
+
+        <div class="mb-2">
+          <h5 class="font-semibold text-[#4A4A4A] text-sm mb-1">Vận động tĩnh</h5>
+          <div v-if="healthBook.fineMotorSkills" class="text-xs text-[#4A4A4A] opacity-60">
+            {{ getHealthRecordOptionLabel(healthBook.fineMotorSkills, fineMotorSkillsOptions) }}
+          </div>
+          <div v-else class="text-xs text-[#4A4A4A] opacity-60">
+            Không có
+          </div>
+        </div>
+
+        <!-- Thị giác & nhận thức -->
+        <div class="mb-2">
+          <h5 class="font-semibold text-[#4A4A4A] text-sm mb-1">Thị giác & nhận thức</h5>
+          <div v-if="healthBook.visualCognition" class="text-xs text-[#4A4A4A] opacity-60">
+            {{ getHealthRecordOptionLabel(healthBook.visualCognition, visualCognitionOptions) }}
+          </div>
+          <div v-else class="text-xs text-[#4A4A4A] opacity-60">
+            Không có
+          </div>
+        </div>
+
+        <!-- Giao tiếp & Cảm xúc -->
+        <div class="mb-2">
+          <h5 class="font-semibold text-[#4A4A4A] text-sm mb-1">Giao tiếp & Cảm xúc</h5>
+          <div v-if="healthBook.communicationEmotion" class="text-xs text-[#4A4A4A] opacity-60">
+            {{ getHealthRecordOptionLabel(healthBook.communicationEmotion, communicationEmotionOptions) }}
+          </div>
+          <div v-else class="text-xs text-[#4A4A4A] opacity-60">
+            Không có
+          </div>
+        </div>
+
+        <!-- Dấu hiệu cảnh báo sớm -->
+        <div>
+          <h5 class="font-semibold text-[#4A4A4A] text-sm mb-1">Dấu hiệu cảnh báo sớm</h5>
+          <div v-if="healthBook.earlyWarning" class="text-xs text-[#4A4A4A] opacity-60">
+            {{ getHealthRecordOptionLabel(healthBook.earlyWarning, earlyWarningOptions) }}
+          </div>
+          <div v-else class="text-xs text-[#4A4A4A] opacity-60">
+            Không có
+          </div>
+        </div>
       </div>
     </div>
   </div>
@@ -53,7 +99,13 @@ import type { HealthBook } from "~/types/api";
 
 import {
   methodOptions,
-  motorSkillsOptions,
+  scheduleOptions,
+  developmentMilestoneOptions,
+  grossMotorSkillsOptions,
+  fineMotorSkillsOptions,
+  visualCognitionOptions,
+  communicationEmotionOptions,
+  earlyWarningOptions,
 } from "~/constants/healthRecordOptions";
 import { getHealthRecordOptionLabel } from "~/utils/healthbook";
 

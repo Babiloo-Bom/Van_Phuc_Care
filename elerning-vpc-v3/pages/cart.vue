@@ -277,12 +277,14 @@ import { ref, computed, onMounted } from 'vue'
 import { message } from 'ant-design-vue'
 import { useCartStore } from '~/stores/cart'
 import { useAuthStore } from '~/stores/auth'
+import { useCoursesStore } from '~/stores/courses'
 import CartToast from '~/components/cart/Toast.vue'
 import CouponInput from '~/components/cart/CouponInput.vue'
 import Rating from '~/components/courses/Rating.vue'
 
 const cartStore = useCartStore()
 const authStore = useAuthStore()
+const coursesStore = useCoursesStore()
 
 // Loading state for bypass payment
 const isProcessingOrder = ref(false)
@@ -497,6 +499,12 @@ const processBypassOrder = async () => {
     
     // Clear cart after successful payment
     await cartStore.clearCart()
+    // Refresh "Khóa học của tôi" ngay sau thanh toán bypass
+    try {
+      await coursesStore.fetchMyCourses()
+    } catch (e) {
+      console.warn('Không thể tải danh sách khóa học sau thanh toán:', e)
+    }
     
     // Show success message
     message.success({

@@ -31,7 +31,7 @@ class MailerService {
     await this.sendMail(mailerOptions, 'forgotPasswordLink', templateArgs);
   }
 
-  public static async verifyAccountOTP (email: string, otp: string, source?: string) {
+  public static async verifyAccountOTP (email: string, otp: string, source?: string, fullname?: string) {
     const mailerOptions: Mail.Options = {
       to: email,
       subject: '[Hệ thống] Xác thực email',
@@ -55,6 +55,7 @@ class MailerService {
     const templateArgs: any = {
       expireTime: settings.otpTtl,
       otp,
+      fullname: fullname || email,
       linkOtp: `${baseUrl}/verify-otp?otp=${otp}&email=${encodeURIComponent(email)}`
     };
     await this.sendMail(mailerOptions, 'verifyAccount', templateArgs);

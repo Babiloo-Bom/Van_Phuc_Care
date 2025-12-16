@@ -7,6 +7,9 @@ const router = Router();
 // Validate coupon code (requires authentication)
 router.post('/validate', userPassport.authenticate('jwt', { session: false }), UserCouponController.validateCoupon);
 
+// Create completion coupon (requires authentication)
+router.post('/completion', userPassport.authenticate('jwt', { session: false }), UserCouponController.createCompletionCoupon);
+
 // Apply coupon to cart (requires authentication)
 router.post('/apply', userPassport.authenticate('jwt', { session: false }), UserCouponController.applyCoupon);
 

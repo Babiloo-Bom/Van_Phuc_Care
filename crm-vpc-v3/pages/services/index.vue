@@ -1,27 +1,9 @@
 <template>
   <div class="container mx-auto">
-    <!-- Header: Title + Tabs -->
+    <!-- Header: Title only (removed tabs) -->
     <div class="header-wrapper">
       <!-- Page Title -->
-      <h1 class="page-title">Dịch vụ</h1>
-
-      <!-- Tab Filter -->
-      <div class="tabs-wrapper">
-        <button
-          class="tab-button"
-          :class="{ 'tab-active': activeTab === 'used' }"
-          @click="activeTab = 'used'"
-        >
-          Đã sử dụng
-        </button>
-        <button
-          class="tab-button"
-          :class="{ 'tab-active': activeTab === 'all' }"
-          @click="activeTab = 'all'"
-        >
-          Tất cả dịch vụ
-        </button>
-      </div>
+      <h1 class="page-title">Tất cả dịch vụ</h1>
     </div>
 
     <!-- Loading State -->
@@ -34,9 +16,7 @@
 
     <!-- Empty State -->
     <div v-else-if="filteredServices.length === 0" class="text-center py-12">
-      <p class="text-gray-500">
-        {{ activeTab === 'used' ? 'Bạn chưa đăng ký dịch vụ nào' : 'Không có dịch vụ nào' }}
-      </p>
+      <p class="text-gray-500">Không có dịch vụ nào</p>
     </div>
 
     <!-- Services Grid -->
@@ -45,7 +25,7 @@
         v-for="service in filteredServices"
         :key="service._id"
         class="service-card"
-        @click="handleServiceClick(service)"
+        @click="openRegisterModal(service)"
       >
         <!-- Thumbnail -->
         <div class="card-image-wrapper">
@@ -66,21 +46,13 @@
             {{ service.shortDescriptions || service.descriptions }}
           </p>
           
-          <!-- Action Button -->
+          <!-- Action Button: Always show "Chi tiết" -->
           <div class="card-footer">
             <button 
-              v-if="service.isRegistered" 
               class="detail-button"
-              @click.stop="handleServiceClick(service)"
+              @click.stop="handleDetailClick(service)"
             >
               Chi tiết
-            </button>
-            <button 
-              v-else 
-              class="register-button"
-              @click.stop="openRegisterModal(service)"
-            >
-              Đăng ký dịch vụ
             </button>
           </div>
         </div>
@@ -201,7 +173,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, onMounted, watch } from 'vue'
+import { ref, computed, onMounted } from 'vue'
 import { message } from 'ant-design-vue'
 import { useServicesApi } from '~/composables/api/useServicesApi'
 import { useRouter } from 'vue-router'
@@ -217,13 +189,16 @@ const { user } = useAuth()
 const authStore = useAuthStore()
 
 const services = ref<any[]>([])
-const activeTab = ref<'all' | 'used'>('all')
+const registeredServiceIds = ref<Set<string>>(new Set())
 const isLoading = ref(false)
 const isRegisterModalOpen = ref(false)
 const isSubmitting = ref(false)
 const selectedService = ref<any>(null)
 const isMobile = ref(false)
 const isRegistrationSuccess = ref(false)
+
+// Default link when service has no link configured
+const DEFAULT_SERVICE_LINK = 'https://vanphuccare.vn/dich-vu'
 
 const registerForm = ref({
   fullname: '',
@@ -235,17 +210,20 @@ const registerForm = ref({
 const fetchServices = async () => {
   try {
     isLoading.value = true
+    // Get all services
+    const res = await getServices({})
+    services.value = res.data?.data?.data || res.data?.data || []
     
-    if (activeTab.value === 'used') {
-      // Get user's registered services
-      const res = await getMyServices({})
-      services.value = res.data?.data?.data || res.data?.data || []
-    } else {
-      // Get all services
-      const res = await getServices({})
-      services.value = res.data?.data?.data || res.data?.data || []
+    // Get user's registered services to check duplicates
+    if (user.value) {
+      try {
+        const myServicesRes = await getMyServices({})
+        const myServices = myServicesRes.data?.data?.data || myServicesRes.data?.data || []
+        registeredServiceIds.value = new Set(myServices.map((s: any) => s.serviceId || s._id))
+      } catch (e) {
+        console.error('Error fetching my services:', e)
+      }
     }
-    
   } catch (e) {
     console.error('Error fetching services:', e)
     services.value = []
@@ -253,11 +231,6 @@ const fetchServices = async () => {
     isLoading.value = false
   }
 }
-
-// Watch activeTab changes to fetch data
-watch(activeTab, () => {
-  fetchServices()
-})
 
 onMounted(() => {
   fetchServices()
@@ -271,21 +244,19 @@ const filteredServices = computed<any[]>(() => {
   return services.value
 })
 
-function goDetail(service: any) {
-  router.push(`/services/${service.slug || service._id}`)
-}
-
-function handleServiceClick(service: any) {
-  // If service has external link, open in new tab
-  if (service.link) {
-    window.open(service.link, '_blank', 'noopener,noreferrer')
-  } else {
-    // Otherwise go to detail page
-    goDetail(service)
-  }
+// Click "Chi tiết" → open configured link (or default link)
+function handleDetailClick(service: any) {
+  const link = service.link?.trim() || DEFAULT_SERVICE_LINK
+  window.open(link, '_blank', 'noopener,noreferrer')
 }
 
 async function openRegisterModal(service: any) {
+  // Check if already registered - show error immediately without opening modal
+  if (registeredServiceIds.value.has(service._id)) {
+    message.warning('Bạn đã đăng ký dịch vụ này rồi')
+    return
+  }
+  
   selectedService.value = service
   
   // Refresh user profile to get latest data including fullAddress
@@ -338,6 +309,8 @@ async function handleRegisterSubmit() {
     })
     
     if (response.status) {
+      // Add to registered set immediately
+      registeredServiceIds.value.add(selectedService.value._id)
       // Show success screen instead of closing modal
       isRegistrationSuccess.value = true
       // Refresh services list
@@ -347,7 +320,7 @@ async function handleRegisterSubmit() {
     }
   } catch (e: any) {
     console.error('Failed to register service:', e)
-    message.error(e?.message || 'Đăng ký thất bại, vui lòng thử lại!')
+    // Error already shown by apiClient, no need to show again
   } finally {
     isSubmitting.value = false
   }
@@ -360,38 +333,17 @@ async function handleRegisterSubmit() {
   @apply md:px-6 md:py-8;
 }
 
-/* Header */
 .header-wrapper {
-  @apply flex flex-col items-center mb-6;
-  @apply md:flex-row md:justify-between md:items-center md:mb-8;
+  @apply flex flex-col items-start mb-6;
+  @apply md:flex-row md:justify-start md:items-center md:mb-8;
 }
 
 .page-title {
   @apply text-2xl font-bold text-[#317BC4] mb-4;
-  @apply md:text-3xl md:mb-0;
+  @apply md:text-3xl md:mb-4;
   font-family: 'SVN-Gilroy', sans-serif;
 }
 
-/* Tabs */
-.tabs-wrapper {
-  @apply flex rounded-full bg-[#EBEBEB];
-}
-
-.tab-button {
-  @apply px-6 py-2 rounded-full font-semibold text-sm transition-all;
-  @apply bg-transparent text-[#999999];
-  font-family: 'SVN-Gilroy', sans-serif;
-}
-
-.tab-button.tab-active {
-  @apply bg-[#317BC4] text-white;
-}
-
-.tab-button:hover {
-  @apply opacity-90;
-}
-
-/* Grid */
 .services-grid {
   @apply grid grid-cols-1 gap-4 mb-8;
   @apply sm:grid-cols-2 sm:gap-5;
@@ -446,11 +398,8 @@ async function handleRegisterSubmit() {
   font-family: 'SVN-Gilroy', sans-serif;
 }
 
-.register-button {
-  @apply px-4 py-2 text-sm font-semibold rounded-lg;
-  @apply text-[#317BC4] bg-white underline;
-  @apply hover:bg-[#317BC4] hover:text-white transition-all;
-  font-family: 'SVN-Gilroy', sans-serif;
+.detail-button:hover {
+  @apply text-[#2563a8];
 }
 
 /* Register Modal */
@@ -560,10 +509,6 @@ async function handleRegisterSubmit() {
 
   .detail-button {
     @apply text-xs;
-  }
-
-  .register-button {
-    @apply px-3 py-1.5 text-xs;
   }
 
   .modal-title {

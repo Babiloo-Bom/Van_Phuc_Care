@@ -24,7 +24,10 @@
                 {{ vaccine.name }}
                 <a
                   class="view-detail-link"
-                  @click.stop="$emit('viewDetail', vaccine)"
+                  :href="vaccineDetailLink"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  @click.stop
                   >(Xem chi tiết)</a
                 >
               </h3>
@@ -55,7 +58,6 @@
                 }}</span>
                 <a-checkbox
                   :checked="isCompleted"
-                  :disabled="isCompleted"
                   @change="handleStatusChange"
                 />
               </div>
@@ -88,7 +90,16 @@
 
         <!-- Vaccine Info -->
         <div class="vaccine-info">
-          <h3 class="vaccine-name">{{ vaccine.name }}</h3>
+          <h3 class="vaccine-name">
+            {{ vaccine.name }}
+            <a
+              class="view-detail-link"
+              :href="vaccineDetailLink"
+              target="_blank"
+              rel="noopener noreferrer"
+              @click.stop
+            >(Xem chi tiết)</a>
+          </h3>
           <div class="date-info">
             <svg
               width="12"
@@ -109,7 +120,6 @@
             <span :class="['status-text', statusClass]">{{ statusText }}</span>
             <a-checkbox
               :checked="isCompleted"
-              :disabled="isCompleted"
               @change="handleStatusChange"
             />
           </div>
@@ -144,6 +154,12 @@ const handleImageError = (e: Event) => {
   target.src = "/images/vaccines/default.png";
 };
 
+const DEFAULT_DETAIL_LINK = 'https://vanphuccare.vn/tiem-chung';
+
+const vaccineDetailLink = computed(() => {
+  return props.vaccine.detailLink?.trim() || DEFAULT_DETAIL_LINK;
+});
+
 // Format injection date
 const formattedDate = computed(() => {
   if (props.vaccine.injectionDate) {
@@ -152,7 +168,7 @@ const formattedDate = computed(() => {
   if (props.vaccine.scheduledDate) {
     return dayjs(props.vaccine.scheduledDate).format("DD/MM/YYYY");
   }
-  return "--/--/----";
+  return dayjs().format("DD/MM/YYYY");
 });
 
 // Check if completed
@@ -281,7 +297,7 @@ const handleStatusChange = (e: any) => {
 .view-detail-link {
   font-size: 13px;
   font-weight: 400;
-  color: #ff7875;
+  color: #1A75BB;
   margin-left: 8px;
   cursor: pointer;
 }
@@ -298,6 +314,7 @@ const handleStatusChange = (e: any) => {
   display: -webkit-box;
   -webkit-box-orient: vertical;
   -webkit-line-clamp: 2;
+  line-clamp: 2;
   overflow: hidden;
 }
 
@@ -334,7 +351,7 @@ const handleStatusChange = (e: any) => {
 }
 
 .status-completed {
-  color: #52c41a;
+  color: #15CF74;
 }
 
 .status-pending {
@@ -356,7 +373,7 @@ const handleStatusChange = (e: any) => {
 
 .injection-count {
   font-size: 13px;
-  color: #ff7875;
+  color: #1A75BB;
   font-weight: 500;
 }
 
@@ -369,14 +386,17 @@ const handleStatusChange = (e: any) => {
   width: 20px;
   height: 20px;
   border-radius: 4px;
+  background-color: #fff;
+  border-color: #d9d9d9;
 }
 
 :deep(.ant-checkbox-checked .ant-checkbox-inner) {
-  background-color: #52c41a;
-  border-color: #52c41a;
+  background-color: #fff;
+  border-color: #06E775;
 }
 
 :deep(.ant-checkbox-checked .ant-checkbox-inner::after) {
+  border-color: #06E775;
   width: 6px;
   height: 10px;
 }
@@ -427,7 +447,7 @@ const handleStatusChange = (e: any) => {
 
   .injection-count {
     font-size: 12px;
-    color: #666;
+    color: #1A75BB;
     margin-top: 4px;
   }
 

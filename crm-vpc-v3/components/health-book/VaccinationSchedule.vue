@@ -30,8 +30,10 @@
     <div class="space-y-4">
       <VaccinationCard
         v-for="vaccine in filteredVaccines"
-        :key="vaccine._id || vaccine.id"
+        :key="`${vaccine._id || vaccine.id}-${vaccine.injectionStatus}`"
         :vaccine="vaccine"
+        @statusChange="handleStatusChange"
+        @viewDetail="handleViewDetail"
       />
     </div>
 
@@ -44,8 +46,10 @@
 
 <script setup lang="ts">
 import { ref, computed, onMounted, watch } from "vue";
+import { message } from "ant-design-vue";
 import { useVaccinationsApi } from "~/composables/api/useVaccinationsApi";
 import VaccinationCard from "./VaccinationCard.vue";
+import type { VaccinationScheduleItem } from "~/types/api";
 
 const props = defineProps<{
   schedule?: any[];
@@ -53,9 +57,13 @@ const props = defineProps<{
   healthBookId?: string;
 }>();
 
+const emit = defineEmits<{
+  viewDetail: [vaccine: VaccinationScheduleItem];
+}>();
+
 const selectedAge = ref<string>("newborn");
 const vaccinations = ref<any[]>([]);
-const { loading, error, getVaccinationSchedule } = useVaccinationsApi();
+const { loading, error, getVaccinationSchedule, createVaccinationRecord, deleteVaccinationRecordByVaccine } = useVaccinationsApi();
 
 const fetchVaccinations = async () => {
   // Pass healthBookId (preferred) or customerId to get merged schedule + records
@@ -109,6 +117,74 @@ const filteredVaccines = computed(() => {
 const handleAgeChange = (value: string) => {
   selectedAge.value = value;
   // Filtering is handled reactively by filteredVaccines computed
+};
+
+// Handle vaccination status change (tick/untick checkbox)
+const handleStatusChange = async (vaccine: VaccinationScheduleItem, completed: boolean) => {
+  const newStatus = completed ? 'completed' : 'pending';
+  const vaccineId = vaccine._id || vaccine.id || '';
+  
+  // Find vaccine index for updating
+  const index = vaccinations.value.findIndex(
+    (v: any) => (v._id || v.id) === vaccineId
+  );
+  
+  if (index === -1) {
+    message.error('Không tìm thấy vaccine trong danh sách');
+    return;
+  }
+  
+  try {
+    if (completed) {
+      // Create vaccination record to mark as completed
+      const result = await createVaccinationRecord({
+        customerId: props.customerId || '', // Backend sẽ tự lấy từ healthBook nếu rỗng
+        healthBookId: props.healthBookId || '',
+        vaccineId: vaccineId,
+        injectionDate: new Date().toISOString(),
+        status: 'completed',
+        injectionNumber: vaccine.injectionNumber || 1,
+      });
+      
+      // Update local state với recordId từ response - tạo array mới để Vue detect thay đổi
+      const updatedVaccinations = [...vaccinations.value];
+      updatedVaccinations[index] = {
+        ...updatedVaccinations[index],
+        injectionStatus: 'completed',
+        injectionDate: new Date().toISOString(),
+        recordId: result?._id || result?.id || null,
+      };
+      vaccinations.value = updatedVaccinations;
+      
+    } else {
+      // If unchecking, delete the vaccination record by vaccineId
+      await deleteVaccinationRecordByVaccine(
+        vaccineId,
+        props.healthBookId || '',
+        vaccine.injectionNumber || 1
+      );
+      
+      // Update local state - tạo array mới để Vue detect thay đổi
+      const updatedVaccinations = [...vaccinations.value];
+      updatedVaccinations[index] = {
+        ...updatedVaccinations[index],
+        injectionStatus: 'pending',
+        injectionDate: null,
+        recordId: null,
+      };
+      vaccinations.value = updatedVaccinations;
+    }
+    
+    message.success(completed ? 'Đã đánh dấu tiêm phòng' : 'Đã bỏ đánh dấu tiêm phòng');
+  } catch (err: any) {
+    // Không cần revert vì chưa update state khi có lỗi
+    message.error(err?.message || 'Không thể cập nhật trạng thái tiêm phòng');
+  }
+};
+
+// Handle view detail
+const handleViewDetail = (vaccine: VaccinationScheduleItem) => {
+  emit('viewDetail', vaccine);
 };
 </script>
 

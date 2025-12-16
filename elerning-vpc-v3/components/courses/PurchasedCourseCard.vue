@@ -1,5 +1,5 @@
-<template>
-    <div class="course-card" @click="viewDetail">
+  <template>
+    <div class="course-card" @click="goToCourseDetail">
       <div class="course-thumbnail">
         <img
           :src="course.thumbnail || '/images/courses/default-course.jpg'"
@@ -118,12 +118,19 @@
             </div>
           </div>
 
-          <!-- Action Button -->
-          <div class="course-actions" v-if="!course?.progress?.isCompleted">
-            <button class="btn-access" @click.stop="viewDetail">Học ngay</button>
+          <!-- Action Buttons -->
+          <!-- Trường hợp 1: Đã từng hoàn thành (có chứng chỉ) nhưng tiến trình hiện tại < 100% (đang học lại) -->
+          <div class="course-actions" v-if="everCompleted && !isCurrentlyCompleted">
+            <button class="btn-access" @click.stop="goToLearning">Học ngay</button>
+            <button class="btn-completed" @click.stop="goToCertificate">Đã hoàn thành</button>
           </div>
-          <div v-else class="course-actions">
-            <button class="btn-completed" @click.stop="viewDetail">Đã hoàn thành</button>
+          <!-- Trường hợp 2: Tiến trình hiện tại = 100% (đã hoàn thành khóa, dù là lần đầu hay học lại) -->
+          <div class="course-actions" v-else-if="isCurrentlyCompleted">
+            <button class="btn-completed" @click.stop="goToCertificate">Đã hoàn thành</button>
+          </div>
+          <!-- Các trường hợp còn lại: đã mua nhưng chưa hoàn thành -->
+          <div class="course-actions" v-else>
+            <button class="btn-access" @click.stop="goToLearningOrCertificate">Học ngay</button>
           </div>
         </div>
       </div>
@@ -133,6 +140,9 @@
   <script setup lang="ts">
   // Import Rating component explicitly if auto-import doesn't work
   import Rating from "~/components/courses/Rating.vue";
+  import { useRouter } from "vue-router";
+  import { computed } from "vue";
+  import { useAuthStore } from "~/stores/auth";
   
   interface Course {
     _id: string;
@@ -184,6 +194,22 @@
     viewDetail: [course: Course];
   }>();
   
+  const router = useRouter();
+  const authStore = useAuthStore();
+
+  const progressPct = computed(() => {
+    return props.progress ?? props.course?.progress?.progressPercentage ?? 0;
+  });
+
+  const everCompleted = computed(() => {
+    const id = props.course?._id?.toString?.();
+    return !!(id && authStore.user?.courseCompleted?.includes(id));
+  });
+
+  const isCurrentlyCompleted = computed(() => {
+    return props.course?.progress?.isCompleted === true || progressPct.value >= 100;
+  });
+  
   const formatPrice = (price: number): string => {
     return new Intl.NumberFormat("vi-VN", {
       style: "currency",
@@ -201,6 +227,26 @@
   
   const viewDetail = () => {
     emit("viewDetail", props.course);
+  };
+  
+  const goToCourseDetail = () => {
+    if (!props.course?.slug) return;
+    router.push(`/courses/${props.course.slug}`);
+  };
+  
+  const goToLearning = () => {
+    if (!props.course?.slug) return;
+    router.push(`/my-learning/${props.course.slug}`);
+  };
+  
+  const goToCertificate = () => {
+    if (!props.course?.slug) return;
+    router.push(`/my-learning/${props.course.slug}?certificate=true`);
+  };
+  
+  const goToLearningOrCertificate = () => {
+    if (!props.course?.slug) return;
+    router.push(`/my-learning/${props.course.slug}`);
   };
   </script>
   

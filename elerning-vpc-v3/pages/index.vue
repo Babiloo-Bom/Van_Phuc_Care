@@ -238,17 +238,15 @@ import { useCoursesStore } from "~/stores/courses";
 import { useCartStore } from "~/stores/cart";
 import { useAuthStore } from "~/stores/auth";
 import { useCourseApi } from "~/composables/useCourseApi";
+import { message } from "ant-design-vue";
 import CourseCard from "~/components/courses/CourseCard.vue";
 import CartToast from "~/components/cart/Toast.vue";
 
-// SEO Configuration for SPA mode
-// Function to update SEO meta tags
+
 const updateSEOMetaTags = () => {
-  // Update document title
   document.title =
     "Van Phuc Care E-Learning - Nền Tảng Học Trực Tuyến Hàng Đầu Việt Nam";
 
-  // Update meta description
   const metaDescription = document.querySelector('meta[name="description"]');
   if (metaDescription) {
     metaDescription.setAttribute(
@@ -392,81 +390,6 @@ useHead({
   ],
 });
 
-
-// Schema.org markup for Homepage (temporarily disabled for testing)
-// useSchemaOrg([
-//   {
-//     '@type': 'WebSite',
-//     name: 'Van Phuc Care E-Learning',
-//     url: 'https://vanphuccare.com',
-//     description: 'Nền tảng học trực tuyến hàng đầu Việt Nam với các khóa học chất lượng cao',
-//     publisher: {
-//       '@type': 'Organization',
-//       name: 'Van Phuc Care',
-//       url: 'https://vanphuccare.com',
-//       logo: 'https://vanphuccare.com/images/logo.png'
-//     },
-//     potentialAction: {
-//       '@type': 'SearchAction',
-//       target: 'https://vanphuccare.com/courses?search={search_term_string}',
-//       'query-input': 'required name=search_term_string'
-//     }
-//   },
-//   {
-//     '@type': 'Organization',
-//     name: 'Van Phuc Care',
-//     url: 'https://vanphuccare.com',
-//     logo: 'https://vanphuccare.com/images/logo.png',
-//     description: 'Nền tảng học trực tuyến hàng đầu Việt Nam với các khóa học chất lượng cao',
-//     foundingDate: '2024',
-//     address: {
-//       '@type': 'PostalAddress',
-//       addressCountry: 'VN',
-//       addressLocality: 'Việt Nam'
-//     },
-//     contactPoint: {
-//       '@type': 'ContactPoint',
-//       telephone: '+84-xxx-xxx-xxx',
-//       contactType: 'customer service',
-//       availableLanguage: 'Vietnamese'
-//     },
-//     sameAs: [
-//       'https://facebook.com/vanphuccare',
-//       'https://youtube.com/vanphuccare',
-//       'https://linkedin.com/company/vanphuccare'
-//     ]
-//   },
-//   {
-//     '@type': 'EducationalOrganization',
-//     name: 'Van Phuc Care E-Learning',
-//     url: 'https://vanphuccare.com',
-//     description: 'Nền tảng học trực tuyến hàng đầu Việt Nam với các khóa học chất lượng cao',
-//     address: {
-//       '@type': 'PostalAddress',
-//       addressCountry: 'VN',
-//       addressLocality: 'Việt Nam'
-//     },
-//     hasOfferCatalog: {
-//       '@type': 'OfferCatalog',
-//       name: 'Khóa học trực tuyến',
-//       itemListElement: computed(() =>
-//         courses.value.map((course, index) => ({
-//           '@type': 'Course',
-//           name: course.title,
-//           description: course.shortDescription,
-//           url: `https://vanphuccare.com/courses/${course.slug}`,
-//           image: `https://vanphuccare.com${course.thumbnail}`,
-//           offers: {
-//             '@type': 'Offer',
-//             price: course.price,
-//             priceCurrency: 'VND',
-//             availability: 'https://schema.org/InStock'
-//           }
-//         }))
-//       )
-//     }
-//   }
-// ])
 const router = useRouter();
 const coursesStore = useCoursesStore();
 const cartStore = useCartStore();
@@ -475,14 +398,12 @@ const courseApi = useCourseApi();
 
 const loading = ref(false);
 const searchKey = ref("");
-const courses = ref([]); // Local reactive state
+const courses = ref([]);
 
-// Filter states
 const selectedCategory = ref("");
 const selectedLevel = ref("");
 const sortBy = ref("priority");
 
-// Computed
 const categories = computed(() => {
   const sourceCourses =
     courses.value.length > 0 ? courses.value : coursesStore.courses;
@@ -493,7 +414,6 @@ const categories = computed(() => {
 });
 
 const filteredCourses = computed(() => {
-  
   // Use local state as primary source
   let sourceCourses =
     courses.value.length > 0 ? courses.value : coursesStore.courses;
@@ -567,8 +487,26 @@ const filteredCourses = computed(() => {
       });
       break;
   }
-  
-  return sourceCourses
+
+  // Enrich for UI states: purchased/completed/progress
+  const myCoursesMap = new Map(
+    (coursesStore.myCourses || []).map((c: any) => [c._id?.toString(), c])
+  )
+  const purchasedSet = new Set(authStore.user?.courseRegister || [])
+
+  return sourceCourses.map((c: any) => {
+    const id = c._id?.toString()
+    const myCourse = id ? myCoursesMap.get(id) : null
+    const progressPct = myCourse?.progress?.progressPercentage ?? c?.progress?.progressPercentage ?? getProgress(id || '')
+    const isCompleted = myCourse?.progress?.isCompleted || c?.progress?.isCompleted || progressPct === 100
+    const isPurchasedFlag = (c?.isPurchased === true) || purchasedSet.has(id || '')
+    return {
+      ...c,
+      isPurchased: isPurchasedFlag,
+      isCompleted,
+      progress: progressPct,
+    }
+  })
 })
 
 // Methods
@@ -605,8 +543,14 @@ const getProgress = (courseId: string) => {
 const handleAddToCart = async (course: any) => {
   try {
     await cartStore.addToCart({ courseId: course._id, quantity: 1, userId: String(authStore.user?.id) || "" })
-  } catch (error) {
-    console.error("❌ Error adding to cart:", error);
+    message.success("Đã thêm vào giỏ hàng");
+  } catch (error: any) {
+    const msg = error?.data?.message || error?.message || "";
+    if (msg.toLowerCase().includes("already in cart") || msg.includes("trong giỏ")) {
+      message.warning("Khóa học đã tồn tại trong giỏ hàng");
+    } else {
+      message.error("Không thể thêm vào giỏ hàng");
+    }
   }
 };
 
@@ -616,17 +560,33 @@ const handleBuyNow = async (course: any) => {
     await cartStore.addToCart({ courseId: course._id, quantity: 1, userId: String(authStore.user?.id) || "" });
     // Navigate to checkout
     navigateTo("/cart");
-  } catch (error) {
-    console.error("❌ Error buying now:", error);
+  } catch (error: any) {
+    const msg = error?.data?.message || error?.message || "";
+    if (msg.toLowerCase().includes("already in cart") || msg.includes("trong giỏ")) {
+      message.warning("Khóa học đã tồn tại trong giỏ hàng");
+      navigateTo("/cart");
+    } else {
+      message.error("Không thể mua ngay lúc này");
+    }
   }
 };
 
 const handleViewDetail = (course: any) => {
   try {
-    // Navigate to course detail page
+    // Nếu card click gửi _forceDetail -> luôn về trang chi tiết khóa học
+    if ((course as any)._forceDetail) {
+      navigateTo(`/courses/${course.slug}`);
+      return;
+    }
+
+    // Các nút Học ngay / Đã hoàn thành mới điều hướng vào trang học/chứng chỉ
+    if (course.isCompleted) {
+      navigateTo(`/my-learning/${course.slug}?certificate=true`);
+      return;
+    }
     if (course.isPurchased) {
       navigateTo(`/my-learning/${course.slug}`);
-      return
+      return;
     }
     navigateTo(`/courses/${course.slug}`);
   } catch (error) {
@@ -719,12 +679,15 @@ onMounted(async () => {
 
   // Initialize auth first to ensure user data is loaded
   await authStore.initAuth();
-  // Fetch courses
-  await fetchData();
-  // Only load cart and my courses if user is logged in
+  // Fetch myCourses trước để enrich UI, sau đó fetchAll song song
   if (authStore.isLoggedIn) {
-    await cartStore.fetchCart();
-    await coursesStore.fetchMyCourses();
+    await Promise.allSettled([
+      coursesStore.fetchMyCourses(),
+      cartStore.fetchCart(),
+      fetchData(),
+    ]);
+  } else {
+    await fetchData();
   }
 });
 </script>

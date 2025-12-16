@@ -10,6 +10,7 @@ export interface VaccinationScheduleItem {
   thumbnail?: string;
   numberOfInjections?: string;
   category?: string;
+  detailLink?: string; // Link to related article/content
   // Merged fields from vaccination records (if customerId is provided)
   vaccinationRecord?: VaccinationRecord | null;
   injectionStatus?: 'completed' | 'pending' | 'scheduled' | 'skipped';
@@ -83,18 +84,59 @@ export interface HealthRecord {
   temperature?: number;
   height?: number;
   weight?: number;
+  
+  // Tình trạng da
   skinCondition?: string;
+  skinConditionNote?: string;
+  
+  // Sức khỏe răng miệng
   oralHealth?: string;
+  oralHealthNote?: string;
+  
+  // Dinh dưỡng
   nutrition?: string;
+  nutritionNote?: string;
+  
+  // Giấc ngủ
   sleep?: string;
+  sleepNote?: string;
+  
+  // Tiêu hóa
   stoolFrequency?: string;
   stoolCondition?: string;
   digestiveIssues?: string;
+  
+  // Lịch sinh hoạt
+  schedule?: string;
+  scheduleNote?: string;
+  
+  // Ghi chú
+  notes?: string;
+  
+  // Mốc phát triển
+  developmentMilestone?: string;
+  
+  // Vận động thô
+  grossMotorSkills?: string;
+  
+  // Vận động tinh
+  fineMotorSkills?: string;
+  
+  // Thị giác và nhận thức
+  visualCognition?: string;
+  
+  // Giao tiếp và cảm xúc
+  communicationEmotion?: string;
+  
+  // Dấu hiệu cảnh báo sớm
+  earlyWarning?: string;
+  
+  // Legacy fields
   method?: string;
   motorSkills?: string;
   vaccination?: HealthRecordVaccination | null;
-  notes?: string;
   healthStatus?: string;
+  
   createdAt?: string;
   updatedAt?: string;
   __v?: number;
@@ -299,18 +341,22 @@ export interface HealthBook {
   weight?: string;
   height?: string;
   skinConditions?: string;
+  skinConditionNote?: string;
   tooth?: {
     count: string;
     descriptions: string;
   };
+  oralHealthNote?: string;
   nutrition?: {
     count: string;
     descriptions: string;
   };
+  nutritionNote?: string;
   sleep?: {
     time: string;
     descriptions: string;
   };
+  sleepNote?: string;
   frequencyOfDefecation?: string;
   fecalCondition?: string;
   digestiveProblems?: string;
@@ -323,6 +369,15 @@ export interface HealthBook {
     status: string;
     descriptions: string;
   };
+  schedule?: string;
+  scheduleNote?: string;
+  notes?: string;
+  developmentMilestone?: string;
+  grossMotorSkills?: string;
+  fineMotorSkills?: string;
+  visualCognition?: string;
+  communicationEmotion?: string;
+  earlyWarning?: string;
   note?: string;
   temperature?: string;
   recordedAt?: string;

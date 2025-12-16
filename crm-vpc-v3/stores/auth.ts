@@ -24,6 +24,9 @@ export interface AuthState {
   isAuthenticated: boolean;
   isLoading: boolean;
   rememberAccount: boolean;
+  isSSOLoginInProgress: boolean; // Flag to disable auto-logout during SSO
+  justLoggedIn: boolean; // Flag to disable auto-logout immediately after login
+  loginTimestamp: number | null; // Timestamp of last login
 }
 
 export const useAuthStore = defineStore('auth', {
@@ -34,6 +37,9 @@ export const useAuthStore = defineStore('auth', {
     isAuthenticated: false,
     isLoading: false,
     rememberAccount: false,
+    isSSOLoginInProgress: false,
+    justLoggedIn: false,
+    loginTimestamp: null,
   }),
 
   getters: {
@@ -120,6 +126,14 @@ export const useAuthStore = defineStore('auth', {
           localStorage.setItem('auth_token', token);
           localStorage.setItem('token_expire_at', this.tokenExpireAt || '');
           localStorage.setItem('user', JSON.stringify(this.user));
+          // Also save authData for initAuth compatibility
+          const authData = {
+            user: this.user,
+            token: this.token,
+            tokenExpireAt: this.tokenExpireAt,
+            rememberAccount: this.rememberAccount,
+          };
+          localStorage.setItem('authData', JSON.stringify(authData));
 
           if (remindAccount) {
             localStorage.setItem(
@@ -132,6 +146,27 @@ export const useAuthStore = defineStore('auth', {
             );
           }
         }
+
+        // Set justLoggedIn flag to prevent auto-logout for 15 seconds
+        this.justLoggedIn = true;
+        this.loginTimestamp = Date.now();
+        console.log('[Login] Set justLoggedIn flag, timestamp:', this.loginTimestamp);
+        
+        // Clear any leftover logout sync cookie when logging in
+        if (process.client) {
+          try {
+            const { clearLogoutSyncCookie } = await import('~/utils/authSync');
+            clearLogoutSyncCookie();
+            console.log('[Login] Cleared logout sync cookie');
+          } catch (e) {
+            console.warn('[Login] Failed to clear logout sync cookie:', e);
+          }
+        }
+        
+        setTimeout(() => {
+          this.justLoggedIn = false;
+          console.log('[Login] Cleared justLoggedIn flag after 15 seconds');
+        }, 15000); // 15 seconds grace period
 
         return { success: true, user: this.user, token };
       } catch (error: any) {
@@ -220,7 +255,15 @@ export const useAuthStore = defineStore('auth', {
           this.saveAuth();
         }
       } catch (error) {
-        console.error('❌ Error refreshing user data:', error);
+        // Don't throw error - just log it. This is a non-critical operation.
+        // The session is still valid even if refresh fails.
+        console.warn('⚠️ Error refreshing user data (non-critical):', error);
+        // Re-throw only if it's a critical error (not 401, not network error)
+        const status = (error as any)?.statusCode || (error as any)?.status;
+        if (status && status !== 401 && status !== 0) {
+          // Only re-throw for unexpected server errors (500, 403, etc.)
+          throw error;
+        }
       }
     },
 
@@ -438,6 +481,8 @@ export const useAuthStore = defineStore('auth', {
      * Migrated from admin-vpc/api/auth.js
      */
     async logout() {
+      console.log('[Auth] Logout called');
+      console.trace('[Auth] Logout stack trace');
       this.isLoading = true;
 
       try {
@@ -446,6 +491,12 @@ export const useAuthStore = defineStore('auth', {
         await authApi.logout().catch(() => {
           // Ignore logout API errors
         });
+
+        // Set logout sync cookie to notify Elearning site
+        if (process.client) {
+          const { setLogoutSyncCookie } = await import('~/utils/authSync');
+          setLogoutSyncCookie();
+        }
 
         // Clear state
         this.user = null;
@@ -457,6 +508,7 @@ export const useAuthStore = defineStore('auth', {
         if (process.client) {
           localStorage.removeItem('auth_token');
           localStorage.removeItem('user');
+          localStorage.removeItem('authData');
 
           // Keep auth_data if rememberAccount was true
           if (!this.rememberAccount) {
@@ -501,7 +553,8 @@ export const useAuthStore = defineStore('auth', {
         const token = localStorage.getItem('auth_token');
         const tokenExpireAt = localStorage.getItem('token_expire_at');
         const userStr = localStorage.getItem('user');
-        const authDataStr = localStorage.getItem('auth_data');
+        // Check both 'authData' (new format) and 'auth_data' (old format) for compatibility
+        const authDataStr = localStorage.getItem('authData') || localStorage.getItem('auth_data');
 
         // Try to restore from authData first (new format), then fallback to old format
         let authData = null;
@@ -558,19 +611,79 @@ export const useAuthStore = defineStore('auth', {
 
             // Check for remember account
             if (authDataStr) {
-              const authData = JSON.parse(authDataStr);
-              this.rememberAccount = authData.remindAccount || false;
+              try {
+                const authData = JSON.parse(authDataStr);
+                this.rememberAccount = authData.remindAccount || false;
+              } catch (e) {
+                // Ignore parse error for authData, it's optional
+                console.warn('⚠️ Failed to parse authData, continuing:', e);
+              }
             }
 
             // Refresh user data from backend to get latest courseRegister
-            await this.refreshUserData();
+            // Skip refresh if SSO login is in progress to avoid race condition
+            if (!this.isSSOLoginInProgress) {
+              try {
+                await this.refreshUserData();
+              } catch (refreshError) {
+                console.warn('⚠️ Failed to refresh user data during initAuth, but keeping session:', refreshError);
+                // Don't logout on refresh error - session might still be valid
+              }
+            } else {
+              console.log('ℹ️ Skipping refreshUserData during SSO login');
+            }
           } catch (error) {
-            console.error('❌ Init auth error:', error);
-            // Clear corrupted data
-            this.logout();
+            console.error('❌ Init auth error (critical):', error);
+            // Only logout on critical errors (parse errors, etc.), not on refresh errors
+            // Check if error is from refreshUserData (it should not throw for non-critical errors)
+            const isCriticalError = !(error as any)?.isRefreshError;
+            if (isCriticalError) {
+              // Only logout if not during SSO login
+              if (!this.isSSOLoginInProgress) {
+                this.logout();
+              } else {
+                console.warn('⚠️ Init auth error during SSO, skipping logout');
+              }
+            } else {
+              console.warn('⚠️ Non-critical error during initAuth, keeping session');
+            }
           }
         } else {
-          console.log('ℹ️ No auth data found in localStorage');
+          // Check if we have token and user from SSO (they might be set separately)
+          if (token && userStr) {
+            try {
+              const user = JSON.parse(userStr);
+              // Check if token is expired
+              if (tokenExpireAt) {
+                const expireTime = new Date(tokenExpireAt).getTime();
+                const now = Date.now();
+                if (!isNaN(expireTime) && now >= expireTime) {
+                  // Token expired, clear data
+                  console.log('⚠️ Token expired, logging out');
+                  this.logout();
+                  return;
+                }
+              }
+              
+              this.token = token;
+              this.tokenExpireAt = tokenExpireAt;
+              this.user = user;
+              this.isAuthenticated = true;
+              console.log('ℹ️ Restored auth from token and user (SSO format)');
+              // Save as authData for future compatibility
+              this.saveAuth();
+            } catch (e) {
+              console.error('❌ Error restoring from token/user:', e);
+              this.logout();
+            }
+          } else {
+            // Check if we're already authenticated (might be from SSO)
+            if (this.isAuthenticated && this.token && this.user) {
+              console.log('ℹ️ Already authenticated, skipping initAuth');
+              return;
+            }
+            console.log('ℹ️ No auth data found in localStorage');
+          }
         }
       }
     },
@@ -689,7 +802,37 @@ export const useAuthStore = defineStore('auth', {
         if (process.client) {
           localStorage.setItem('token_expire_at', this.tokenExpireAt);
           localStorage.setItem('user', JSON.stringify(userData));
+          // Also save authData for initAuth compatibility
+          const authData = {
+            user: userData,
+            token: accessToken,
+            tokenExpireAt: this.tokenExpireAt,
+            rememberAccount: false,
+          };
+          localStorage.setItem('authData', JSON.stringify(authData));
+          console.log('[Google Login] Auth data saved to localStorage');
         }
+
+        // Set justLoggedIn flag to prevent auto-logout for 15 seconds
+        this.justLoggedIn = true;
+        this.loginTimestamp = Date.now();
+        console.log('[Google Login] Set justLoggedIn flag, timestamp:', this.loginTimestamp);
+        
+        // Clear any leftover logout sync cookie when logging in
+        if (process.client) {
+          try {
+            const { clearLogoutSyncCookie } = await import('~/utils/authSync');
+            clearLogoutSyncCookie();
+            console.log('[Google Login] Cleared logout sync cookie');
+          } catch (e) {
+            console.warn('[Google Login] Failed to clear logout sync cookie:', e);
+          }
+        }
+        
+        setTimeout(() => {
+          this.justLoggedIn = false;
+          console.log('[Google Login] Cleared justLoggedIn flag after 15 seconds');
+        }, 15000); // 15 seconds grace period
 
         return { success: true };
       } catch (error: any) {

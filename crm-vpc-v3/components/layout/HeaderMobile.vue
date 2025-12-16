@@ -48,17 +48,32 @@
 
         <!-- Menu Items -->
         <nav class="flex-1 py-4 overflow-y-auto">
-          <NuxtLink 
-            v-for="item in menuItems"
-            :key="item.path"
-            :to="item.path" 
-            class="flex items-center gap-3 px-5 py-3.5 text-gray-700 text-[15px] font-medium transition-all active:bg-gray-50"
-            :class="isActive(item.path) ? 'bg-blue-50 text-blue-500 border-l-4 border-blue-500 pl-4' : ''"
-            @click="closeMenu"
-          >
-            <div v-html="item.icon" />
-            <span>{{ item.label }}</span>
-          </NuxtLink>
+          <template v-for="item in menuItems" :key="item.path">
+            <!-- External Link -->
+            <a
+              v-if="isExternalLink(item.path)"
+              :href="item.path"
+              target="_blank"
+              rel="noopener noreferrer"
+              class="flex items-center gap-3 px-5 py-3.5 text-gray-700 text-[15px] font-medium transition-all active:bg-gray-50"
+              :class="isActive(item.path) ? 'bg-blue-50 text-blue-500 border-l-4 border-blue-500 pl-4' : ''"
+              @click.prevent="handleElearningLinkClick(item.path)"
+            >
+              <div v-html="item.icon" />
+              <span>{{ item.label }}</span>
+            </a>
+            <!-- Internal Link -->
+            <NuxtLink
+              v-else
+              :to="item.path"
+              class="flex items-center gap-3 px-5 py-3.5 text-gray-700 text-[15px] font-medium transition-all active:bg-gray-50"
+              :class="isActive(item.path) ? 'bg-blue-50 text-blue-500 border-l-4 border-blue-500 pl-4' : ''"
+              @click="closeMenu"
+            >
+              <div v-html="item.icon" />
+              <span>{{ item.label }}</span>
+            </NuxtLink>
+          </template>
         </nav>
 
         <!-- Logout Button -->
@@ -78,22 +93,73 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed } from 'vue';
+import { ref, computed, onMounted, onUnmounted } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
+import { useAuthStore } from '~/stores/auth';
+import { useRuntimeConfig } from '#app';
 import { MENU_ITEMS } from '~/constants/menu';
 
 const route = useRoute();
 const router = useRouter();
 const authStore = useAuthStore();
+const config = useRuntimeConfig();
 
 // State
 const isMenuOpen = ref(false);
 const menuItems = MENU_ITEMS;
 
+// Elearning Base URL
+const elearningBaseUrl = computed(() => config.public.baseUrlElearning || 'http://elearning.vanphuccare.com');
+
 // User data
 const userName = computed(() => authStore.user?.fullname || authStore.user?.name || 'User');
 const userEmail = computed(() => authStore.user?.email || 'user@example.com');
 const userAvatar = computed(() => authStore.user?.avatar || '/images/avatar-fallback.png');
+
+// Auto refresh user data on mount and window focus
+const handleFocus = async () => {
+  if (authStore.isAuthenticated && authStore.token) {
+    await authStore.refreshUserData();
+  }
+};
+
+let stopLogoutMonitor: (() => void) | null = null;
+
+onMounted(async () => {
+  // Refresh user data on component mount if authenticated
+  if (authStore.isAuthenticated && authStore.token) {
+    await authStore.refreshUserData();
+  }
+
+  // Refresh user data when window gains focus (user switches back to this tab)
+  window.addEventListener('focus', handleFocus);
+
+  // Monitor logout sync cookie from Elearning site
+  if (process.client) {
+    const { startLogoutSyncMonitor } = await import('~/utils/authSync');
+      stopLogoutMonitor = startLogoutSyncMonitor(async () => {
+        // Logout if sync cookie detected, but not immediately after SSO login
+        if (authStore.isAuthenticated) {
+          const timeSinceLogin = authStore.loginTimestamp 
+            ? Date.now() - authStore.loginTimestamp 
+            : Infinity;
+          // Only skip logout if login was VERY recent (within 2 seconds) - this protects against SSO race conditions
+          // But allow logout sync for normal logouts from other site
+          if (timeSinceLogin < 2000) {
+            return;
+          }
+          await authStore.logout();
+        }
+      });
+  }
+});
+
+onUnmounted(() => {
+  window.removeEventListener('focus', handleFocus);
+  if (stopLogoutMonitor) {
+    stopLogoutMonitor();
+  }
+});
 
 // Methods
 const toggleMenu = () => {
@@ -110,11 +176,45 @@ const closeMenu = () => {
   document.body.style.overflow = '';
 };
 
+const isExternalLink = (path: string) => {
+  return path.startsWith('http://') || path.startsWith('https://');
+};
+
 const isActive = (path: string) => {
+  if (isExternalLink(path)) {
+    return false;
+  }
   if (path === '/') {
     return route.path === '/';
   }
   return route.path.startsWith(path);
+};
+
+// Handle Elearning link click with SSO
+const handleElearningLinkClick = async (path: string) => {
+  if (!isExternalLink(path)) return;
+  
+  closeMenu();
+  
+  // If it's the "Khóa học của tôi" link, add SSO token
+  if (path.includes('my-learning') && authStore.isAuthenticated && authStore.token) {
+    try {
+      const { buildSSOUrl } = await import('~/utils/sso');
+      const baseUrl = String(elearningBaseUrl.value || 'http://elearning.vanphuccare.com');
+      const ssoUrl = await buildSSOUrl(baseUrl, '/my-learning');
+      console.log('[SSO] Opening Elearning with SSO:', ssoUrl);
+      // Wait a bit for cookie to be set
+      await new Promise(resolve => setTimeout(resolve, 200));
+      window.open(ssoUrl, '_blank', 'noopener,noreferrer');
+    } catch (error) {
+      console.error('[SSO] Error building SSO URL:', error);
+      // Fallback: open without SSO
+      window.open(path, '_blank', 'noopener,noreferrer');
+    }
+  } else {
+    // Regular external link
+    window.open(path, '_blank', 'noopener,noreferrer');
+  }
 };
 
 const handleLogout = async () => {

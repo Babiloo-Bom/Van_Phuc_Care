@@ -44,8 +44,8 @@
       <h4 class="font-bold text-[#1A75BB] text-sm mb-2">
         Lưu ý:
       </h4>
-      <ul class="list-disc list-inside text-sm text-gray-600 leading-relaxed space-y-1">
-        <li class="font-bold" v-for="(line, index) in noteLines" :key="index">{{ line }}</li>
+      <ul class="list-disc list-inside text-sm leading-relaxed space-y-1">
+        <li class="font-bold text-[#000000]" v-for="(line, index) in noteLines" :key="index">{{ line }}</li>
       </ul>
     </div>
   </div>

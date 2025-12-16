@@ -260,17 +260,42 @@ class HealthBookController {
         temperature,
         height,
         weight,
+        // Tình trạng da
         skinCondition,
+        skinConditionNote,
+        // Sức khỏe răng miệng
         oralHealth,
+        oralHealthNote,
+        // Dinh dưỡng
         nutrition,
+        nutritionNote,
+        // Giấc ngủ
         sleep,
+        sleepNote,
+        // Tiêu hóa
         stoolFrequency,
         stoolCondition,
         digestiveIssues,
+        // Lịch sinh hoạt
+        schedule,
+        // Ghi chú
+        notes,
+        // Mốc phát triển
+        developmentMilestone,
+        // Vận động thô
+        grossMotorSkills,
+        // Vận động tinh
+        fineMotorSkills,
+        // Thị giác và nhận thức
+        visualCognition,
+        // Giao tiếp và cảm xúc
+        communicationEmotion,
+        // Dấu hiệu cảnh báo sớm
+        earlyWarning,
+        // Legacy fields
         method,
         motorSkills,
         vaccination,
-        notes,
         healthStatus,
       } = req.body;
 
@@ -307,17 +332,56 @@ class HealthBookController {
       if (temperature !== undefined) recordData.temperature = temperature;
       if (height !== undefined) recordData.height = height;
       if (weight !== undefined) recordData.weight = weight;
+      
+      // Tình trạng da
       if (skinCondition !== undefined) recordData.skinCondition = skinCondition;
+      if (skinConditionNote !== undefined) recordData.skinConditionNote = skinConditionNote;
+      
+      // Sức khỏe răng miệng
       if (oralHealth !== undefined) recordData.oralHealth = oralHealth;
+      if (oralHealthNote !== undefined) recordData.oralHealthNote = oralHealthNote;
+      
+      // Dinh dưỡng
       if (nutrition !== undefined) recordData.nutrition = nutrition;
+      if (nutritionNote !== undefined) recordData.nutritionNote = nutritionNote;
+      
+      // Giấc ngủ
       if (sleep !== undefined) recordData.sleep = sleep;
+      if (sleepNote !== undefined) recordData.sleepNote = sleepNote;
+      
+      // Tiêu hóa
       if (stoolFrequency !== undefined) recordData.stoolFrequency = stoolFrequency;
       if (stoolCondition !== undefined) recordData.stoolCondition = stoolCondition;
       if (digestiveIssues !== undefined) recordData.digestiveIssues = digestiveIssues;
+      
+      // Lịch sinh hoạt
+      if (schedule !== undefined) recordData.schedule = schedule;
+      
+      // Ghi chú
+      if (notes !== undefined) recordData.notes = notes;
+      
+      // Mốc phát triển
+      if (developmentMilestone !== undefined) recordData.developmentMilestone = developmentMilestone;
+      
+      // Vận động thô
+      if (grossMotorSkills !== undefined) recordData.grossMotorSkills = grossMotorSkills;
+      
+      // Vận động tinh
+      if (fineMotorSkills !== undefined) recordData.fineMotorSkills = fineMotorSkills;
+      
+      // Thị giác và nhận thức
+      if (visualCognition !== undefined) recordData.visualCognition = visualCognition;
+      
+      // Giao tiếp và cảm xúc
+      if (communicationEmotion !== undefined) recordData.communicationEmotion = communicationEmotion;
+      
+      // Dấu hiệu cảnh báo sớm
+      if (earlyWarning !== undefined) recordData.earlyWarning = earlyWarning;
+      
+      // Legacy fields
       if (method !== undefined) recordData.method = method;
       if (motorSkills !== undefined) recordData.motorSkills = motorSkills;
       if (vaccination !== undefined) recordData.vaccination = vaccination;
-      if (notes !== undefined) recordData.notes = notes;
       if (healthStatus !== undefined) recordData.healthStatus = healthStatus;
 
       // Upsert: update if exists, create if not

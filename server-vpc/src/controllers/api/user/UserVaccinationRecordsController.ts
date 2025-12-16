@@ -17,7 +17,7 @@ class UserVaccinationRecordsController {
 
       const query: any = { 
         customerId,
-        domain: req.headers.origin || "",
+        domain: req.headers.origin || req.headers.host || "crm.vanphuccare.com",
       };
 
       const [records, total] = await Promise.all([
@@ -52,7 +52,7 @@ class UserVaccinationRecordsController {
    */
   public async create(req: Request, res: Response) {
     try {
-      const {
+      let {
         customerId,
         healthBookId,
         vaccineId,
@@ -66,9 +66,18 @@ class UserVaccinationRecordsController {
         nextDoseDate,
       } = req.body;
 
-      // Validate required fields
-      if (!customerId || !healthBookId || !vaccineId) {
-        return sendError(res, 400, "customerId, healthBookId và vaccineId là bắt buộc");
+      // Validate required fields - healthBookId và vaccineId là bắt buộc
+      if (!healthBookId || !vaccineId) {
+        return sendError(res, 400, "healthBookId và vaccineId là bắt buộc");
+      }
+
+      // Nếu không có customerId, lấy từ healthBook
+      if (!customerId) {
+        const healthBook = await HealthBooks.model.findById(healthBookId);
+        if (!healthBook) {
+          return sendError(res, 404, "HealthBook không tồn tại");
+        }
+        customerId = (healthBook as any).customerId || (healthBook as any).userId || healthBookId;
       }
 
       // Check if vaccine exists
@@ -100,7 +109,7 @@ class UserVaccinationRecordsController {
         injectionNumber: injectionNumber || 1,
         sideEffects: sideEffects || "",
         nextDoseDate: nextDoseDate || null,
-        domain: req.headers.origin || "",
+        domain: req.headers.origin || req.headers.host || "crm.vanphuccare.com",
       });
 
       // Populate vaccine info
@@ -174,6 +183,45 @@ class UserVaccinationRecordsController {
       });
     } catch (error: any) {
       console.error("Error deleting vaccination record:", error);
+      return sendError(res, 500, error.message);
+    }
+  }
+
+  /**
+   * Xóa vaccination record theo vaccineId và healthBookId
+   * DELETE /api/u/vaccination-records/by-vaccine/:vaccineId
+   * Query: healthBookId (required)
+   */
+  public async deleteByVaccine(req: Request, res: Response) {
+    try {
+      const { vaccineId } = req.params;
+      const { healthBookId, injectionNumber } = req.query;
+
+      if (!healthBookId) {
+        return sendError(res, 400, "healthBookId là bắt buộc");
+      }
+
+      const query: any = {
+        vaccineId,
+        healthBookId,
+      };
+
+      // Nếu có injectionNumber thì thêm vào query
+      if (injectionNumber) {
+        query.injectionNumber = Number(injectionNumber);
+      }
+
+      const record = await VaccinationRecords.model.findOneAndDelete(query);
+
+      if (!record) {
+        return sendError(res, 404, "Không tìm thấy bản ghi tiêm chủng");
+      }
+
+      return sendSuccess(res, {
+        message: "Đã xóa bản ghi tiêm chủng thành công",
+      });
+    } catch (error: any) {
+      console.error("Error deleting vaccination record by vaccine:", error);
       return sendError(res, 500, error.message);
     }
   }

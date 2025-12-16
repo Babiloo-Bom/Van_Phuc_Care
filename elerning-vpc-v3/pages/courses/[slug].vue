@@ -55,7 +55,7 @@
                 <div class="p-2 sm:p-4 rounded-md overflow-hidden shadow-md">
                   <video
                     v-if="currentVideoUrl"
-                    ref="videoRef"
+                    :ref="videoRef"
                     :src="currentVideoUrl"
                     :poster="course?.thumbnail"
                     class="w-full h-auto min-h-[200px] sm:min-h-[300px] md:min-h-[400px] lg:min-h-[500px] object-cover rounded-[8px] sm:rounded-[12px]"
@@ -521,17 +521,27 @@
 
                 <!-- Action Buttons -->
                 <div class="flex flex-col gap-2 sm:gap-3">
-                  <!-- Vào học Button (if purchased) -->
+                  <!-- Đã hoàn thành (đi tới trang chứng chỉ) -->
                   <a-button
-                    v-if="course?.isPurchased"
+                    v-if="course?.progress?.isCompleted"
+                    class="!w-full !py-2 sm:!py-3 !h-[44px] sm:!h-[50px] !text-white !border-none !font-bold !text-sm sm:!text-base !rounded-lg !transition-all !duration-200 hover:!opacity-90"
+                    style="background: linear-gradient(88.69deg, #FFBE6A -1.04%, #EBBC46 23.61%, #FFDA7D 55.57%, #EBBC46 74.44%, #FFBE6A 97.91%) !important"
+                    @click="goToCertificate"
+                  >
+                    Đã hoàn thành
+                  </a-button>
+
+                  <!-- Học ngay (đã mua nhưng chưa hoàn thành) -->
+                  <a-button
+                    v-else-if="course?.isPurchased"
                     class="!w-full !py-2 sm:!py-3 !h-[44px] sm:!h-[50px] !text-white !border-none !font-bold !text-sm sm:!text-base !rounded-lg !transition-all !duration-200 hover:!opacity-90"
                     style="background-color: #15cf74 !important"
                     @click="goToLearning"
                   >
-                    Vào học ngay
+                    Học ngay
                   </a-button>
 
-                  <!-- Mua ngay Button (if not purchased) -->
+                  <!-- Mua ngay (chưa mua) -->
                   <a-button
                     v-else
                     class="!w-full !py-2 sm:!py-3 !h-[44px] sm:!h-[50px] !text-white !border-none !font-bold !text-sm sm:!text-base !rounded-lg !transition-all !duration-200 hover:!opacity-90"
@@ -756,7 +766,7 @@ const socialMediaArray = ref<Array<{ icon: string; link: string }>>([]);
 
 // Expanded chapters state
 const expandedChapters = ref<Record<number, boolean>>({ 0: true }); // B1 expanded by default
-
+const videoRef = ref<any>(null)
 const course = computed(() => coursesStore.course);
 
 // SEO Configuration
@@ -1078,6 +1088,11 @@ const goToLearning = () => {
   router.push(`/my-learning/${course.value.slug}`);
 };
 
+const goToCertificate = () => {
+  if (!course.value?.slug) return;
+  router.push(`/my-learning/${course.value.slug}?certificate=true`);
+};
+
 const accessCourse = () => {
   // Redirect to course learning page or show course content
   // For now, just show a message - you can implement actual course access later
@@ -1110,6 +1125,7 @@ const handlePreviewLesson = (lesson: any) => {
   } else if (lesson.videos && lesson.videos.length > 0) {
     currentVideoUrl.value = lesson.videos[0].videoUrl;
   }
+  videoRef.value?.play()
   // Scroll to video section
   nextTick(() => {
     const videoElement = document.querySelector('video');
