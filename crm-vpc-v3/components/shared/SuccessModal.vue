@@ -92,7 +92,6 @@ const handleOverlayClick = () => {
   position: relative;
   width: 420px;
   height: auto;
-  min-height: 312px;
   background: #ffffff;
   box-shadow: 0px 1px 10px rgba(0, 0, 0, 0.05), 0px 2px 4px rgba(0, 0, 0, 0.1);
   border-radius: 12px;
@@ -129,6 +128,7 @@ const handleOverlayClick = () => {
   order: 0;
   align-self: stretch;
   flex-grow: 0;
+  border-radius: 12px;
 }
 
 .title-container {
@@ -151,7 +151,6 @@ const handleOverlayClick = () => {
   margin: 0 auto;
   width: 48px;
   height: 48px;
-  background: #249f5d;
   border-radius: 50%;
   display: flex;
   align-items: center;
@@ -214,6 +213,7 @@ const handleOverlayClick = () => {
   order: 1;
   align-self: stretch;
   flex-grow: 0;
+  border-radius: 12px;
 }
 
 .confirm-button {
@@ -249,7 +249,9 @@ const handleOverlayClick = () => {
 .confirm-button:active {
   background: #1d4ed8;
 }
-
+.success-icon svg {
+  flex-shrink: 0;
+}
 /* Mobile - smaller modal */
 @media (max-width: 480px) {
   .modal-overlay {
@@ -260,7 +262,6 @@ const handleOverlayClick = () => {
     width: 90vw;
     max-width: 332px;
     height: auto;
-    min-height: 312px;
   }
 
   .text-content {
@@ -269,11 +270,11 @@ const handleOverlayClick = () => {
     gap: 12px;
     height: auto;
     min-height: 200px;
+    border-radius: 12px;
   }
 
   .title-container {
     width: 100%;
-    gap: 20px;
     justify-content: center;
     height: auto;
   }
@@ -281,11 +282,6 @@ const handleOverlayClick = () => {
   .success-icon {
     width: 40px;
     height: 40px;
-  }
-
-  .success-icon svg {
-    width: 20px;
-    height: 20px;
   }
 
   .modal-title {
@@ -314,6 +310,7 @@ const handleOverlayClick = () => {
     justify-content: center;
     height: auto;
     min-height: 88px;
+    border-radius: 12px;
   }
 
   .confirm-button {

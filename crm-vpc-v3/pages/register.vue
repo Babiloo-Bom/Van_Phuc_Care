@@ -9,12 +9,12 @@
             <img
               src="/images/logo-vanphuc-new-mobile.png"
               alt="Van Phuc Care"
-              class="lg:hidden logo mobile-logo"
+              class="lg:hidden logo"
             />
             <img
               src="/images/logo-vanphuc-new.png"
               alt="Van Phuc Care"
-              class="hidden lg:block logo desktop-logo"
+              class="hidden lg:block logo"
             />
           </div>
 
@@ -60,29 +60,28 @@
             <!-- Phone Field -->
             <div class="form-group">
               <label class="form-label">Số điện thoại</label>
-              <div class="input-container" :class="{'input-error': errors.phone}">
+              <div class="input-container">
                 <input
                   v-model="form.phone"
                   type="tel"
-                  inputmode="numeric"
-                  pattern="[0-9]*"
-                  maxlength="10"
+                    inputmode="numeric"
+                    pattern="[0-9]*"
+                    maxlength="10"
                   placeholder="Số điện thoại"
                   class="form-input"
-                  @input="onPhoneInput"
                   required
                 />
               </div>
-              <div v-if="errors.phone" style="color: #e53935; font-size: 16px; margin-top: 4px; display: flex; align-items: center; gap: 4px;">
-                <span style="font-size: 18px;">&#10006;</span>
-                <span>{{ errors.phone }}</span>
-              </div>
+                <div v-if="errors.phone" style="color: #e53935; font-size: 16px; margin-top: 4px; display: flex; align-items: center; gap: 4px;">
+                  <span style="font-size: 18px;">&#10006;</span>
+                  <span>{{ errors.phone }}</span>
+                </div>
             </div>
 
             <!-- Password Field -->
             <div class="form-group">
               <label class="form-label">Mật khẩu</label>
-              <div class="input-container">
+              <div class="input-container" :class="{'input-error': errors.password}">
                 <input
                   v-model="form.password"
                   :type="showPassword ? 'text' : 'password'"
@@ -97,6 +96,10 @@
                 >
                   {{ showPassword ? "👁️" : "👁️‍🗨️" }}
                 </button>
+              </div>
+              <div v-if="errors.password" style="color: #e53935; font-size: 16px; margin-top: 4px; display: flex; align-items: center; gap: 4px;">
+                <span style="font-size: 18px;">&#10006;</span>
+                <span>{{ errors.password }}</span>
               </div>
             </div>
 
@@ -227,6 +230,7 @@ const form = reactive({
 
 const errors = reactive({
   email: "",
+  password: "",
   phone: "",
 });
 
@@ -249,6 +253,7 @@ const handleSubmit = async () => {
   try {
     // Clear previous errors
     errors.email = "";
+    errors.password = "";
     errors.phone = "";
 
     // Require agreement
@@ -277,9 +282,11 @@ const handleSubmit = async () => {
       showSuccessModal.value = true;
     } else {
       // Parse server response for duplicate account/email
-      const serverMsg = result?.data?.error?.message ?? result?.message ?? (typeof result?.error === 'string' ? result.error : result?.error?.message);
+      console.log("Register result:", result);
+      const serverMsg = result?.data?.error?.message ?? result?.data?.message ?? (typeof result?.error === 'string' ? result.error : result?.error?.message);
       const serverMsgStr = serverMsg ? String(serverMsg).toLowerCase() : "";
-      if (serverMsgStr.includes('account') || serverMsgStr.includes('account exists') || serverMsgStr.includes('accountexists') || serverMsgStr.includes('email')) {
+      console.log("Server message string:", serverMsgStr);
+      if (serverMsgStr.includes('duplicate') || serverMsgStr.includes('account exists') || serverMsgStr.includes('accountexists') || serverMsgStr.includes('email')) {
         errors.email = 'Email này đã được đăng ký';
       } else {
         if (result?.error) {
@@ -319,7 +326,6 @@ const handleSuccessClose = () => {
 /* Base styles - will be overridden by media queries */
 .register-form-section {
   position: relative;
-  width: 100%;
   height: 100vh;
   background: #ffffff;
   display: flex;
@@ -328,7 +334,6 @@ const handleSuccessClose = () => {
   justify-content: center;
   padding: 0;
   flex: 0 0 50%;
-  overflow-y: auto;
 }
 
 .content-wrapper {
@@ -582,7 +587,6 @@ const handleSuccessClose = () => {
 /* Left Side - Registration Form */
 .register-form-section {
   position: relative;
-  width: 100%;
   height: 100vh;
   background: #ffffff;
   display: flex;
@@ -591,7 +595,6 @@ const handleSuccessClose = () => {
   justify-content: center;
   padding: 0;
   flex: 0 0 50%;
-  overflow-y: auto;
 }
 
 .content-wrapper {
@@ -783,7 +786,6 @@ const handleSuccessClose = () => {
   text-decoration: none;
 }
 
-/* Right Side - Marketing Section */
 .marketing-section {
   position: relative;
   width: 50%;
@@ -1166,75 +1168,6 @@ const handleSuccessClose = () => {
     gap: 0;
   }
 
-  /* Force mobile logo/title visibility and stacking on CRM page */
-  .logo-section {
-    z-index: 30;
-  }
-  .title-section {
-    z-index: 30;
-  }
-  .logo-section .mobile-logo {
-    display: block !important;
-  }
-  .logo-section .desktop-logo {
-    display: none !important;
-  }
-
-  .main-title {
-    width: 265px;
-    height: 32px;
-    font-family: "SVN-Gilroy";
-    font-style: normal;
-    font-weight: 700;
-    font-size: 24px;
-    line-height: 32px;
-    text-align: center;
-    letter-spacing: 0.3px;
-    text-transform: capitalize;
-    color: #000000;
-    margin: 0;
-  }
-
-  .subtitle {
-    width: 265px;
-    height: 24px;
-    font-family: "SVN-Gilroy";
-    font-style: normal;
-    font-weight: 500;
-    font-size: 16px;
-    line-height: 24px;
-    letter-spacing: 0.3px;
-    color: #4a4a4a;
-    margin: 0;
-    text-align: center;
-  }
-
-  .logo-section {
-    position: absolute;
-    width: 80.1px;
-    height: 62.09px;
-    left: calc(50% - 80.1px / 2 - 7.44px);
-    top: -186.31px;
-    text-align: center;
-  }
-
-  .logo {
-    width: 80.1px;
-    height: 62.09px;
-    object-fit: contain;
-  }
-
-  .title-section {
-    position: absolute;
-    width: 265px;
-    height: 56px;
-    top: -76.2px;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    gap: 0;
-  }
-
   .main-title {
     width: 265px;
     height: 32px;
@@ -1423,45 +1356,23 @@ const handleSuccessClose = () => {
     justify-content: center;
   }
 }
-
-/* Custom Scrollbar - Transparent */
-.register-form-section {
-  scrollbar-width: thin;
-  scrollbar-color: transparent transparent;
-}
-
-.register-form-section::-webkit-scrollbar {
-  width: 6px;
-  background: transparent;
-}
-
-.register-form-section::-webkit-scrollbar-track {
-  background: transparent;
-}
-
-.register-form-section::-webkit-scrollbar-thumb {
-  background: transparent;
-  border-radius: 3px;
-}
-
-.register-form-section::-webkit-scrollbar-thumb:hover {
-  background: rgba(0, 0, 0, 0.1);
-}
 </style>
 <style scoped>
 .register-agree-label {
+  width: 100%;
   display: flex;
-  align-items: center;
+  align-items: self-start;
   font-weight: 700;
   font-size: 22px;
   color: #444;
   gap: 8px;
+  height: auto;
 }
 .register-checkbox {
-  width: 32px;
-  height: 32px;
+  width: 16px;
+  height: 16px;
   accent-color: #bdbdbd;
-  margin-right: 12px;
+  flex-shrink: 0;
 }
 .register-link {
   color: #1A75BB;

@@ -230,6 +230,7 @@ const form = reactive({
 
 const errors = reactive({
   email: "",
+  password: "",
   phone: "",
 });
 
@@ -251,6 +252,7 @@ const handleSubmit = async () => {
   try {
     // Clear previous errors
     errors.email = "";
+    errors.password = "";
     errors.phone = "";
 
     // Require agreement
@@ -279,9 +281,9 @@ const handleSubmit = async () => {
       showSuccessModal.value = true;
     } else {
       // Parse server response for duplicate account/email
-      const serverMsg = result?.data?.error?.message ?? result?.message ?? (typeof result?.error === 'string' ? result.error : result?.error?.message);
+      const serverMsg = result?.data?.error?.message ?? result?.data?.message ?? (typeof result?.error === 'string' ? result.error : result?.error?.message);
       const serverMsgStr = serverMsg ? String(serverMsg).toLowerCase() : "";
-      if (serverMsgStr.includes('account') || serverMsgStr.includes('account exists') || serverMsgStr.includes('accountexists') || serverMsgStr.includes('email')) {
+      if (serverMsgStr.includes('duplicate') || serverMsgStr.includes('account exists') || serverMsgStr.includes('accountexists') || serverMsgStr.includes('email')) {
         errors.email = 'Email này đã được đăng ký';
       } else {
         if (result?.error) {
@@ -1353,18 +1355,20 @@ const handleSuccessClose = () => {
 </style>
 <style scoped>
 .register-agree-label {
+  width: 100%;
   display: flex;
-  align-items: center;
+  align-items: self-start;
   font-weight: 700;
   font-size: 22px;
   color: #444;
   gap: 8px;
+  height: auto;
 }
 .register-checkbox {
-  width: 32px;
-  height: 32px;
+  width: 16px;
+  height: 16px;
   accent-color: #bdbdbd;
-  margin-right: 12px;
+  flex-shrink: 0;
 }
 .register-link {
   color: #1A75BB;

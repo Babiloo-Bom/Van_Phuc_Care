@@ -133,7 +133,7 @@ export const useAuthApi = () => {
     if (error instanceof AuthError) {
       return error;
     }
-
+    console.log("Transforming error:", error);
     // Try to extract message from API response
     let customMessage = null;
     if (error.data?.error) {

@@ -288,17 +288,11 @@ export const useAuthStore = defineStore('auth', {
         const authApi = useAuthApi();
 
         // Call API register
-        const response: any = await authApi.register(
-          email,
-          password,
-          repeatPassword,
-          fullname,
-          phone,
-        );
-
+        const response: any = await authApi.register(email, password, repeatPassword, fullname, phone);
         return { success: true, data: response };
       } catch (error: any) {
-        console.error('Register error:', error);
+        console.error('Register error.data?.message:', error.data?.message);
+        console.error('Register error?.message:', error?.message);
         return {
           success: false,
           error:
