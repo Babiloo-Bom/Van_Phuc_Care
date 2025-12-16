@@ -427,6 +427,19 @@ const hasCertificate = computed(() => {
   return !!(id && authStore.user?.courseCompleted?.includes(id));
 });
 
+// Kiểm tra xem user đã mua hoặc đã hoàn thành khóa học chưa
+const isPurchasedOrCompleted = computed(() => {
+  if (!course.value) return false;
+  const courseId = course.value._id?.toString();
+  
+  return (
+    course.value.isPurchased === true ||
+    course.value.progress?.isCompleted === true ||
+    (courseId && authStore.user?.courseRegister?.includes(courseId)) ||
+    (courseId && authStore.user?.courseCompleted?.includes(courseId))
+  );
+});
+
 const showCertificate = computed(() => {
   // Ẩn chứng chỉ khi ở chế độ review
   if (isReviewMode.value) return false;
@@ -613,27 +626,54 @@ const findValidLesson = (): {
 const fetchCourseDetail = async () => {
   try {
     loading.value = true;
-    await coursesStore.fetchMyCourseBySlug(slug.value, currentChapterIndex.value, currentLessonIndex.value);
-
+    
     const chapterParam = route.query.chapter;
     const lessonParam = route.query.lesson;
 
     if (chapterParam !== undefined) {
       currentChapterIndex.value = parseInt(chapterParam as string) || 0;
-    } else if (course.value?.chapters && course.value.chapters.length > 0) {
-      currentChapterIndex.value = 0;
     }
-
     if (lessonParam !== undefined) {
       currentLessonIndex.value = parseInt(lessonParam as string) || 0;
-    } else if (
-      currentChapter.value?.lessons &&
-      currentChapter.value.lessons.length > 0
-    ) {
+    }
+
+    // Nếu user chưa mua, dùng API public để lấy thông tin khóa học (cho phép xem preview)
+    // Nếu user đã mua, dùng API my-courses để lấy thông tin đầy đủ với progress
+    try {
+      await coursesStore.fetchDetail(slug.value);
+      
+      // Sau khi fetch, kiểm tra lại isPurchased hoặc đã hoàn thành
+      if (!isPurchasedOrCompleted.value) {
+        // Nếu chưa mua, chỉ cho phép xem bài preview
+        if (currentLesson.value && (!currentLesson.value.isPreview || currentLesson.value.isLocked)) {
+          // Redirect về trang chi tiết khóa học với query parameter để tự động hiện popup
+          navigateTo(`/courses/${slug.value}?showPurchaseModal=true`);
+          return;
+        }
+      } else {
+        // Nếu đã mua, fetch lại bằng my-courses để có progress đầy đủ
+        await coursesStore.fetchMyCourseBySlug(slug.value, currentChapterIndex.value, currentLessonIndex.value);
+      }
+    } catch (error: any) {
+      // Nếu API public cũng fail, thử dùng my-courses (có thể user đã mua nhưng API public có vấn đề)
+      if (error?.statusCode === 403 || error?.data?.error?.includes('chưa mua')) {
+        // User chưa mua, redirect về trang chi tiết
+        navigateTo(`/courses/${slug.value}`);
+        return;
+      }
+      await coursesStore.fetchMyCourseBySlug(slug.value, currentChapterIndex.value, currentLessonIndex.value);
+    }
+
+    // Set lại chapter và lesson index sau khi fetch
+    if (chapterParam === undefined && course.value?.chapters && course.value.chapters.length > 0) {
+      currentChapterIndex.value = 0;
+    }
+    if (lessonParam === undefined && currentChapter.value?.lessons && currentChapter.value.lessons.length > 0) {
       currentLessonIndex.value = 0;
     }
     
   } catch (error) {
+    console.error('Error fetching course detail:', error);
     navigateTo("/my-learning");
   } finally {
     loading.value = false;
@@ -696,86 +736,46 @@ watch(
     )
       return;
 
+    // Nếu chưa mua hoặc chưa hoàn thành khóa học
+    if (!isPurchasedOrCompleted.value) {
+      // Chỉ cho phép xem bài preview, không mark completed
+      if (!lesson.isPreview || lesson.isLocked) {
+        // Redirect về trang chi tiết với query parameter để tự động hiện popup mua khóa học
+        navigateTo(`/courses/${slug.value}?showPurchaseModal=true`);
+        return;
+      }
+      // Bài preview: không mark completed khi chưa mua
+      return;
+    }
+
     // Nếu đã mua khóa học, cho phép nhảy cóc - bỏ qua check bài trước
-    if (course.value?.isPurchased) {
-      // Chỉ mark completed nếu chưa hoàn thành (kể cả khi ở chế độ review/jump ahead)
-      // Điều này đảm bảo khi nhảy cóc vẫn tính tiến độ
-      const hasQuiz = lesson.hasQuiz || !!lesson.quizId || !!lesson.quiz;
-      if (!hasQuiz && !lesson.isCompleted) {
-        try {
-          markingCompleted.value = true;
-          await progressTracking.markLessonCompleted(
-            course.value._id,
-            currentChapter.value._id,
-            lesson._id,
-            0
-          );
-          // Reload course để cập nhật UI (tick, progress %)
-          await coursesStore.fetchMyCourseBySlug(
-            slug.value,
-            currentChapterIndex.value,
-            currentLessonIndex.value
-          );
-        } catch (error) {
-          console.error('Error marking lesson completed:', error);
-        } finally {
-          markingCompleted.value = false;
-        }
-      }
-      // Nếu ở chế độ review (đã hoàn thành 100%), không làm gì thêm
-      // Nhưng vẫn cho phép mark completed nếu bài chưa hoàn thành (nhảy cóc)
-      return;
-    }
-
-    // Ở chế độ review (chưa mua), không tự động mark completed và không redirect
-    if (isReviewMode.value) return;
-
-    const isFirstLesson =
-      currentChapterIndex.value === 0 && currentLessonIndex.value === 0;
-
-    // Nếu bài đã hoàn thành rồi và không phải bài đầu sau khi học lại thì bỏ qua
-    if (lesson.isCompleted && !isFirstLesson) return;
-
-    // Với bài đầu tiên sau khi "Học lại từ đầu" thì bỏ qua check bài trước
-    if (
-      !isFirstLesson &&
-      !canMarkLessonCompleted(
-        currentChapterIndex.value,
-        currentLessonIndex.value
-      )
-    ) {
-      const validLesson = findValidLesson();
-      if (validLesson) {
-        navigateTo(
-          `/my-learning/${slug.value}?chapter=${validLesson.chapterIndex}&lesson=${validLesson.lessonIndex}`
-        );
-      }
-      return;
-    }
-
+    // Chỉ mark completed nếu chưa hoàn thành (kể cả khi ở chế độ review/jump ahead)
+    // Điều này đảm bảo khi nhảy cóc vẫn tính tiến độ
     const hasQuiz = lesson.hasQuiz || !!lesson.quizId || !!lesson.quiz;
-
     if (!hasQuiz && !lesson.isCompleted) {
       try {
         markingCompleted.value = true;
-
         await progressTracking.markLessonCompleted(
           course.value._id,
           currentChapter.value._id,
           lesson._id,
           0
         );
-
+        // Reload course để cập nhật UI (tick, progress %)
         await coursesStore.fetchMyCourseBySlug(
           slug.value,
           currentChapterIndex.value,
           currentLessonIndex.value
         );
       } catch (error) {
+        console.error('Error marking lesson completed:', error);
       } finally {
         markingCompleted.value = false;
       }
     }
+    // Nếu ở chế độ review (đã hoàn thành 100%), không làm gì thêm
+    // Nhưng vẫn cho phép mark completed nếu bài chưa hoàn thành (nhảy cóc)
+    return;
   },
   { immediate: false }
 );

@@ -213,7 +213,7 @@
                                     v-if="lesson.isPreview && !lesson.isLocked"
                                     class="px-2 sm:px-3 py-1 text-[10px] sm:text-xs font-medium rounded border transition-colors whitespace-nowrap"
                                     style="color: #1A75BB; border-color: #1A75BB; background-color: transparent;"
-                                    @click.stop="handlePreviewLesson(lesson)"
+                                    @click.stop="handleLessonNavigate(chapterIndex, lessonIndex, lesson)"
                                   >
                                     Học thử
                                   </button>
@@ -763,6 +763,120 @@
 
     <!-- Cart Toast -->
     <CartToast />
+
+    <!-- Purchase Modal -->
+    <a-modal
+      v-model:open="showPurchaseModal"
+      :width="480"
+      :footer="null"
+      :closable="true"
+      :maskClosable="true"
+      centered
+      class="purchase-modal"
+      :body-style="{ padding: 0, borderRadius: '12px', background: 'transparent', boxShadow: 'none' }"
+      :wrap-style="{ borderRadius: '12px' }"
+    >
+      <div class="purchase-modal-content">
+        <!-- Text Container: padding 28px 40px, gap 16px, width 480px, height 248px -->
+        <div class="purchase-modal-text-container">
+          <!-- Frame: width 400px, height 192px, gap 18px -->
+          <div class="purchase-modal-frame">
+            <!-- Title Section: width 400px, height 70px -->
+            <div class="purchase-modal-title-section">
+              <!-- Image: 70x70, margin 0 auto -->
+              <img
+                src="/images/storytelling.png"
+                alt="Storytelling"
+                class="purchase-modal-image"
+              />
+            </div>
+            
+            <!-- Text Content: width 400px, height 104px, gap 8px -->
+            <div class="purchase-modal-text-content">
+              <!-- Title: width 206px, height 24px, font-size 20px, font-weight 700, color #232325 -->
+              <h3 class="purchase-modal-title">
+                Bạn đang học rất tốt!
+              </h3>
+              
+              <!-- Description: width 400px, height 72px, font-size 16px, font-weight 500, color #6F727A, text-align center -->
+              <p class="purchase-modal-description">
+                Bạn đã hoàn thành hết nội dung học thử. Đừng để kiến thức bị ngắt quãng, hãy mở khóa toàn bộ khóa học để tiếp tục bạn nhé!
+              </p>
+            </div>
+          </div>
+        </div>
+        
+        <!-- CTA Section: padding 8px 40px 24px, width 480px, height 80px -->
+        <div class="purchase-modal-cta-section">
+          <!-- Button: width 400px, height 48px, padding 12px, gap 10px, background #317BC4 -->
+          <a-button
+            type="primary"
+            size="large"
+            class="purchase-modal-button"
+            @click="handlePurchaseFromModal"
+          >
+            Mua khóa học ngay
+          </a-button>
+        </div>
+      </div>
+    </a-modal>
+
+    <!-- Login Modal -->
+    <a-modal
+      v-model:open="showLoginModal"
+      :width="480"
+      :footer="null"
+      :closable="true"
+      :maskClosable="true"
+      centered
+      class="login-modal"
+      :body-style="{ padding: 0, borderRadius: '12px', background: 'transparent', boxShadow: 'none' }"
+      :wrap-style="{ borderRadius: '12px' }"
+    >
+      <div class="login-modal-content">
+        <!-- Text Container: padding 28px 40px, gap 16px, width 480px, height 248px -->
+        <div class="login-modal-text-container">
+          <!-- Frame: width 400px, height 192px, gap 18px -->
+          <div class="login-modal-frame">
+            <!-- Title Section: width 400px, height 70px -->
+            <div class="login-modal-title-section">
+              <!-- Image: 70x70, margin 0 auto -->
+              <img
+                src="/images/padlock.png"
+                alt="Padlock"
+                class="login-modal-image"
+              />
+            </div>
+            
+            <!-- Text Content: width 400px, height 104px, gap 8px -->
+            <div class="login-modal-text-content">
+              <!-- Title: width 206px, height 24px, font-size 20px, font-weight 700, color #232325 -->
+              <h3 class="login-modal-title">
+                Mở khóa bài học thử miễn phí!
+              </h3>
+              
+              <!-- Description: width 400px, height 72px, font-size 16px, font-weight 500, color #6F727A, text-align center -->
+              <p class="login-modal-description">
+                Hãy đăng nhập để truy cập video và tài liệu học tập ngay lập tức.
+              </p>
+            </div>
+          </div>
+        </div>
+        
+        <!-- CTA Section: padding 8px 40px 24px, width 480px, height 80px -->
+        <div class="login-modal-cta-section">
+          <!-- Button: width 400px, height 48px, padding 12px, gap 10px, background #317BC4 -->
+          <a-button
+            type="primary"
+            size="large"
+            class="login-modal-button"
+            @click="handleLoginFromModal"
+          >
+            Đăng nhập ngay
+          </a-button>
+        </div>
+      </div>
+    </a-modal>
   </div>
 </template>
 
@@ -787,6 +901,21 @@ const authStore = useAuthStore();
 const activeTab = ref("1");
 const loadingReview = ref(false);
 const socialMediaArray = ref<Array<{ icon: string; link: string }>>([]);
+const showPurchaseModal = ref(false);
+const showLoginModal = ref(false);
+
+// Watch query parameter để tự động hiện popup
+watch(
+  () => route.query.showPurchaseModal,
+  (value) => {
+    if (value === 'true') {
+      showPurchaseModal.value = true;
+      // Xóa query parameter sau khi hiện popup
+      router.replace({ query: { ...route.query, showPurchaseModal: undefined } });
+    }
+  },
+  { immediate: true }
+);
 
 // Expanded chapters state
 const expandedChapters = ref<Record<number, boolean>>({ 0: true }); // B1 expanded by default
@@ -1141,6 +1270,16 @@ const goToReview = () => {
   router.push(`/my-learning/${course.value.slug}?chapter=0&lesson=0&review=true`);
 };
 
+const handlePurchaseFromModal = async () => {
+  showPurchaseModal.value = false;
+  await redirectCheckout();
+};
+
+const handleLoginFromModal = () => {
+  showLoginModal.value = false;
+  router.push('/login');
+};
+
 const accessCourse = () => {
   // Redirect to course learning page or show course content
   // For now, just show a message - you can implement actual course access later
@@ -1162,7 +1301,7 @@ const handleTabChange = async (key: string) => {
 };
 
 // Điều hướng sang trang học tập khi click vào lesson trong chi tiết khóa học
-const handleLessonNavigate = (
+const handleLessonNavigate = async (
   chapterIndex: number,
   lessonIndex: number,
   lesson: any
@@ -1170,26 +1309,62 @@ const handleLessonNavigate = (
   // Nếu không có slug thì bỏ qua
   if (!course.value?.slug) return;
 
-  // Nếu user chưa mua khóa học
-  if (!course.value.isPurchased) {
-    // Bài preview thì giữ hành vi xem thử ngay trên trang chi tiết
+  // Đảm bảo authStore đã được init
+  if (process.client && authStore.isLoggedIn && !authStore.user) {
+    await authStore.initAuth();
+  }
+
+  // Kiểm tra xem user đã mua hoặc đã hoàn thành khóa học chưa
+  const courseId = course.value._id?.toString();
+  
+  // Kiểm tra từ nhiều nguồn để đảm bảo chính xác
+  const isPurchasedFromStore = course.value.isPurchased === true;
+  const isPurchasedFromUser = courseId && authStore.user?.courseRegister?.includes(courseId);
+  const isCompletedFromProgress = course.value.progress?.isCompleted === true;
+  const isCompletedFromUser = courseId && authStore.user?.courseCompleted?.includes(courseId);
+  const hasCert = hasCertificate.value;
+  
+  const isPurchasedOrCompleted = 
+    isPurchasedFromStore ||
+    isPurchasedFromUser ||
+    hasCert ||
+    isCompletedFromProgress ||
+    isCompletedFromUser;
+
+  // Nếu user chưa mua và chưa hoàn thành khóa học
+  if (!isPurchasedOrCompleted) {
+    // Bài preview: kiểm tra đăng nhập trước
     if (lesson.isPreview && !lesson.isLocked) {
-      handlePreviewLesson(lesson);
+      // Nếu chưa đăng nhập thì hiện popup đăng nhập
+      if (!authStore.isLoggedIn) {
+        showLoginModal.value = true;
+        return;
+      }
+      // Đã đăng nhập: chuyển đến trang học tập với bài đó
+      router.push({
+        path: `/my-learning/${course.value.slug}`,
+        query: {
+          chapter: String(chapterIndex),
+          lesson: String(lessonIndex),
+        },
+      });
+      return;
     }
-    // Các bài bị khóa thì không làm gì thêm
+    // Các bài không phải preview: hiện popup mua khóa học
+    showPurchaseModal.value = true;
     return;
   }
 
-  // Đã mua khóa học: luôn cho phép nhảy cóc tự do (không check locked)
+  // Đã mua hoặc đã hoàn thành khóa học: luôn cho phép nhảy cóc tự do (không check locked)
   const slug = course.value.slug;
 
-  // Giữ lại query review=true nếu đang ở chế độ review
+  // Giữ lại query review=true nếu đang ở chế độ review hoặc đã hoàn thành
   const query: Record<string, string> = {
     chapter: String(chapterIndex),
     lesson: String(lessonIndex),
   };
 
-  if (isReviewMode.value || hasCertificate.value || course.value.progress?.isCompleted) {
+  if (isReviewMode.value || hasCert || isCompletedFromProgress || isCompletedFromUser) {
     query.review = "true";
   }
 
@@ -1227,6 +1402,11 @@ const handlePreviewLesson = (lesson: any) => {
 
 const fetchData = async () => {
   try {
+    // Đảm bảo authStore đã được init trước khi fetch course detail
+    if (process.client && authStore.isLoggedIn) {
+      await authStore.initAuth();
+    }
+    
     const slug = route.params.slug as string;
     await coursesStore.fetchDetail(slug);
     convertToObjectArray();
@@ -1258,6 +1438,350 @@ watch(
 </script>
 
 <style scoped>
+/* Purchase Modal Styles */
+.purchase-modal :deep(.ant-modal-content) {
+  background: #FFFFFF;
+  border-radius: 12px;
+  box-shadow: 0px 1px 10px rgba(0, 0, 0, 0.05), 0px 2px 4px rgba(0, 0, 0, 0.1);
+  overflow: hidden;
+}
+
+.purchase-modal :deep(.ant-modal-body) {
+  padding: 0;
+  background: transparent;
+}
+
+.purchase-modal-content {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  padding: 0px;
+  position: relative;
+  width: 100%;
+  min-height: 328px;
+  background: #FFFFFF;
+  border-radius: 12px;
+  overflow: hidden;
+}
+
+.purchase-modal-text-container {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  padding: 28px 40px;
+  gap: 16px;
+  width: 100%;
+  min-height: 248px;
+  background: transparent;
+  flex: none;
+  order: 0;
+  align-self: stretch;
+  flex-grow: 0;
+  box-sizing: border-box;
+}
+
+.purchase-modal-frame {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 0px;
+  gap: 18px;
+  width: 400px;
+  flex: none;
+  order: 0;
+  align-self: center;
+  flex-grow: 0;
+}
+
+.purchase-modal-title-section {
+  display: flex;
+  flex-direction: row;
+  justify-content: center;
+  align-items: center;
+  padding: 0px;
+  width: 400px;
+  height: 70px;
+  flex: none;
+  order: 0;
+  align-self: stretch;
+  flex-grow: 0;
+}
+
+.purchase-modal-image {
+  margin: 0 auto;
+  width: 70px;
+  height: 70px;
+  flex: none;
+  order: 0;
+  flex-grow: 0;
+  object-fit: contain;
+}
+
+.purchase-modal-text-content {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 0px;
+  gap: 8px;
+  width: 400px;
+  flex: none;
+  order: 1;
+  align-self: stretch;
+  flex-grow: 0;
+}
+
+.purchase-modal-title {
+  width: auto;
+  min-height: 24px;
+  font-family: 'SVN-Gilroy', sans-serif;
+  font-style: normal;
+  font-weight: 700;
+  font-size: 20px;
+  line-height: 24px;
+  letter-spacing: 0.3px;
+  color: #232325;
+  flex: none;
+  order: 0;
+  flex-grow: 0;
+  margin: 0;
+  text-align: center;
+}
+
+.purchase-modal-description {
+  width: 400px;
+  min-height: 72px;
+  font-family: 'SVN-Gilroy', sans-serif;
+  font-style: normal;
+  font-weight: 500;
+  font-size: 16px;
+  line-height: 24px;
+  text-align: center;
+  letter-spacing: 0.3px;
+  color: #6F727A;
+  flex: none;
+  order: 1;
+  align-self: stretch;
+  flex-grow: 0;
+  margin: 0;
+}
+
+.purchase-modal-cta-section {
+  display: flex;
+  flex-direction: row;
+  justify-content: center;
+  align-items: center;
+  padding: 8px 40px 24px;
+  width: 100%;
+  min-height: 80px;
+  background: transparent;
+  flex: none;
+  order: 1;
+  align-self: stretch;
+  flex-grow: 0;
+  box-sizing: border-box;
+}
+
+.purchase-modal-button {
+  display: flex;
+  flex-direction: row;
+  justify-content: center;
+  align-items: center;
+  padding: 12px;
+  gap: 10px;
+  width: 400px;
+  height: 48px;
+  background: #317BC4 !important;
+  border-radius: 8px;
+  border: none;
+  font-family: 'SVN-Gilroy', sans-serif;
+  font-style: normal;
+  font-weight: 700;
+  font-size: 16px;
+  line-height: 24px;
+  letter-spacing: 0.3px;
+  color: #FFFFFF !important;
+  flex: none;
+  order: 0;
+  flex-grow: 1;
+}
+
+.purchase-modal-button:hover {
+  background: #2a6ba8 !important;
+}
+
+/* Login Modal Styles */
+.login-modal :deep(.ant-modal-content) {
+  background: #FFFFFF;
+  border-radius: 12px;
+  box-shadow: 0px 1px 10px rgba(0, 0, 0, 0.05), 0px 2px 4px rgba(0, 0, 0, 0.1);
+  overflow: hidden;
+}
+
+.login-modal :deep(.ant-modal-body) {
+  padding: 0;
+  background: transparent;
+}
+
+.login-modal-content {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  padding: 0px;
+  position: relative;
+  width: 100%;
+  min-height: 328px;
+  background: #FFFFFF;
+  border-radius: 12px;
+  overflow: hidden;
+}
+
+.login-modal-text-container {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  padding: 28px 40px;
+  gap: 16px;
+  width: 100%;
+  min-height: 248px;
+  background: transparent;
+  flex: none;
+  order: 0;
+  align-self: stretch;
+  flex-grow: 0;
+  box-sizing: border-box;
+}
+
+.login-modal-frame {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 0px;
+  gap: 18px;
+  width: 400px;
+  flex: none;
+  order: 0;
+  align-self: center;
+  flex-grow: 0;
+}
+
+.login-modal-title-section {
+  display: flex;
+  flex-direction: row;
+  justify-content: center;
+  align-items: center;
+  padding: 0px;
+  width: 400px;
+  height: 70px;
+  flex: none;
+  order: 0;
+  align-self: stretch;
+  flex-grow: 0;
+}
+
+.login-modal-image {
+  margin: 0 auto;
+  width: 70px;
+  height: 70px;
+  flex: none;
+  order: 0;
+  flex-grow: 0;
+  object-fit: contain;
+}
+
+.login-modal-text-content {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 0px;
+  gap: 8px;
+  width: 400px;
+  flex: none;
+  order: 1;
+  align-self: stretch;
+  flex-grow: 0;
+}
+
+.login-modal-title {
+  width: auto;
+  min-height: 24px;
+  font-family: 'SVN-Gilroy', sans-serif;
+  font-style: normal;
+  font-weight: 700;
+  font-size: 20px;
+  line-height: 24px;
+  letter-spacing: 0.3px;
+  color: #232325;
+  flex: none;
+  order: 0;
+  flex-grow: 0;
+  margin: 0;
+  text-align: center;
+}
+
+.login-modal-description {
+  width: 400px;
+  min-height: 72px;
+  font-family: 'SVN-Gilroy', sans-serif;
+  font-style: normal;
+  font-weight: 500;
+  font-size: 16px;
+  line-height: 24px;
+  text-align: center;
+  letter-spacing: 0.3px;
+  color: #6F727A;
+  flex: none;
+  order: 1;
+  align-self: stretch;
+  flex-grow: 0;
+  margin: 0;
+}
+
+.login-modal-cta-section {
+  display: flex;
+  flex-direction: row;
+  justify-content: center;
+  align-items: center;
+  padding: 8px 40px 24px;
+  width: 100%;
+  min-height: 80px;
+  background: transparent;
+  flex: none;
+  order: 1;
+  align-self: stretch;
+  flex-grow: 0;
+  box-sizing: border-box;
+}
+
+.login-modal-button {
+  display: flex;
+  flex-direction: row;
+  justify-content: center;
+  align-items: center;
+  padding: 12px;
+  gap: 10px;
+  width: 400px;
+  height: 48px;
+  background: #317BC4 !important;
+  border-radius: 8px;
+  border: none;
+  font-family: 'SVN-Gilroy', sans-serif;
+  font-style: normal;
+  font-weight: 700;
+  font-size: 16px;
+  line-height: 24px;
+  letter-spacing: 0.3px;
+  color: #FFFFFF !important;
+  flex: none;
+  order: 0;
+  flex-grow: 1;
+}
+
+.login-modal-button:hover {
+  background: #2a6ba8 !important;
+}
+
 .card-container :deep(.ant-tabs-content) {
   margin-top: -16px;
   padding-left: 20px;

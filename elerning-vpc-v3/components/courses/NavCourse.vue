@@ -98,19 +98,33 @@
                   v-if="!hasQuiz(lesson)"
                   :class="`lesson-title ${
                     lesson.isCompleted ? 'lesson-title-completed' : 'lesson-title-pending hover:!text-[#155a8f]'
-                  }`"
+                  } ${!isPurchasedOrCompleted && isLessonLocked(chapterIndex, lessonIndex) ? 'lesson-title-locked' : ''}`"
                   @click="handleLessonClick(chapterIndex, lessonIndex)"
-                  style="cursor: pointer"
+                  :style="!isPurchasedOrCompleted && isLessonLocked(chapterIndex, lessonIndex) ? { cursor: 'not-allowed', opacity: 0.6 } : { cursor: 'pointer' }"
+                  class="flex items-center gap-2"
                 >
-                  {{ lesson.title }}
+                  <span>{{ lesson.title }}</span>
+                  <img
+                    v-if="!isPurchasedOrCompleted && isLessonLocked(chapterIndex, lessonIndex)"
+                    src="/images/svg/lock.svg"
+                    alt="locked"
+                    class="w-3 h-3 sm:w-4 sm:h-4 flex-shrink-0"
+                  />
                 </h3>
                 <h3
                   v-else
-                  :class="['lesson-title', { 'lesson-title-completed': lesson.isCompleted, 'lesson-title-pending hover:!text-[#155a8f]': !lesson.isCompleted }]"
+                  :class="['lesson-title', { 'lesson-title-completed': lesson.isCompleted, 'lesson-title-pending hover:!text-[#155a8f]': !lesson.isCompleted, 'lesson-title-locked': !isPurchasedOrCompleted && isLessonLocked(chapterIndex, lessonIndex) }]"
                   @click="handleQuizClick(chapterIndex, lessonIndex, lesson)"
-                  style="cursor: pointer"
+                  :style="!isPurchasedOrCompleted && isLessonLocked(chapterIndex, lessonIndex) ? { cursor: 'not-allowed', opacity: 0.6 } : { cursor: 'pointer' }"
+                  class="flex items-center gap-2"
                 >
-                  {{ getQuizTitle(lesson) }}
+                  <span>{{ getQuizTitle(lesson) }}</span>
+                  <img
+                    v-if="!isPurchasedOrCompleted && isLessonLocked(chapterIndex, lessonIndex)"
+                    src="/images/svg/lock.svg"
+                    alt="locked"
+                    class="w-3 h-3 sm:w-4 sm:h-4 flex-shrink-0"
+                  />
                 </h3>
               </div>
             </div>
@@ -125,6 +139,7 @@
 import { ref, watch, computed } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useCoursesStore } from '~/stores/courses'
+import { useAuthStore } from '~/stores/auth'
 import { message } from 'ant-design-vue'
 
 interface Lesson {
@@ -151,6 +166,7 @@ withDefaults(defineProps<Props>(), {
 const route = useRoute()
 const router = useRouter()
 const coursesStore = useCoursesStore()
+const authStore = useAuthStore()
 
 const activeKey = ref<string | string[]>('chapter_0')
 
@@ -160,9 +176,29 @@ const course = computed(() => coursesStore.course)
 // Chế độ Review: cho phép xem lại tất cả bài mà không cần check locked
 const isReviewMode = computed(() => route.query.review === "true")
 
-// My-learning chỉ dành cho user đã mua nên luôn cho phép nhảy cóc, không lock bài nào
-const isLessonLocked = (_chapterIndex: number, _lessonIndex: number) => {
-  return false
+// Kiểm tra xem user đã mua hoặc đã hoàn thành khóa học chưa
+const isPurchasedOrCompleted = computed(() => {
+  if (!course.value) return false;
+  const courseId = course.value._id?.toString();
+  
+  return (
+    course.value.isPurchased === true ||
+    course.value.progress?.isCompleted === true ||
+    (courseId && authStore.user?.courseRegister?.includes(courseId)) ||
+    (courseId && authStore.user?.courseCompleted?.includes(courseId))
+  );
+});
+
+// Kiểm tra bài có bị lock không (khi chưa mua, chỉ cho phép bài preview)
+const isLessonLocked = (chapterIndex: number, lessonIndex: number) => {
+  if (!course.value) return false;
+  
+  // Nếu đã mua hoặc đã hoàn thành, không lock bài nào
+  if (isPurchasedOrCompleted.value) return false;
+  
+  // Nếu chưa mua, chỉ cho phép bài preview
+  const lesson = course.value.chapters?.[chapterIndex]?.lessons?.[lessonIndex];
+  return !lesson?.isPreview || lesson?.isLocked || false;
 }
 
 const hasQuiz = (lesson: any) => {
@@ -215,6 +251,12 @@ const handlePanelClick = (chapter: number, event?: Event) => {
 }
 
 const handleLessonClick = (chapterIndex: number, lessonIndex: number) => {
+  // Nếu chưa mua/hoàn thành và bài không phải preview → redirect về trang chi tiết với query để tự động hiện popup
+  if (!isPurchasedOrCompleted.value && isLessonLocked(chapterIndex, lessonIndex)) {
+    router.push(`/courses/${route.params.slug}?showPurchaseModal=true`);
+    return;
+  }
+  
   // Tự động expand chapter khi click vào lesson
   const chapterKey = `chapter_${chapterIndex}`
   if (Array.isArray(activeKey.value)) {
@@ -248,6 +290,12 @@ const handleLessonClick = (chapterIndex: number, lessonIndex: number) => {
 }
 
 const handleQuizClick = (chapterIndex: number, lessonIndex: number, lesson: any) => {
+  // Nếu chưa mua/hoàn thành và bài không phải preview → redirect về trang chi tiết với query để tự động hiện popup
+  if (!isPurchasedOrCompleted.value && isLessonLocked(chapterIndex, lessonIndex)) {
+    router.push(`/courses/${route.params.slug}?showPurchaseModal=true`);
+    return;
+  }
+  
   // Tự động expand chapter khi click vào quiz
   const chapterKey = `chapter_${chapterIndex}`
   if (Array.isArray(activeKey.value)) {
