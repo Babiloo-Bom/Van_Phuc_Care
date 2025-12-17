@@ -19,6 +19,7 @@ echo "🚀 Deploying Van Phuc Care - Environment: $ENVIRONMENT"
 
 # Load environment variables (check both naming conventions)
 ENV_FILE=""
+ENV_FILE_FLAG=""
 if [ -f ".env.$ENVIRONMENT" ]; then
     ENV_FILE=".env.$ENVIRONMENT"
 elif [ -f "$ENVIRONMENT.env" ]; then
@@ -30,6 +31,7 @@ if [ -n "$ENV_FILE" ]; then
     set -a  # automatically export all variables
     source "$ENV_FILE"
     set +a
+    ENV_FILE_FLAG="--env-file $ENV_FILE"
     echo "✅ Environment variables loaded successfully"
     # Debug: show SMTP config (hide password)
     echo "   SMTP_HOST=$SMTP_HOST"
@@ -49,11 +51,11 @@ fi
 
 # Pull latest images
 echo "⬇️  Pulling latest Docker images..."
-docker compose -f $COMPOSE_FILE --env-file "$ENV_FILE" pull
+docker compose -f $COMPOSE_FILE $ENV_FILE_FLAG pull
 
 # Stop and remove old containers
 echo "🛑 Stopping old containers..."
-docker compose -f $COMPOSE_FILE --env-file "$ENV_FILE" down
+docker compose -f $COMPOSE_FILE $ENV_FILE_FLAG down
 
 # Remove orphaned nginx container if exists (from previous deployments)
 echo "🧹 Removing orphaned containers..."
@@ -61,7 +63,7 @@ docker rm -f vpc-nginx 2>/dev/null || true
 
 # Start new containers
 echo "▶️  Starting new containers..."
-docker compose -f $COMPOSE_FILE --env-file "$ENV_FILE" up -d --build
+docker compose -f $COMPOSE_FILE $ENV_FILE_FLAG up -d --build
 
 # Wait for services to be healthy
 echo "⏳ Waiting for services to be healthy..."
@@ -76,7 +78,7 @@ fi
 
 # Check service status
 echo "✅ Checking service status..."
-docker compose -f $COMPOSE_FILE --env-file "$ENV_FILE" ps
+docker compose -f $COMPOSE_FILE $ENV_FILE_FLAG ps
 
 # Clean up old images
 echo "🧹 Cleaning up old Docker images..."
