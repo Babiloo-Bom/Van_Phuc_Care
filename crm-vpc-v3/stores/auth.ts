@@ -328,7 +328,7 @@ export const useAuthStore = defineStore('auth', {
         // Response from Nuxt server proxy: { message, data: { accessToken, ... } }
         // Extract actual data from response.data
         const responseData = response?.data || response;
-        
+        console.log('Verify email response data:', responseData);
         // Auto login: Save token and user info from response
         if (responseData?.accessToken) {
           this.token = responseData.accessToken;
