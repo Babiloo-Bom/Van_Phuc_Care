@@ -7,7 +7,7 @@
         <h3>Đang xử lý đăng nhập Google...</h3>
         <p>Vui lòng đợi trong giây lát</p>
       </div>
-
+        
       <!-- Success State -->
       <div v-else-if="isSuccess" class="success-state">
         <a-result
@@ -53,7 +53,7 @@ const route = useRoute();
 const isLoading = ref(true);
 const isSuccess = ref(false);
 const errorMessage = ref("");
-
+//
 // ===== GOOGLE OAUTH CALLBACK HANDLER =====
 const handleGoogleCallback = async () => {
   try {

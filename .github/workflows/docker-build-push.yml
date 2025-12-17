@@ -74,7 +74,8 @@ jobs:
             type=semver,pattern={{version}}
             type=semver,pattern={{major}}.{{minor}}
             type=sha,prefix={{branch}}-
-            type=raw,value=latest,enable={{is_default_branch}}
+            # Luôn cập nhật tag latest cho mỗi lần build
+            type=raw,value=latest
 
       - name: Build and push API
         uses: docker/build-push-action@v5
@@ -123,7 +124,8 @@ jobs:
             type=semver,pattern={{version}}
             type=semver,pattern={{major}}.{{minor}}
             type=sha,prefix={{branch}}-
-            type=raw,value=latest,enable={{is_default_branch}}
+            # Luôn cập nhật tag latest cho mỗi lần build
+            type=raw,value=latest
 
       - name: Build and push Admin
         uses: docker/build-push-action@v5
@@ -172,7 +174,8 @@ jobs:
             type=semver,pattern={{version}}
             type=semver,pattern={{major}}.{{minor}}
             type=sha,prefix={{branch}}-
-            type=raw,value=latest,enable={{is_default_branch}}
+            # Luôn cập nhật tag latest cho mỗi lần build
+            type=raw,value=latest
 
       - name: Build and push CRM
         uses: docker/build-push-action@v5
@@ -221,7 +224,8 @@ jobs:
             type=semver,pattern={{version}}
             type=semver,pattern={{major}}.{{minor}}
             type=sha,prefix={{branch}}-
-            type=raw,value=latest,enable={{is_default_branch}}
+            # Luôn cập nhật tag latest cho mỗi lần build
+            type=raw,value=latest
 
       - name: Build and push E-Learning
         uses: docker/build-push-action@v5

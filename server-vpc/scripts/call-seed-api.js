@@ -2,7 +2,7 @@
  * Script to call seed courses API
  * Run with: node scripts/call-seed-api.js
  */
-
+///
 const fetch = require('node-fetch');
 
 async function seedCourses() {
