@@ -236,6 +236,7 @@ const handleGoogleCallback = () => {
   const urlParams = new URLSearchParams(window.location.search);
   const googleSuccess = urlParams.get("google_success");
   const googleError = urlParams.get("google_error");
+  const errorParam = urlParams.get("error"); // Also check 'error' parameter (from callback page redirect)
   const token = urlParams.get("token");
 
   if (googleSuccess && token) {
@@ -243,8 +244,16 @@ const handleGoogleCallback = () => {
     localStorage.setItem("auth_token", token);
     message.success("Đăng nhập Google thành công!");
     navigateTo("/");
-  } else if (googleError) {
-    message.error("Đăng nhập Google thất bại");
+  } else if (googleError || errorParam) {
+    // Decode error message from URL parameter
+    const errorMessage = decodeURIComponent(
+      (googleError || errorParam) === 'true' 
+        ? 'Đăng nhập Google thất bại' 
+        : (googleError || errorParam || 'Đăng nhập Google thất bại')
+    );
+    message.error(errorMessage);
+    // Clean up URL
+    window.history.replaceState({}, document.title, window.location.pathname);
   }
 };
 
@@ -285,8 +294,8 @@ const handleSubmit = async () => {
 const handleGoogleLogin = async () => {
   try {
     const baseFrontend = window.location.origin.replace(/\/$/, "");
-    // Redirect về trang chủ sau khi đăng nhập Google
-    const redirectUri = `${baseFrontend}`;
+    // Elearning uses callback page, so redirectUri should point to /auth/google/callback
+    const redirectUri = `${baseFrontend}/auth/google/callback`;
     const frontendUrl = baseFrontend;
 
     // Google OAuth luôn dùng /api/u (user endpoint)

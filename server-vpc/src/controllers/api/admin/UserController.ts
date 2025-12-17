@@ -5,8 +5,10 @@
 
 import { Request, Response } from "express";
 import MongoDbAdmins from "@mongodb/admins";
+import MongoDbUsers from "@mongodb/users";
 import { sendSuccess, sendError } from "@libs/response";
 import { NoData, InternalError } from "@libs/errors";
+import mongoose from "mongoose";
 
 export default class UserController {
   /**
@@ -27,9 +29,20 @@ export default class UserController {
 
       if (search) {
         query.$or = [
+          { fullname: { $regex: search, $options: "i" } },
           { name: { $regex: search, $options: "i" } },
           { email: { $regex: search, $options: "i" } },
         ];
+      }
+      
+      // Handle isActive filter
+      if (req.query.isActive !== undefined) {
+        const isActiveValue = String(req.query.isActive);
+        if (isActiveValue === 'true' || isActiveValue === '1') {
+          query.isActive = true;
+        } else if (isActiveValue === 'false' || isActiveValue === '0') {
+          query.isActive = false;
+        }
       }
 
       if (provider) {
@@ -40,19 +53,79 @@ export default class UserController {
         query.role = role;
       }
 
-      // Get users with pagination
+      // Build query for both collections
+      const adminQuery = { ...query };
+      const userQuery = { ...query };
+      
+      // Handle role filter - admins collection uses 'role', users collection uses 'type'
+      const roleStr = String(role || '');
+      let shouldQueryAdmins = true;
+      let shouldQueryUsers = true;
+      
+      if (roleStr) {
+        if (['admin', 'manager', 'worker'].includes(roleStr)) {
+          adminQuery.role = roleStr;
+          shouldQueryUsers = false; // Don't query users collection for admin roles
+        } else if (roleStr === 'customer' || roleStr === 'user') {
+          // Map 'customer' and 'user' to query both collections for customer role
+          // 'user' is kept for backward compatibility
+          shouldQueryAdmins = true;
+          adminQuery.role = 'user'; // admins collection uses 'user' for customers
+          shouldQueryUsers = true;
+          userQuery.type = 'normal'; // users collection uses 'normal' for customers
+        }
+      }
+      
+      // Query ALL records from both collections (without pagination first)
+      // Then merge, deduplicate, sort, and apply pagination
+      const [allAdmins, allUsers, adminCount, userCount] = await Promise.all([
+        shouldQueryAdmins
+          ? MongoDbAdmins.model.find(adminQuery).sort({ createdAt: -1 }).select("-password").lean()
+          : Promise.resolve([]),
+        shouldQueryUsers
+          ? MongoDbUsers.model.find(userQuery).sort({ createdAt: -1 }).select("-password").lean()
+          : Promise.resolve([]),
+        shouldQueryAdmins
+          ? MongoDbAdmins.model.countDocuments(adminQuery)
+          : Promise.resolve(0),
+        shouldQueryUsers
+          ? MongoDbUsers.model.countDocuments(userQuery)
+          : Promise.resolve(0),
+      ]);
+      
+      // Merge results and add source indicator (no duplicate checking)
+      // Normalize role: 'user' and 'normal' both become 'customer'
+      const mergedUsers = [
+        ...allAdmins.map((admin: any) => ({
+          ...admin,
+          _source: 'admins',
+          provider: admin.provider || 'local',
+          role: admin.role === 'user' ? 'customer' : (admin.role || 'customer'),
+        })),
+        ...allUsers.map((user: any) => ({
+          ...user,
+          _source: 'users',
+          provider: user.provider || 'local',
+          role: user.type === 'normal' ? 'customer' : (user.type || 'customer'),
+        })),
+      ];
+      
+      // Sort by createdAt descending
+      mergedUsers.sort((a, b) => {
+        const dateA = new Date(a.createdAt || 0).getTime();
+        const dateB = new Date(b.createdAt || 0).getTime();
+        return dateB - dateA;
+      });
+      
+      // Apply pagination to merged and sorted results
       const skip = (Number(page) - 1) * Number(limit);
-      const users = await MongoDbAdmins.model
-        .find(query)
-        .skip(skip)
-        .limit(Number(limit))
-        .sort({ createdAt: -1 })
-        .select("-password"); // Exclude password
-
-      const total = await MongoDbAdmins.model.countDocuments(query);
+      const paginatedUsers = mergedUsers.slice(skip, skip + Number(limit));
+      
+      // Total is the sum of both collections (no deduplication)
+      const total = adminCount + userCount;
 
       sendSuccess(res, {
-        users,
+        users: paginatedUsers,
         pagination: {
           page: Number(page),
           limit: Number(limit),
@@ -67,30 +140,131 @@ export default class UserController {
   }
 
   /**
+   * Get user by ID
+   */
+  public static async getUserById(req: Request, res: Response) {
+    try {
+      const { id } = req.params;
+
+      // Try to find in admins collection first
+      let user = await MongoDbAdmins.model.findById(id).select("-password").lean();
+      let source = 'admins';
+
+      // If not found in admins, try users collection
+      if (!user) {
+        user = await MongoDbUsers.model.findById(id).select("-password").lean();
+        source = 'users';
+      }
+
+      if (!user) {
+        return sendError(res, 404, NoData);
+      }
+
+      // Format user data
+      // Normalize role: 'user' and 'normal' both become 'customer'
+      const userData: any = {
+        ...user,
+        _source: source,
+        provider: (user as any).provider || 'local',
+        role: source === 'admins' 
+          ? (((user as any).role === 'user' ? 'customer' : (user as any).role) || 'customer')
+          : (((user as any).type === 'normal' ? 'customer' : (user as any).type) || 'customer'),
+        isActive: source === 'admins'
+          ? ((user as any).isActive !== undefined ? (user as any).isActive : true)
+          : ((user as any).status === 'active'),
+      };
+
+      sendSuccess(res, { user: userData });
+    } catch (error: any) {
+      console.error("❌ Get user by ID failed:", error);
+      sendError(res, 500, InternalError, error);
+    }
+  }
+
+  /**
    * Get user statistics
    */
   public static async getUserStats(req: Request, res: Response) {
     try {
-      const total = await MongoDbAdmins.model.countDocuments();
-      const active = await MongoDbAdmins.model.countDocuments({
-        isActive: true,
-      });
-      const google = await MongoDbAdmins.model.countDocuments({
-        provider: "google",
-      });
-      const local = await MongoDbAdmins.model.countDocuments({
-        provider: "local",
-      });
+      // Get stats from both collections
+      const [adminStats, userStats] = await Promise.all([
+        MongoDbAdmins.model.aggregate([
+          {
+            $group: {
+              _id: null,
+              total: { $sum: 1 },
+              active: {
+                $sum: { $cond: [{ $eq: ["$isActive", true] }, 1, 0] }
+              },
+              google: {
+                $sum: { $cond: [{ $eq: ["$provider", "google"] }, 1, 0] }
+              },
+              local: {
+                $sum: { $cond: [{ $or: [{ $eq: ["$provider", "local"] }, { $not: "$provider" }] }, 1, 0] }
+              },
+            }
+          }
+        ]),
+        MongoDbUsers.model.aggregate([
+          {
+            $group: {
+              _id: null,
+              total: { $sum: 1 },
+              active: {
+                $sum: { $cond: [{ $eq: ["$status", "active"] }, 1, 0] }
+              },
+              google: {
+                $sum: { $cond: [{ $eq: ["$provider", "google"] }, 1, 0] }
+              },
+              local: {
+                $sum: { $cond: [{ $or: [{ $eq: ["$provider", "local"] }, { $not: "$provider" }] }, 1, 0] }
+              },
+            }
+          }
+        ]),
+      ]);
+      
+      // Merge stats
+      const adminData = adminStats[0] || { total: 0, active: 0, google: 0, local: 0 };
+      const userData = userStats[0] || { total: 0, active: 0, google: 0, local: 0 };
+      
+      const total = adminData.total + userData.total;
+      const active = adminData.active + userData.active;
+      const google = adminData.google + userData.google;
+      const local = adminData.local + userData.local;
 
-      // Get role statistics
-      const roleStats = await MongoDbAdmins.model.aggregate([
-        { $group: { _id: "$role", count: { $sum: 1 } } },
+      // Get role statistics from both collections
+      const [adminRoleStats, userRoleStats] = await Promise.all([
+        MongoDbAdmins.model.aggregate([
+          { $group: { _id: "$role", count: { $sum: 1 } } },
+        ]),
+        MongoDbUsers.model.aggregate([
+          { $group: { _id: "$type", count: { $sum: 1 } } },
+        ]),
       ]);
 
-      const byRole = roleStats.reduce((acc, item) => {
-        acc[item._id] = item.count;
-        return acc;
-      }, {} as Record<string, number>);
+      // Merge role stats
+      const byRole: Record<string, number> = {};
+      
+      // Process admin roles
+      adminRoleStats.forEach((stat: any) => {
+        const role = stat._id || "null";
+        byRole[role] = (byRole[role] || 0) + stat.count;
+      });
+      
+      // Process user types (map 'normal' to 'user')
+      userRoleStats.forEach((stat: any) => {
+        const role = stat._id === 'normal' ? 'user' : (stat._id || "null");
+        byRole[role] = (byRole[role] || 0) + stat.count;
+      });
+
+      // Calculate customers (users collection - type: 'normal')
+      const customers = await MongoDbUsers.model.countDocuments({ type: 'normal' });
+      
+      // Calculate staff (admins collection - role: admin, manager, worker)
+      const staff = await MongoDbAdmins.model.countDocuments({
+        role: { $in: ['admin', 'manager', 'worker'] }
+      });
 
       sendSuccess(res, {
         total,
@@ -98,6 +272,8 @@ export default class UserController {
         google,
         local,
         byRole,
+        customers,
+        staff,
       });
     } catch (error: any) {
       console.error("❌ Get user stats failed:", error);
@@ -113,51 +289,141 @@ export default class UserController {
       const {
         email,
         name,
+        fullname,
         avatar,
         provider,
         googleId,
         role = "user",
+        password,
+        phone,
+        phoneNumber,
+        isActive = true
       } = req.body;
 
-      if (!email || !name || !provider) {
+      if (!email || (!name && !fullname) || !provider) {
         return sendError(res, 400, "Email, name, and provider are required");
       }
 
-      // Check if user already exists
-      const existingUser = await MongoDbAdmins.model.findOne({ email });
-      if (existingUser) {
+      // For local provider, password is required
+      if (provider === 'local' && !password) {
+        return sendError(res, 400, "Password is required for local users");
+      }
+
+      // Check if user already exists in both collections
+      const [existingAdmin, existingUser] = await Promise.all([
+        MongoDbAdmins.model.findOne({ email }),
+        MongoDbUsers.model.findOne({ email })
+      ]);
+
+      if (existingAdmin || existingUser) {
         return sendError(res, 400, "User with this email already exists");
       }
 
-      // Create user
-      const userData: any = {
-        email,
-        name,
-        provider,
-        role,
-        isActive: true,
-        permissions: [],
-      };
+      // Import bcrypt for password hashing
+      const bcrypt = await import('bcryptjs')
+      
+      // Determine which collection to create user in based on role
+      const isAdminRole = ['admin', 'manager', 'worker'].includes(role);
+      const isCustomerRole = role === 'customer';
+      
+      let createdUser: any = null;
+      let userObj: any = null;
 
-      if (avatar) userData.avatar = avatar;
-      if (googleId) userData.googleId = googleId;
+      if (isAdminRole) {
+        // Create in admins collection only
+        const adminData: any = {
+          email,
+          name: name || fullname,
+          fullname: fullname || name,
+          provider,
+          role: role, // admin, manager, or worker
+          isActive: isActive !== false,
+          status: isActive !== false ? MongoDbAdmins.STATUS_ENUM.ACTIVE : MongoDbAdmins.STATUS_ENUM.INACTIVE,
+          permissions: [],
+          verified: provider === 'google' ? 'true' : 'false'
+        };
 
-      const user = await MongoDbAdmins.model.create(userData);
-      const userObj: any = user.toObject();
+        if (avatar) adminData.avatar = avatar;
+        if (googleId) adminData.googleId = googleId;
+        if (phone || phoneNumber) adminData.phone = phone || phoneNumber;
+        
+        // Hash password for local users
+        if (provider === 'local' && password) {
+          adminData.password = await bcrypt.hash(password, 10);
+        }
 
+        createdUser = await MongoDbAdmins.model.create(adminData);
+        userObj = createdUser.toObject();
+      } else if (isCustomerRole) {
+        // Create in users collection only
+        const userData: any = {
+          email,
+          fullname: fullname || name,
+          provider,
+          type: 'normal', // Customer maps to 'normal' type in users collection
+          status: isActive !== false ? MongoDbUsers.STATUS_ENUM.ACTIVE : MongoDbUsers.STATUS_ENUM.INACTIVE,
+        };
+
+        if (avatar) userData.avatar = avatar;
+        if (googleId) userData.googleId = googleId;
+        if (phone || phoneNumber) userData.phoneNumber = phone || phoneNumber;
+        else userData.phoneNumber = `local-${Date.now()}`; // Required field
+        
+        // Hash password for local users
+        if (provider === 'local' && password) {
+          userData.password = await bcrypt.hash(password, 10);
+        }
+
+        createdUser = await MongoDbUsers.model.create(userData);
+        userObj = createdUser.toObject();
+        
+        // Normalize userObj to match expected format
+        userObj.role = 'customer';
+        userObj.isActive = userObj.status === MongoDbUsers.STATUS_ENUM.ACTIVE;
+      } else {
+        // Unknown role, default to admins collection
+        const adminData: any = {
+          email,
+          name: name || fullname,
+          fullname: fullname || name,
+          provider,
+          role: role,
+          isActive: isActive !== false,
+          status: isActive !== false ? MongoDbAdmins.STATUS_ENUM.ACTIVE : MongoDbAdmins.STATUS_ENUM.INACTIVE,
+          permissions: [],
+          verified: provider === 'google' ? 'true' : 'false'
+        };
+
+        if (avatar) adminData.avatar = avatar;
+        if (googleId) adminData.googleId = googleId;
+        if (phone || phoneNumber) adminData.phone = phone || phoneNumber;
+        
+        if (provider === 'local' && password) {
+          adminData.password = await bcrypt.hash(password, 10);
+        }
+
+        createdUser = await MongoDbAdmins.model.create(adminData);
+        userObj = createdUser.toObject();
+      }
+
+      // Determine source collection for response
+      const sourceCollection = isAdminRole ? 'admins' : (isCustomerRole ? 'users' : 'admins');
+      
       sendSuccess(res, {
         user: {
           id: userObj._id,
           email: userObj.email,
           name: userObj.name || userObj.fullname,
+          fullname: userObj.fullname || userObj.name,
           avatar: userObj.avatar,
           provider: userObj.provider,
           googleId: userObj.googleId,
-          isActive: userObj.isActive,
-          role: userObj.role,
+          isActive: userObj.isActive !== undefined ? userObj.isActive : (userObj.status === MongoDbUsers.STATUS_ENUM.ACTIVE),
+          role: userObj.role || (isCustomerRole ? 'customer' : userObj.type === 'normal' ? 'customer' : userObj.role),
           permissions: userObj.permissions || [],
           createdAt: userObj.createdAt,
           updatedAt: userObj.updatedAt,
+          _source: sourceCollection
         },
       });
     } catch (error: any) {
@@ -174,19 +440,84 @@ export default class UserController {
       const { id } = req.params;
       const updateData = req.body;
 
-      const user = await MongoDbAdmins.model
-        .findByIdAndUpdate(
-          id,
-          { ...updateData, updatedAt: new Date() },
-          { new: true }
-        )
-        .select("-password");
+      // Try to find user in admins collection first
+      let user = await MongoDbAdmins.model.findById(id);
+      let source = 'admins';
+
+      // If not found in admins, try users collection
+      if (!user) {
+        user = await MongoDbUsers.model.findById(id) as any;
+        source = 'users';
+      }
 
       if (!user) {
         return sendError(res, 404, NoData);
       }
 
-      sendSuccess(res, { user });
+      // Update based on source collection
+      if (source === 'admins') {
+        // Update admins collection
+        const adminUpdate: any = {
+          ...updateData,
+          updatedAt: new Date()
+        };
+        
+        // Map role if provided
+        // 'customer' maps to 'user' in admins collection
+        if (updateData.role) {
+          adminUpdate.role = updateData.role === 'customer' ? 'user' : updateData.role;
+        }
+        
+        // Map isActive if provided
+        if (updateData.isActive !== undefined) {
+          adminUpdate.isActive = updateData.isActive;
+        }
+
+        user = await MongoDbAdmins.model
+          .findByIdAndUpdate(id, adminUpdate, { new: true })
+          .select("-password");
+      } else {
+        // Update users collection
+        const userUpdate: any = {
+          ...updateData,
+          updatedAt: new Date()
+        };
+        
+        // Map type if role is provided
+        // 'customer' maps to 'normal' in users collection
+        if (updateData.role) {
+          userUpdate.type = (updateData.role === 'customer' || updateData.role === 'user') ? 'normal' : updateData.role;
+        }
+        
+        // Map status if isActive is provided
+        if (updateData.isActive !== undefined) {
+          userUpdate.status = updateData.isActive ? 'active' : 'inactive';
+        }
+
+        user = await MongoDbUsers.model
+          .findByIdAndUpdate(id, userUpdate, { new: true })
+          .select("-password");
+      }
+
+      if (!user) {
+        return sendError(res, 404, NoData);
+      }
+
+      // Format response
+      // Normalize role: 'user' and 'normal' both become 'customer'
+      const userData: any = {
+        ...user.toObject(),
+        _source: source,
+        provider: (user as any).provider || 'local',
+        role: source === 'admins' 
+          ? (((user as any).role === 'user' ? 'customer' : (user as any).role) || 'customer')
+          : (((user as any).type === 'normal' ? 'customer' : (user as any).type) || 'customer'),
+        isActive: source === 'admins'
+          ? ((user as any).isActive !== undefined ? (user as any).isActive : true)
+          : ((user as any).status === 'active'),
+      };
+
+      sendSuccess(res, { user: userData });
     } catch (error: any) {
       console.error("❌ Update user failed:", error);
       sendError(res, 500, InternalError, error);
@@ -196,16 +527,161 @@ export default class UserController {
   /**
    * Delete user
    */
+  /**
+   * Delete all related data for a user (cascade delete)
+   */
+  private static async deleteUserRelatedData(userId: string, email?: string) {
+    try {
+      const userIdStr = userId.toString();
+      const userIdObjId = new mongoose.Types.ObjectId(userIdStr);
+
+      // Import models dynamically to avoid circular dependencies
+      const [
+        ModelTransaction,
+        MongoDbTickets,
+        MongoDbTicketComments,
+        ServiceRegistrationModels,
+        MongoDbQuizAttempts,
+        RatingModels
+      ] = await Promise.all([
+        import('@mongodb/transactions').then(m => m.default),
+        import('@mongodb/tickets').then(m => m.default),
+        import('@mongodb/ticket-comments').then(m => m.default),
+        import('@mongodb/service-registrations').then(m => m.default),
+        import('@mongodb/quiz-attempts').then(m => m.default),
+        import('@mongodb/ratings').then(m => m.default)
+      ]);
+
+      // Delete operations - run in parallel for better performance
+      const deletePromises = [
+        // Delete transactions
+        ModelTransaction.model.deleteMany({ userId: userIdStr }),
+        
+        // Delete tickets (using ObjectId)
+        MongoDbTickets.model.deleteMany({ userId: userIdObjId }),
+        
+        // Delete ticket comments (using ObjectId)
+        MongoDbTicketComments.model.deleteMany({ userId: userIdObjId }),
+        
+        // Delete service registrations
+        ServiceRegistrationModels.model.deleteMany({ userId: userIdStr }),
+        
+        // Delete quiz attempts
+        MongoDbQuizAttempts.deleteMany({ userId: userIdStr }),
+        
+        // Delete ratings
+        RatingModels.model.deleteMany({ userId: userIdStr }),
+      ];
+
+      // Delete orders (from Order model in OrderController)
+      try {
+        const OrderModel = mongoose.models.Order || mongoose.model('Order', new mongoose.Schema({}, { strict: false }), 'orders');
+        deletePromises.push(OrderModel.deleteMany({ userId: userIdStr }));
+      } catch (err) {
+        console.warn('⚠️ Could not delete orders:', err);
+      }
+
+      // Delete carts (from Cart model in OrderController)
+      try {
+        const CartModel = mongoose.models.Cart || mongoose.model('Cart', new mongoose.Schema({}, { strict: false }), 'carts');
+        deletePromises.push(CartModel.deleteMany({ userId: userIdStr }));
+      } catch (err) {
+        console.warn('⚠️ Could not delete carts:', err);
+      }
+
+      // Delete health records if exists
+      try {
+        const HealthRecordModel = mongoose.models['health-records'] || mongoose.model('health-records', new mongoose.Schema({}, { strict: false }), 'health-records');
+        deletePromises.push(HealthRecordModel.deleteMany({ userId: userIdStr }));
+      } catch (err) {
+        console.warn('⚠️ Could not delete health records:', err);
+      }
+
+      // Delete health books if exists
+      try {
+        const HealthBookModel = mongoose.models['health-books'] || mongoose.model('health-books', new mongoose.Schema({}, { strict: false }), 'health-books');
+        deletePromises.push(HealthBookModel.deleteMany({ userId: userIdStr }));
+      } catch (err) {
+        console.warn('⚠️ Could not delete health books:', err);
+      }
+
+      // Execute all delete operations
+      const results = await Promise.allSettled(deletePromises);
+      
+      // Log results
+      const deletedCounts: Record<string, number> = {};
+      results.forEach((result, index) => {
+        if (result.status === 'fulfilled') {
+          const collectionNames = [
+            'transactions', 'tickets', 'ticket-comments', 
+            'service-registrations', 'quiz-attempts', 'ratings',
+            'orders', 'carts', 'health-records', 'health-books'
+          ];
+          const collectionName = collectionNames[index] || `collection-${index}`;
+          deletedCounts[collectionName] = result.value.deletedCount || 0;
+        } else {
+          console.warn(`⚠️ Failed to delete from collection ${index}:`, result.reason);
+        }
+      });
+
+      console.log(`✅ Deleted related data for user ${userId}:`, deletedCounts);
+      return deletedCounts;
+    } catch (error: any) {
+      console.error('❌ Error deleting user related data:', error);
+      // Don't throw - we still want to delete the user even if related data deletion fails
+      return {};
+    }
+  }
+
   public static async deleteUser(req: Request, res: Response) {
     try {
       const { id } = req.params;
 
-      const user = await MongoDbAdmins.model.findByIdAndDelete(id);
-      if (!user) {
+      // Try to find user first (before deleting) to get email
+      let userToDelete = await MongoDbAdmins.model.findById(id);
+      let source = 'admins';
+
+      // If not found in admins, try users collection
+      if (!userToDelete) {
+        userToDelete = await MongoDbUsers.model.findById(id) as any;
+        source = 'users';
+      }
+
+      if (!userToDelete) {
         return sendError(res, 404, NoData);
       }
 
-      sendSuccess(res, { message: "User deleted successfully" });
+      // Get user email before deletion
+      const userObj = userToDelete.toObject ? userToDelete.toObject() : userToDelete;
+      const email = (userObj as any).email;
+
+      // Delete all related data first (cascade delete)
+      await UserController.deleteUserRelatedData(id, email);
+
+      // Now delete the user from the source collection
+      let deletedUser = await MongoDbAdmins.model.findByIdAndDelete(id);
+      
+      if (!deletedUser) {
+        deletedUser = await MongoDbUsers.model.findByIdAndDelete(id) as any;
+        source = 'users';
+      }
+
+      // Also check if there's a duplicate by email in the other collection
+      // and delete it if found (to maintain consistency)
+      if (email) {
+        if (source === 'admins') {
+          // Check and delete from users collection if exists
+          await MongoDbUsers.model.findOneAndDelete({ email });
+        } else {
+          // Check and delete from admins collection if exists
+          await MongoDbAdmins.model.findOneAndDelete({ email });
+        }
+      }
+
+      sendSuccess(res, { 
+        message: "User và tất cả dữ liệu liên quan đã được xóa thành công",
+        deletedFrom: source
+      });
     } catch (error: any) {
       console.error("❌ Delete user failed:", error);
       sendError(res, 500, InternalError, error);
@@ -218,21 +694,76 @@ export default class UserController {
   public static async toggleUserStatus(req: Request, res: Response) {
     try {
       const { id } = req.params;
-      const { isActive } = req.body;
+      
+      // Try to find user in admins collection first
+      let user = await MongoDbAdmins.model.findById(id);
+      let source = 'admins';
 
-      const user = await MongoDbAdmins.model
-        .findByIdAndUpdate(
-          id,
-          { isActive, updatedAt: new Date() },
-          { new: true }
-        )
-        .select("-password");
+      // If not found in admins, try users collection
+      if (!user) {
+        user = await MongoDbUsers.model.findById(id) as any;
+        source = 'users';
+      }
 
       if (!user) {
         return sendError(res, 404, NoData);
       }
 
-      sendSuccess(res, { user });
+      // Toggle status based on source collection
+      if (source === 'admins') {
+        // Toggle isActive for admins collection
+        const currentIsActive = (user as any).isActive !== undefined ? (user as any).isActive : true;
+        const newIsActive = !currentIsActive;
+        
+        user = await MongoDbAdmins.model
+          .findByIdAndUpdate(
+            id,
+            { 
+              isActive: newIsActive,
+              // Also update status to match
+              status: newIsActive ? MongoDbAdmins.STATUS_ENUM.ACTIVE : MongoDbAdmins.STATUS_ENUM.INACTIVE,
+              updatedAt: new Date() 
+            },
+            { new: true }
+          )
+          .select("-password");
+      } else {
+        // Toggle status for users collection
+        const currentStatus = (user as any).status || MongoDbUsers.STATUS_ENUM.ACTIVE;
+        const newStatus = currentStatus === MongoDbUsers.STATUS_ENUM.ACTIVE 
+          ? MongoDbUsers.STATUS_ENUM.INACTIVE 
+          : MongoDbUsers.STATUS_ENUM.ACTIVE;
+        
+        user = await MongoDbUsers.model
+          .findByIdAndUpdate(
+            id,
+            { 
+              status: newStatus,
+              updatedAt: new Date() 
+            },
+            { new: true }
+          )
+          .select("-password");
+      }
+
+      if (!user) {
+        return sendError(res, 404, NoData);
+      }
+
+      // Format response
+      const userData: any = {
+        ...user.toObject(),
+        _source: source,
+        provider: (user as any).provider || 'local',
+        role: source === 'admins' 
+          ? (((user as any).role === 'user' ? 'customer' : (user as any).role) || 'customer')
+          : (((user as any).type === 'normal' ? 'customer' : (user as any).type) || 'customer'),
+        isActive: source === 'admins'
+          ? ((user as any).isActive !== undefined ? (user as any).isActive : true)
+          : ((user as any).status === 'active'),
+      };
+
+      sendSuccess(res, { user: userData });
     } catch (error: any) {
       console.error("❌ Toggle user status failed:", error);
       sendError(res, 500, InternalError, error);

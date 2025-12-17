@@ -17,6 +17,8 @@ export interface User {
   permissions?: string[]
   createdAt?: string
   updatedAt?: string
+  fullAddress?: string
+  address?: string
 }
 
 export interface AuthState {
@@ -26,6 +28,8 @@ export interface AuthState {
   isAuthenticated: boolean
   isLoading: boolean
   rememberAccount: boolean
+  justLoggedIn: boolean // Flag to disable auto-logout immediately after login
+  loginTimestamp: number | null // Timestamp of last login
 }
 
 export const useAuthStore = defineStore('auth', {
@@ -35,7 +39,9 @@ export const useAuthStore = defineStore('auth', {
     tokenExpireAt: null,
     isAuthenticated: false,
     isLoading: false,
-    rememberAccount: false
+    rememberAccount: false,
+    justLoggedIn: false,
+    loginTimestamp: null,
   }),
 
   getters: {
@@ -49,22 +55,26 @@ export const useAuthStore = defineStore('auth', {
   actions: {
     /**
      * Login user (Admin)
-     * Migrated from admin-vpc/pages/login.vue
+     * Only allows admin, manager, worker roles
      */
     async login(username: string, password: string, remindAccount = false) {
       this.isLoading = true
-      
+
       try {
         const authApi = useAuthApi()
-        
+
         // Call API login
-        const response: any = await authApi.login(username, password, remindAccount)
+        const response: any = await authApi.login(
+          username,
+          password,
+          remindAccount,
+        )
 
         // Backend returns: { data: { accessToken, tokenExpireAt } }
-        const token = response.data?.accessToken || response.accessToken || response.token
-        const tokenExpireAt = response.data?.tokenExpireAt || response.tokenExpireAt
-
-        console.log('🔍 Login response:', { token: !!token, tokenExpireAt, responseData: response.data })
+        const token =
+          response.data?.accessToken || response.accessToken || response.token
+        const tokenExpireAt =
+          response.data?.tokenExpireAt || response.tokenExpireAt
 
         if (!token) {
           throw new Error('No token received from server')
@@ -72,46 +82,140 @@ export const useAuthStore = defineStore('auth', {
 
         // Calculate token expiry time (default 7 days if not provided)
         this.token = token
-        console.log('🔍 About to calculate expire time with:', tokenExpireAt, 'type:', typeof tokenExpireAt)
-        this.tokenExpireAt = tokenExpireAt ? this.calculateExpireTime(tokenExpireAt) : this.calculateExpireTime('7d')
-        console.log('🔍 Calculated tokenExpireAt:', this.tokenExpireAt)
+        this.tokenExpireAt = tokenExpireAt
+          ? this.calculateExpireTime(tokenExpireAt)
+          : this.calculateExpireTime('7d')
         this.isAuthenticated = true
         this.rememberAccount = remindAccount
-        
-        // Create basic user object (will be enhanced later if needed)
-        this.user = { 
-          id: response.id || 'temp-id',
-          email: username,
-          username: username,
-          fullname: response.fullname || username
-        }
 
-        // Save to localStorage
+        // Save token to localStorage immediately (needed for API calls)
         if (process.client) {
           localStorage.setItem('auth_token', token)
-          localStorage.setItem('token_expire_at', this.tokenExpireAt || '')
-          localStorage.setItem('user', JSON.stringify(this.user))
-          
-          if (remindAccount) {
-            localStorage.setItem('auth_data', JSON.stringify({
-              username,
-              remindAccount,
-              origin: 'vanphuccare.gensi.vn'
-            }))
+          if (this.tokenExpireAt) {
+            localStorage.setItem('token_expire_at', this.tokenExpireAt)
           }
         }
+
+        // Fetch full user profile data from API
+        try {
+          const profileResponse = (await authApi.getUserProfile()) as any
+          const userData = profileResponse?.data?.user || profileResponse?.data?.data || profileResponse?.data?.admin || profileResponse?.data
+          
+          if (!userData) {
+            throw new Error('Không thể lấy thông tin người dùng')
+          }
+          
+          // Check if user has allowed role (admin, manager, worker)
+          const userRole = userData?.role || userData?.type
+          const allowedRoles = ['admin', 'manager', 'worker']
+          
+          if (!userRole || !allowedRoles.includes(userRole)) {
+            // Clear token and logout
+            this.token = null
+            this.isAuthenticated = false
+            if (process.client) {
+              localStorage.removeItem('auth_token')
+              localStorage.removeItem('user')
+              localStorage.removeItem('authData')
+            }
+            throw new Error('Bạn không có quyền truy cập hệ thống này. Chỉ admin, manager và worker mới được phép đăng nhập.')
+          }
+          
+          this.user = {
+            id: userData?._id || userData?.id || 'temp-id',
+            email: userData?.email || username,
+            username: userData?.username || userData?.email || username,
+            fullname: userData?.fullname || userData?.name || username,
+            name: userData?.name || userData?.fullname,
+            phone: userData?.phoneNumber || userData?.phone,
+            avatar: userData?.avatar,
+            role: userRole,
+            verified: userData?.verified,
+            status: userData?.status,
+            fullAddress: userData?.fullAddress || '',
+            address: userData?.address || '',
+          }
+          
+        } catch (profileError: any) {
+          console.error('⚠️ Failed to fetch user profile or role check failed:', profileError)
+          // If it's a role check error, throw it
+          if (profileError.message?.includes('không có quyền') || profileError.message?.includes('Không thể lấy thông tin')) {
+            // Clear auth state on critical errors
+            this.token = null
+            this.isAuthenticated = false
+            if (process.client) {
+              localStorage.removeItem('auth_token')
+              localStorage.removeItem('user')
+              localStorage.removeItem('authData')
+            }
+            throw profileError
+          }
+          // Fallback to basic user data if profile fetch fails (non-critical)
+          console.warn('⚠️ Using fallback user data due to profile fetch error')
+          this.user = {
+            id: response.id || response._id || 'temp-id',
+            email: username,
+            username: username,
+            fullname: response.fullname || username,
+            role: 'user', // Default role, but middleware will check
+          }
+        }
+
+        // Save to localStorage (ensure isAuthenticated is saved)
+        if (process.client && this.token) {
+          localStorage.setItem('auth_token', this.token)
+          if (this.tokenExpireAt) {
+            localStorage.setItem('token_expire_at', this.tokenExpireAt)
+          }
+          localStorage.setItem('user', JSON.stringify(this.user))
+          // Also save authData for initAuth compatibility
+          const authData = {
+            user: this.user,
+            token: this.token,
+            tokenExpireAt: this.tokenExpireAt,
+            rememberAccount: this.rememberAccount,
+            isAuthenticated: this.isAuthenticated,
+          }
+          localStorage.setItem('authData', JSON.stringify(authData))
+
+          if (remindAccount) {
+            localStorage.setItem(
+              'auth_data',
+              JSON.stringify({
+                username,
+                remindAccount,
+                origin: 'vanphuccare.gensi.vn',
+              }),
+            )
+          }
+        }
+
+        // Set justLoggedIn flag to prevent auto-logout for 15 seconds
+        this.justLoggedIn = true
+        this.loginTimestamp = Date.now()
+        console.log('[Login] Set justLoggedIn flag, timestamp:', this.loginTimestamp)
+        
+        setTimeout(() => {
+          this.justLoggedIn = false
+          console.log('[Login] Cleared justLoggedIn flag after 15 seconds')
+        }, 15000) // 15 seconds grace period
 
         return { success: true, user: this.user, token }
       } catch (error: any) {
         // Ignore AbortError (request cancelled due to navigation/reload)
-        if (error?.name === 'AbortError' || error?.message?.includes('aborted')) {
-          console.log('[Auth] Login cancelled (navigation/reload)')
+        if (
+          error?.name === 'AbortError' ||
+          error?.message?.includes('aborted')
+        ) {
           return { success: false, error: 'Request cancelled' }
         }
         console.error('Login error:', error)
-        return { 
-          success: false, 
-          error: error.data?.message || error.message || 'Tên đăng nhập hoặc mật khẩu không chính xác'
+        return {
+          success: false,
+          error:
+            error.data?.message ||
+            error.message ||
+            'Tên đăng nhập hoặc mật khẩu không chính xác',
         }
       } finally {
         this.isLoading = false
@@ -119,43 +223,71 @@ export const useAuthStore = defineStore('auth', {
     },
 
     /**
-     * Register new account (CRM/E-Learning)
-     * Migrated from crm-vpc/components/auth/forms/SignUp.vue
+     * Refresh user data from backend
      */
-    async register(email: string, password: string, repeatPassword: string, fullname?: string) {
-      this.isLoading = true
-      
+    async refreshUserData() {
+      if (!this.user || !this.token) {
+        return
+      }
+
       try {
-        if (password !== repeatPassword) {
-          throw new Error('Mật khẩu không khớp')
-        }
-
         const authApi = useAuthApi()
-        
-        // Call API register
-        const response: any = await authApi.register(email, password, repeatPassword, fullname)
+        const response = (await authApi.getUserProfile()) as any
+        // getCurrentAdmin returns { data: { admin } }
+        const userData = response?.data?.admin || response?.data?.user || response?.data?.data || response?.data
 
-        return { success: true, data: response }
-      } catch (error: any) {
-        console.error('Register error:', error)
-        return { 
-          success: false, 
-          error: error.data?.message || error.message || 'Email đã được sử dụng, vui lòng nhập email khác!'
+        if (userData) {
+          // Check role before updating - if role becomes invalid, don't update
+          const newRole = userData?.role || userData?.type
+          const allowedRoles = ['admin', 'manager', 'worker']
+          
+          if (newRole && !allowedRoles.includes(newRole)) {
+            console.warn('⚠️ Refreshed user data has invalid role:', newRole, '- keeping existing role')
+            // Don't update role if it becomes invalid - just update other fields
+            this.user = {
+              ...this.user,
+              id: userData?._id || userData?.id || this.user.id,
+              email: userData?.email || this.user.email,
+              username: userData?.username || userData?.email || this.user.username,
+              fullname: userData?.fullname || userData?.name || this.user.fullname,
+              name: userData?.name || userData?.fullname || this.user.name,
+              phone: userData?.phoneNumber || userData?.phone || this.user.phone,
+              avatar: userData?.avatar || this.user.avatar,
+              verified: userData?.verified !== undefined ? userData?.verified : this.user.verified,
+              status: userData?.status || this.user.status,
+              fullAddress: userData?.fullAddress || this.user.fullAddress || '',
+              address: userData?.address || this.user.address || '',
+            }
+          } else {
+            // Update user data with fresh data from backend (same mapping as login)
+            this.user = {
+              id: userData?._id || userData?.id || this.user.id,
+              email: userData?.email || this.user.email,
+              username: userData?.username || userData?.email || this.user.username,
+              fullname: userData?.fullname || userData?.name || this.user.fullname,
+              name: userData?.name || userData?.fullname || this.user.name,
+              phone: userData?.phoneNumber || userData?.phone || this.user.phone,
+              avatar: userData?.avatar || this.user.avatar,
+              role: newRole || this.user.role, // Use new role or keep existing
+              verified: userData?.verified !== undefined ? userData?.verified : this.user.verified,
+              status: userData?.status || this.user.status,
+              fullAddress: userData?.fullAddress || this.user.fullAddress || '',
+              address: userData?.address || this.user.address || '',
+            }
+          }
+          this.saveAuth()
         }
-      } finally {
-        this.isLoading = false
+      } catch (error) {
+        // Don't throw error - just log it. This is a non-critical operation.
+        // The session is still valid even if refresh fails.
+        console.warn('⚠️ Error refreshing user data (non-critical):', error)
+        // Re-throw only if it's a critical error (not 401, not network error)
+        const status = (error as any)?.statusCode || (error as any)?.status
+        if (status && status !== 401 && status !== 0) {
+          // Only re-throw for unexpected server errors (500, 403, etc.)
+          throw error
+        }
       }
-    },
-
-    /**
-     * Login after email verification
-     * Auto login user after successful registration
-     */
-    async loginAfterRegister(email: string, password: string) {
-      console.log('🔍 authStore.loginAfterRegister called with email:', email)
-      const result = await this.login(email, password, false)
-      console.log('🔍 authStore.loginAfterRegister result:', result)
-      return result
     },
 
     /**
@@ -230,29 +362,22 @@ export const useAuthStore = defineStore('auth', {
     },
 
     /**
-     * Verify email with OTP
-     * For user registration verification
+     * Save current auth state to localStorage
      */
-    async verifyEmail(email: string, otp: string) {
-      this.isLoading = true
-      
-      try {
-        const authApi = useAuthApi()
-        
-        const response: any = await authApi.verifyEmail(email, otp)
-        console.log('🔍 authStore.verifyEmail response:', response)
-
-        return { success: true, data: response.data }
-      } catch (error: any) {
-        console.error('🔍 authStore.verifyEmail error:', error)
-        console.error('🔍 error.data:', error.data)
-        console.error('🔍 error.message:', error.message)
-        return { 
-          success: false, 
-          error: error.data?.message || error.message || 'Xác thực email thất bại'
+    saveAuth() {
+      if (process.client && this.user && this.token) {
+        try {
+          const authData = {
+            user: this.user,
+            token: this.token,
+            tokenExpireAt: this.tokenExpireAt,
+            rememberAccount: this.rememberAccount,
+            loginTimestamp: this.loginTimestamp,
+          }
+          localStorage.setItem('authData', JSON.stringify(authData))
+        } catch (error) {
+          console.error('❌ Error saving auth data:', error)
         }
-      } finally {
-        this.isLoading = false
       }
     },
 
@@ -294,16 +419,17 @@ export const useAuthStore = defineStore('auth', {
 
     /**
      * Logout user
-     * Migrated from admin-vpc/api/auth.js
+     * @param showMessage Whether to show success message (default: true, set to false when called from initAuth)
      */
-    async logout() {
+    async logout(showMessage = true) {
+      console.log('[Auth] Logout called', { showMessage })
       this.isLoading = true
 
       try {
-        // Call logout API to clear server session
+        // Call logout API to clear server session (ignore errors if endpoint doesn't exist)
         const authApi = useAuthApi()
         await authApi.logout().catch(() => {
-          // Ignore logout API errors
+          // Ignore logout API errors - endpoint may not exist
         })
 
         // Clear state
@@ -311,22 +437,48 @@ export const useAuthStore = defineStore('auth', {
         this.token = null
         this.isAuthenticated = false
         this.rememberAccount = false
+        this.justLoggedIn = false
+        this.loginTimestamp = null
 
         // Clear localStorage
         if (process.client) {
           localStorage.removeItem('auth_token')
           localStorage.removeItem('user')
-          
+          localStorage.removeItem('authData')
+          localStorage.removeItem('token_expire_at')
+          localStorage.removeItem('redirect_after_login')
+
           // Keep auth_data if rememberAccount was true
           if (!this.rememberAccount) {
             localStorage.removeItem('auth_data')
           }
         }
 
+        // Show success message only if explicitly requested (not when called from initAuth)
+        if (showMessage && process.client && typeof window !== 'undefined') {
+          // Use Ant Design message if available
+          try {
+            const { message } = await import('ant-design-vue')
+            message.success('Đăng xuất thành công')
+          } catch {
+            // Message component not available, continue without notification
+          }
+        }
+
         // Redirect to login
-        navigateTo('/login')
+        if (process.client) {
+          window.location.href = '/login'
+        } else {
+          await navigateTo('/login')
+        }
       } catch (error) {
         console.error('Logout error:', error)
+        // Still redirect to login even if there's an error
+        if (process.client) {
+          window.location.href = '/login'
+        } else {
+          await navigateTo('/login')
+        }
       } finally {
         this.isLoading = false
       }
@@ -336,23 +488,78 @@ export const useAuthStore = defineStore('auth', {
      * Check and restore session from localStorage
      * Migrated from @nuxtjs/auth-next behavior
      */
-    initAuth() {
+    async initAuth() {
       if (process.client) {
         const token = localStorage.getItem('auth_token')
         const tokenExpireAt = localStorage.getItem('token_expire_at')
         const userStr = localStorage.getItem('user')
-        const authDataStr = localStorage.getItem('auth_data')
+        // Check both 'authData' (new format) and 'auth_data' (old format) for compatibility
+        const authDataStr = localStorage.getItem('authData') || localStorage.getItem('auth_data')
 
-        if (token && userStr) {
+        // Try to restore from authData first (new format), then fallback to old format
+        let authData = null
+        if (authDataStr) {
+          try {
+            authData = JSON.parse(authDataStr)
+          } catch (e) {
+            console.error('⚠️ Failed to parse authData:', e)
+          }
+        }
+
+        if (authData && authData.user && authData.token) {
+          // Use new format (authData)
+          try {
+            // Check if token is expired
+            if (authData.tokenExpireAt) {
+              const expireTime = new Date(authData.tokenExpireAt).getTime()
+              const now = Date.now()
+              if (!isNaN(expireTime) && now >= expireTime) {
+                // Token expired, clear data (don't show message - session expired)
+                this.logout(false)
+                return
+              }
+            }
+
+            this.token = authData.token
+            this.tokenExpireAt = authData.tokenExpireAt
+            this.user = authData.user
+            this.isAuthenticated = true
+            this.rememberAccount = authData.rememberAccount || false
+            this.loginTimestamp = authData.loginTimestamp || null
+
+            // Check if user has allowed role
+            const userRole = this.user?.role
+            const allowedRoles = ['admin', 'manager', 'worker']
+            if (!userRole || !allowedRoles.includes(userRole)) {
+              console.warn('[InitAuth] User role not allowed:', userRole)
+              this.logout(false) // Don't show message - invalid session
+              return
+            }
+
+            // Refresh user data from backend to get latest info
+            // Skip refresh if SSO login is in progress to avoid race condition
+            try {
+              await this.refreshUserData()
+            } catch (refreshError) {
+              console.warn('⚠️ Failed to refresh user data during initAuth, but keeping session:', refreshError)
+              // Don't logout on refresh error - session might still be valid
+            }
+          } catch (e) {
+            console.error('❌ Error restoring from authData:', e)
+            this.logout(false) // Don't show message - error restoring session
+            return
+          }
+        } else if (token && userStr && tokenExpireAt) {
+          // Fallback to old format
           try {
             // Check if token is expired
             if (tokenExpireAt) {
               const expireTime = new Date(tokenExpireAt).getTime()
               const now = Date.now()
-              
-              if (now >= expireTime) {
-                // Token expired, clear data
-                this.logout()
+
+              if (!isNaN(expireTime) && now >= expireTime) {
+                // Token expired, clear data (don't show message - session expired)
+                this.logout(false)
                 return
               }
             }
@@ -362,16 +569,46 @@ export const useAuthStore = defineStore('auth', {
             this.user = JSON.parse(userStr)
             this.isAuthenticated = true
 
+            // Check if user has allowed role
+            const userRole = this.user?.role
+            const allowedRoles = ['admin', 'manager', 'worker']
+            if (!userRole || !allowedRoles.includes(userRole)) {
+              console.warn('[InitAuth] User role not allowed:', userRole)
+              this.logout(false) // Don't show message - invalid session
+              return
+            }
+
             // Check for remember account
             if (authDataStr) {
-              const authData = JSON.parse(authDataStr)
-              this.rememberAccount = authData.remindAccount || false
+              try {
+                const authData = JSON.parse(authDataStr)
+                this.rememberAccount = authData.remindAccount || false
+              } catch (e) {
+                // Ignore parse error for authData, it's optional
+                console.warn('⚠️ Failed to parse authData, continuing:', e)
+              }
+            }
+
+            // Refresh user data from backend to get latest info
+            // Skip refresh if just logged in to avoid race condition
+            const timeSinceLogin = this.loginTimestamp ? Date.now() - this.loginTimestamp : Infinity
+            if (timeSinceLogin > 5000) { // Only refresh if logged in more than 5 seconds ago
+              try {
+                await this.refreshUserData()
+              } catch (refreshError) {
+                console.warn('⚠️ Failed to refresh user data during initAuth, but keeping session:', refreshError)
+                // Don't logout on refresh error - session might still be valid
+              }
+            } else {
+              console.log('ℹ️ Skipping refreshUserData - just logged in', timeSinceLogin, 'ms ago')
             }
           } catch (error) {
-            console.error('Init auth error:', error)
-            // Clear corrupted data
-            this.logout()
+            console.error('❌ Init auth error (critical):', error)
+            // Only logout on critical errors (parse errors, etc.), not on refresh errors
+            this.logout(false) // Don't show message - critical error
           }
+        } else {
+          console.log('ℹ️ No auth data found in localStorage')
         }
       }
     },
@@ -411,6 +648,10 @@ export const useAuthStore = defineStore('auth', {
       }
 
       const [, value, unit] = match
+      if (!value || !unit) {
+        // Default to 7 days if format is invalid
+        return new Date(now.getTime() + 7 * 24 * 60 * 60 * 1000).toISOString()
+      }
       const amount = parseInt(value)
       
       let milliseconds = 0

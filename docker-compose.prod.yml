@@ -84,12 +84,12 @@ services:
       # IMPORTANT: This URL must be publicly accessible from browser
       # Change to your actual domain or IP, e.g., http://minio.vanphuccare.com:9000
       - MINIO_PUBLIC_URL=${MINIO_PUBLIC_URL:-http://103.216.119.104:9000}
-      # VNPay
-      - VNP_TMNCODE=VPCTEST1
-      - VNP_HASHSECRET=95M6E1P08UICHY6HS515HCXC9ORKNZRF
-      - VNP_URL=https://sandbox.vnpayment.vn/paymentv2/vpcpay.html
-      - VNP_RETURN_URL=http://localhost:3102/vnpay-return
-      - IPN_URL=http://localhost:3000/orders/payment/vnpay-ipn
+      # VNPay Configuration
+      - VNP_TMNCODE=${VNP_TMNCODE:-VPCTEST1}
+      - VNP_HASHSECRET=${VNP_HASHSECRET:-95M6E1P08UICHY6HS515HCXC9ORKNZRF}
+      - VNP_URL=${VNP_URL:-https://sandbox.vnpayment.vn/paymentv2/vpcpay.html}
+      - VNP_RETURN_URL=${VNP_RETURN_URL:-https://elearning.vanphuccare.com/vnpay-return}
+      - IPN_URL=${IPN_URL:-https://elearning.vanphuccare.com/api/u/orders/payment/vnpay-ipn}
       # Cloudflare config
       - CLOUDFLARE_R2_BUCKET_NAME=vanphuccare-video-edu
       - CLOUDFLARE_R2_PUBLIC_URL=https://pub-d52b327cd86048b0aff51ec33d95f7fe.r2.dev

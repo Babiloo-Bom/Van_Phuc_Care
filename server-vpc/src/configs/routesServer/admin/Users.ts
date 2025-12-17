@@ -12,8 +12,11 @@ const router = Router()
 // Get all users
 router.get('/', adminPassport.authenticate('jwt', { session: false }), UserController.getAllUsers)
 
-// Get user statistics
+// Get user statistics (must be before /:id to avoid conflict)
 router.get('/stats', adminPassport.authenticate('jwt', { session: false }), UserController.getUserStats)
+
+// Get user by ID
+router.get('/:id', adminPassport.authenticate('jwt', { session: false }), UserController.getUserById)
 
 // Create user
 router.post('/', adminPassport.authenticate('jwt', { session: false }), UserController.createUser)

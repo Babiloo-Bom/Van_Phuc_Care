@@ -410,13 +410,16 @@ class OrderController {
         return sendError(res, 404, "Order not found");
       }
 
+      // Làm tròn số tiền để không có số thập phân (tương tự SePay)
+      const roundedTotalAmount = Math.round(paymentData.totalAmount || order.totalAmount || 0);
+      
       // Simulate payment processing based on method
       const transaction: any = await ModelTransaction.model.create({
         userId: order.userId,
         origin: "web",
         type: "payment",
         title: `Thanh toán đơn hàng ${order.orderId}`,
-        total: paymentData.totalAmount,
+        total: roundedTotalAmount,
         fee: 0,
         retryCount: 0,
         status: ModelTransaction.STATUS_ENUM.PENDING,
@@ -436,11 +439,15 @@ class OrderController {
       const ipAddr = req.headers['x-forwarded-for'] || req.connection.remoteAddress;
       const createDate = moment(new Date()).utcOffset(7).format('YYYYMMDDHHmmss');
       const expiredAt = moment(new Date(transaction.get('expiredAt'))).utcOffset(7).format('YYYYMMDDHHmmss');
+      
+      // Làm tròn số tiền trước khi nhân 100 (VNPay yêu cầu amount tính bằng xu)
+      const roundedAmount = Math.round(transaction.get('total') || 0);
+      
       let params:any = {
         vnp_Version: "2.1.0",
         vnp_Command: "pay",
         vnp_TmnCode: configs.vnpayConfig.vnp_TmnCode,
-        vnp_Amount: transaction.get('total') * 100,
+        vnp_Amount: roundedAmount * 100,
         vnp_CurrCode: "VND",
         vnp_TxnRef: transaction._id.toString(),
         vnp_OrderInfo: `Thanh toan transaction ${transaction._id}, order ${order.orderId}. So tien ${transaction.total}d`,
@@ -455,7 +462,7 @@ class OrderController {
       const signData = qs.stringify(params, { encode: false });
 
       const hmac = crypto.createHmac("sha512", configs.vnpayConfig.vnp_HashSecret);
-      const secureHash = hmac.update(Buffer.from(signData, "utf-8")).digest("hex");
+      const secureHash = hmac.update(signData, "utf-8").digest("hex");
       params.vnp_SecureHash = secureHash;
       
       const paymentUrl = `${configs.vnpayConfig.vnp_Url}?${qs.stringify(params, { encode: false })}`;

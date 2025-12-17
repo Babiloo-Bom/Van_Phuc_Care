@@ -434,15 +434,15 @@ export const useAuthApi = () => {
         if (_isAbsolutePath) {
           // Absolute path: replace /api/u or /u with /api/a
           googleBase = apiBase
-            .replace(/\/api\/u\/?$/, "/api/a")
-            .replace(/\/u\/?$/, "/api/a");
+            .replace(/\/api\/u\/?$/, '/api/a')
+            .replace(/\/u\/?$/, '/api/a');
         } else {
           // Relative path: use /api/a (Nginx will add /api/ prefix in production)
-          googleBase = "/api/a";
+          googleBase = '/api/a';
         }
         return await withRetry(() =>
           fetchWithTimeout(`${googleBase}/auth/google/login`, {
-            method: "POST",
+            method: 'POST',
             body: { code, state },
           })
         );
@@ -461,16 +461,16 @@ export const useAuthApi = () => {
         if (_isAbsolutePath) {
           // Absolute path: replace /api/u or /u with /api/a
           googleBase = apiBase
-            .replace(/\/api\/u\/?$/, "/api/a")
-            .replace(/\/u\/?$/, "/api/a");
+            .replace(/\/api\/u\/?$/, '/api/a')
+            .replace(/\/u\/?$/, '/api/a');
         } else {
           // Relative path: use /api/a (Nginx will add /api/ prefix in production)
-          googleBase = "/api/a";
+          googleBase = '/api/a';
         }
         return await withRetry(() =>
           fetchWithTimeout(`${googleBase}/auth/google/url`, {
-            method: "GET",
-          })
+            method: 'GET',
+          }),
         );
       } catch (error: any) {
         throw transformError(error);

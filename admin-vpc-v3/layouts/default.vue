@@ -1,67 +1,256 @@
 <template>
-  <div class="min-h-screen bg-gray-50">
-    <!-- Header -->
-    <header class="bg-white shadow-sm border-b border-gray-200">
-      <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div class="flex justify-between items-center h-16">
-          <!-- Logo & Title -->
-          <div class="flex items-center">
-            <NuxtLink to="/" class="flex items-center">
-              <span class="text-2xl font-bold text-primary-500">🏥</span>
-              <span class="ml-2 text-xl font-semibold text-gray-900">Admin Portal</span>
-            </NuxtLink>
-          </div>
+  <div class="min-h-screen bg-gray-50 flex">
+    <!-- Mobile Menu Toggle -->
+    <div class="mobile-menu-toggle lg:hidden fixed top-4 left-4 z-50">
+      <a-button 
+        type="primary" 
+        @click="sidebarOpen = !sidebarOpen"
+        class="!flex items-center justify-center"
+      >
+        <MenuOutlined />
+      </a-button>
+    </div>
 
-          <!-- Navigation -->
-          <nav class="hidden md:flex space-x-8">
-            <NuxtLink to="/" class="text-gray-700 hover:text-primary-500 px-3 py-2 rounded-md text-sm font-medium transition-colors">
-              Dashboard
-            </NuxtLink>
-            <NuxtLink to="/faqs" class="text-gray-700 hover:text-primary-500 px-3 py-2 rounded-md text-sm font-medium transition-colors">
-              FAQs
-            </NuxtLink>
-            <NuxtLink to="/products" class="text-gray-700 hover:text-primary-500 px-3 py-2 rounded-md text-sm font-medium transition-colors">
-              Products
-            </NuxtLink>
-            <NuxtLink to="/customers" class="text-gray-700 hover:text-primary-500 px-3 py-2 rounded-md text-sm font-medium transition-colors">
-              Customers
-            </NuxtLink>
-          </nav>
+    <!-- Mobile Overlay -->
+    <div 
+      v-if="sidebarOpen" 
+      class="mobile-overlay lg:hidden fixed inset-0 bg-black bg-opacity-50 z-40"
+      @click="sidebarOpen = false"
+    ></div>
 
-          <!-- User Menu -->
-          <div class="flex items-center space-x-4">
-            <button class="text-gray-500 hover:text-gray-700">
-              <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" />
-              </svg>
-            </button>
-            <div class="flex items-center space-x-2">
-              <div class="w-8 h-8 rounded-full bg-primary-500 flex items-center justify-center text-white font-semibold">
-                A
-              </div>
-              <span class="text-sm font-medium text-gray-700">Admin</span>
-            </div>
-          </div>
-        </div>
+    <!-- Sidebar -->
+    <aside 
+      :class="[
+        'w-64 bg-white shadow-lg fixed left-0 top-0 bottom-0 overflow-y-auto z-50 transition-transform duration-300',
+        sidebarOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'
+      ]"
+    >
+      <!-- Logo -->
+      <div class="p-6 border-b border-gray-200">
+        <NuxtLink to="/" class="flex items-center">
+          <span class="text-2xl font-bold text-primary-500">🏥</span>
+          <span class="ml-2 text-xl font-semibold text-gray-900">Admin Portal</span>
+        </NuxtLink>
       </div>
-    </header>
+
+      <!-- User Info -->
+      <div class="p-4 border-b border-gray-200">
+        <a-dropdown :trigger="['click']" placement="bottomLeft">
+          <div class="flex items-center space-x-3 cursor-pointer hover:bg-gray-50 p-2 rounded-md transition-colors">
+            <div class="w-10 h-10 rounded-full bg-primary-500 flex items-center justify-center text-white font-semibold">
+              {{ getUserInitials }}
+            </div>
+            <div class="flex-1 min-w-0">
+              <div class="text-sm font-medium text-gray-900 truncate">{{ userDisplayName }}</div>
+              <div class="text-xs text-gray-500">{{ userRoleText }}</div>
+            </div>
+            <svg class="w-4 h-4 text-gray-500 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
+            </svg>
+          </div>
+          <template #overlay>
+            <a-menu>
+              <a-menu-item key="profile" disabled>
+                <div class="px-2 py-1">
+                  <div class="text-sm font-medium text-gray-900">{{ userDisplayName }}</div>
+                  <div class="text-xs text-gray-500">{{ authStore.user?.email }}</div>
+                </div>
+              </a-menu-item>
+              <a-menu-divider />
+              <a-menu-item key="logout" @click="handleLogout">
+                <div class="flex items-center">
+                  <LogoutOutlined class="mr-2" />
+                  <span>Đăng xuất</span>
+                </div>
+              </a-menu-item>
+            </a-menu>
+          </template>
+        </a-dropdown>
+      </div>
+
+      <!-- Navigation Menu -->
+      <nav class="p-4">
+        <a-menu mode="inline" :selected-keys="selectedKeys" class="border-0">
+          <a-menu-item key="dashboard">
+            <NuxtLink to="/" class="flex items-center">
+              <DashboardOutlined class="mr-3 text-lg" />
+              <span>Dashboard</span>
+            </NuxtLink>
+          </a-menu-item>
+          
+          <a-menu-item key="orders">
+            <NuxtLink to="/orders" class="flex items-center">
+              <ShoppingCartOutlined class="mr-3 text-lg" />
+              <span>Đơn hàng</span>
+            </NuxtLink>
+          </a-menu-item>
+          
+          <a-menu-item key="customers">
+            <NuxtLink to="/customers" class="flex items-center">
+              <UserOutlined class="mr-3 text-lg" />
+              <span>Khách hàng</span>
+            </NuxtLink>
+          </a-menu-item>
+          
+          <a-menu-item key="products">
+            <NuxtLink to="/products" class="flex items-center">
+              <AppstoreOutlined class="mr-3 text-lg" />
+              <span>Sản phẩm</span>
+            </NuxtLink>
+          </a-menu-item>
+
+          <a-menu-item v-if="isAdmin" key="users">
+            <NuxtLink to="/admin/users" class="flex items-center">
+              <TeamOutlined class="mr-3 text-lg" />
+              <span>Quản lý người dùng</span>
+            </NuxtLink>
+          </a-menu-item>
+
+          <a-menu-divider />
+
+          <a-menu-item key="faqs">
+            <NuxtLink to="/faqs" class="flex items-center">
+              <InfoCircleOutlined class="mr-3 text-lg" />
+              <span>FAQs</span>
+            </NuxtLink>
+          </a-menu-item>
+        </a-menu>
+      </nav>
+    </aside>
 
     <!-- Main Content -->
-    <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-      <slot />
-    </main>
-
-    <!-- Footer -->
-    <footer class="bg-white border-t border-gray-200 mt-auto">
-      <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
-        <p class="text-center text-sm text-gray-500">
-          © 2025 Van Phuc Care. All rights reserved.
-        </p>
-      </div>
-    </footer>
+    <div class="flex-1 lg:ml-64">
+      <main class="p-4 lg:p-6 pt-16 lg:pt-6">
+        <slot />
+      </main>
+    </div>
   </div>
 </template>
 
 <script setup lang="ts">
-// Layout logic can go here
+import { 
+  LogoutOutlined, 
+  TeamOutlined, 
+  InfoCircleOutlined, 
+  DashboardOutlined,
+  ShoppingCartOutlined,
+  UserOutlined,
+  AppstoreOutlined,
+  SettingOutlined,
+  MenuOutlined
+} from '@ant-design/icons-vue'
+import { message } from 'ant-design-vue'
+
+const route = useRoute()
+const authStore = useAuthStore()
+const sidebarOpen = ref(false)
+
+// Close sidebar when route changes (mobile)
+watch(() => route.path, () => {
+  if (window.innerWidth < 1024) {
+    sidebarOpen.value = false
+  }
+})
+
+// Get selected menu keys based on current route
+const selectedKeys = computed(() => {
+  const path = route.path
+  if (path === '/') return ['dashboard']
+  if (path.startsWith('/orders')) return ['orders']
+  if (path.startsWith('/customers')) return ['customers']
+  if (path.startsWith('/products')) return ['products']
+  if (path.startsWith('/admin/users')) return ['users']
+  if (path.startsWith('/faqs')) return ['faqs']
+  return []
+})
+
+// Computed properties for user display
+const userDisplayName = computed(() => {
+  return authStore.user?.fullname || authStore.user?.name || authStore.user?.email || 'Admin'
+})
+
+const getUserInitials = computed(() => {
+  const name = userDisplayName.value
+  if (!name) return 'A'
+  
+  const parts = name.trim().split(' ').filter(p => p.length > 0)
+  if (parts.length >= 2) {
+    const first = parts[0]?.[0] || ''
+    const last = parts[parts.length - 1]?.[0] || ''
+    return (first + last).toUpperCase()
+  }
+  return name[0]?.toUpperCase() || 'A'
+})
+
+const userRoleText = computed(() => {
+  const role = authStore.user?.role
+  const roleMap: Record<string, string> = {
+    admin: 'Quản trị viên',
+    manager: 'Quản lý',
+    worker: 'Nhân viên'
+  }
+  return roleMap[role || ''] || role || 'Người dùng'
+})
+
+// Check if current user is admin
+const isAdmin = computed(() => {
+  return authStore.user?.role === 'admin'
+})
+
+// Logout handler
+const handleLogout = async () => {
+  try {
+    await authStore.logout()
+    message.success('Đăng xuất thành công')
+  } catch (error: any) {
+    console.error('Logout error:', error)
+    message.error('Đăng xuất thất bại')
+  }
+}
 </script>
+
+<style scoped>
+/* Custom styles for sidebar menu */
+:deep(.ant-menu-item) {
+  margin: 4px 0 !important;
+  border-radius: 6px;
+}
+
+:deep(.ant-menu-item-selected) {
+  background-color: #e6f7ff !important;
+}
+
+:deep(.ant-menu-item-selected a) {
+  color: #1890ff !important;
+}
+
+:deep(.ant-sub-menu-title) {
+  border-radius: 6px;
+  margin: 4px 0 !important;
+}
+
+:deep(.ant-menu-submenu-selected > .ant-sub-menu-title) {
+  color: #1890ff !important;
+}
+
+.mobile-menu-toggle {
+  position: fixed;
+  top: 16px;
+  left: 16px;
+  z-index: 60;
+}
+
+.mobile-overlay {
+  position: fixed;
+  inset: 0;
+  background-color: rgba(0, 0, 0, 0.5);
+  z-index: 40;
+}
+
+@media (min-width: 1024px) {
+  .mobile-menu-toggle,
+  .mobile-overlay {
+    display: none;
+  }
+}
+</style>

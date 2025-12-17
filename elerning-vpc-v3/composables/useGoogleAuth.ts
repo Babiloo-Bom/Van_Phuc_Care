@@ -102,7 +102,9 @@ export const useGoogleAuth = () => {
 
       return response
     } catch (error: any) {
-      throw new Error('Đăng nhập Google thất bại. Vui lòng thử lại.')
+      // Extract error message from response
+      const errorMessage = error?.data?.message || error?.data?.error || error?.message || 'Đăng nhập Google thất bại. Vui lòng thử lại.'
+      throw new Error(errorMessage)
     }
   };
 
@@ -112,11 +114,28 @@ export const useGoogleAuth = () => {
     state?: string
   ): Promise<GoogleLoginResponse> => {
     try {
+      // Extract redirectUri from state if available, otherwise use callback URL
+      let redirectUri = googleConfig.redirectUri;
+      if (state) {
+        try {
+          const decoded = JSON.parse(decodeURIComponent(state));
+          if (decoded?.redirectUri) {
+            redirectUri = decoded.redirectUri;
+          }
+        } catch (e) {
+          // If state parsing fails, use default callback URL
+          redirectUri = `${googleConfig.redirectUri}/auth/google/callback`;
+        }
+      } else {
+        // If no state, use callback URL
+        redirectUri = `${googleConfig.redirectUri}/auth/google/callback`;
+      }
+      
       // Gọi API backend để xử lý toàn bộ Google OAuth flow
       const loginResponse = await googleLogin({
         code,
         state,
-        redirectUri: googleConfig.redirectUri,
+        redirectUri,
       });
 
       return loginResponse;

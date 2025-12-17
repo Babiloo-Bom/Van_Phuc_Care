@@ -106,12 +106,19 @@ export default class GoogleAuthController {
       })
 
       if (user) {
+        // Check if account is active BEFORE allowing login
+        const userStatus = user.get('status');
+        if (userStatus !== MongoDbUsers.STATUS_ENUM.ACTIVE) {
+          console.warn('⚠️ User account is inactive:', googleProfileData.email);
+          return sendError(res, 403, 'Tài khoản của bạn đã bị khóa. Vui lòng liên hệ quản trị viên.');
+        }
+        
         // Update existing user - only update fields that are not already set by user
         // Don't overwrite user's custom fullname/avatar if they have edited it
+        // DON'T override status if it's inactive
         const updateData: any = {
           provider: 'google',
           googleId: googleProfileData.id,
-          status: MongoDbUsers.STATUS_ENUM.ACTIVE,
           updatedAt: new Date()
         }
         
@@ -195,10 +202,21 @@ export default class GoogleAuthController {
       } catch (error) {
         console.warn('⚠️ Could not decode state parameter:', error)
       }
+      
+      // Determine if this is Elearning or CRM
+      // Both now redirect to /login page for errors
+      const isElearning = stateRedirectUri?.includes('/auth/google/callback') || 
+                         stateFrontendUrl?.includes('elearning') ||
+                         process.env.FRONTEND_URL?.includes('elearning')
+      const errorRedirectPath = '/login'
+      const errorParamName = 'google_error'
 
       if (!code) {
         const baseFrontend = (stateFrontendUrl || process.env.FRONTEND_URL || '').replace(/\/$/, '')
-        if (baseFrontend) return res.redirect(`${baseFrontend}/login?google_error=true`)
+        const errorUrl = baseFrontend 
+          ? `${baseFrontend}${errorRedirectPath}?${errorParamName}=${encodeURIComponent('Không nhận được mã xác thực từ Google')}`
+          : `${errorRedirectPath}?${errorParamName}=${encodeURIComponent('Không nhận được mã xác thực từ Google')}`
+        if (baseFrontend) return res.redirect(errorUrl)
         return sendError(res, 400, 'Missing OAuth code')
       }
       
@@ -222,7 +240,10 @@ export default class GoogleAuthController {
       if (tokenData.error) {
         console.error('❌ Token exchange error:', tokenData.error)
         const baseFrontend = (stateFrontendUrl || process.env.FRONTEND_URL || '').replace(/\/$/, '')
-        if (baseFrontend) return res.redirect(`${baseFrontend}/login?google_error=true`)
+        const errorUrl = baseFrontend 
+          ? `${baseFrontend}${errorRedirectPath}?${errorParamName}=${encodeURIComponent(tokenData.error_description || 'Không thể xác thực với Google')}`
+          : `${errorRedirectPath}?${errorParamName}=${encodeURIComponent(tokenData.error_description || 'Không thể xác thực với Google')}`
+        if (baseFrontend) return res.redirect(errorUrl)
         return sendError(res, 400, tokenData.error_description || 'Failed to exchange code for token')
       }
       
@@ -230,7 +251,10 @@ export default class GoogleAuthController {
       
       if (!access_token) {
         const baseFrontend = (stateFrontendUrl || process.env.FRONTEND_URL || '').replace(/\/$/, '')
-        if (baseFrontend) return res.redirect(`${baseFrontend}/login?google_error=true`)
+        const errorUrl = baseFrontend 
+          ? `${baseFrontend}${errorRedirectPath}?${errorParamName}=${encodeURIComponent('Không thể lấy token từ Google')}`
+          : `${errorRedirectPath}?${errorParamName}=${encodeURIComponent('Không thể lấy token từ Google')}`
+        if (baseFrontend) return res.redirect(errorUrl)
         return sendError(res, 400, 'Failed to get access token from Google')
       }
       
@@ -245,7 +269,10 @@ export default class GoogleAuthController {
       
       if (!profile || !profile.email) {
         const baseFrontend = (stateFrontendUrl || process.env.FRONTEND_URL || '').replace(/\/$/, '')
-        if (baseFrontend) return res.redirect(`${baseFrontend}/login?google_error=true`)
+        const errorUrl = baseFrontend 
+          ? `${baseFrontend}${errorRedirectPath}?${errorParamName}=${encodeURIComponent('Không thể lấy thông tin từ Google')}`
+          : `${errorRedirectPath}?${errorParamName}=${encodeURIComponent('Không thể lấy thông tin từ Google')}`
+        if (baseFrontend) return res.redirect(errorUrl)
         return sendError(res, 400, 'Failed to get Google profile')
       }
       
@@ -255,13 +282,24 @@ export default class GoogleAuthController {
       })
 
       if (user) {
+        // Check if account is active BEFORE allowing login
+        const userStatus = user.get('status');
+        if (userStatus !== MongoDbUsers.STATUS_ENUM.ACTIVE) {
+          console.warn('⚠️ User account is inactive:', profile.email);
+          const baseFrontend = (stateFrontendUrl || process.env.FRONTEND_URL || '').replace(/\/$/, '')
+          const errorUrl = baseFrontend 
+            ? `${baseFrontend}${errorRedirectPath}?${errorParamName}=${encodeURIComponent('Tài khoản của bạn đã bị khóa. Vui lòng liên hệ quản trị viên.')}` 
+            : `${errorRedirectPath}?${errorParamName}=${encodeURIComponent('Tài khoản của bạn đã bị khóa. Vui lòng liên hệ quản trị viên.')}`
+          return res.redirect(errorUrl)
+        }
+        
         // Update existing user
+        // DON'T override status if it's inactive
         user.set({
           fullname: profile.name,
           avatar: profile.picture,
           provider: 'google',
           googleId: profile.id,
-          status: MongoDbUsers.STATUS_ENUM.ACTIVE,
           updatedAt: new Date()
         })
         
@@ -302,10 +340,35 @@ export default class GoogleAuthController {
       
     } catch (error: any) {
       console.error('❌ Google callback error:', error)
-      const baseFrontend = (process.env.FRONTEND_URL || '').replace(/\/$/, '')
+      // Determine redirect path based on site (Elearning uses callback page, CRM uses login page)
+      const stateRedirectUri = req.query.state ? (() => {
+        try {
+          if (typeof req.query.state === 'string' && req.query.state.length > 0) {
+            const decoded = JSON.parse(decodeURIComponent(req.query.state as string))
+            return decoded?.redirectUri
+          }
+        } catch (e) {}
+        return undefined
+      })() : undefined
+      const stateFrontendUrl = req.query.state ? (() => {
+        try {
+          if (typeof req.query.state === 'string' && req.query.state.length > 0) {
+            const decoded = JSON.parse(decodeURIComponent(req.query.state as string))
+            return decoded?.frontendUrl
+          }
+        } catch (e) {}
+        return undefined
+      })() : undefined
+      
+      // Both Elearning and CRM now redirect to /login page for errors
+      const errorRedirectPath = '/login'
+      const errorParamName = 'google_error'
+      const errorMsg = error?.message || 'Đăng nhập Google thất bại'
+      
+      const baseFrontend = (stateFrontendUrl || process.env.FRONTEND_URL || '').replace(/\/$/, '')
       const frontendUrl = baseFrontend 
-        ? `${baseFrontend}/login?google_error=true` 
-        : `/login?google_error=true`
+        ? `${baseFrontend}${errorRedirectPath}?${errorParamName}=${encodeURIComponent(errorMsg)}` 
+        : `${errorRedirectPath}?${errorParamName}=${encodeURIComponent(errorMsg)}`
       return res.redirect(frontendUrl)
     }
   }

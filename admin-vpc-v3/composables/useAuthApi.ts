@@ -22,10 +22,29 @@ const RETRY_CONFIG = {
 
 export const useAuthApi = () => {
   const config = useRuntimeConfig()
-  const apiBase = config.public.apiBase || 'http://103.216.119.104:3000/api/a'
+  // Use /api/a for admin endpoints
+  let apiBase = config.public.apiBase || '/api/a'
   
-  // Debug: Log API base URL
-  console.log('🔍 API Base URL:', apiBase)
+  // Normalize API base URL
+  if (apiBase.startsWith('http://') || apiBase.startsWith('https://')) {
+    // Absolute path - ensure it ends with /api/a
+    apiBase = apiBase.replace(/\/+$/, '')
+    if (!apiBase.endsWith('/api/a')) {
+      apiBase = apiBase.replace(/\/api\/u\/?$/, '/api/a').replace(/\/u\/?$/, '/api/a')
+      if (!apiBase.endsWith('/api/a')) {
+        apiBase = apiBase + '/api/a'
+      }
+    }
+  } else {
+    // Relative path - ensure it's /api/a
+    apiBase = apiBase.replace(/\/+$/, '')
+    if (!apiBase.endsWith('/api/a') && !apiBase.endsWith('/a')) {
+      apiBase = apiBase.replace(/\/api\/u\/?$/, '/api/a').replace(/\/u\/?$/, '/api/a')
+      if (!apiBase.endsWith('/api/a') && !apiBase.endsWith('/a')) {
+        apiBase = '/api/a'
+      }
+    }
+  }
 
   /**
    * Exponential backoff delay
@@ -138,49 +157,23 @@ export const useAuthApi = () => {
     },
 
     /**
-     * Register new account
-     * @param email Email
-     * @param password Password
-     * @param repeat_password Repeat password
-     * @param fullname Full name
+     * Get user profile
      */
-    async register(email: string, password: string, repeat_password: string, fullname?: string) {
+    async getUserProfile() {
       try {
+        const authStore = useAuthStore()
+        const token = authStore.token
+        
         return await withRetry(() =>
-          fetchWithTimeout(`${apiBase}/sessions`, {
-            method: 'POST',
-            body: {
-              email,
-              password,
-              repeat_password,
-              fullname: fullname || email.split('@')[0], // Use email prefix if no fullname
-              domain: 'vanphuccare.gensi.vn'
-            }
+          fetchWithTimeout(`${apiBase}/sessions/current_admin`, {
+            method: 'GET',
+            headers: {
+              Authorization: `Bearer ${token}`,
+            },
           })
         )
       } catch (error: any) {
-        throw transformError(error)
-      }
-    },
-
-    /**
-     * Verify email with OTP after registration
-     * @param email Email
-     * @param otp OTP code
-     */
-    async verifyEmail(email: string, otp: string) {
-      try {
-        return await withRetry(() =>
-          fetchWithTimeout(`${apiBase}/sessions/verify_email`, {
-            method: 'POST',
-            body: {
-              email,
-              otp,
-              origin: 'vanphuccare.gensi.vn'
-            }
-          })
-        )
-      } catch (error: any) {
+        console.error('❌ getUserProfile error:', error)
         throw transformError(error)
       }
     },
@@ -230,7 +223,7 @@ export const useAuthApi = () => {
     async forgotPassword(email: string) {
       try {
         return await withRetry(() =>
-          fetchWithTimeout(`${apiBase}/passwords/forgot_password`, {
+          fetchWithTimeout(`${apiBase}/sessions/forgot_password`, {
             method: 'POST',
             body: { email }
           })
@@ -241,14 +234,14 @@ export const useAuthApi = () => {
     },
 
     /**
-     * Verify OTP for forgot password
+     * Verify OTP
      * @param email Email
      * @param otp OTP code
      */
     async verifyOtp(email: string, otp: string) {
       try {
         return await withRetry(() =>
-          fetchWithTimeout(`${apiBase}/passwords/verify_otp`, {
+          fetchWithTimeout(`${apiBase}/sessions/verify_otp`, {
             method: 'POST',
             body: { email, otp }
           })
@@ -257,6 +250,7 @@ export const useAuthApi = () => {
         throw transformError(error)
       }
     },
+
 
     /**
      * Reset password with token
@@ -314,16 +308,27 @@ export const useAuthApi = () => {
 
     /**
      * Logout
+     * Note: Logout endpoint may not exist, so we ignore errors
      */
     async logout() {
       try {
+        // Try to call logout endpoint if it exists
+        // If it doesn't exist (404), that's fine - we'll just clear local state
         return await withRetry(() =>
           fetchWithTimeout(`${apiBase}/active-logs/logout`, {
-            method: 'PATCH'
+            method: 'PATCH',
+            showError: false // Don't show error if endpoint doesn't exist
           })
         )
       } catch (error: any) {
-        throw transformError(error)
+        // Ignore 404 errors - logout endpoint may not exist
+        if (error.statusCode === 404 || error.status === 404) {
+          console.log('ℹ️ Logout endpoint not found, continuing with local logout')
+          return { success: true }
+        }
+        // For other errors, still ignore to allow logout to complete
+        console.warn('⚠️ Logout API error (ignored):', error)
+        return { success: true }
       }
     },
 
@@ -346,12 +351,33 @@ export const useAuthApi = () => {
      * Google Login
      * Exchange authorization code for user data and JWT
      */
-    async googleLogin(code: string, state: string) {
+    async googleLogin(code: string, state: string, redirectUri?: string) {
       try {
+        // Get redirect_uri from state or use current frontend callback URL
+        let finalRedirectUri = redirectUri
+        if (!finalRedirectUri && typeof window !== 'undefined') {
+          try {
+            if (state) {
+              const decoded = JSON.parse(decodeURIComponent(state))
+              finalRedirectUri = decoded?.redirectUri
+            }
+          } catch {}
+          
+          // Fallback to current frontend callback URL
+          if (!finalRedirectUri) {
+            const baseUrl = window.location.origin.replace(/\/$/, '')
+            finalRedirectUri = `${baseUrl}/auth/google/callback`
+          }
+        }
+        
         return await withRetry(() =>
-          fetchWithTimeout(`${apiBase}/api/auth/google/login`, {
+          fetchWithTimeout(`${apiBase}/auth/google/login`, {
             method: 'POST',
-            body: { code, state }
+            body: { 
+              code, 
+              state,
+              redirectUri: finalRedirectUri
+            }
           })
         )
       } catch (error: any) {
@@ -365,7 +391,7 @@ export const useAuthApi = () => {
     async getGoogleAuthUrl() {
       try {
         return await withRetry(() =>
-          fetchWithTimeout(`${apiBase}/api/auth/google/url`, {
+          fetchWithTimeout(`${apiBase}/auth/google/url`, {
             method: 'GET'
           })
         )

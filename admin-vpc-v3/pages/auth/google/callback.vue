@@ -46,8 +46,7 @@
 
 <script setup lang="ts">
 // ===== COMPOSABLES =====
-const { completeGoogleLogin } = useGoogleAuth()
-const { login } = useAuth()
+const authApi = useAuthApi()
 const router = useRouter()
 const route = useRoute()
 
@@ -62,7 +61,7 @@ const handleGoogleCallback = async () => {
     isLoading.value = true
     errorMessage.value = ''
 
-    // Get authorization code from URL
+    // Get authorization code from URL (giống elearning và crm)
     const code = route.query.code as string
     const state = route.query.state as string
 
@@ -70,16 +69,43 @@ const handleGoogleCallback = async () => {
       throw new Error('Không nhận được mã xác thực từ Google')
     }
 
-    // Complete Google login flow
-    const response = await completeGoogleLogin(code, state)
+    // Call backend API to exchange code for token (giống elearning và crm)
+    const authApi = useAuthApi()
+    const response: any = await authApi.googleLogin(code, state)
 
-    if (response.success && response.data) {
+    if (response && response.data) {
+      const accessToken = response.data.accessToken || response.data.accessToken
+      const tokenExpireAt = response.data.tokenExpireAt || Date.now() + 7 * 24 * 60 * 60 * 1000
+      const userData = response.data.user || response.data
+
+      if (!accessToken) {
+        throw new Error('Không nhận được token từ server')
+      }
+
+      // Check if user has required admin roles
+      const userRole = userData?.role || userData?.type
+      if (!userRole || !['admin', 'manager', 'worker'].includes(userRole)) {
+        throw new Error('Bạn không có quyền truy cập vào hệ thống quản trị.')
+      }
+
       // Store auth data directly in auth store
       const authStore = useAuthStore()
       await authStore.completeGoogleLogin(
-        response.data.accessToken, 
-        response.data.tokenExpireAt, 
-        response.data.user
+        accessToken,
+        tokenExpireAt,
+        {
+          id: userData._id || userData.id,
+          email: userData.email,
+          fullname: userData.fullname || userData.name,
+          name: userData.name || userData.fullname,
+          username: userData.username || userData.email,
+          role: userRole,
+          avatar: userData.avatar,
+          verified: userData.verified,
+          status: userData.status,
+          provider: userData.provider || 'google',
+          googleId: userData.googleId,
+        } as any
       )
 
       isSuccess.value = true
@@ -87,7 +113,7 @@ const handleGoogleCallback = async () => {
       // Redirect after success
       setTimeout(() => {
         redirectToDashboard()
-      }, 2000)
+      }, 1000)
       
     } else {
       throw new Error(response.error || 'Đăng nhập Google thất bại')
@@ -95,7 +121,9 @@ const handleGoogleCallback = async () => {
 
   } catch (error: any) {
     console.error('❌ Google callback failed:', error)
-    errorMessage.value = error.message || 'Đăng nhập Google thất bại'
+    const errorMsg = error.message || 'Đăng nhập Google thất bại'
+    // Redirect về login với error message
+    router.push(`/login?google_error=${encodeURIComponent(errorMsg)}`)
   } finally {
     isLoading.value = false
   }

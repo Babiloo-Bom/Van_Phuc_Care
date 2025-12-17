@@ -41,7 +41,17 @@ export default defineEventHandler(async (event): Promise<GoogleLoginResponse> =>
 
 
       // Check if backend returned success
-      if (!backendResponse || !backendResponse.data) {
+      if (!backendResponse) {
+        throw new Error('Không nhận được phản hồi từ server')
+      }
+      
+      // Check for error response
+      if (backendResponse.status === false || backendResponse.error) {
+        const errorMsg = backendResponse.message || backendResponse.error || 'Đăng nhập Google thất bại'
+        throw new Error(errorMsg)
+      }
+      
+      if (!backendResponse.data) {
         throw new Error(backendResponse?.message || 'Backend authentication failed')
       }
 
@@ -70,7 +80,12 @@ export default defineEventHandler(async (event): Promise<GoogleLoginResponse> =>
       };
 
     } catch (backendError: any) {
-      throw new Error(backendError.message || 'Backend authentication failed')
+      // Extract error message from backend response
+      const errorMessage = backendError?.data?.message || 
+                          backendError?.data?.error || 
+                          backendError?.message || 
+                          'Backend authentication failed';
+      throw new Error(errorMessage);
     }
 
   } catch (error: any) {

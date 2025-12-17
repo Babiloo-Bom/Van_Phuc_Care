@@ -77,7 +77,7 @@ export const useOrdersApi = () => {
      * Get order statistics
      */
     async getOrderStats(params?: { from?: string; to?: string }) {
-      return apiClient.get('/api/a/orders/statistics', { params })
+      return apiClient.get('/api/a/orders/stats/overview', { params })
     },
 
     /**

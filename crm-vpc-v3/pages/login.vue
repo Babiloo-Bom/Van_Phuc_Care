@@ -198,7 +198,11 @@ const handleGoogleCallback = () => {
     message.success("Đăng nhập Google thành công!");
     navigateTo("/");
   } else if (googleError) {
-    message.error("Đăng nhập Google thất bại");
+    // Decode error message from URL parameter
+    const errorMessage = decodeURIComponent(googleError === 'true' ? 'Đăng nhập Google thất bại' : googleError);
+    message.error(errorMessage || "Đăng nhập Google thất bại");
+    // Clean up URL
+    window.history.replaceState({}, document.title, window.location.pathname);
   }
 };
 

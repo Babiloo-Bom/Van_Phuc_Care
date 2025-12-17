@@ -29,9 +29,10 @@ export default defineEventHandler(async (event): Promise<GoogleLoginResponse> =>
     const redirectUri = bodyRedirectUri || `${baseUrl}/auth/google/callback`;
 
     // Delegate code exchange to main backend
+    // CRM should use /api/u (user endpoint), not /api/a (admin endpoint)
     try {
       const apiHost = config.apiHostInternal || config.public.apiHost;
-      const backendResponse = await $fetch<any>(`${apiHost}/api/a/auth/google/login`, {
+      const backendResponse = await $fetch<any>(`${apiHost}/api/u/auth/google/login`, {
         method: 'POST',
         body: {
           code,
@@ -53,15 +54,17 @@ export default defineEventHandler(async (event): Promise<GoogleLoginResponse> =>
         success: true,
         data: {
           user: {
-            _id: userInfo._id,
+            id: userInfo._id || userInfo.id || '',
             email: userInfo.email,
             fullname: userInfo.fullname,
+            name: userInfo.fullname || userInfo.name,
             avatar: userInfo.avatar,
-            role: userInfo.role || 'user',
-            permissions: userInfo.permissions || [],
             provider: userInfo.provider || 'google',
+            // Additional fields for compatibility
+            role: userInfo.role || userInfo.type || 'user',
+            permissions: userInfo.permissions || [],
             googleId: userInfo.googleId,
-          },
+          } as any, // Type assertion to allow additional fields
           accessToken: userData.accessToken,
           tokenExpireAt: userData.tokenExpireAt,
         },
@@ -69,7 +72,12 @@ export default defineEventHandler(async (event): Promise<GoogleLoginResponse> =>
 
     } catch (backendError: any) {
       console.error('❌ Backend API error:', backendError);
-      throw new Error(backendError.message || 'Backend authentication failed');
+      // Extract error message from backend response
+      const errorMessage = backendError?.data?.message || 
+                          backendError?.data?.error || 
+                          backendError?.message || 
+                          'Backend authentication failed';
+      throw new Error(errorMessage);
     }
 
   } catch (error: any) {

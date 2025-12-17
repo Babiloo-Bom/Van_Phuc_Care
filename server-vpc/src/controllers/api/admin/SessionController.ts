@@ -13,19 +13,77 @@ import randomString from 'randomstring';
 class SessionController {
   public static async login (req: Request, res: Response) {
     try {
-      const { username, password } = req.body;
+      const { username, password, remindAccount } = req.body;
+      
+      console.log('🔍 Admin login request:', { 
+        username, 
+        hasPassword: !!password, 
+        passwordType: typeof password,
+        passwordLength: password?.length,
+        remindAccount 
+      });
+      
+      // Validate input
+      if (!username || !password) {
+        console.warn('⚠️ Missing username or password');
+        return sendError(res, 400, 'Email và mật khẩu là bắt buộc');
+      }
+      
+      // Ensure password is a string
+      const passwordStr = String(password).trim();
+      if (!passwordStr) {
+        console.warn('⚠️ Password is empty after trim');
+        return sendError(res, 400, 'Mật khẩu không được để trống');
+      }
       
       let admin = null;
-      admin = await MongoDbAdmins.model.findOne({ email: username, status: MongoDbAdmins.STATUS_ENUM.ACTIVE });
-      if (!admin || !await bcrypt.compare(password, admin.get('password'))) {
+      // Check both status and isActive for admin login
+      admin = await MongoDbAdmins.model.findOne({ 
+        email: username, 
+        status: MongoDbAdmins.STATUS_ENUM.ACTIVE,
+        isActive: { $ne: false } // isActive should not be false (allow true or undefined)
+      });
+      
+      if (!admin) {
+        console.warn('⚠️ Admin not found or inactive:', username);
         return sendError(res, 404, BadAuthentication);
       }
       
+      // Double check isActive field explicitly
+      const adminIsActive = admin.get('isActive');
+      if (adminIsActive === false) {
+        console.warn('⚠️ Admin account is deactivated (isActive = false):', username);
+        return sendError(res, 403, 'Tài khoản của bạn đã bị khóa. Vui lòng liên hệ quản trị viên.');
+      }
+      
+      // Check if admin has password
+      const storedPassword = admin.get('password');
+      console.log('🔍 Stored password check:', { 
+        hasStoredPassword: !!storedPassword,
+        storedPasswordType: typeof storedPassword,
+        storedPasswordLength: storedPassword?.length 
+      });
+      
+      if (!storedPassword || typeof storedPassword !== 'string') {
+        console.warn('⚠️ Admin has no password or password is not a string');
+        return sendError(res, 404, BadAuthentication);
+      }
+      
+      // Compare password
+      const isPasswordValid = await bcrypt.compare(passwordStr, storedPassword);
+      if (!isPasswordValid) {
+        console.warn('⚠️ Password mismatch for:', username);
+        return sendError(res, 404, BadAuthentication);
+      }
+      
+      console.log('✅ Login successful for:', username);
       const accessToken = jwt.sign({ id: admin.get('_id') }, settings.jwt.adminSecret, { expiresIn: settings.jwt.ttl });
       const timestampNow = Date.now()
       const tokenExpireAt = new Date(timestampNow + settings.jwt.ttl)
       sendSuccess(res, { accessToken, tokenExpireAt });
     } catch (error: any) {
+      console.error('❌ Admin login error:', error);
+      console.error('❌ Error stack:', error.stack);
       sendError(res, 500, error.message, error as Error);
     }
   }

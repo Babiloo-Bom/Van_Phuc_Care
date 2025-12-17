@@ -42,6 +42,7 @@
 
 <script setup lang="ts">
 import { nextTick } from "vue";
+import { message } from "ant-design-vue";
 
 // ===== COMPOSABLES =====
 const { completeGoogleLogin } = useGoogleAuth();
@@ -59,6 +60,19 @@ const handleGoogleCallback = async () => {
   try {
     isLoading.value = true;
     errorMessage.value = "";
+
+    // Check for error parameter first (from backend redirect)
+    // If there's an error, redirect to login page instead of showing here
+    const errorParam = route.query.error as string;
+    const googleError = route.query.google_error as string;
+    
+    if (errorParam || googleError) {
+      const errorMsg = decodeURIComponent(errorParam || googleError || 'Đăng nhập Google thất bại');
+      // Redirect to login page with error message
+      const errorParamEncoded = encodeURIComponent(errorMsg);
+      router.push(`/login?google_error=${errorParamEncoded}`);
+      return;
+    }
 
     // Get authorization code from URL
     const code = route.query.code as string;
@@ -86,18 +100,18 @@ const handleGoogleCallback = async () => {
       }
 
       // Create user data with proper ID
+      const userInfo = response.data.user || {};
       const userData = {
-        id: response.data.user?.id || `google-user-${Date.now()}`,
-        email: response.data.user?.email || "user@google.com",
-        name: response.data.user?.name || "Google User",
-        fullname:
-          response.data.user?.fullname ||
-          response.data.user?.name ||
-          "Google User",
-        username: response.data.user?.username || `google-user-${Date.now()}`,
-        role: "user",
+        id: userInfo._id || `google-user-${Date.now()}`,
+        email: userInfo.email || "user@google.com",
+        name: userInfo.fullname || "Google User",
+        fullname: userInfo.fullname || "Google User",
+        username: userInfo.email || `google-user-${Date.now()}`,
+        role: userInfo.role || "user",
         verified: true,
-        ...response.data.user,
+        avatar: userInfo.avatar,
+        provider: userInfo.provider,
+        googleId: userInfo.googleId,
       };
 
 
@@ -119,7 +133,12 @@ const handleGoogleCallback = async () => {
     }
   } catch (error: any) {
     console.error("❌ Google callback failed:", error);
-    errorMessage.value = error.message || "Đăng nhập Google thất bại";
+    // Extract detailed error message
+    const detailedError = error?.data?.message || error?.data?.error || error?.message || "Đăng nhập Google thất bại";
+    
+    // Redirect to login page with error message instead of showing on callback page
+    const errorParam = encodeURIComponent(detailedError);
+    router.push(`/login?google_error=${errorParam}`);
   } finally {
     isLoading.value = false;
   }

@@ -44,7 +44,7 @@ export const useUploadsApi = () => {
         formData.append('files', files)
       }
 
-      return apiClient.upload<UploadResponse>('/api/uploads', formData, {
+      return apiClient.upload('/api/uploads', formData, {
         errorMessage: 'Không thể upload file',
         timeout: 120000 // 2 minutes for large files
       })
@@ -66,9 +66,9 @@ export const useUploadsApi = () => {
       }
 
       const formData = new FormData()
-      formData.append('image', file)
+      formData.append('files', file)
 
-      return apiClient.upload<UploadResponse>('/api/uploaders/image', formData, {
+      return apiClient.upload('/api/uploads', formData, {
         errorMessage: 'Không thể upload ảnh'
       })
     },
@@ -91,7 +91,7 @@ export const useUploadsApi = () => {
       const formData = new FormData()
       formData.append('video', file)
 
-      return apiClient.upload<UploadResponse>('/api/uploaders/video', formData, {
+      return apiClient.upload('/api/uploaders/video', formData, {
         errorMessage: 'Không thể upload video',
         timeout: 300000 // 5 minutes for large videos
       })
