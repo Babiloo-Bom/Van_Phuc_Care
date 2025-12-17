@@ -59,6 +59,8 @@ COPY --from=builder --chown=expressjs:nodejs /app/dist ./dist
 COPY --from=builder --chown=expressjs:nodejs /app/package.json ./package.json
 COPY --from=builder --chown=expressjs:nodejs /app/views ./views
 COPY --from=builder --chown=expressjs:nodejs /app/public ./public
+# Copy utility scripts (e.g. create-99-discount.js)
+COPY --from=builder --chown=expressjs:nodejs /app/scripts ./scripts
 
 # Create directories that app needs with proper permissions
 RUN mkdir -p tmp logs uploads public/uploads && \
