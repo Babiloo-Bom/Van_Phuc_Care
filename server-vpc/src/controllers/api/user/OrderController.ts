@@ -8,6 +8,7 @@ import crypto from 'crypto';
 import qs from 'qs';
 import configs from "@configs/configs";
 import { sortObj } from "@libs/common";
+import SePayService from "@services/sepay";
 
 
 const orderSchema = new mongoose.Schema(
@@ -293,11 +294,13 @@ class OrderController {
           break;
 
         case "qr":
-          // TODO: Generate QR code
+          // QR code payment - chỉ tạo QR, chưa thanh toán
+          // Thanh toán sẽ được xác nhận qua webhook
           paymentResult = {
             success: true,
             transactionId: `QR_${Date.now()}`,
-            message: "QR payment processed successfully",
+            message: "QR code generated successfully. Please scan and pay.",
+            requiresPayment: true, // Đánh dấu cần thanh toán
           };
           break;
 
@@ -698,6 +701,167 @@ class OrderController {
         console.error('❌ Error clearing cart:', error);
         // Don't fail the payment processing if this fails
       }
+    }
+  }
+
+  /**
+   * Tạo QR code cho thanh toán đơn hàng
+   */
+  public async createQRCode(req: Request, res: Response) {
+    try {
+      const { orderId } = req.body;
+
+      if (!orderId) {
+        return sendError(res, 400, "Order ID is required");
+      }
+
+      const order = await OrderModel.findOne({ orderId });
+
+      if (!order) {
+        return sendError(res, 404, "Order not found");
+      }
+
+      // Kiểm tra nếu đơn hàng đã thanh toán
+      if (order.paymentStatus === 'completed') {
+        return sendError(res, 400, "Order already paid");
+      }
+
+      // Tạo mô tả thanh toán
+      const courseNames = order.items.map((item: any) => item.course?.title || 'Khóa học').join(', ');
+      const description = `Thanh toan khoa hoc: ${courseNames}`;
+
+      // Tạo QR code với SePay
+      const qrData = await SePayService.createQRCode(
+        order.totalAmount,
+        order.orderId,
+        description
+      );
+
+      // Cập nhật order với thông tin QR code
+      order.paymentMethod = 'qr';
+      order.paymentStatus = 'pending';
+      await order.save();
+
+      sendSuccess(res, {
+        message: "QR code created successfully",
+        qrData: {
+          qrCode: qrData.qrCode,
+          qrData: qrData.qrData,
+          accountNo: qrData.accountNo,
+          accountName: qrData.accountName,
+          bankCode: qrData.bankCode,
+          amount: qrData.amount,
+          content: qrData.content,
+          orderId: order.orderId
+        }
+      });
+    } catch (error: any) {
+      console.error("❌ Create QR code error:", error);
+      sendError(res, 500, error.message, error as Error);
+    }
+  }
+
+  /**
+   * Webhook từ SePay để xác nhận thanh toán
+   */
+  public async sepayWebhook(req: Request, res: Response) {
+    try {
+      // Lấy Bearer Token từ header
+      const authHeader = req.headers.authorization;
+      if (!authHeader) {
+        return sendError(res, 401, "Missing authorization header");
+      }
+
+      // Xác thực token
+      const isValid = SePayService.verifyWebhook(authHeader, req.body);
+      if (!isValid) {
+        return sendError(res, 401, "Invalid webhook token");
+      }
+
+      // Xử lý webhook
+      const webhookResult = await SePayService.handleWebhook(req.body);
+
+      if (!webhookResult.success || !webhookResult.orderId) {
+        return sendError(res, 400, "Invalid webhook data");
+      }
+
+      // Tìm order
+      const order = await OrderModel.findOne({ orderId: webhookResult.orderId });
+
+      if (!order) {
+        return sendError(res, 404, "Order not found");
+      }
+
+      // Kiểm tra nếu đã thanh toán rồi
+      if (order.paymentStatus === 'completed') {
+        return sendSuccess(res, {
+          message: "Order already paid",
+          order
+        });
+      }
+
+      // Cập nhật trạng thái thanh toán
+      order.paymentStatus = 'completed';
+      order.status = 'completed';
+      if (webhookResult.transactionId) {
+        order.transactionId = webhookResult.transactionId;
+      }
+      await order.save();
+
+      // Cập nhật courseRegister cho user
+      await this.updateCourseForUser(order);
+
+      // Xóa giỏ hàng
+      await this.clearCartUser(order);
+
+      console.log(`✅ QR payment confirmed for order ${webhookResult.orderId}`);
+
+      sendSuccess(res, {
+        message: "Payment confirmed successfully",
+        order
+      });
+    } catch (error: any) {
+      console.error("❌ SePay webhook error:", error);
+      sendError(res, 500, error.message, error as Error);
+    }
+  }
+
+  /**
+   * Kiểm tra trạng thái thanh toán QR code
+   */
+  public async checkQRPaymentStatus(req: Request, res: Response) {
+    try {
+      const { orderId } = req.params;
+
+      if (!orderId) {
+        return sendError(res, 400, "Order ID is required");
+      }
+
+      const order = await OrderModel.findOne({ orderId });
+
+      if (!order) {
+        return sendError(res, 404, "Order not found");
+      }
+
+      // Nếu đã thanh toán, trả về thông tin
+      if (order.paymentStatus === 'completed') {
+        return sendSuccess(res, {
+          message: "Payment completed",
+          order,
+          paid: true
+        });
+      }
+
+      // Nếu chưa thanh toán, có thể kiểm tra với SePay API
+      // (Tùy chọn: polling SePay API để kiểm tra)
+      sendSuccess(res, {
+        message: "Payment pending",
+        order,
+        paid: false
+      });
+    } catch (error: any) {
+      console.error("❌ Check QR payment status error:", error);
+      sendError(res, 500, error.message, error as Error);
     }
   }
 }

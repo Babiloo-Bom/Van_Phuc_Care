@@ -179,7 +179,7 @@
                   <h4 class="text-base sm:text-lg font-bold text-gray-800 mb-3">
                     Nhập mã ưu đãi
                   </h4>
-                  <CouponInput />
+                  <CouponInput @coupon-applied="handleCouponApplied" />
                 </div>
                 
                 <!-- Payment Summary -->
@@ -219,7 +219,8 @@
                     type="primary"
                     size="large"
                     class="w-full !bg-[#1A75BB] !h-12 sm:!h-14 !text-white !border-prim-100 !text-base sm:!text-base !font-semibold !rounded-lg"
-                    :disabled="cartItems.length === 0"
+                    :disabled="cartItems.length === 0 || isProcessingOrderQr"
+                    :loading="isProcessingOrderQr"
                     @click="handlePayment('qr')"
                   >
                     Thanh toán bằng QR Banking
@@ -269,6 +270,70 @@
 
     <!-- Cart Toast -->
     <CartToast />
+
+    <!-- QR Payment Modal -->
+    <a-modal
+      v-model:open="showQrModal"
+      :footer="null"
+      :closable="true"
+      :maskClosable="false"
+      centered
+      width="520px"
+    >
+      <div class="py-4 px-4 sm:px-6">
+        <h3 class="text-lg sm:text-xl font-bold text-center text-gray-800 mb-4">
+          Quét mã QR để thanh toán
+        </h3>
+
+        <div v-if="qrInfo" class="text-center">
+          <div class="inline-block bg-white p-4 rounded-xl shadow-sm border border-gray-100">
+            <!-- SePay /img trả về ảnh QR nên có thể nhúng trực tiếp -->
+            <img
+              :src="qrInfo.qrCode"
+              alt="QR thanh toán MB Bank"
+              class="w-64 h-64 mx-auto rounded-lg object-contain"
+            >
+          </div>
+
+          <p class="text-sm text-gray-600 mt-4">
+            Mở ứng dụng ngân hàng / ví điện tử, chọn quét QR và xác nhận thanh toán.
+          </p>
+
+          <div class="mt-4 text-sm text-gray-700 space-y-1 text-left max-w-sm mx-auto">
+            <p>
+              <span class="font-semibold">Ngân hàng:</span>
+              <span class="ml-1">MB Bank</span>
+            </p>
+            <p>
+              <span class="font-semibold">Số tài khoản:</span>
+              <span class="ml-1">{{ qrInfo.accountNo }}</span>
+            </p>
+            <p>
+              <span class="font-semibold">Chủ tài khoản:</span>
+              <span class="ml-1">{{ qrInfo.accountName }}</span>
+            </p>
+            <p>
+              <span class="font-semibold">Số tiền:</span>
+              <span class="ml-1 text-primary-100 font-bold">
+                {{ Number(qrInfo.amount).toLocaleString('vi-VN') }}đ
+              </span>
+            </p>
+            <p>
+              <span class="font-semibold">Nội dung chuyển khoản:</span>
+              <span class="ml-1 text-gray-900 break-words">{{ qrInfo.content }}</span>
+            </p>
+          </div>
+
+          <p class="mt-4 text-xs text-gray-500">
+            Sau khi thanh toán thành công, hệ thống sẽ tự động kích hoạt khóa học và chuyển bạn đến trang học.
+          </p>
+        </div>
+
+        <div v-else class="text-center text-gray-500 py-8">
+          Đang chuẩn bị mã QR thanh toán...
+        </div>
+      </div>
+    </a-modal>
   </div>
 </template>
 
@@ -278,6 +343,7 @@ import { message } from 'ant-design-vue'
 import { useCartStore } from '~/stores/cart'
 import { useAuthStore } from '~/stores/auth'
 import { useCoursesStore } from '~/stores/courses'
+import { useApiBase } from '~/composables/useApiBase'
 import CartToast from '~/components/cart/Toast.vue'
 import CouponInput from '~/components/cart/CouponInput.vue'
 import Rating from '~/components/courses/Rating.vue'
@@ -286,14 +352,24 @@ const cartStore = useCartStore()
 const authStore = useAuthStore()
 const coursesStore = useCoursesStore()
 
-// Loading state for bypass payment
+// Loading state for payments
 const isProcessingOrder = ref(false)
 const isProcessingOrderVnpay = ref(false)
+const isProcessingOrderQr = ref(false)
+
+// QR payment state (SePay)
+const showQrModal = ref(false)
+const qrInfo = ref<any | null>(null)
+const qrPaymentStatus = ref<'pending' | 'completed'>('pending')
+let qrStatusInterval: any = null
 
 // Reactive data
 const cartItems = computed(() => {
   return cartStore.items || []
 })
+
+// Trạng thái: người dùng có vừa áp dụng mã giảm giá trong phiên hiện tại không
+const hasAppliedCoupon = ref(false)
 
 // Computed properties
 const subtotalPrice = computed(() => {
@@ -302,21 +378,28 @@ const subtotalPrice = computed(() => {
   }, 0)
 })
 
-const vatPrice = computed(() => {
-  return (subtotalPrice.value - discountAmount.value) * 0.08 
-})
-
+// Chỉ hiển thị/áp dụng mã ưu đãi nếu user vừa apply ở phiên hiện tại
 const appliedCoupon = computed(() => {
+  if (!hasAppliedCoupon.value) return null
   return cartStore.cart?.coupon || null
 })
 
+// Chỉ trừ tiền khi THỰC SỰ có mã ưu đãi được áp dụng,
+// và không cho giảm quá số tiền sản phẩm (tránh tổng tiền âm)
 const discountAmount = computed(() => {
-  // Get discount amount from coupon or cart summary
-  return cartStore.cart?.coupon?.discountAmount || cartStore.cart?.discountAmount || 0
+  if (!appliedCoupon.value) return 0
+  const rawDiscount = appliedCoupon.value.discountAmount || 0
+  if (rawDiscount <= 0) return 0
+  return Math.min(rawDiscount, subtotalPrice.value)
+})
+
+const vatPrice = computed(() => {
+  const taxableAmount = Math.max(subtotalPrice.value - discountAmount.value, 0)
+  return taxableAmount * 0.08
 })
 
 const finalPrice = computed(() => {
-  return subtotalPrice.value - discountAmount.value
+  return Math.max(subtotalPrice.value - discountAmount.value, 0)
 })
 
 // Keep totalPrice for backward compatibility
@@ -401,6 +484,9 @@ const getExamCount = (course: any): number => {
 }
 
 // Methods
+const handleCouponApplied = () => {
+  hasAppliedCoupon.value = true
+}
 const handleRemoveFromCart = async (course: any) => {
   try {
     // Use courseId field (not _id which is cart item ID)
@@ -424,9 +510,159 @@ const handlePayment = async (method: string) => {
     await processVnPay()
     return
   }
-  
-  // For other methods, navigate to checkout
+
+  if (method === 'qr') {
+    await processQrOrder()
+    return
+  }
+
+  // Các phương thức khác (nếu có) có thể điều hướng sang checkout
   navigateTo(`/checkout?method=${method}`)
+}
+
+const clearQrInterval = () => {
+  if (qrStatusInterval) {
+    clearInterval(qrStatusInterval)
+    qrStatusInterval = null
+  }
+}
+
+const startQrStatusPolling = (orderId: string) => {
+  if (!process.client) return
+
+  clearQrInterval()
+  const { apiUser } = useApiBase()
+
+  qrStatusInterval = setInterval(async () => {
+    try {
+      const res: any = await $fetch(`${apiUser}/orders/payment/qr/status/${orderId}?t=${Date.now()}`)
+      if (res?.data?.paid) {
+        qrPaymentStatus.value = 'completed'
+        clearQrInterval()
+
+        // Clear cart sau khi thanh toán thành công
+        await cartStore.clearCart()
+
+        // Refresh "Khóa học của tôi"
+        try {
+          await coursesStore.fetchMyCourses()
+        } catch (e) {
+          console.warn('Không thể tải danh sách khóa học sau thanh toán QR:', e)
+        }
+
+        // Lấy thông tin khóa học từ order để chuyển thẳng sang trang học
+        const order = res.data.order as any
+        const firstItem = order?.items?.[0]
+        const courseSlug =
+          firstItem?.course?.slug ||
+          firstItem?.course?.seoUrl ||
+          firstItem?.course?.slugify ||
+          null
+
+        showQrModal.value = false
+
+        if (courseSlug) {
+          await navigateTo(`/my-learning/${courseSlug}`)
+        } else {
+          await navigateTo('/my-learning')
+        }
+      }
+    } catch (error) {
+      console.error('❌ Check QR payment status failed (cart):', error)
+    }
+  }, 5000)
+}
+
+const processQrOrder = async () => {
+  if (cartItems.value.length === 0) return
+  const { apiUser } = useApiBase()
+
+  try {
+    isProcessingOrderQr.value = true
+
+    // Yêu cầu đăng nhập
+    if (!authStore.user || !authStore.user.id) {
+      await navigateTo('/login')
+      return
+    }
+
+    // Chuẩn bị dữ liệu đơn hàng
+    const orderData = {
+      userId: authStore.user.id,
+      customerInfo: {
+        fullName: authStore.user.fullname || authStore.user.name || '',
+        phone: authStore.user.phone || '',
+        email: authStore.user.email || ''
+      },
+      items: cartItems.value.map((item: any) => ({
+        courseId: item.courseId || item.course?._id || item._id,
+        course: item.course || item,
+        price: item.course?.price || item.price || 0
+      })),
+      subtotal: subtotalPrice.value,
+      discount: appliedCoupon.value ? {
+        type: appliedCoupon.value.type,
+        value: appliedCoupon.value.value,
+        amount: discountAmount.value,
+        couponCode: appliedCoupon.value.code
+      } : null,
+      totalAmount: totalPrice.value,
+      paymentMethod: 'qr',
+      notes: ''
+    }
+
+    // Tạo đơn hàng
+    const orderResponse: any = await $fetch(`${apiUser}/orders`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json'
+      },
+      body: orderData
+    })
+
+    if (!orderResponse.data || !orderResponse.data.order) {
+      throw new Error('Failed to create order')
+    }
+
+    const order = orderResponse.data.order
+
+    // Gọi API tạo QR SePay
+    const qrResponse: any = await $fetch(`${apiUser}/orders/payment/qr/create`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json'
+      },
+      body: {
+        orderId: order.orderId
+      }
+    })
+
+    qrInfo.value = qrResponse?.data?.qrData || null
+    qrPaymentStatus.value = 'pending'
+
+    if (!qrInfo.value) {
+      throw new Error('Không tạo được mã QR thanh toán')
+    }
+
+    // Hiện popup QR ngay trên trang giỏ hàng
+    showQrModal.value = true
+
+    // Bắt đầu kiểm tra trạng thái thanh toán
+    startQrStatusPolling(order.orderId)
+
+  } catch (error: any) {
+    console.error('❌ Error processing QR order:', error)
+    const errorMsg = error.data?.message || error.message || 'Có lỗi xảy ra khi tạo thanh toán QR'
+    message.error({
+      content: errorMsg,
+      duration: 5,
+      style: {
+        marginTop: '80px',
+      },
+    })
+  } finally {
+    isProcessingOrderQr.value = false
+  }
 }
 
 const processBypassOrder = async () => {

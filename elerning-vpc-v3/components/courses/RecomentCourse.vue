@@ -34,6 +34,7 @@
 
 <script setup lang="ts">
 import { ref, computed, onMounted } from 'vue'
+import { message } from 'ant-design-vue'
 import { useCoursesStore } from '~/stores/courses'
 import { useAuthStore } from '~/stores/auth'
 import { useCartStore } from '~/stores/cart'
@@ -72,18 +73,29 @@ const fetchCourses = async () => {
 // Event handlers
 const handleAddToCart = async (course: any) => {
   try {
-    await cartStore.addToCart({ courseId: course._id, quantity: 1 })
-  } catch (error) {
-    console.error('❌ Error adding to cart:', error)
+    await cartStore.addToCart({ courseId: course._id, quantity: 1, userId: String(authStore.user?.id) || "" })
+  } catch (error: any) {
+    const msg = error?.data?.message || error?.message || ''
+    if (msg.toLowerCase().includes('already in cart') || msg.includes('trong giỏ')) {
+      message.warning('Khóa học đã tồn tại trong giỏ hàng')
+    } else {
+      message.error('Không thể thêm vào giỏ hàng')
+    }
   }
 }
 
 const handleBuyNow = async (course: any) => {
   try {
-    await cartStore.addToCart({ courseId: course._id, quantity: 1 })
+    await cartStore.addToCart({ courseId: course._id, quantity: 1, userId: String(authStore.user?.id) || "" })
     navigateTo('/cart')
-  } catch (error) {
-    console.error('❌ Error buying now:', error)
+  } catch (error: any) {
+    const msg = error?.data?.message || error?.message || ''
+    if (msg.toLowerCase().includes('already in cart') || msg.includes('trong giỏ')) {
+      message.warning('Khóa học đã tồn tại trong giỏ hàng')
+      navigateTo('/cart')
+    } else {
+      message.error('Không thể mua ngay lúc này')
+    }
   }
 }
 

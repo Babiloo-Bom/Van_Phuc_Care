@@ -133,7 +133,7 @@ export const useAuthApi = () => {
     if (error instanceof AuthError) {
       return error;
     }
-    console.log("Transforming error:", error);
+
     // Try to extract message from API response
     let customMessage = null;
     if (error.data?.error) {
@@ -312,13 +312,12 @@ export const useAuthApi = () => {
      * Forgot password - Send OTP to email
      * @param email Email
      */
-    async forgotPassword(email: string, source?: string) {
+    async forgotPassword(email: string) {
       try {
-        // Call Nuxt server API instead of backend directly
         return await withRetry(() =>
-          fetchWithTimeout(`/api/sessions/forgot-password`, {
+          fetchWithTimeout(`${apiBase}/passwords/forgot_password`, {
             method: 'POST',
-            body: { email, source },
+            body: { email },
           }),
         );
       } catch (error: any) {
@@ -340,47 +339,6 @@ export const useAuthApi = () => {
               token,
               password: newPassword,
             },
-          }),
-        );
-      } catch (error: any) {
-        throw transformError(error);
-      }
-    },
-
-    /**
-     * Reset password for user using email + token (OTP)
-     * POST /sessions/reset_password with { email, token, newPassword, confirmPassword }
-     */
-    async resetPasswordWithEmail(email: string, token: string, newPassword: string) {
-      try {
-        // Call Nuxt server API instead of backend directly
-        return await withRetry(() =>
-          fetchWithTimeout(`/api/sessions/reset-password`, {
-            method: 'POST',
-            body: {
-              email,
-              token,
-              newPassword,
-              confirmPassword: newPassword,
-            },
-          }),
-        );
-      } catch (error: any) {
-        throw transformError(error);
-      }
-    },
-
-    /**
-     * Verify OTP for user (email + otp)
-     * POST /sessions/verify_otp
-     */
-    async verifyOtp(email: string, otp: string) {
-      try {
-        // Call Nuxt server API instead of backend directly
-        return await withRetry(() =>
-          fetchWithTimeout(`/api/sessions/verify-otp`, {
-            method: 'POST',
-            body: { email, otp },
           }),
         );
       } catch (error: any) {

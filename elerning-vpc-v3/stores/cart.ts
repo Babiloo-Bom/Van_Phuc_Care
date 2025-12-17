@@ -195,7 +195,29 @@ export const useCartStore = defineStore('cart', {
           course: null, // We don't have course info in the new API
         })
         
-      } catch (error) {
+      } catch (error: any) {
+        const rawMsg =
+          (error?.data && (error.data.message || error.data.error)) ||
+          error?.message ||
+          ''
+        const msg = String(rawMsg)
+
+        // Nếu khoá học đã có trong giỏ -> không coi là lỗi, show toast thông báo
+        if (msg.toLowerCase().includes('already in cart')) {
+          try {
+            await this.fetchCart()
+          } catch {}
+
+          this.showToast({
+            status: true,
+            type: 'info',
+            course: null,
+          })
+
+          // Không throw nữa để phía UI không hiện lỗi
+          return
+        }
+
         this.setError('Không thể thêm vào giỏ hàng')
         throw error
       } finally {

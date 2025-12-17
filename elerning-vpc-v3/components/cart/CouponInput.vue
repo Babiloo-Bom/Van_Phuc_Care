@@ -46,6 +46,10 @@ import { useAuthStore } from '~/stores/auth'
 const cartStore = useCartStore()
 const authStore = useAuthStore()
 
+const emit = defineEmits<{
+  (e: 'coupon-applied'): void
+}>()
+
 const couponCode = ref('')
 const isLoading = ref(false)
 const errorMessage = ref('')
@@ -92,6 +96,9 @@ const applyCoupon = async () => {
       
       successMessage.value = `Áp dụng mã "${cartStore.cart?.coupon?.name || couponCode.value}" thành công!`
       couponCode.value = ''
+
+      // Thông báo cho trang giỏ hàng biết là người dùng vừa áp dụng mã
+      emit('coupon-applied')
       setTimeout(() => {
         successMessage.value = ''
       }, 3000)

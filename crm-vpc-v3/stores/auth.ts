@@ -288,30 +288,23 @@ export const useAuthStore = defineStore('auth', {
         const authApi = useAuthApi();
 
         // Call API register
-        const response: any = await authApi.register(email, password, repeatPassword, fullname, phone);
+        const response: any = await authApi.register(
+          email,
+          password,
+          repeatPassword,
+          fullname,
+          phone,
+        );
+
         return { success: true, data: response };
       } catch (error: any) {
         console.error('Register error:', error);
-        console.error('Register error.data:', error.data);
-        console.error('Register error.message:', error.message);
-        console.error('Register error.statusMessage:', error.statusMessage);
-        
-        // Extract error message from various formats
-        let errorMessage = 'Email đã được sử dụng, vui lòng nhập email khác!';
-        
-        if (error.data?.message) {
-          errorMessage = error.data.message;
-        } else if (error.data?.error && typeof error.data.error === 'string') {
-          errorMessage = error.data.error;
-        } else if (error.statusMessage && typeof error.statusMessage === 'string') {
-          errorMessage = error.statusMessage;
-        } else if (error.message && typeof error.message === 'string') {
-          errorMessage = error.message;
-        }
-        
         return {
           success: false,
-          error: errorMessage,
+          error:
+            error.data?.message ||
+            error.message ||
+            'Email đã được sử dụng, vui lòng nhập email khác!',
         };
       } finally {
         this.isLoading = false;
@@ -321,7 +314,7 @@ export const useAuthStore = defineStore('auth', {
     /**
      * Verify email with OTP (after registration)
      * Migrated from crm-vpc/components/auth/forms/SignUp.vue
-     * Updated: Auto login after successful verification (same logic as login)
+     * Updated: Auto login after successful verification
      */
     async verifyEmail(email: string, otp: string) {
       this.isLoading = true;
@@ -332,90 +325,32 @@ export const useAuthStore = defineStore('auth', {
         // Verify OTP - API returns accessToken if successful
         const response: any = await authApi.verifyEmail(email, otp);
         
-        // Handle response - may be wrapped in { data: {...} } or direct
-        const responseData = response?.data || response;
-        
-        // Auto login: Save token and user info from response (same as login flow)
-        if (responseData?.accessToken) {
-          const token = responseData.accessToken;
-          const tokenExpireAt = responseData.tokenExpireAt;
+        // Auto login: Save token and user info from response
+        if (response?.accessToken) {
+          this.token = response.accessToken;
           
-          this.token = token;
-          this.tokenExpireAt = tokenExpireAt
-            ? this.calculateExpireTime(tokenExpireAt)
+          // Handle tokenExpireAt from response
+          this.tokenExpireAt = response.tokenExpireAt
+            ? this.calculateExpireTime(response.tokenExpireAt)
             : this.calculateExpireTime('7d');
+          
+          this.user = {
+            id: response.id,
+            email: response.email,
+            fullname: response.fullname,
+            username: response.username,
+          };
           this.isAuthenticated = true;
           
-          // Fetch full user profile data from API
-          try {
-            const profileResponse = (await authApi.getUserProfile()) as any;
-            const userData = profileResponse?.data?.user || profileResponse?.data?.data || profileResponse?.data;
-            
-            this.user = {
-              id: userData?._id || userData?.id || responseData.id || 'temp-id',
-              email: userData?.email || responseData.email || email,
-              username: userData?.username || responseData.username || email,
-              fullname: userData?.fullname || userData?.name || responseData.fullname || email,
-              name: userData?.name || userData?.fullname,
-              phone: userData?.phoneNumber || userData?.phone,
-              avatar: userData?.avatar,
-              role: userData?.role || userData?.type,
-              verified: true,
-              status: userData?.status || 'active',
-              fullAddress: userData?.fullAddress || '',
-              address: userData?.address || '',
-              courseRegister: userData?.courseRegister || [],
-              courseCompleted: userData?.courseCompleted || [],
-            };
-          } catch (profileError) {
-            console.error('⚠️ Failed to fetch user profile after verify, using basic data:', profileError);
-            // Fallback to basic user data if profile fetch fails
-            this.user = {
-              id: responseData.id || 'temp-id',
-              email: responseData.email || email,
-              username: responseData.username || email,
-              fullname: responseData.fullname || email,
-              verified: true,
-              status: 'active',
-            };
-          }
-          
-          // Save to localStorage (same as login)
+          // Persist to localStorage
           if (import.meta.client) {
-            localStorage.setItem('auth_token', token);
+            localStorage.setItem('auth_token', response.accessToken);
             localStorage.setItem('token_expire_at', this.tokenExpireAt || '');
             localStorage.setItem('user', JSON.stringify(this.user));
-            
-            // Also save authData for initAuth compatibility
-            const authData = {
-              user: this.user,
-              token: this.token,
-              tokenExpireAt: this.tokenExpireAt,
-              rememberAccount: false,
-            };
-            localStorage.setItem('authData', JSON.stringify(authData));
           }
           
-          // Set justLoggedIn flag to prevent auto-logout for 15 seconds (same as login)
-          this.justLoggedIn = true;
-          this.loginTimestamp = Date.now();
-          console.log('[VerifyEmail] Set justLoggedIn flag, timestamp:', this.loginTimestamp);
-          
-          // Clear any leftover logout sync cookie when logging in
-          if (process.client) {
-            try {
-              const { clearLogoutSyncCookie } = await import('~/utils/authSync');
-              clearLogoutSyncCookie();
-              console.log('[VerifyEmail] Cleared logout sync cookie');
-            } catch (e) {
-              console.warn('[VerifyEmail] Failed to clear logout sync cookie:', e);
-            }
-          }
-          
-          setTimeout(() => {
-            this.justLoggedIn = false;
-            console.log('[VerifyEmail] Cleared justLoggedIn flag after 15 seconds');
-          }, 15000); // 15 seconds grace period
+          // Fetch full user profile
+          await this.refreshUserData();
         }
 
         return { success: true, user: this.user, token: this.token };
@@ -445,13 +380,13 @@ export const useAuthStore = defineStore('auth', {
      * Forgot password - Send OTP
      * Migrated from admin-vpc/components/auth/forms/GetOtp.vue
      */
-    async forgotPassword(email: string, source?: string) {
+    async forgotPassword(email: string) {
       this.isLoading = true;
 
       try {
         const authApi = useAuthApi();
 
-        await authApi.forgotPassword(email, source);
+        await authApi.forgotPassword(email);
 
         return { success: true };
       } catch (error: any) {
@@ -469,13 +404,13 @@ export const useAuthStore = defineStore('auth', {
      * Reset password with token
      * Migrated from admin-vpc/components/auth/forms/NewPassword.vue
      */
-    async resetPassword(email: string, token: string, newPassword: string) {
+    async resetPassword(token: string, newPassword: string) {
       this.isLoading = true;
 
       try {
         const authApi = useAuthApi();
 
-        await authApi.resetPasswordWithEmail(email, token, newPassword);
+        await authApi.resetPassword(token, newPassword);
 
         return { success: true };
       } catch (error: any) {
@@ -485,20 +420,6 @@ export const useAuthStore = defineStore('auth', {
           error:
             error.data?.message || error.message || 'Đổi mật khẩu thất bại',
         };
-      } finally {
-        this.isLoading = false;
-      }
-    },
-
-    async verifyOtp(email: string, otp: string) {
-      this.isLoading = true;
-      try {
-        const authApi = useAuthApi();
-        await authApi.verifyOtp(email, otp);
-        return { success: true };
-      } catch (error: any) {
-        console.error('Verify OTP error:', error);
-        return { success: false, error: error.data?.message || error.message || 'Xác thực OTP thất bại' };
       } finally {
         this.isLoading = false;
       }

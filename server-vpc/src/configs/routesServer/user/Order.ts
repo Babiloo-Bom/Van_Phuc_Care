@@ -49,4 +49,7 @@ router.post('/payment', OrderController.processPayment);
 router.post('/payment/vnpay', (req, res) => OrderController.processPaymentVnpay(req, res));
 router.post('/payment/vnpay-ipn', (req, res) => OrderController.paymentVnpayIpn(req, res));
 router.post('/payment/vnpay-verify', (req, res) => OrderController.paymentVnpayVerify(req, res));
+router.post('/payment/qr/create', OrderController.createQRCode);
+router.post('/payment/sepay-webhook', (req, res) => OrderController.sepayWebhook(req, res));
+router.get('/payment/qr/status/:orderId', OrderController.checkQRPaymentStatus);
 export default router;

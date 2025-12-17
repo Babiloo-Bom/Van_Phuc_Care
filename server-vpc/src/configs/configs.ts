@@ -17,6 +17,15 @@ export default {
     vnp_ReturnUrl: process.env.VNP_RETURN_URL || "http://localhost:3102/vnpay-return",
     vnp_IpnUrl: process.env.IPN_URL || "http://localhost:3000/orders/vnpay/ipn",
   },
+  sepayConfig: {
+    apiToken: process.env.SEPAY_API_TOKEN || "GL23FZNXPG7O2QVFMNTY8AWIX46WUIXSWTC4BYVALU5Q93CA05BHMFXLVJGFN6JK",
+    qrApiUrl: process.env.SEPAY_QR_API_URL || "https://qr.sepay.vn/qr-mbbank.html",
+    apiBaseUrl: process.env.SEPAY_API_BASE_URL || "https://api.sepay.vn",
+    bankCode: "MB",
+    accountNo: process.env.SEPAY_ACCOUNT_NO || "655123456888",
+    accountName: process.env.SEPAY_ACCOUNT_NAME || "Công Ty TNHH Vạn Phúc Care",
+    webhookUrl: process.env.SEPAY_WEBHOOK_URL || "http://localhost:3000/api/u/orders/payment/sepay-webhook",
+  },
   mailerTransporter: {
     host: process.env.SMTP_HOST || "smtp.gmail.com",
     port: parseInt(process.env.SMTP_PORT || "587"),

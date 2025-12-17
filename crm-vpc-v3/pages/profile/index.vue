@@ -58,18 +58,16 @@
                       { 
                         required: false,
                         validator: validatePhoneNumber,
-                        trigger: ['blur', 'change']
+                        trigger: 'blur'
                       }
                     ]"
                   >
                     <a-input
                       v-model:value="infoForm.phone"
-                      placeholder="0923333389"
+                      placeholder="092 333 3389"
                       size="large"
                       maxlength="10"
-                      @keypress="handlePhoneKeypress"
                       @input="handlePhoneInput"
-                      @paste="handlePhonePaste"
                     />
                   </a-form-item>
                   <a-form-item label="Email" name="email" class="flex-1">
@@ -264,32 +262,13 @@ const validatePhoneNumber = (_rule: any, value: string) => {
   });
 };
 
-// Handle phone keypress - prevent non-digit characters from being typed
-const handlePhoneKeypress = (event: KeyboardEvent) => {
-  // Allow only digits (0-9)
-  if (!/^\d$/.test(event.key)) {
-    event.preventDefault();
-  }
-};
-
-// Handle phone input - clean any non-digit characters (fallback)
+// Handle phone input - only allow digits
 const handlePhoneInput = (event: Event) => {
   const input = event.target as HTMLInputElement;
   const value = input.value;
   // Remove all non-digit characters
   const digitsOnly = value.replace(/\D/g, '');
-  // Update form value if changed
-  if (value !== digitsOnly) {
-    infoForm.phone = digitsOnly;
-  }
-};
-
-// Handle phone paste - clean pasted content
-const handlePhonePaste = (event: ClipboardEvent) => {
-  event.preventDefault();
-  const pastedText = event.clipboardData?.getData('text') || '';
-  // Extract only digits from pasted content
-  const digitsOnly = pastedText.replace(/\D/g, '').slice(0, 10);
+  // Update form value
   infoForm.phone = digitsOnly;
 };
 

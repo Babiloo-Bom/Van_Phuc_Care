@@ -108,22 +108,60 @@
                   @method-selected="onPaymentMethodSelected"
                 />
                 
-                <!-- QR Code Section -->
-                <div v-if="checkoutForm.paymentMethod === 'qr'" class="mt-8 p-6 bg-gray-50 rounded-xl border border-gray-200">
+                <!-- QR Code Section (SePay MB Bank) -->
+                <div
+                  v-if="checkoutForm.paymentMethod === 'qr' && qrInfo"
+                  class="mt-8 p-6 bg-gray-50 rounded-xl border border-gray-200"
+                >
                   <div class="text-center">
-                    <h5 class="text-lg font-semibold text-gray-800 mb-4">Quét mã QR để thanh toán</h5>
+                    <h5 class="text-lg font-semibold text-gray-800 mb-4">
+                      Quét mã QR MB Bank để thanh toán
+                    </h5>
                     <div class="bg-white p-4 rounded-lg shadow-sm inline-block">
-                      <div id="qrcode" class="flex justify-center"></div>
+                      <!-- SePay /img trả về ảnh QR nên có thể nhúng trực tiếp -->
+                      <img
+                        :src="qrInfo.qrCode"
+                        alt="QR thanh toán MB Bank"
+                        class="w-64 h-64 mx-auto rounded-lg object-contain"
+                      >
                     </div>
                     <p class="text-sm text-gray-600 mt-4">
-                      Sử dụng ứng dụng ngân hàng hoặc ví điện tử để quét mã QR này
+                      Mở ứng dụng ngân hàng / ví điện tử, chọn quét QR và xác nhận thanh toán.
                     </p>
+
+                    <div class="mt-4 text-sm text-gray-700 space-y-1">
+                      <p>
+                        <span class="font-semibold">Ngân hàng:</span>
+                        <span class="ml-1">MB Bank</span>
+                      </p>
+                      <p>
+                        <span class="font-semibold">Số tài khoản:</span>
+                        <span class="ml-1">{{ qrInfo.accountNo }}</span>
+                      </p>
+                      <p>
+                        <span class="font-semibold">Chủ tài khoản:</span>
+                        <span class="ml-1">{{ qrInfo.accountName }}</span>
+                      </p>
+                      <p>
+                        <span class="font-semibold">Số tiền:</span>
+                        <span class="ml-1 text-primary-100 font-bold">
+                          {{ Number(qrInfo.amount).toLocaleString('vi-VN') }}đ
+                        </span>
+                      </p>
+                      <p>
+                        <span class="font-semibold">Nội dung chuyển khoản:</span>
+                        <span class="ml-1 text-gray-900">{{ qrInfo.content }}</span>
+                      </p>
+                    </div>
+
                     <div class="mt-4 flex items-center justify-center gap-2 text-sm text-primary-100">
                       <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" class="fill-none stroke-current">
                         <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10Z" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
                         <path d="M9 12l2 2 4-4" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
                       </svg>
-                      <span>Thanh toán được bảo mật 100%</span>
+                      <span>
+                        Đơn hàng sẽ được kích hoạt tự động sau khi thanh toán thành công.
+                      </span>
                     </div>
                   </div>
                 </div>
@@ -262,10 +300,11 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, onMounted, nextTick, watch } from 'vue'
+import { ref, computed, onMounted, onUnmounted, nextTick, watch } from 'vue'
 import { useCartStore } from '~/stores/cart'
 import { useAuthStore } from '~/stores/auth'
 import { usePayment } from '~/composables/usePayment'
+import { useApiBase } from '~/composables/useApiBase'
 import PaymentMethodSelector from '~/components/payment/PaymentMethodSelector.vue'
 
 const cartStore = useCartStore()
@@ -290,8 +329,10 @@ const checkoutForm = ref({
   paymentMethod: 'vnpay'
 })
 
-// QR Code state
-const qrCodeGenerated = ref(false)
+// QR Code state (dùng QR thật từ backend SePay)
+const qrInfo = ref<any | null>(null)
+const qrPaymentStatus = ref<'pending' | 'completed'>('pending')
+let qrStatusInterval: any = null
 
 // Form validation rules - only validate for non-bypass payments
 const formRules = computed(() => {
@@ -351,57 +392,52 @@ watch(() => cartStore.totalPrice, (newPrice) => {
 // Methods
 const onPaymentMethodSelected = (method: any) => {
   checkoutForm.value.paymentMethod = method.id
-  
-  if (method.id === 'qr' && !qrCodeGenerated.value) {
-    generateQRCode()
-  }
 }
 
 const handlePaymentMethodChange = () => {
-  if (checkoutForm.value.paymentMethod === 'qr' && !qrCodeGenerated.value) {
-    generateQRCode()
+  // Giữ placeholder để tương thích, hiện tại không làm gì thêm
+}
+
+const clearQRInterval = () => {
+  if (qrStatusInterval) {
+    clearInterval(qrStatusInterval)
+    qrStatusInterval = null
   }
 }
 
-const generateQRCode = () => {
-  if (process.client) {
-    // Clear existing QR code
-    const qrContainer = document.getElementById('qrcode')
-    if (qrContainer) {
-      qrContainer.innerHTML = ''
+const startQRStatusPolling = (orderId: string) => {
+  if (!process.client) return
+
+  clearQRInterval()
+  const { apiUser } = useApiBase()
+
+  qrStatusInterval = setInterval(async () => {
+    try {
+      const res: any = await $fetch(`${apiUser}/orders/payment/qr/status/${orderId}?t=${Date.now()}`)
+      if (res?.data?.paid) {
+        qrPaymentStatus.value = 'completed'
+        clearQRInterval()
+        await cartStore.clearCart()
+
+        // Lấy thông tin khóa học từ order để chuyển thẳng sang trang học
+        const order = res.data.order as any
+        const firstItem = order?.items?.[0]
+        const courseSlug =
+          firstItem?.course?.slug ||
+          firstItem?.course?.seoUrl ||
+          firstItem?.course?.slugify ||
+          null
+
+        if (courseSlug) {
+          await navigateTo(`/my-learning/${courseSlug}`)
+        } else {
+          await navigateTo('/my-learning')
+        }
+      }
+    } catch (error) {
+      console.error('❌ Check QR payment status failed:', error)
     }
-    
-    // Generate QR code data
-    const qrData = {
-      amount: totalPrice.value,
-      orderId: `VPC${Date.now()}`,
-      description: `Thanh toán khóa học - ${cartItems.value.map(c => c.title).join(', ')}`,
-      timestamp: new Date().toISOString()
-    }
-    
-    // Create QR code (using a simple text-based QR for demo)
-    // In production, you would use a proper QR code library like qrcode.js
-    const qrText = `Thanh toán: ${totalPrice.value.toLocaleString('vi-VN')}đ\nMã đơn hàng: ${qrData.orderId}\nMô tả: ${qrData.description}`
-    
-    if (qrContainer) {
-      qrContainer.innerHTML = `
-        <div class="w-48 h-48 bg-white border-2 border-gray-200 rounded-lg flex items-center justify-center">
-          <div class="text-center p-4">
-            <div class="w-32 h-32 bg-gray-100 rounded border-2 border-dashed border-gray-300 flex items-center justify-center mb-2">
-              <svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 24 24" class="fill-none stroke-gray-400">
-                <path d="M3 11h8a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2v-8a2 2 0 0 1 2-2Z" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
-                <path d="M13 3h8a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2h-8a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2Z" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
-                <path d="M13 13h8M13 17h8M17 13v4" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
-              </svg>
-            </div>
-            <p class="text-xs text-gray-500">QR Code sẽ được tạo tự động</p>
-          </div>
-        </div>
-      `
-    }
-    
-    qrCodeGenerated.value = true
-  }
+  }, 5000)
 }
 
 const handleSubmit = async (e?: Event) => {
@@ -463,6 +499,35 @@ const handleSubmit = async (e?: Event) => {
     }
 
     const order = orderResponse.data.order
+
+    // Thanh toán bằng QR (SePay) - tạo QR động MB Bank + poll trạng thái
+    if (checkoutForm.value.paymentMethod === 'qr') {
+      try {
+        const qrResponse: any = await $fetch(`${apiUser}/orders/payment/qr/create`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json'
+          },
+          body: {
+            orderId: order.orderId
+          }
+        })
+
+        qrInfo.value = qrResponse?.data?.qrData || null
+        qrPaymentStatus.value = 'pending'
+
+        // Bắt đầu kiểm tra trạng thái thanh toán định kỳ
+        startQRStatusPolling(order.orderId)
+      } catch (error) {
+        console.error('❌ Create QR code failed:', error)
+      } finally {
+        loading.value = false
+        isSubmitting.value = false
+      }
+
+      // Không gọi processPayment / không redirect ngay, đợi webhook + polling
+      return
+    }
 
     // Handle bypass payment for demo - skip validation
     if (checkoutForm.value.paymentMethod === 'bypass') {
@@ -543,12 +608,20 @@ definePageMeta({
 
 // Lifecycle
 onMounted(async () => {
-  
+  const route = useRoute()
+
+  // Nếu có query ?method=qr (hoặc method khác) thì set sẵn phương thức thanh toán
+  const methodFromQuery = route.query.method as string | undefined
+  if (methodFromQuery) {
+    checkoutForm.value.paymentMethod = methodFromQuery
+  }
+
   // Redirect if cart is empty
   if (cartItems.value.length === 0) {
     await cartStore.fetchCart()
     if (cartItems.value.length === 0) {
       navigateTo('/cart')
+      return
     }
   }
   
@@ -558,6 +631,15 @@ onMounted(async () => {
     checkoutForm.value.email = authStore.user.email || ''
     checkoutForm.value.phone = authStore.user.phone || ''
   }
+
+  // Nếu tới từ link /checkout?method=qr thì tự động tạo đơn + hiển thị QR luôn
+  if (checkoutForm.value.paymentMethod === 'qr') {
+    await handleSubmit()
+  }
+})
+
+onUnmounted(() => {
+  clearQRInterval()
 })
 </script>
 

@@ -395,8 +395,13 @@ const handleAddToCart = async (course: any) => {
 
   try {
     await cartStore.addToCart({ courseId: course._id, quantity: 1, userId: String(authStore.user?.id) || "" })
-  } catch (error) {
-    console.error("❌ Error adding to cart:", error);
+  } catch (error: any) {
+    const msg = error?.data?.message || error?.message || ""
+    if (msg.toLowerCase().includes("already in cart") || msg.includes("trong giỏ")) {
+      ;(window as any).$message?.warning?.("Khóa học đã tồn tại trong giỏ hàng")
+    } else {
+      ;(window as any).$message?.error?.("Không thể thêm vào giỏ hàng")
+    }
   }
 };
 
@@ -404,8 +409,14 @@ const handleBuyNow = async (course: any) => {
   try {
     await cartStore.addToCart({ courseId: course._id, quantity: 1, userId: String(authStore.user?.id) || "" })
     navigateTo('/cart')
-  } catch (error) {
-    console.error("❌ Error buying now:", error);
+  } catch (error: any) {
+    const msg = error?.data?.message || error?.message || ""
+    if (msg.toLowerCase().includes("already in cart") || msg.includes("trong giỏ")) {
+      ;(window as any).$message?.warning?.("Khóa học đã tồn tại trong giỏ hàng")
+      navigateTo('/cart')
+    } else {
+      ;(window as any).$message?.error?.("Không thể mua ngay lúc này")
+    }
   }
 };
 

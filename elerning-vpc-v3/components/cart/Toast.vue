@@ -91,7 +91,7 @@ const toastTitle = computed(() => {
     case 'error':
       return 'Có lỗi xảy ra!'
     case 'info':
-      return 'Đã xóa khỏi giỏ hàng!'
+      return 'Khóa học đã có trong giỏ hàng!'
     default:
       return ''
   }
