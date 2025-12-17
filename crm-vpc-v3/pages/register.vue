@@ -933,7 +933,7 @@ const handleSuccessClose = () => {
 }
 
 /* Desktop styles */
-@media (max-width: 1024px) {
+@media (min-width: 1024px) {
   .marketing-section {
     display: none;
   }

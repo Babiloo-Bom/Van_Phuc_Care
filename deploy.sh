@@ -17,12 +17,28 @@ fi
 
 echo "🚀 Deploying Van Phuc Care - Environment: $ENVIRONMENT"
 
-# Load environment variables
+# Load environment variables (check both naming conventions)
+ENV_FILE=""
 if [ -f ".env.$ENVIRONMENT" ]; then
-    echo "📦 Loading environment variables from .env.$ENVIRONMENT"
-    export $(grep -v '^#' .env.$ENVIRONMENT | xargs -d '\n')
+    ENV_FILE=".env.$ENVIRONMENT"
+elif [ -f "$ENVIRONMENT.env" ]; then
+    ENV_FILE="$ENVIRONMENT.env"
+fi
+
+if [ -n "$ENV_FILE" ]; then
+    echo "📦 Loading environment variables from $ENV_FILE"
+    set -a  # automatically export all variables
+    source "$ENV_FILE"
+    set +a
+    echo "✅ Environment variables loaded successfully"
+    # Debug: show SMTP config (hide password)
+    echo "   SMTP_HOST=$SMTP_HOST"
+    echo "   SMTP_PORT=$SMTP_PORT"
+    echo "   SMTP_USER=$SMTP_USER"
+    echo "   SMTP_FROM_EMAIL=$SMTP_FROM_EMAIL"
 else
-    echo "⚠️  Warning: .env.$ENVIRONMENT not found, using existing environment variables"
+    echo "⚠️  Warning: Neither .env.$ENVIRONMENT nor $ENVIRONMENT.env found"
+    echo "   Using existing environment variables"
 fi
 
 # Login to GitHub Container Registry (if needed)

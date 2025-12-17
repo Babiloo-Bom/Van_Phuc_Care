@@ -6,9 +6,9 @@ export default {
   esmsConfig: {
     ApiKey: process.env.ESMS_API_KEY,
     SecretKey: process.env.ESMS_SECRET_KEY,
-    Brandname: 'FNOTIFY',
-    SmsType: '2',
-    campaignid: '',
+    Brandname: "FNOTIFY",
+    SmsType: "2",
+    campaignid: "",
   },
   vnpayConfig: {
     vnp_TmnCode: process.env.VNP_TMNCODE || "VPCTEST1",
@@ -18,13 +18,15 @@ export default {
     vnp_IpnUrl: process.env.IPN_URL || "http://localhost:3000/orders/vnpay/ipn",
   },
   mailerTransporter: {
-    host: process.env.SMTP_HOST || 'smtp.gmail.com',
-    port: parseInt(process.env.SMTP_PORT || '587'),
-    secure: false, // Use STARTTLS for port 587
-    requireTLS: true, // Require TLS
+    host: process.env.SMTP_HOST || "smtp.gmail.com",
+    port: parseInt(process.env.SMTP_PORT || "587"),
+    // Port 465 uses implicit TLS (secure=true), port 587 uses STARTTLS (secure=false)
+    secure: process.env.SMTP_SECURE === "true" || parseInt(process.env.SMTP_PORT || "587") === 465,
+    // Only require TLS for non-secure connections (STARTTLS)
+    ...(process.env.SMTP_SECURE !== "true" && parseInt(process.env.SMTP_PORT || "587") !== 465 && { requireTLS: true }),
     auth: {
-      user: process.env.SMTP_USER || '',
-      pass: process.env.SMTP_PASS || '',
+      user: process.env.SMTP_USER || "",
+      pass: process.env.SMTP_PASS || "",
     },
   },
 };
