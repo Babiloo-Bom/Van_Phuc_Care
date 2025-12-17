@@ -56,7 +56,7 @@ export default defineEventHandler(async (event): Promise<GoogleLoginResponse> =>
       }
 
       // Backend response is valid, continue
-
+      //
       // Extract data from backend response
       const userData = backendResponse.data;
       const userInfo = userData.user || userData;

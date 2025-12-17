@@ -19,7 +19,7 @@ const RETRY_CONFIG = {
   retryDelay: 1000, // 1 second
   timeout: 30000, // 30 seconds
 };
-
+//
 export const useAuthApi = () => {
   const config = useRuntimeConfig();
   // Use runtime config, fallback to relative path for production
