@@ -322,31 +322,60 @@ export const useAuthStore = defineStore('auth', {
       try {
         const authApi = useAuthApi();
 
-        // Verify OTP - API returns accessToken if successful
+        // Verify OTP - API returns { message, data: { accessToken, ... } }
         const response: any = await authApi.verifyEmail(email, otp);
         
+        // Response from Nuxt server proxy: { message, data: { accessToken, ... } }
+        // Extract actual data from response.data
+        const responseData = response?.data || response;
+        
         // Auto login: Save token and user info from response
-        if (response?.accessToken) {
-          this.token = response.accessToken;
+        if (responseData?.accessToken) {
+          this.token = responseData.accessToken;
           
           // Handle tokenExpireAt from response
-          this.tokenExpireAt = response.tokenExpireAt
-            ? this.calculateExpireTime(response.tokenExpireAt)
+          this.tokenExpireAt = responseData.tokenExpireAt
+            ? this.calculateExpireTime(responseData.tokenExpireAt)
             : this.calculateExpireTime('7d');
           
           this.user = {
-            id: response.id,
-            email: response.email,
-            fullname: response.fullname,
-            username: response.username,
+            id: responseData._id || responseData.id,
+            email: responseData.email,
+            fullname: responseData.fullname,
+            username: responseData.username,
           };
           this.isAuthenticated = true;
           
+          // Set justLoggedIn flag to prevent auto-logout for 30 seconds
+          this.justLoggedIn = true;
+          this.loginTimestamp = Date.now();
+          console.log('[VerifyEmail] Set justLoggedIn flag, timestamp:', this.loginTimestamp);
+          setTimeout(() => {
+            this.justLoggedIn = false;
+            console.log('[VerifyEmail] Cleared justLoggedIn flag after 30 seconds');
+          }, 30000);
+          
           // Persist to localStorage
           if (import.meta.client) {
-            localStorage.setItem('auth_token', response.accessToken);
+            localStorage.setItem('auth_token', responseData.accessToken);
             localStorage.setItem('token_expire_at', this.tokenExpireAt || '');
             localStorage.setItem('user', JSON.stringify(this.user));
+            localStorage.setItem('login_timestamp', String(this.loginTimestamp));
+            
+            // Also save authData for initAuth compatibility
+            const authData = {
+              user: this.user,
+              token: this.token,
+              tokenExpireAt: this.tokenExpireAt,
+              rememberAccount: this.rememberAccount,
+              loginTimestamp: this.loginTimestamp,
+            };
+            localStorage.setItem('authData', JSON.stringify(authData));
+            
+            // Clear logout sync cookie on successful login
+            const { clearLogoutSyncCookie } = await import('~/utils/authSync');
+            clearLogoutSyncCookie();
+            console.log('[VerifyEmail] Cleared logout sync cookie');
           }
           
           // Fetch full user profile
