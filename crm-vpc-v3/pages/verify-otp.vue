@@ -75,7 +75,7 @@ const verifyOtp = async () => {
       
       // Redirect to home page after 2 seconds (user is already logged in)
       setTimeout(() => {
-        navigateTo("/");
+        // navigateTo("/");
       }, 2000);
     } else {
       error.value = true;
