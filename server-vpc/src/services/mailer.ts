@@ -72,8 +72,14 @@ class MailerService {
       const templateSrc = path.join(__dirname, `../../views/mailer/${templateName}.hbs`);
       const template = handlebars.compile(fs.readFileSync(templateSrc, 'utf-8'));
       const html = template(templateArgs);
+      
+      // Set from address from environment
+      const fromName = process.env.SMTP_FROM_NAME || 'Van Phuc Care';
+      const fromEmail = process.env.SMTP_FROM_EMAIL || process.env.SMTP_USER || '';
+      args.from = `"${fromName}" <${fromEmail}>`;
       args.html = html;
 
+      console.log('📧 Sending email from:', args.from, 'to:', args.to);
       const result = await transporter.sendMail(args);
       console.log('✅ Email sent successfully:', result.messageId);
       return result;
