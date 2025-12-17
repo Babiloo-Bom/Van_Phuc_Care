@@ -295,15 +295,15 @@ export const useAuthStore = defineStore('auth', {
           fullname,
           phone,
         );
-
         return { success: true, data: response };
       } catch (error: any) {
-        console.error('Register error:', error);
+        // Error đã được transform bởi transformError() trong useAuthApi
+        // AuthError có message được set từ API response
         return {
           success: false,
           error:
-            error.data?.message ||
             error.message ||
+            error.data?.message ||
             'Email đã được sử dụng, vui lòng nhập email khác!',
         };
       } finally {

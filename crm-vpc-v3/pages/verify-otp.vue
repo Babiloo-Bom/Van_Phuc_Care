@@ -4,7 +4,7 @@
       <a-spin v-if="loading" size="large" tip="Đang xác minh tài khoản..." />
       <div v-else-if="verified" class="success-message">
         <div class="success-icon">✓</div>
-        <h2>Xác minh thành công!</h2>
+        <h2>Xác minh thành công</h2>
         <p>Đang chuyển hướng về trang chủ...</p>
       </div>
       <div v-else-if="error" class="error-message">
@@ -75,7 +75,7 @@ const verifyOtp = async () => {
       
       // Redirect to home page after 2 seconds (user is already logged in)
       setTimeout(() => {
-        // navigateTo("/");
+        navigateTo("/");
       }, 2000);
     } else {
       error.value = true;

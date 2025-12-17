@@ -41,17 +41,21 @@ export default defineEventHandler(async (event) => {
         source: 'crm', // Identify this is from CRM for email verification link
       },
     });
-
+    console.log('Register response:', response);
     return response;
   } catch (error: any) {
     // Forward error from backend
-    const statusCode = error.statusCode || error.status || 500;
-    const message = error.data?.message || error.data?.error || error.message || 'Đăng ký thất bại';
-
+    // $fetch error structure: error.data contains the response body
+    // Backend returns: { error: { code, message } } or { message }
+    const statusCode = error.statusCode || error.status || error.data?.error?.code || 500;
+    const message = error.data?.error?.message || error.data?.message || error.message || 'Đăng ký thất bại';
+    
+    console.error('Register error:', { statusCode, message, data: error.data });
+    
     throw createError({
       statusCode,
       message,
-      data: error.data,
+      data: error.data?.error,
     });
   }
 });

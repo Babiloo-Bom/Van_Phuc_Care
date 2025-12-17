@@ -299,11 +299,6 @@ const handleSubmit = async () => {
     if (result && result.success) {
       showSuccessModal.value = true;
     } else {
-      // Parse server response for duplicate account/email
-      console.log("Register result:", result);
-      console.log("result.error:", result?.error);
-      console.log("typeof result.error:", typeof result?.error);
-      
       // Extract error message from various possible formats
       let serverMsg = '';
       if (typeof result?.error === 'string') {
@@ -317,7 +312,6 @@ const handleSubmit = async () => {
       }
       
       const serverMsgStr = serverMsg ? String(serverMsg).toLowerCase() : "";
-      console.log("Server message string:", serverMsgStr);
       
       // Check for duplicate email error patterns
       const isDuplicateEmail = serverMsgStr.includes('duplicate') || 
@@ -326,6 +320,7 @@ const handleSubmit = async () => {
         serverMsgStr.includes('accountexists') || 
         serverMsgStr.includes('email_1') ||
         serverMsgStr.includes('email đã được sử dụng') ||
+        serverMsgStr.includes('account exists') ||
         serverMsgStr.includes('đã được đăng ký');
       
       if (isDuplicateEmail) {
