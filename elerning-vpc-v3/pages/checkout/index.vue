@@ -381,7 +381,8 @@ const discountAmount = computed(() => {
 })
 
 const totalPrice = computed(() => {
-  return subtotalPrice.value - discountAmount.value
+  // Làm tròn để không có số thập phân
+  return Math.round(subtotalPrice.value - discountAmount.value)
 })
 
 // Sync amount with cart total
@@ -473,14 +474,14 @@ const handleSubmit = async (e?: Event) => {
         course: item.course || item,
         price: item.course?.price || item.price || 0
       })),
-      subtotal: subtotalPrice.value,
+      subtotal: Math.round(subtotalPrice.value),
       discount: appliedCoupon.value ? {
         type: appliedCoupon.value.type,
         value: appliedCoupon.value.value,
-        amount: appliedCoupon.value.discountAmount,
+        amount: Math.round(appliedCoupon.value.discountAmount || 0),
         couponCode: appliedCoupon.value.code
       } : null,
-      totalAmount: totalPrice.value,
+      totalAmount: totalPrice.value, // Đã được làm tròn trong computed
       paymentMethod: checkoutForm.value.paymentMethod,
       notes: checkoutForm.value.note || ''
     }

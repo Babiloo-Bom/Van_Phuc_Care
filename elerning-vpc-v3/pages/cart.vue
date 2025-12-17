@@ -395,15 +395,15 @@ const discountAmount = computed(() => {
 
 const vatPrice = computed(() => {
   const taxableAmount = Math.max(subtotalPrice.value - discountAmount.value, 0)
-  return taxableAmount * 0.08
+  return Math.round(taxableAmount * 0.08) // Làm tròn VAT
 })
 
 const finalPrice = computed(() => {
   return Math.max(subtotalPrice.value - discountAmount.value, 0)
 })
 
-// Keep totalPrice for backward compatibility
-const totalPrice = computed(() => finalPrice.value + vatPrice.value)
+// Keep totalPrice for backward compatibility - làm tròn để không có số thập phân
+const totalPrice = computed(() => Math.round(finalPrice.value + vatPrice.value))
 
 // Helper functions to get course counts
 // Similar to how [slug].vue handles it, but for cart items
@@ -599,14 +599,14 @@ const processQrOrder = async () => {
         course: item.course || item,
         price: item.course?.price || item.price || 0
       })),
-      subtotal: subtotalPrice.value,
+      subtotal: Math.round(subtotalPrice.value),
       discount: appliedCoupon.value ? {
         type: appliedCoupon.value.type,
         value: appliedCoupon.value.value,
-        amount: discountAmount.value,
+        amount: Math.round(discountAmount.value),
         couponCode: appliedCoupon.value.code
       } : null,
-      totalAmount: totalPrice.value,
+      totalAmount: totalPrice.value, // Đã được làm tròn trong computed
       paymentMethod: 'qr',
       notes: ''
     }
@@ -690,14 +690,14 @@ const processBypassOrder = async () => {
         course: item.course || item,
         price: item.course?.price || item.price || 0
       })),
-      subtotal: subtotalPrice.value,
+      subtotal: Math.round(subtotalPrice.value),
       discount: appliedCoupon.value ? {
         type: appliedCoupon.value.type,
         value: appliedCoupon.value.value,
-        amount: discountAmount.value,
+        amount: Math.round(discountAmount.value),
         couponCode: appliedCoupon.value.code
       } : null,
-      totalAmount: totalPrice.value,
+      totalAmount: totalPrice.value, // Đã được làm tròn trong computed
       paymentMethod: 'bypass',
       notes: ''
     }
@@ -795,14 +795,14 @@ const processVnPay = async () => {
         course: item.course || item,
         price: item.course?.price || item.price || 0
       })),
-      subtotal: subtotalPrice.value,
+      subtotal: Math.round(subtotalPrice.value),
       discount: appliedCoupon.value ? {
         type: appliedCoupon.value.type,
         value: appliedCoupon.value.value,
-        amount: discountAmount.value,
+        amount: Math.round(discountAmount.value),
         couponCode: appliedCoupon.value.code
       } : null,
-      totalAmount: totalPrice.value,
+      totalAmount: totalPrice.value, // Đã được làm tròn trong computed
       paymentMethod: 'vnpay',
       notes: ''
     }

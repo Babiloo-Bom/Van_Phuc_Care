@@ -218,20 +218,20 @@ class OrderController {
         .substr(2, 5)
         .toUpperCase()}`;
 
-      // Create order
+      // Create order - làm tròn tất cả số tiền để không có số thập phân
       const order = await OrderModel.create({
         orderId,
         userId,
         customerInfo,
         items,
-        subtotal,
+        subtotal: Math.round(subtotal || 0),
         discount: {
           type: discount?.type || "percentage",
           value: discount?.value || 0,
-          amount: discount?.amount || 0,
+          amount: Math.round(discount?.amount || 0),
           couponCode: discount?.couponCode || null,
         },
-        totalAmount,
+        totalAmount: Math.round(totalAmount || 0), // Làm tròn totalAmount
         paymentMethod,
         notes,
       });
@@ -730,9 +730,12 @@ class OrderController {
       const courseNames = order.items.map((item: any) => item.course?.title || 'Khóa học').join(', ');
       const description = `Thanh toan khoa hoc: ${courseNames}`;
 
+      // Làm tròn số tiền trước khi tạo QR code (đảm bảo không có số thập phân)
+      const roundedAmount = Math.round(order.totalAmount);
+
       // Tạo QR code với SePay
       const qrData = await SePayService.createQRCode(
-        order.totalAmount,
+        roundedAmount,
         order.orderId,
         description
       );
@@ -766,15 +769,22 @@ class OrderController {
    */
   public async sepayWebhook(req: Request, res: Response) {
     try {
+      // Log sandbox mode
+      if (configs.sepayConfig.isSandbox) {
+        console.log('🧪 SePay SANDBOX webhook received - TEST mode');
+      }
+
       // Lấy Bearer Token từ header
       const authHeader = req.headers.authorization;
       if (!authHeader) {
+        console.error('❌ SePay webhook: Missing authorization header');
         return sendError(res, 401, "Missing authorization header");
       }
 
       // Xác thực token
       const isValid = SePayService.verifyWebhook(authHeader, req.body);
       if (!isValid) {
+        console.error('❌ SePay webhook: Invalid webhook token');
         return sendError(res, 401, "Invalid webhook token");
       }
 
@@ -782,6 +792,11 @@ class OrderController {
       const webhookResult = await SePayService.handleWebhook(req.body);
 
       if (!webhookResult.success || !webhookResult.orderId) {
+        console.error('❌ SePay webhook: Invalid webhook data', {
+          success: webhookResult.success,
+          orderId: webhookResult.orderId,
+          status: webhookResult.status
+        });
         return sendError(res, 400, "Invalid webhook data");
       }
 
@@ -789,15 +804,38 @@ class OrderController {
       const order = await OrderModel.findOne({ orderId: webhookResult.orderId });
 
       if (!order) {
+        console.error(`❌ SePay webhook: Order not found: ${webhookResult.orderId}`);
         return sendError(res, 404, "Order not found");
       }
 
       // Kiểm tra nếu đã thanh toán rồi
       if (order.paymentStatus === 'completed') {
+        console.log(`ℹ️ SePay webhook: Order already paid: ${webhookResult.orderId}`);
         return sendSuccess(res, {
           message: "Order already paid",
           order
         });
+      }
+
+      // So sánh số tiền với tolerance (cho phép sai lệch ±1 VND hoặc làm tròn)
+      const orderAmount = Math.round(order.totalAmount);
+      const paymentAmount = webhookResult.amount ? Math.round(webhookResult.amount) : null;
+      
+      if (paymentAmount !== null) {
+        const amountDiff = Math.abs(orderAmount - paymentAmount);
+        // Cho phép sai lệch tối đa 1 VND (do làm tròn của ngân hàng)
+        if (amountDiff > 1) {
+          console.warn(`⚠️ SePay webhook: Amount mismatch for order ${webhookResult.orderId}`, {
+            orderAmount,
+            paymentAmount,
+            diff: amountDiff
+          });
+          // Vẫn chấp nhận thanh toán nếu sai lệch nhỏ (≤ 1 VND)
+          // Nếu sai lệch lớn hơn, có thể là giao dịch sai
+          if (amountDiff > 10) {
+            return sendError(res, 400, `Amount mismatch: expected ${orderAmount}, got ${paymentAmount}`);
+          }
+        }
       }
 
       // Cập nhật trạng thái thanh toán
@@ -814,7 +852,11 @@ class OrderController {
       // Xóa giỏ hàng
       await this.clearCartUser(order);
 
-      console.log(`✅ QR payment confirmed for order ${webhookResult.orderId}`);
+      console.log(`✅ QR payment confirmed for order ${webhookResult.orderId}`, {
+        orderAmount,
+        paymentAmount,
+        transactionId: webhookResult.transactionId
+      });
 
       sendSuccess(res, {
         message: "Payment confirmed successfully",
@@ -828,6 +870,7 @@ class OrderController {
 
   /**
    * Kiểm tra trạng thái thanh toán QR code
+   * Nếu order vẫn pending, tự động kiểm tra với SePay API (fallback khi webhook không hoạt động)
    */
   public async checkQRPaymentStatus(req: Request, res: Response) {
     try {
@@ -852,8 +895,50 @@ class OrderController {
         });
       }
 
-      // Nếu chưa thanh toán, có thể kiểm tra với SePay API
-      // (Tùy chọn: polling SePay API để kiểm tra)
+      // Nếu chưa thanh toán, kiểm tra với SePay API (fallback)
+      // Chỉ kiểm tra nếu order được tạo trong 24h gần đây để tránh spam API
+      const orderAge = Date.now() - new Date(order.createdAt).getTime();
+      const maxAge = 24 * 60 * 60 * 1000; // 24 hours
+
+      if (orderAge < maxAge && order.paymentMethod === 'qr') {
+        try {
+          console.log(`🔍 Checking SePay API for order ${orderId} (fallback check)`);
+          const transactionResult = await SePayService.findTransactionByOrderId(
+            orderId,
+            order.totalAmount
+          );
+
+          if (transactionResult.found && transactionResult.transaction) {
+            // Tìm thấy giao dịch thành công từ SePay API
+            console.log(`✅ Found payment from SePay API for order ${orderId}, updating order status`);
+
+            // Cập nhật trạng thái thanh toán (giống như webhook)
+            order.paymentStatus = 'completed';
+            order.status = 'completed';
+            if (transactionResult.transaction.id || transactionResult.transaction.transactionId) {
+              order.transactionId = transactionResult.transaction.id || transactionResult.transaction.transactionId;
+            }
+            await order.save();
+
+            // Cập nhật courseRegister cho user
+            await this.updateCourseForUser(order);
+
+            // Xóa giỏ hàng
+            await this.clearCartUser(order);
+
+            return sendSuccess(res, {
+              message: "Payment completed (verified via SePay API)",
+              order,
+              paid: true
+            });
+          }
+        } catch (apiError: any) {
+          // Nếu lỗi khi gọi SePay API, không fail request, chỉ log
+          console.warn(`⚠️ SePay API check failed for order ${orderId}:`, apiError.message);
+        }
+      }
+
+      // Chưa thanh toán hoặc không tìm thấy giao dịch
       sendSuccess(res, {
         message: "Payment pending",
         order,

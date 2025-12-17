@@ -60,6 +60,12 @@ services:
       - JWT_SECRET=${JWT_SECRET}
       - JWT_ADMIN_SECRET=${JWT_ADMIN_SECRET}
       - JWT_TTL=7d
+      # SePay Configuration - Production Mode (dùng SePay thật)
+      - SEPAY_SANDBOX=false
+      - SEPAY_API_TOKEN=${SEPAY_API_TOKEN:-GL23FZNXPG7O2QVFMNTY8AWIX46WUIXSWTC4BYVALU5Q93CA05BHMFXLVJGFN6JK}
+      - SEPAY_ACCOUNT_NO=${SEPAY_ACCOUNT_NO:-655123456888}
+      - SEPAY_ACCOUNT_NAME=${SEPAY_ACCOUNT_NAME:-Công Ty TNHH Vạn Phúc Care}
+      - SEPAY_WEBHOOK_URL=${SEPAY_WEBHOOK_URL:-https://elearning.vanphuccare.com/api/u/orders/payment/sepay-webhook}
       # SMTP Configuration
       - SMTP_HOST=${SMTP_HOST:-smtp.gmail.com}
       - SMTP_PORT=${SMTP_PORT:-587}
