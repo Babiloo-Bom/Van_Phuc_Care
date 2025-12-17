@@ -11,25 +11,39 @@ interface SePayQRData {
 }
 
 interface SePayTransaction {
-  id: string;
-  amount: number;
-  content: string;
-  orderId: string;
-  status: 'pending' | 'completed' | 'failed';
-  createdAt: string;
-  updatedAt: string;
+  id?: string;
+  transactionId?: string;
+  amount?: number;
+  money?: number; // SePay có thể dùng field này
+  content?: string;
+  description?: string;
+  message?: string;
+  orderId?: string;
+  status?: 'pending' | 'completed' | 'failed' | 'success' | 'SUCCESS' | 'COMPLETED';
+  createdAt?: string;
+  updatedAt?: string;
+  [key: string]: any; // Cho phép các field khác từ SePay API
 }
 
 class SePayService {
   // Đọc cấu hình từ configs để có thể override bằng ENV khi deploy
-  private static readonly API_TOKEN = configs.sepayConfig.apiToken;
+  private static readonly IS_SANDBOX = configs.sepayConfig.isSandbox;
+  private static readonly API_TOKEN = configs.sepayConfig.isSandbox 
+    ? configs.sepayConfig.sandboxApiToken 
+    : configs.sepayConfig.apiToken;
   // Endpoint tạo ảnh QR VietQR cho MBBank
   // Docs: https://qr.sepay.vn/img?acc=SO_TAI_KHOAN&bank=MBBank&amount=SO_TIEN&des=NOI_DUNG&template=TEMPLATE
   private static readonly QR_IMG_API_URL = 'https://qr.sepay.vn/img';
-  private static readonly API_BASE_URL = configs.sepayConfig.apiBaseUrl;
+  private static readonly API_BASE_URL = configs.sepayConfig.isSandbox
+    ? configs.sepayConfig.sandboxApiBaseUrl
+    : configs.sepayConfig.apiBaseUrl;
   private static readonly BANK_CODE = configs.sepayConfig.bankCode;
-  private static readonly ACCOUNT_NO = configs.sepayConfig.accountNo;
-  private static readonly ACCOUNT_NAME = configs.sepayConfig.accountName;
+  private static readonly ACCOUNT_NO = configs.sepayConfig.isSandbox
+    ? configs.sepayConfig.sandboxAccountNo
+    : configs.sepayConfig.accountNo;
+  private static readonly ACCOUNT_NAME = configs.sepayConfig.isSandbox
+    ? configs.sepayConfig.sandboxAccountName
+    : configs.sepayConfig.accountName;
 
   /**
    * Tạo QR code động cho thanh toán
@@ -48,6 +62,14 @@ class SePayService {
     content: string;
   }> {
     try {
+      // Log mode hiện tại
+      if (this.IS_SANDBOX) {
+        console.log('🧪 SePay SANDBOX MODE - Using test account for QR code generation');
+      }
+      
+      // Làm tròn số tiền để đảm bảo không có số thập phân (ngân hàng chỉ chấp nhận số nguyên)
+      const roundedAmount = Math.round(amount);
+      
       // Tạo nội dung chuyển khoản với mã đơn hàng
       const content = description 
         ? `${description} - ${orderId}` 
@@ -58,7 +80,7 @@ class SePayService {
       const qrParams = new URLSearchParams({
         acc: this.ACCOUNT_NO,
         bank: 'MBBank',
-        amount: amount.toString(),
+        amount: roundedAmount.toString(), // Dùng số đã làm tròn
         des: content,
         template: 'compact', // hoặc qronly / để trống
       });
@@ -70,19 +92,31 @@ class SePayService {
         accountNo: this.ACCOUNT_NO,
         accountName: this.ACCOUNT_NAME,
         bankCode: this.BANK_CODE,
-        amount: amount,
+        amount: roundedAmount, // Dùng số đã làm tròn
         content: content
       });
 
-      return {
+      const result = {
         qrCode: qrCodeUrl,
         qrData: qrData,
         accountNo: this.ACCOUNT_NO,
         accountName: this.ACCOUNT_NAME,
         bankCode: this.BANK_CODE,
-        amount: amount,
+        amount: roundedAmount, // Trả về số đã làm tròn
         content: content
       };
+
+      if (this.IS_SANDBOX) {
+        console.log('🧪 SePay SANDBOX QR Code created:', {
+          orderId,
+          amount: roundedAmount,
+          accountNo: this.ACCOUNT_NO,
+          accountName: this.ACCOUNT_NAME,
+          note: 'This is a TEST transaction - no real money will be transferred'
+        });
+      }
+
+      return result;
     } catch (error: any) {
       console.error('❌ SePay create QR code error:', error);
       throw new Error(`Failed to create QR code: ${error.message}`);
@@ -135,11 +169,87 @@ class SePayService {
   }
 
   /**
+   * Tìm giao dịch từ SePay API theo orderId (fallback khi webhook không hoạt động)
+   */
+  public static async findTransactionByOrderId(orderId: string, expectedAmount?: number): Promise<{
+    found: boolean;
+    transaction?: any;
+    amount?: number;
+  }> {
+    try {
+      // Lấy transactions trong 24h gần đây
+      const fromDate = new Date();
+      fromDate.setHours(fromDate.getHours() - 24);
+      const toDate = new Date();
+
+      const transactions = await this.getTransactions({
+        fromDate: fromDate.toISOString(),
+        toDate: toDate.toISOString(),
+        status: 'success', // Chỉ lấy giao dịch thành công
+        limit: 100 // Lấy tối đa 100 giao dịch gần nhất
+      });
+
+      // Tìm transaction có content chứa orderId
+      for (const transaction of transactions) {
+        const content = (transaction.content || transaction.description || transaction.message || '').toString();
+        
+        // Kiểm tra nếu content chứa orderId
+        if (content.includes(orderId)) {
+          const transactionAmount = transaction.amount || transaction.money || 0;
+          
+          // Nếu có expectedAmount, kiểm tra số tiền với tolerance
+          if (expectedAmount !== undefined) {
+            const amountDiff = Math.abs(Math.round(expectedAmount) - Math.round(transactionAmount));
+            // Cho phép sai lệch ±1 VND
+            if (amountDiff <= 1) {
+              console.log(`✅ Found matching transaction for order ${orderId}`, {
+                transactionId: transaction.id || transaction.transactionId,
+                expectedAmount: Math.round(expectedAmount),
+                actualAmount: Math.round(transactionAmount),
+                diff: amountDiff
+              });
+              return {
+                found: true,
+                transaction: transaction,
+                amount: transactionAmount
+              };
+            } else {
+              console.warn(`⚠️ Transaction found but amount mismatch for order ${orderId}`, {
+                expectedAmount: Math.round(expectedAmount),
+                actualAmount: Math.round(transactionAmount),
+                diff: amountDiff
+              });
+            }
+          } else {
+            // Không có expectedAmount, chỉ cần match orderId
+            return {
+              found: true,
+              transaction: transaction,
+              amount: transactionAmount
+            };
+          }
+        }
+      }
+
+      return { found: false };
+    } catch (error: any) {
+      console.error(`❌ SePay find transaction by orderId error for ${orderId}:`, error);
+      return { found: false };
+    }
+  }
+
+  /**
    * Xác thực webhook từ SePay
    */
   public static verifyWebhook(token: string, payload: any): boolean {
     // Xác thực Bearer Token
-    return token === `Bearer ${this.API_TOKEN}` || token === this.API_TOKEN;
+    const isValid = token === `Bearer ${this.API_TOKEN}` || token === this.API_TOKEN;
+    
+    if (this.IS_SANDBOX && isValid) {
+      console.log('🧪 SePay SANDBOX webhook verified - TEST mode');
+    }
+    
+    return isValid;
   }
 
   /**
@@ -153,21 +263,57 @@ class SePayService {
     status?: string;
   }> {
     try {
+      // Log payload để debug
+      console.log('📥 SePay webhook payload:', JSON.stringify(payload, null, 2));
+
       // Parse payload từ SePay webhook
       // Format có thể khác nhau tùy theo SePay API
       const {
-        orderId,
+        orderId: payloadOrderId,
         transactionId,
         amount,
         status,
-        content
+        content,
+        description,
+        message,
+        // SePay có thể dùng các field khác
+        code,
+        reference_code,
+        order_code
       } = payload;
 
+      // Extract orderId từ nhiều nguồn
+      let orderId = payloadOrderId || order_code || reference_code || code;
+
+      // Nếu không có orderId trực tiếp, thử extract từ content/description
+      if (!orderId && (content || description || message)) {
+        const text = (content || description || message || '').toString();
+        
+        // Tìm pattern VPC + số + chữ (format: VPC{timestamp}{random})
+        const vpcPattern = /VPC\d+[A-Z0-9]+/gi;
+        const match = text.match(vpcPattern);
+        if (match && match.length > 0) {
+          orderId = match[0];
+          console.log(`🔍 Extracted orderId from content: ${orderId}`);
+        }
+      }
+
+      // Kiểm tra status - SePay có thể dùng nhiều format
+      const isSuccess = 
+        status === 'success' || 
+        status === 'completed' || 
+        status === 'paid' ||
+        status === 'SUCCESS' ||
+        status === 'COMPLETED' ||
+        status === 'PAID' ||
+        (typeof status === 'number' && status === 1) ||
+        (typeof status === 'boolean' && status === true);
+
       return {
-        success: status === 'success' || status === 'completed',
+        success: isSuccess,
         orderId: orderId,
-        transactionId: transactionId,
-        amount: amount,
+        transactionId: transactionId || payload.id || payload.transaction_id,
+        amount: amount || payload.amount || payload.money,
         status: status
       };
     } catch (error: any) {
