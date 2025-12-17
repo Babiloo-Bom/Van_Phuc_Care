@@ -49,11 +49,11 @@ fi
 
 # Pull latest images
 echo "⬇️  Pulling latest Docker images..."
-docker compose -f $COMPOSE_FILE pull
+docker compose -f $COMPOSE_FILE --env-file "$ENV_FILE" pull
 
 # Stop and remove old containers
 echo "🛑 Stopping old containers..."
-docker compose -f $COMPOSE_FILE down
+docker compose -f $COMPOSE_FILE --env-file "$ENV_FILE" down
 
 # Remove orphaned nginx container if exists (from previous deployments)
 echo "🧹 Removing orphaned containers..."
@@ -61,7 +61,7 @@ docker rm -f vpc-nginx 2>/dev/null || true
 
 # Start new containers
 echo "▶️  Starting new containers..."
-docker compose -f $COMPOSE_FILE up -d --build
+docker compose -f $COMPOSE_FILE --env-file "$ENV_FILE" up -d --build
 
 # Wait for services to be healthy
 echo "⏳ Waiting for services to be healthy..."
@@ -76,7 +76,7 @@ fi
 
 # Check service status
 echo "✅ Checking service status..."
-docker compose -f $COMPOSE_FILE ps
+docker compose -f $COMPOSE_FILE --env-file "$ENV_FILE" ps
 
 # Clean up old images
 echo "🧹 Cleaning up old Docker images..."
