@@ -52,7 +52,7 @@ app.options('*', cors(corsOptions)); // Xử lý preflight requests
 app.use(strongParams());
 
 app.get('/', (req, res) => {
-  res.send("Hello World!");
+  res.send("Hello World");
 })
 
 app.use('/api', routesServer);
