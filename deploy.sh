@@ -17,13 +17,13 @@ fi
 
 echo "🚀 Deploying Van Phuc Care - Environment: $ENVIRONMENT"
 
-# Load environment variables (check both naming conventions)
+# Load environment variables (check both naming conventions - prefer production.env)
 ENV_FILE=""
 ENV_FILE_FLAG=""
-if [ -f ".env.$ENVIRONMENT" ]; then
-    ENV_FILE=".env.$ENVIRONMENT"
-elif [ -f "$ENVIRONMENT.env" ]; then
+if [ -f "$ENVIRONMENT.env" ]; then
     ENV_FILE="$ENVIRONMENT.env"
+elif [ -f ".env.$ENVIRONMENT" ]; then
+    ENV_FILE=".env.$ENVIRONMENT"
 fi
 
 if [ -n "$ENV_FILE" ]; then
