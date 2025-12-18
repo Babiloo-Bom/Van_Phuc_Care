@@ -309,22 +309,34 @@ export default class UserController {
         return sendError(res, 400, "Password is required for local users");
       }
 
-      // Check if user already exists in both collections
-      const [existingAdmin, existingUser] = await Promise.all([
-        MongoDbAdmins.model.findOne({ email }),
-        MongoDbUsers.model.findOne({ email })
-      ]);
-
-      if (existingAdmin || existingUser) {
-        return sendError(res, 400, "User with this email already exists");
-      }
-
       // Import bcrypt for password hashing
       const bcrypt = await import('bcryptjs')
       
       // Determine which collection to create user in based on role
       const isAdminRole = ['admin', 'manager', 'worker'].includes(role);
       const isCustomerRole = role === 'customer';
+
+      // Check if user already exists in the target collection only
+      // Allow same email in different collections (e.g., admin can also be a customer)
+      if (isAdminRole) {
+        // Check only in admins collection
+        const existingAdmin = await MongoDbAdmins.model.findOne({ email });
+        if (existingAdmin) {
+          return sendError(res, 400, "Admin with this email already exists");
+        }
+      } else if (isCustomerRole) {
+        // Check only in users collection
+        const existingUser = await MongoDbUsers.model.findOne({ email });
+        if (existingUser) {
+          return sendError(res, 400, "User with this email already exists");
+        }
+      } else {
+        // Unknown role, default to admins collection
+        const existingAdmin = await MongoDbAdmins.model.findOne({ email });
+        if (existingAdmin) {
+          return sendError(res, 400, "User with this email already exists");
+        }
+      }
       
       let createdUser: any = null;
       let userObj: any = null;
