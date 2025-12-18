@@ -776,6 +776,7 @@ class OrderController {
    */
   public async sepayWebhook(req: Request, res: Response) {
     try {
+      console.log("🔔 SePay webhook received:", req.body);
       // Log sandbox mode
       if (configs.sepayConfig.isSandbox) {
         console.log('🧪 SePay SANDBOX webhook received - TEST mode');

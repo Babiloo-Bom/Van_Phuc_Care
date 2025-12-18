@@ -839,9 +839,13 @@ const processVnPay = async () => {
       }
     })
     if (paymentRes?.data?.paymentUrl) {
-      window.open(paymentRes?.data?.paymentUrl)
+      // Sử dụng window.location.href thay vì window.open để tránh popup blocker
+      // và để payment gateway hoạt động đúng cách
+      window.location.href = paymentRes.data.paymentUrl
+      return true
+    } else {
+      throw new Error('Không nhận được URL thanh toán từ VNPAY')
     }
-    return true
     
   } catch (error: any) {
     console.error('❌ Error processing bypass order:', error)

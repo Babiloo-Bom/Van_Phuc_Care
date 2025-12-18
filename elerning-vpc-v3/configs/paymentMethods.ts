@@ -30,18 +30,13 @@ export interface PaymentMethodConfig {
 
 export const paymentMethods: PaymentMethodConfig[] = [
   {
-    id: 'vnpay',
-    name: 'Thanh toán qua VNPay',
-    description: 'Thanh toán nhanh chóng và an toàn',
-    icon: '/images/payment/vnpay-logo.png',
-    color: '#E31837',
+    id: "vnpay",
+    name: "Thanh toán qua VNPay",
+    description: "Thanh toán nhanh chóng và an toàn",
+    icon: "/images/payment/vnpay-logo.png",
+    color: "#E31837",
     enabled: true,
-    // Các key sẽ được thêm vào đây
-    apiKey: process.env.VNPAY_API_KEY || '',
-    merchantId: process.env.VNPAY_MERCHANT_ID || '',
-    secretKey: process.env.VNPAY_SECRET_KEY || '',
-    webhookUrl: process.env.VNPAY_WEBHOOK_URL || '',
-    redirectUrl: process.env.VNPAY_REDIRECT_URL || '',
+    // Frontend không cần apiKey, secretKey, webhookUrl - backend tự xử lý
     fees: {
       percentage: 0.5, // 0.5% phí
     },
@@ -49,21 +44,16 @@ export const paymentMethods: PaymentMethodConfig[] = [
       min: 10000, // 10,000 VND
       max: 50000000, // 50,000,000 VND
     },
-    features: ['instant', 'secure', 'refund'],
+    features: ["instant", "secure", "refund"],
   },
   {
-    id: 'momo',
-    name: 'Thanh toán qua MoMo',
-    description: 'Ví điện tử phổ biến tại Việt Nam',
-    icon: '/images/payment/momo-logo.png',
-    color: '#D82D8B',
+    id: "momo",
+    name: "Thanh toán qua MoMo",
+    description: "Ví điện tử phổ biến tại Việt Nam",
+    icon: "/images/payment/momo-logo.png",
+    color: "#D82D8B",
     enabled: true,
-    // Các key sẽ được thêm vào đây
-    apiKey: process.env.MOMO_API_KEY || '',
-    merchantId: process.env.MOMO_MERCHANT_ID || '',
-    secretKey: process.env.MOMO_SECRET_KEY || '',
-    webhookUrl: process.env.MOMO_WEBHOOK_URL || '',
-    redirectUrl: process.env.MOMO_REDIRECT_URL || '',
+    // Frontend không cần apiKey, secretKey, webhookUrl - backend tự xử lý
     fees: {
       percentage: 0.3, // 0.3% phí
     },
@@ -71,19 +61,16 @@ export const paymentMethods: PaymentMethodConfig[] = [
       min: 1000, // 1,000 VND
       max: 20000000, // 20,000,000 VND
     },
-    features: ['instant', 'mobile', 'qr'],
+    features: ["instant", "mobile", "qr"],
   },
   {
-    id: 'qr',
-    name: 'Thanh toán QR Code',
-    description: 'Quét mã QR để thanh toán nhanh chóng',
-    icon: '/images/payment/qr-logo.png',
-    color: '#00C851',
+    id: "qr",
+    name: "Thanh toán QR Code",
+    description: "Quét mã QR để thanh toán nhanh chóng",
+    icon: "/images/payment/qr-logo.png",
+    color: "#00C851",
     enabled: true,
-    // Các key sẽ được thêm vào đây
-    qrCodeUrl: process.env.QR_CODE_URL || '',
-    webhookUrl: process.env.QR_WEBHOOK_URL || '',
-    redirectUrl: process.env.QR_REDIRECT_URL || '',
+    // Frontend không cần webhookUrl - backend tự xử lý
     fees: {
       fixed: 0, // Miễn phí
     },
@@ -91,23 +78,16 @@ export const paymentMethods: PaymentMethodConfig[] = [
       min: 1000, // 1,000 VND
       max: 10000000, // 10,000,000 VND
     },
-    features: ['instant', 'qr', 'mobile'],
+    features: ["instant", "qr", "mobile"],
   },
   {
-    id: 'bank_transfer',
-    name: 'Chuyển khoản ngân hàng',
-    description: 'Chuyển khoản trực tiếp qua ngân hàng',
-    icon: '/images/payment/bank-logo.png',
-    color: '#1976D2',
+    id: "bank_transfer",
+    name: "Chuyển khoản ngân hàng",
+    description: "Chuyển khoản trực tiếp qua ngân hàng",
+    icon: "/images/payment/bank-logo.png",
+    color: "#1976D2",
     enabled: true,
-    // Thông tin ngân hàng
-    bankInfo: {
-      bankName: process.env.BANK_NAME || 'Vietcombank',
-      accountNumber: process.env.BANK_ACCOUNT || '',
-      accountHolder: process.env.BANK_HOLDER || '',
-      branch: process.env.BANK_BRANCH || '',
-    },
-    webhookUrl: process.env.BANK_WEBHOOK_URL || '',
+    // Thông tin ngân hàng sẽ được lấy từ API backend khi cần
     fees: {
       fixed: 0, // Miễn phí
     },
@@ -115,14 +95,14 @@ export const paymentMethods: PaymentMethodConfig[] = [
       min: 10000, // 10,000 VND
       max: 100000000, // 100,000,000 VND
     },
-    features: ['manual', 'secure', 'low_fee'],
+    features: ["manual", "secure", "low_fee"],
   },
   {
-    id: 'bypass',
-    name: 'Bypass thanh toán (Demo)',
-    description: 'Bỏ qua thanh toán để test giao diện',
-    icon: '/images/payment/bypass-logo.png',
-    color: '#8B5CF6',
+    id: "bypass",
+    name: "Bypass thanh toán (Demo)",
+    description: "Bỏ qua thanh toán để test giao diện",
+    icon: "/images/payment/bypass-logo.png",
+    color: "#8B5CF6",
     enabled: true,
     fees: {
       fixed: 0, // Miễn phí
@@ -131,7 +111,7 @@ export const paymentMethods: PaymentMethodConfig[] = [
       min: 0,
       max: Infinity,
     },
-    features: ['demo', 'instant', 'free'],
+    features: ["demo", "instant", "free"],
   },
 ];
 
