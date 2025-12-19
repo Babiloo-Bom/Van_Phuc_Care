@@ -198,11 +198,9 @@ services:
       - NUXT_API_HOST_INTERNAL=${NUXT_API_HOST_INTERNAL:-http://api:3000}
       - NUXT_PUBLIC_TINYMCE_KEY=${TINYMCE_KEY}
       - NUXT_PUBLIC_APP_NAME=CRM Portal - Van Phuc Care
-      - NUXT_PUBLIC_APP_URL=${NUXT_PUBLIC_APP_URL:-http://localhost:3101}
       # Google OAuth Configuration
       - NUXT_PUBLIC_GOOGLE_CLIENT_ID=${NUXT_PUBLIC_GOOGLE_CLIENT_ID}
       - NUXT_GOOGLE_CLIENT_SECRET=${GOOGLE_CLIENT_SECRET}
-      - NUXT_PUBLIC_BASE_URL=${NUXT_PUBLIC_BASE_URL:-http://localhost:3101}
     networks:
       - vpc-network
     depends_on:
