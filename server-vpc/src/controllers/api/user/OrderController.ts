@@ -478,6 +478,7 @@ class OrderController {
   }
 
   public async paymentVnpayIpn(req: Request, res: Response) {
+    console.log("🔔 VNPay IPN received:", req.query);
     const params = req.query;
 
     const secureHash = params.vnp_SecureHash;
