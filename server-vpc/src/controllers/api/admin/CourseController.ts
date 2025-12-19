@@ -291,14 +291,25 @@ class CourseController {
   /**
    * Get course by slug with modules and lessons
    * Includes progress tracking: isCompleted, isLocked for each lesson
+   * Also supports getting by ID if the slug is a valid ObjectId
    */
   public static async getCourseBySlug(req: Request, res: Response) {
     try {
       const { slug } = req.params;
       const userId =
         (req as any).currentUser?._id || (req as any).currentAdmin?._id;
-
-      const course = await Course.findOne({ slug, status: "active" });
+      
+      // Kiểm tra xem slug có phải là ObjectId hợp lệ không
+      const isObjectId = /^[0-9a-fA-F]{24}$/.test(slug);
+      
+      let course: any;
+      if (isObjectId) {
+        // Nếu là ObjectId, tìm theo ID
+        course = await Course.findById(slug);
+      } else {
+        // Nếu không phải ObjectId, tìm theo slug
+        course = await Course.findOne({ slug, status: "active" });
+      }
 
       if (!course) {
         return sendError(res, 404, "Khóa học không tồn tại");
@@ -604,8 +615,24 @@ class CourseController {
    */
   public static async getCourseById(req: Request, res: Response) {
     try {
-      const { id } = req.params;
-      const course = await Course.findById(id);
+      // Đọc từ cả id và slug (vì route có thể truyền slug nhưng là ObjectId)
+      const id = (req.params as any).id || (req.params as any).slug;
+      
+      if (!id) {
+        return sendError(res, 400, "ID hoặc slug không được cung cấp");
+      }
+      
+      // Kiểm tra xem id có phải là ObjectId hợp lệ không
+      const isObjectId = /^[0-9a-fA-F]{24}$/.test(id);
+      
+      let course: any;
+      if (isObjectId) {
+        // Tìm theo ID
+        course = await Course.findById(id);
+      } else {
+        // Tìm theo slug
+        course = await Course.findOne({ slug: id });
+      }
 
       if (!course) {
         return sendError(res, 404, "Khóa học không tồn tại");

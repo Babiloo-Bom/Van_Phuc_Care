@@ -8,8 +8,23 @@ const router = Router();
 router.get('/', CourseController.getAllCourses);
 router.post('/', CourseController.createCourse);
 router.get('/id/:id', CourseController.getCourseById);
-// Optional auth for getCourseBySlug - allows public access but includes progress if authenticated
-router.get('/:slug', optionalAuth, CourseController.getCourseBySlug);
+
+// Route này sẽ xử lý cả slug và ID (nếu là ObjectId)
+router.get('/:slug', optionalAuth, async (req, res, next) => {
+  const { slug } = req.params;
+  // Kiểm tra xem có phải ObjectId không
+  const isObjectId = /^[0-9a-fA-F]{24}$/.test(slug);
+  
+  if (isObjectId) {
+    // Nếu là ObjectId, đổi tên param thành id để getCourseById đọc được
+    req.params.id = slug;
+    return CourseController.getCourseById(req, res);
+  } else {
+    // Nếu không phải ObjectId, gọi getCourseBySlug
+    return CourseController.getCourseBySlug(req, res);
+  }
+});
+
 router.put('/:slug/chapters', CourseController.updateCourseChapters);
 router.put('/:id', CourseController.updateCourse);
 router.delete('/:id', CourseController.deleteCourse);

@@ -746,6 +746,138 @@
         </a-tab-pane>
       </a-tabs>
     </a-modal>
+
+    <!-- View Course Modal -->
+    <a-modal
+      v-model:open="viewModalVisible"
+      title="Chi tiết khóa học"
+      :width="1000"
+      :footer="null"
+    >
+      <div v-if="viewingCourse" class="course-detail-view">
+        <!-- Basic Info -->
+        <a-descriptions title="Thông tin cơ bản" bordered :column="2">
+          <a-descriptions-item label="Tên khóa học">
+            {{ viewingCourse.title || viewingCourse.name }}
+          </a-descriptions-item>
+          <a-descriptions-item label="Slug">
+            {{ viewingCourse.slug }}
+          </a-descriptions-item>
+          <a-descriptions-item label="Mô tả ngắn" :span="2">
+            {{ viewingCourse.shortDescription || 'Chưa có' }}
+          </a-descriptions-item>
+          <a-descriptions-item label="Mô tả chi tiết" :span="2">
+            {{ viewingCourse.description || 'Chưa có' }}
+          </a-descriptions-item>
+          <a-descriptions-item label="Danh mục">
+            {{ viewingCourse.category }}
+          </a-descriptions-item>
+          <a-descriptions-item label="Cấp độ">
+            {{ viewingCourse.level === 'beginner' ? 'Cơ bản' : viewingCourse.level === 'intermediate' ? 'Trung bình' : 'Nâng cao' }}
+          </a-descriptions-item>
+          <a-descriptions-item label="Giá">
+            {{ formatCurrency(viewingCourse.price || 0) }}
+          </a-descriptions-item>
+          <a-descriptions-item label="Giá gốc">
+            {{ viewingCourse.originalPrice ? formatCurrency(viewingCourse.originalPrice) : 'N/A' }}
+          </a-descriptions-item>
+          <a-descriptions-item label="Giảm giá">
+            {{ viewingCourse.discount || 0 }}%
+          </a-descriptions-item>
+          <a-descriptions-item label="Trạng thái">
+            <a-tag :color="viewingCourse.status === 'active' ? 'success' : 'default'">
+              {{ viewingCourse.status === 'active' ? 'Hoạt động' : 'Tạm dừng' }}
+            </a-tag>
+          </a-descriptions-item>
+          <a-descriptions-item label="Xuất bản">
+            <a-tag :color="viewingCourse.isPublished ? 'success' : 'default'">
+              {{ viewingCourse.isPublished ? 'Có' : 'Không' }}
+            </a-tag>
+          </a-descriptions-item>
+          <a-descriptions-item label="Nổi bật">
+            <a-tag :color="viewingCourse.isFeatured ? 'success' : 'default'">
+              {{ viewingCourse.isFeatured ? 'Có' : 'Không' }}
+            </a-tag>
+          </a-descriptions-item>
+          <a-descriptions-item label="Tags" :span="2">
+            <a-tag v-for="tag in (viewingCourse.tags || [])" :key="tag" style="margin: 4px;">
+              {{ tag }}
+            </a-tag>
+          </a-descriptions-item>
+          <a-descriptions-item label="Ngày tạo">
+            {{ formatDate(viewingCourse.createdAt) }}
+          </a-descriptions-item>
+          <a-descriptions-item label="Ngày cập nhật">
+            {{ formatDate(viewingCourse.updatedAt) }}
+          </a-descriptions-item>
+        </a-descriptions>
+
+        <!-- Instructor Info -->
+        <a-descriptions title="Thông tin giảng viên" bordered :column="2" style="margin-top: 24px;">
+          <a-descriptions-item label="Tên giảng viên">
+            {{ viewingCourse.instructor?.name || 'Chưa có' }}
+          </a-descriptions-item>
+          <a-descriptions-item label="Ảnh đại diện">
+            <img 
+              v-if="viewingCourse.instructor?.avatar" 
+              :src="viewingCourse.instructor.avatar" 
+              style="max-width: 100px; max-height: 100px; border-radius: 4px;"
+            />
+            <span v-else>Chưa có</span>
+          </a-descriptions-item>
+          <a-descriptions-item label="Tiểu sử" :span="2">
+            {{ viewingCourse.instructor?.bio || 'Chưa có' }}
+          </a-descriptions-item>
+        </a-descriptions>
+
+        <!-- Thumbnail & Intro Video -->
+        <div style="margin-top: 24px;">
+          <h3>Hình ảnh & Video</h3>
+          <a-row :gutter="16" style="margin-top: 16px;">
+            <a-col :span="12">
+              <div>
+                <strong>Ảnh đại diện:</strong>
+                <div style="margin-top: 8px;">
+                  <img 
+                    v-if="viewingCourse.thumbnail" 
+                    :src="viewingCourse.thumbnail" 
+                    style="max-width: 100%; max-height: 200px; border-radius: 4px;"
+                  />
+                  <span v-else>Chưa có</span>
+                </div>
+              </div>
+            </a-col>
+            <a-col :span="12">
+              <div>
+                <strong>Video giới thiệu:</strong>
+                <div style="margin-top: 8px;">
+                  <video 
+                    v-if="viewingCourse.introVideo" 
+                    :src="viewingCourse.introVideo" 
+                    controls
+                    style="max-width: 100%; max-height: 200px; border-radius: 4px;"
+                  />
+                  <span v-else>Chưa có</span>
+                </div>
+              </div>
+            </a-col>
+          </a-row>
+        </div>
+
+        <!-- Statistics -->
+        <a-descriptions title="Thống kê" bordered :column="3" style="margin-top: 24px;">
+          <a-descriptions-item label="Tổng bài học">
+            {{ viewingCourse.lessons || 0 }}
+          </a-descriptions-item>
+          <a-descriptions-item label="Học viên">
+            {{ viewingCourse.students || 0 }}
+          </a-descriptions-item>
+          <a-descriptions-item label="Đánh giá">
+            {{ viewingCourse.rating?.average || 0 }}/5 ({{ viewingCourse.rating?.count || 0 }} đánh giá)
+          </a-descriptions-item>
+        </a-descriptions>
+      </div>
+    </a-modal>
   </div>
 </template>
 
@@ -761,6 +893,11 @@ import {
   EditOutlined,
   DeleteOutlined,
   UploadOutlined,
+  UserOutlined,
+  CalendarOutlined,
+  TagOutlined,
+  LevelOutlined,
+  TagsOutlined,
 } from '@ant-design/icons-vue'
 import { message } from 'ant-design-vue'
 import type { Course } from '~/types/api'
@@ -805,6 +942,10 @@ const modalLoading = ref(false)
 const modalTitle = computed(() => editingCourse.value ? 'Sửa khóa học' : 'Tạo khóa học mới')
 const editingCourse = ref<Course | null>(null)
 const formRef = ref()
+
+// Thêm state cho view modal
+const viewModalVisible = ref(false)
+const viewingCourse = ref<Course | null>(null)
 
 // State for file uploads
 const thumbnailFileList = ref<UploadFile[]>([])
@@ -1355,9 +1496,20 @@ const handleModalOk = async () => {
 }
 
 // Actions
-const viewCourse = (course: Course) => {
-  // TODO: Navigate to course detail page
-  message.info(`Xem chi tiết khóa học: ${course.title || course.name}`)
+const viewCourse = async (course: Course) => {
+  viewingCourse.value = course
+  try {
+    // Fetch full course data with chapters
+    const response = await coursesApi.getCourse(course._id)
+    if (response.status && response.data) {
+      const courseData = response.data.course || response.data.data?.course || response.data
+      viewingCourse.value = courseData as Course
+    }
+  } catch (error) {
+    console.error('Error loading course:', error)
+    message.error('Không thể tải thông tin khóa học')
+  }
+  viewModalVisible.value = true
 }
 
 const toggleCourseStatus = async (course: Course) => {
@@ -1953,5 +2105,156 @@ const handleLessonDocumentChange = async (chapterIndex: number, lessonIndex: num
   display: flex;
   gap: 8px;
   flex-wrap: wrap;
+}
+
+.course-details-container {
+  padding: 20px;
+}
+
+.course-header {
+  margin-bottom: 20px;
+  padding-bottom: 20px;
+  border-bottom: 1px solid #f0f0f0;
+}
+
+.course-image-card {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  background: #f0f0f0;
+  border-radius: 8px;
+  padding: 20px;
+}
+
+.course-info-card {
+  padding: 20px;
+}
+
+.course-title {
+  font-size: 24px;
+  font-weight: 700;
+  color: #1a1a1a;
+  margin-bottom: 8px;
+}
+
+.course-code {
+  font-size: 16px;
+  color: #8c8c8c;
+  margin-bottom: 12px;
+}
+
+.course-description {
+  font-size: 16px;
+  color: #595959;
+  margin-bottom: 16px;
+  line-height: 1.6;
+}
+
+.course-price-section {
+  display: flex;
+  align-items: baseline;
+  gap: 10px;
+  margin-bottom: 16px;
+}
+
+.course-price-section .price-current {
+  font-size: 28px;
+  font-weight: 700;
+  color: #1a1a1a;
+}
+
+.course-price-section .price-original {
+  font-size: 18px;
+  color: #8c8c8c;
+  text-decoration: line-through;
+}
+
+.course-status-tag {
+  margin-bottom: 16px;
+}
+
+.course-meta-info {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  margin-top: 16px;
+  font-size: 14px;
+  color: #8c8c8c;
+}
+
+.meta-item {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.course-content-section {
+  padding-top: 20px;
+  border-top: 1px solid #f0f0f0;
+}
+
+.course-content-section h2 {
+  font-size: 20px;
+  font-weight: 600;
+  color: #1a1a1a;
+  margin-bottom: 16px;
+}
+
+.lesson-title {
+  font-size: 18px;
+  font-weight: 600;
+  color: #1a1a1a;
+  margin-bottom: 8px;
+}
+
+.lesson-description {
+  font-size: 14px;
+  color: #595959;
+  margin-bottom: 12px;
+  line-height: 1.5;
+}
+
+.lesson-content h3 {
+  font-size: 16px;
+  font-weight: 600;
+  color: #1a1a1a;
+  margin-top: 16px;
+  margin-bottom: 8px;
+}
+
+.lesson-content p {
+  font-size: 14px;
+  color: #595959;
+  line-height: 1.6;
+  margin-bottom: 12px;
+}
+
+.quiz-info {
+  margin-top: 16px;
+  padding: 12px;
+  background-color: #f0f0f0;
+  border-radius: 8px;
+}
+
+.quiz-info h3 {
+  font-size: 16px;
+  font-weight: 600;
+  color: #1a1a1a;
+  margin-bottom: 8px;
+}
+
+.quiz-info p {
+  font-size: 14px;
+  color: #595959;
+  margin-bottom: 12px;
+}
+
+.quiz-info .ant-button {
+  margin-top: 12px;
+}
+
+.course-detail-view {
+  max-height: 70vh;
+  overflow-y: auto;
 }
 </style>
