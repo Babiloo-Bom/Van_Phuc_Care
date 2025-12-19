@@ -638,7 +638,58 @@ class CourseController {
         return sendError(res, 404, "Khóa học không tồn tại");
       }
 
-      sendSuccess(res, { course });
+      // Get chapters for this course
+      const chapters = await ChaptersModel.model
+        .find({
+          courseId: course._id,
+          status: "active",
+        })
+        .sort({ index: 1 });
+
+      // Get lessons for each chapter
+      const LessonsModel = (await import("@mongodb/lessons")).default;
+      const QuizzesModel = (await import("@mongodb/quizzes")).default;
+
+      const chaptersWithLessons = await Promise.all(
+        chapters.map(async (chapter: any) => {
+          const lessons = await LessonsModel.model
+            .find({
+              chapterId: chapter._id,
+              status: "active",
+            })
+            .sort({ index: 1 });
+
+          const lessonsWithQuiz = await Promise.all(
+            lessons.map(async (lesson: any) => {
+              const lessonData: any = lesson.toObject();
+              
+              // Get quiz if exists
+              if (lessonData.quizId) {
+                const quiz = await QuizzesModel.findById(lessonData.quizId);
+                lessonData.quiz = quiz ? quiz.toObject() : null;
+              } else {
+                lessonData.quiz = null;
+              }
+
+              return lessonData;
+            })
+          );
+
+          return {
+            _id: chapter._id.toString(),
+            title: chapter.title,
+            description: chapter.description || "",
+            index: chapter.index || 0,
+            status: chapter.status || "active",
+            lessons: lessonsWithQuiz,
+          };
+        })
+      );
+
+      const courseData = course.toObject();
+      courseData.chapters = chaptersWithLessons;
+
+      sendSuccess(res, { course: courseData });
     } catch (error: any) {
       sendError(res, 500, error.message, error as Error);
     }

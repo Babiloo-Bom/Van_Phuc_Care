@@ -1375,17 +1375,105 @@ const editCourse = async (course: Course) => {
         isPublished: courseData.isPublished ?? true,
         isFeatured: courseData.isFeatured ?? false,
         status: courseData.status || 'active',
-        chapters: [], // Will be loaded separately
+        chapters: [], // Sẽ được load bên dưới
       })
 
-      // Load chapters and lessons
-      // TODO: Fetch chapters API
+      // Load chapters and lessons từ API response
+      if (courseData.chapters && Array.isArray(courseData.chapters)) {
+        formData.chapters = courseData.chapters.map((chapter: any) => ({
+          _id: chapter._id,
+          title: chapter.title || '',
+          description: chapter.description || '',
+          index: chapter.index || 0,
+          status: chapter.status || 'active',
+          lessons: (chapter.lessons || []).map((lesson: any) => ({
+            _id: lesson._id,
+            title: lesson.title || '',
+            description: lesson.description || '',
+            content: lesson.content || '',
+            type: lesson.type || 'video',
+            isPreview: lesson.isPreview || false,
+            status: lesson.status || 'active',
+            videos: lesson.videos || [],
+            documents: lesson.documents || [],
+            videoFileList: [],
+            documentFileList: [],
+            uploadingVideo: false,
+            uploadingDocument: false,
+            quiz: lesson.quiz ? {
+              title: lesson.quiz.title || '',
+              description: lesson.quiz.description || '',
+              questions: (lesson.quiz.questions || []).map((q: any) => ({
+                id: q.id || `q-${Date.now()}`,
+                question: q.question || '',
+                type: q.type || 'multiple-choice',
+                options: (q.options || []).map((opt: any) => ({
+                  id: opt.id || `opt-${Date.now()}`,
+                  text: opt.text || '',
+                  isCorrect: opt.isCorrect || false,
+                })),
+                correctAnswer: q.correctAnswer || '',
+                explanation: q.explanation || '',
+                points: q.points || 1,
+              })),
+              passingScore: lesson.quiz.passingScore || 80,
+              timeLimit: lesson.quiz.timeLimit || 0,
+              attempts: lesson.quiz.attempts || 3,
+            } : {
+              title: '',
+              description: '',
+              questions: [],
+              passingScore: 80,
+              timeLimit: 0,
+              attempts: 3,
+            },
+          })),
+        }))
+      }
+
+      // Set thumbnail file list if exists
+      if (courseData.thumbnail) {
+        thumbnailFileList.value = [{
+          uid: '-1',
+          name: 'thumbnail',
+          status: 'done',
+          url: courseData.thumbnail,
+        }]
+      } else {
+        thumbnailFileList.value = []
+      }
+
+      // Set intro video file list if exists
+      if (courseData.introVideo) {
+        introVideoFileList.value = [{
+          uid: '-1',
+          name: 'intro-video',
+          status: 'done',
+          url: courseData.introVideo,
+        }]
+      } else {
+        introVideoFileList.value = []
+      }
+
+      // Set instructor avatar file list if exists
+      if (courseData.instructor?.avatar) {
+        instructorAvatarFileList.value = [{
+          uid: '-1',
+          name: 'instructor-avatar',
+          status: 'done',
+          url: courseData.instructor.avatar,
+        }]
+      } else {
+        instructorAvatarFileList.value = []
+      }
     }
   } catch (error) {
     console.error('Error loading course:', error)
+    message.error('Không thể tải thông tin khóa học')
   }
   
   modalVisible.value = true
+  activeTab.value = 'basic' // Reset về tab đầu tiên
 }
 
 // Updated handleModalOk
@@ -1394,19 +1482,31 @@ const handleModalOk = async () => {
     await formRef.value?.validate()
     modalLoading.value = true
     
-    // Upload thumbnail to MinIO
-    if (thumbnailFileList.value.length > 0) {
+    // Upload thumbnail to MinIO - CHỈ KHI CÓ FILE MỚI
+    if (thumbnailFileList.value.length > 0 && thumbnailFileList.value[0].originFileObj) {
       formData.thumbnail = await uploadFileToMinIO(thumbnailFileList.value[0].originFileObj as File, 'courses/thumbnails')
     }
-    
-    // Upload intro video to R2/CDN
-    if (introVideoFileList.value.length > 0) {
-      formData.introVideo = await uploadVideoToR2(introVideoFileList.value[0].originFileObj as File, 'courses/intro-videos')
+    // Nếu không có file mới nhưng có URL (khi edit), giữ nguyên URL
+    else if (thumbnailFileList.value.length > 0 && thumbnailFileList.value[0].url) {
+      formData.thumbnail = thumbnailFileList.value[0].url
     }
     
-    // Upload instructor avatar to MinIO
-    if (instructorAvatarFileList.value.length > 0) {
+    // Upload intro video to R2/CDN - CHỈ KHI CÓ FILE MỚI
+    if (introVideoFileList.value.length > 0 && introVideoFileList.value[0].originFileObj) {
+      formData.introVideo = await uploadVideoToR2(introVideoFileList.value[0].originFileObj as File, 'courses/intro-videos')
+    }
+    // Nếu không có file mới nhưng có URL (khi edit), giữ nguyên URL
+    else if (introVideoFileList.value.length > 0 && introVideoFileList.value[0].url) {
+      formData.introVideo = introVideoFileList.value[0].url
+    }
+    
+    // Upload instructor avatar to MinIO - CHỈ KHI CÓ FILE MỚI
+    if (instructorAvatarFileList.value.length > 0 && instructorAvatarFileList.value[0].originFileObj) {
       formData.instructor.avatar = await uploadFileToMinIO(instructorAvatarFileList.value[0].originFileObj as File, 'instructors')
+    }
+    // Nếu không có file mới nhưng có URL (khi edit), giữ nguyên URL
+    else if (instructorAvatarFileList.value.length > 0 && instructorAvatarFileList.value[0].url) {
+      formData.instructor.avatar = instructorAvatarFileList.value[0].url
     }
 
     // Calculate discount
@@ -1466,9 +1566,9 @@ const handleModalOk = async () => {
       const response = await coursesApi.updateCourse(editingCourse.value._id, payload)
       if (response.status) {
         message.success('Cập nhật khóa học thành công')
-        modalVisible.value = false // Đóng modal
-        resetForm() // Reset form
-        fetchCourses() // Refresh danh sách
+        modalVisible.value = false
+        resetForm()
+        fetchCourses()
       } else {
         message.error(response.message || 'Cập nhật khóa học thất bại')
       }
@@ -1476,9 +1576,9 @@ const handleModalOk = async () => {
       const response = await coursesApi.createCourse(payload)
       if (response.status) {
         message.success('Tạo khóa học thành công')
-        modalVisible.value = false // Đóng modal
-        resetForm() // Reset form
-        fetchCourses() // Refresh danh sách
+        modalVisible.value = false
+        resetForm()
+        fetchCourses()
       } else {
         message.error(response.message || 'Tạo khóa học thất bại')
       }
@@ -1486,7 +1586,6 @@ const handleModalOk = async () => {
   } catch (error: any) {
     console.error('Modal error:', error)
     if (error.errorFields) {
-      // Validation error - không đóng modal
       return
     }
     message.error('Có lỗi xảy ra')

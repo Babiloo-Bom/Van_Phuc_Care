@@ -9,7 +9,7 @@ router.get('/', CourseController.getAllCourses);
 router.post('/', CourseController.createCourse);
 router.get('/id/:id', CourseController.getCourseById);
 
-// Route này sẽ xử lý cả slug và ID (nếu là ObjectId)
+// Route này sẽ xử lý cả slug và ID (nếu là ObjectId) - CHỈ CHO GET
 router.get('/:slug', optionalAuth, async (req, res, next) => {
   const { slug } = req.params;
   // Kiểm tra xem có phải ObjectId không
@@ -27,6 +27,7 @@ router.get('/:slug', optionalAuth, async (req, res, next) => {
 
 router.put('/:slug/chapters', CourseController.updateCourseChapters);
 router.put('/:id', CourseController.updateCourse);
+router.patch('/:id', CourseController.updateCourse); // Thêm route PATCH
 router.delete('/:id', CourseController.deleteCourse);
 
 // Seed sample courses (no auth required for seeding)
