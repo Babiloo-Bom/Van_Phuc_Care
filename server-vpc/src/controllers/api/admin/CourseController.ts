@@ -632,6 +632,9 @@ class CourseController {
 
       const course = await Course.create(courseData);
       let chapters = [];
+      let totalLessons = 0;
+      let totalQuizzes = 0;
+
       if (Array.isArray(req.body.chapters)) {
         for (const [idx, chapter] of req.body.chapters.entries()) {
           const newChapter = await ChaptersModel.model.create({
@@ -642,10 +645,75 @@ class CourseController {
             status: chapter.status || "active",
           });
           chapters.push(newChapter);
+
+          // Tạo lessons cho chapter này
+          if (Array.isArray(chapter.lessons) && chapter.lessons.length > 0) {
+            for (const lessonData of chapter.lessons) {
+              const lesson = await LessonsModel.model.create({
+                chapterId: newChapter._id,
+                quizId: null,
+                title: lessonData.title,
+                description: lessonData.description || "",
+                content: lessonData.content || "",
+                type: lessonData.type || "video",
+                isPreview: lessonData.isPreview || false,
+                videos: lessonData.videos || [],
+                documents: lessonData.documents || [],
+                duration: lessonData.duration || 0,
+                status: lessonData.status || "active",
+              });
+
+              totalLessons++;
+
+              // Tạo quiz nếu có
+              if (lessonData.quizData) {
+                const quizData = typeof lessonData.quizData === 'string' 
+                  ? JSON.parse(lessonData.quizData) 
+                  : lessonData.quizData;
+
+                const quiz = await QuizzesModel.create({
+                  courseId: course._id.toString(),
+                  chapterId: newChapter._id.toString(),
+                  lessonId: lesson._id.toString(),
+                  title: quizData.title || 'Quiz',
+                  description: quizData.description || "",
+                  questions: quizData.questions || [],
+                  passingScore: quizData.passingScore || 80,
+                  timeLimit: quizData.timeLimit || 0,
+                  attempts: quizData.attempts || 3,
+                  status: "active",
+                });
+
+                // Update lesson with quizId
+                await LessonsModel.model.findByIdAndUpdate(lesson._id, {
+                  quizId: quiz._id,
+                });
+
+                totalQuizzes++;
+              }
+            }
+          }
         }
       }
-      if (chapters.length > 0) sendSuccess(res, { course, chapters });
-      else sendSuccess(res, { course });
+
+      // Update course với số lượng lessons
+      await Course.findByIdAndUpdate(course._id, {
+        lessons: totalLessons,
+      });
+
+      if (chapters.length > 0) {
+        sendSuccess(res, { 
+          course, 
+          chapters,
+          summary: {
+            chapters: chapters.length,
+            lessons: totalLessons,
+            quizzes: totalQuizzes,
+          }
+        });
+      } else {
+        sendSuccess(res, { course });
+      }
     } catch (error: any) {
       sendError(res, 500, error.message, error as Error);
     }
@@ -667,11 +735,16 @@ class CourseController {
       }
 
       let chapters = [];
+      let totalLessons = 0;
+      let totalQuizzes = 0;
+
       if (Array.isArray(req.body.chapters)) {
         for (const [idx, chapter] of req.body.chapters.entries()) {
+          let updatedChapter;
+          
           if (chapter._id) {
             // Update existing chapter
-            const updated = await ChaptersModel.model.findByIdAndUpdate(
+            updatedChapter = await ChaptersModel.model.findByIdAndUpdate(
               chapter._id,
               {
                 title: chapter.title,
@@ -681,23 +754,100 @@ class CourseController {
               },
               { new: true }
             );
-            if (updated) chapters.push(updated);
+            if (updatedChapter) chapters.push(updatedChapter);
           } else {
-            // Create new module
-            const newChapter = await ChaptersModel.model.create({
+            // Create new chapter
+            updatedChapter = await ChaptersModel.model.create({
               courseId: course._id,
               title: chapter.title,
               description: chapter.description || "",
               index: typeof chapter.index === "number" ? chapter.index : idx,
               status: chapter.status || "active",
             });
-            chapters.push(newChapter);
+            chapters.push(updatedChapter);
+          }
+
+          // Xử lý lessons cho chapter
+          if (updatedChapter && Array.isArray(chapter.lessons)) {
+            // Xóa lessons cũ của chapter (nếu update)
+            if (chapter._id) {
+              const oldLessons = await LessonsModel.model.find({ chapterId: updatedChapter._id });
+              for (const oldLesson of oldLessons) {
+                // Xóa quiz nếu có - SỬA TYPE
+                const lessonData = oldLesson as any;
+                if (lessonData.quizId) {
+                  await QuizzesModel.findByIdAndDelete(lessonData.quizId);
+                }
+                await LessonsModel.model.findByIdAndDelete(oldLesson._id);
+              }
+            }
+
+            // Tạo lessons mới
+            for (const lessonData of chapter.lessons) {
+              const lesson = await LessonsModel.model.create({
+                chapterId: updatedChapter._id,
+                quizId: null,
+                title: lessonData.title,
+                description: lessonData.description || "",
+                content: lessonData.content || "",
+                type: lessonData.type || "video",
+                isPreview: lessonData.isPreview || false,
+                videos: lessonData.videos || [],
+                documents: lessonData.documents || [],
+                duration: lessonData.duration || 0,
+                status: lessonData.status || "active",
+              });
+
+              totalLessons++;
+
+              // Tạo quiz nếu có
+              if (lessonData.quizData) {
+                const quizData = typeof lessonData.quizData === 'string' 
+                  ? JSON.parse(lessonData.quizData) 
+                  : lessonData.quizData;
+
+                const quiz = await QuizzesModel.create({
+                  courseId: course._id.toString(),
+                  chapterId: updatedChapter._id.toString(),
+                  lessonId: lesson._id.toString(),
+                  title: quizData.title || 'Quiz',
+                  description: quizData.description || "",
+                  questions: quizData.questions || [],
+                  passingScore: quizData.passingScore || 80,
+                  timeLimit: quizData.timeLimit || 0,
+                  attempts: quizData.attempts || 3,
+                  status: "active",
+                });
+
+                await LessonsModel.model.findByIdAndUpdate(lesson._id, {
+                  quizId: quiz._id,
+                });
+
+                totalQuizzes++;
+              }
+            }
           }
         }
       }
 
-      if (chapters.length > 0) sendSuccess(res, { course, chapters });
-      else sendSuccess(res, { course });
+      // Update course với số lượng lessons
+      await Course.findByIdAndUpdate(course._id, {
+        lessons: totalLessons,
+      });
+
+      if (chapters.length > 0) {
+        sendSuccess(res, { 
+          course, 
+          chapters,
+          summary: {
+            chapters: chapters.length,
+            lessons: totalLessons,
+            quizzes: totalQuizzes,
+          }
+        });
+      } else {
+        sendSuccess(res, { course });
+      }
     } catch (error: any) {
       sendError(res, 500, error.message, error as Error);
     }
@@ -779,7 +929,7 @@ class CourseController {
           ) {
             const chapterDataSeed = courseData.chapters[chapterIndex];
 
-            const chapter = await ChaptersModel.model.create({
+            const chapterDataObj = await ChaptersModel.model.create({
               courseId: savedCourse._id,
               title: chapterDataSeed.title,
               description: chapterDataSeed.description || "",
@@ -787,7 +937,6 @@ class CourseController {
               status: "active",
             });
 
-            const chapterDataObj = chapter as any;
             totalChapters++;
 
             if (chapterDataSeed.lessons && chapterDataSeed.lessons.length > 0) {
@@ -858,3 +1007,4 @@ class CourseController {
 }
 
 export default CourseController;
+ 

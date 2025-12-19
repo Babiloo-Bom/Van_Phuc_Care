@@ -100,7 +100,7 @@ class Lessons {
       },
       type: {
         type: String,
-        enum: ['video', 'document', 'quiz', 'project'],
+        enum: ['video', 'document', 'text', 'quiz', 'project'], // Thêm 'text'
         default: 'video',
       },
       isPreview: {

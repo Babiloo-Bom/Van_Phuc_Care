@@ -4,6 +4,7 @@ import { initializeApp } from 'firebase/app';
 import { getStorage, ref, getDownloadURL, uploadBytesResumable } from 'firebase/storage';
 import dayjs from 'dayjs';
 import MinioService from '@services/minio';
+import CloudflareService from '@services/cloudflare';
 
 class UploadController {
   public async uploadFirebase (req: Request, res: Response) {
@@ -78,6 +79,53 @@ class UploadController {
       sendSuccess(res, { files: uploadedFiles });
     } catch (error: any) {
       console.error('Upload MinIO error:', error);
+      sendError(res, 500, error.message, error as Error);
+    }
+  }
+
+  /**
+   * Upload video to Cloudflare R2 + CDN
+   * POST /uploads/video
+   */
+  public async uploadVideoToR2(req: Request, res: Response) {
+    try {
+      // Route dùng .single('file') nên dùng req.file thay vì req.files
+      const file = req.file as Express.Multer.File;
+      const folder = (req.query.folder as string) || 'courses/intro-videos';
+
+      if (!file) {
+        return sendError(res, 400, 'No video file uploaded');
+      }
+
+      // Validate video file
+      if (!file.mimetype.startsWith('video/')) {
+        return sendError(res, 400, `File ${file.originalname} is not a video file`);
+      }
+
+      // Upload to R2
+      const objectName = await CloudflareService.uploadFile(
+        file.buffer,
+        file.originalname,
+        file.mimetype,
+        folder
+      );
+
+      // Get public URL (CDN URL)
+      const publicUrl = CloudflareService.getPublicUrl(objectName);
+
+      sendSuccess(res, { 
+        videos: [{
+          filename: file.originalname,
+          url: publicUrl,
+          objectName: objectName,
+          size: file.size,
+          type: file.mimetype,
+          uploadedAt: new Date().toISOString(),
+        }],
+        message: 'Video uploaded successfully to R2+CDN'
+      });
+    } catch (error: any) {
+      console.error('Upload video to R2 error:', error);
       sendError(res, 500, error.message, error as Error);
     }
   }
