@@ -149,16 +149,16 @@ services:
       - "3100:3000"
     environment:
       - NODE_ENV=production
-      - NUXT_PUBLIC_API_HOST=http://localhost:3000
-      - NUXT_PUBLIC_API_BASE=http://localhost:3000/api/a
-      - NUXT_API_HOST_INTERNAL=http://api:3000
+      - NUXT_PUBLIC_API_HOST=${NUXT_PUBLIC_API_HOST:-http://localhost:3000}
+      - NUXT_PUBLIC_API_BASE=${NUXT_PUBLIC_API_BASE:-http://localhost:3000/api/a}
+      - NUXT_API_HOST_INTERNAL=${NUXT_API_HOST_INTERNAL:-http://api:3000}
       - NUXT_PUBLIC_TINYMCE_KEY=${TINYMCE_KEY}
       - NUXT_PUBLIC_APP_NAME=Admin Portal - Van Phuc Care
-      - NUXT_PUBLIC_APP_URL=http://localhost:3100
+      - NUXT_PUBLIC_APP_URL=${NUXT_PUBLIC_APP_URL:-http://localhost:3100}
       # Google OAuth Configuration
       - NUXT_PUBLIC_GOOGLE_CLIENT_ID=${NUXT_PUBLIC_GOOGLE_CLIENT_ID}
       - NUXT_GOOGLE_CLIENT_SECRET=${GOOGLE_CLIENT_SECRET}
-      - NUXT_PUBLIC_BASE_URL=http://localhost:3100
+      - NUXT_PUBLIC_BASE_URL=${NUXT_PUBLIC_BASE_URL:-http://localhost:3100}
     networks:
       - vpc-network
     depends_on:
@@ -195,14 +195,14 @@ services:
       - NUXT_PUBLIC_API_BASE=/api/u
       - NUXT_PUBLIC_API_BASE_URL=
       # Internal API host for server-side proxy (Docker network)
-      - NUXT_API_HOST_INTERNAL=http://api:3000
+      - NUXT_API_HOST_INTERNAL=${NUXT_API_HOST_INTERNAL:-http://api:3000}
       - NUXT_PUBLIC_TINYMCE_KEY=${TINYMCE_KEY}
       - NUXT_PUBLIC_APP_NAME=CRM Portal - Van Phuc Care
-      - NUXT_PUBLIC_APP_URL=http://localhost:3101
+      - NUXT_PUBLIC_APP_URL=${NUXT_PUBLIC_APP_URL:-http://localhost:3101}
       # Google OAuth Configuration
       - NUXT_PUBLIC_GOOGLE_CLIENT_ID=${NUXT_PUBLIC_GOOGLE_CLIENT_ID}
       - NUXT_GOOGLE_CLIENT_SECRET=${GOOGLE_CLIENT_SECRET}
-      - NUXT_PUBLIC_BASE_URL=http://localhost:3101
+      - NUXT_PUBLIC_BASE_URL=${NUXT_PUBLIC_BASE_URL:-http://localhost:3101}
     networks:
       - vpc-network
     depends_on:
@@ -235,14 +235,14 @@ services:
     environment:
       - NODE_ENV=production
       - NUXT_PUBLIC_API_BASE=/api/u
-      - NUXT_API_HOST_INTERNAL=http://api:3000
+      - NUXT_API_HOST_INTERNAL=${NUXT_API_HOST_INTERNAL:-http://api:3000}
       - NUXT_PUBLIC_TINYMCE_KEY=${TINYMCE_KEY}
       - NUXT_PUBLIC_APP_NAME=E-Learning Portal - Van Phuc Care
-      - NUXT_PUBLIC_APP_URL=http://localhost:3102
+      - NUXT_PUBLIC_APP_URL=${NUXT_PUBLIC_APP_URL:-http://localhost:3102}
       # Google OAuth Configuration
       - NUXT_PUBLIC_GOOGLE_CLIENT_ID=${NUXT_PUBLIC_GOOGLE_CLIENT_ID}
       - NUXT_GOOGLE_CLIENT_SECRET=${GOOGLE_CLIENT_SECRET}
-      - NUXT_PUBLIC_BASE_URL=http://localhost:3102
+      - NUXT_PUBLIC_BASE_URL=${NUXT_PUBLIC_BASE_URL:-http://localhost:3102}
     networks:
       - vpc-network
     depends_on:
