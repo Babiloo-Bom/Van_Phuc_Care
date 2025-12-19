@@ -11,7 +11,7 @@ export const useBaseUrl = () => {
   // Get base URL with fallback logic
   const getBaseUrl = () => {
     // 1. Check environment variable first
-    if (config.public.baseUrl && config.public.baseUrl !== 'http://localhost:3102') {
+    if (config.public.baseUrl && config.public.baseUrl !== 'http://localhost:3101') {
       return config.public.baseUrl;
     }
     
@@ -23,11 +23,11 @@ export const useBaseUrl = () => {
       }
       
       // Fallback to environment variable
-      return process.env.NUXT_PUBLIC_APP_URL || 'https://your-domain.com';
+      return process.env.NUXT_PUBLIC_APP_URL || 'https://crm.vanphuccare.com';
     }
     
     // 3. Development fallback
-    return 'http://localhost:3102';
+    return 'http://localhost:3101';
   };
   
   const baseUrl = computed(() => getBaseUrl());

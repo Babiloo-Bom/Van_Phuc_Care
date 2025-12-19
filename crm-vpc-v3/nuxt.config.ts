@@ -71,14 +71,14 @@ export default defineNuxtConfig({
       googleUserInfoUrl: 'https://www.googleapis.com/oauth2/v2/userinfo',
       
       // Base URL for OAuth redirects
-      baseUrl: process.env.NUXT_PUBLIC_BASE_URL || 'http://localhost:3101',
+      baseUrl: process.env.NUXT_PUBLIC_BASE_URL,
       
       // TinyMCE Configuration
       tinymceKey: process.env.NUXT_PUBLIC_TINYMCE_KEY || '',
       
       // App Configuration
       appName: process.env.NUXT_PUBLIC_APP_NAME || 'CRM Portal - Van Phuc Care',
-      appUrl: process.env.NUXT_PUBLIC_APP_URL || 'http://localhost:3101',
+      appUrl: process.env.NUXT_PUBLIC_APP_URL,
       
       // Environment
       isDevelopment: process.env.NODE_ENV === 'development',
