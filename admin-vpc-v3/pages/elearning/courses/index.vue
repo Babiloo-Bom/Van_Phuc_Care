@@ -83,24 +83,126 @@
       </div>
     </a-card>
 
-    <!-- Courses Table -->
+    <!-- Courses Table - Desktop -->
     <a-card class="table-card" :bordered="false">
       <template #title>
         <span>Danh sách khóa học</span>
       </template>
       
-      <a-table
-        :columns="columns"
-        :data-source="courses"
-        :loading="loading"
-        :pagination="paginationConfig"
-        :scroll="{ x: 1200 }"
-        @change="handleTableChange"
-        row-key="_id"
-      >
-        <!-- Thumbnail Column -->
-        <template #bodyCell="{ column, record }">
-          <template v-if="column.key === 'thumbnail'">
+      <!-- Desktop Table -->
+      <div class="desktop-table">
+        <a-table
+          :columns="columns"
+          :data-source="courses"
+          :loading="loading"
+          :pagination="paginationConfig"
+          :scroll="{ x: 1200 }"
+          @change="handleTableChange"
+          row-key="_id"
+        >
+          <!-- Thumbnail Column -->
+          <template #bodyCell="{ column, record }">
+            <template v-if="column.key === 'thumbnail'">
+              <a-avatar 
+                :src="record.thumbnail" 
+                :size="60"
+                shape="square"
+                :style="{ backgroundColor: '#f0f0f0' }"
+              >
+                <template v-if="!record.thumbnail">
+                  <BookOutlined />
+                </template>
+              </a-avatar>
+            </template>
+            
+            <!-- Title Column -->
+            <template v-else-if="column.key === 'title'">
+              <div class="course-info">
+                <div class="course-title">{{ record.title || record.name || 'Chưa có tiêu đề' }}</div>
+                <div class="course-code">{{ record.code || 'N/A' }}</div>
+              </div>
+            </template>
+            
+            <!-- Description Column -->
+            <template v-else-if="column.key === 'description'">
+              <div class="course-description">
+                {{ record.shortDescription || record.description || 'Chưa có mô tả' }}
+              </div>
+            </template>
+            
+            <!-- Price Column -->
+            <template v-else-if="column.key === 'price'">
+              <div>
+                <div class="price-current">{{ formatCurrency(record.price || 0) }}</div>
+                <div v-if="record.originalPrice && record.originalPrice > record.price" class="price-original">
+                  {{ formatCurrency(record.originalPrice) }}
+                </div>
+              </div>
+            </template>
+            
+            <!-- Status Column -->
+            <template v-else-if="column.key === 'status'">
+              <a-tag :color="record.status === 'active' ? 'success' : 'default'">
+                {{ record.status === 'active' ? 'Hoạt động' : 'Tạm dừng' }}
+              </a-tag>
+            </template>
+            
+            <!-- Created At Column -->
+            <template v-else-if="column.key === 'createdAt'">
+              {{ formatDate(record.createdAt) }}
+            </template>
+            
+            <!-- Actions Column -->
+            <template v-else-if="column.key === 'actions'">
+              <a-space>
+                <a-button 
+                  type="link" 
+                  size="small" 
+                  @click="viewCourse(record)"
+                >
+                  <EyeOutlined /> Xem
+                </a-button>
+                <a-button 
+                  type="link" 
+                  size="small"
+                  @click="editCourse(record)"
+                >
+                  <EditOutlined /> Sửa
+                </a-button>
+                <a-button 
+                  type="link" 
+                  size="small"
+                  :danger="record.status === 'active'"
+                  @click="toggleCourseStatus(record)"
+                >
+                  <template v-if="record.status === 'active'">
+                    <PauseCircleOutlined /> Tạm dừng
+                  </template>
+                  <template v-else>
+                    <PlayCircleOutlined /> Kích hoạt
+                  </template>
+                </a-button>
+                <a-popconfirm
+                  title="Bạn có chắc muốn xóa khóa học này?"
+                  ok-text="Xóa"
+                  cancel-text="Hủy"
+                  ok-type="danger"
+                  @confirm="deleteCourse(record)"
+                >
+                  <a-button type="link" size="small" danger>
+                    <DeleteOutlined /> Xóa
+                  </a-button>
+                </a-popconfirm>
+              </a-space>
+            </template>
+          </template>
+        </a-table>
+      </div>
+
+      <!-- Mobile Stack Cards -->
+      <div class="mobile-cards">
+        <div v-for="record in courses" :key="record._id" class="mobile-course-card">
+          <div class="mobile-card-header">
             <a-avatar 
               :src="record.thumbnail" 
               :size="60"
@@ -111,90 +213,106 @@
                 <BookOutlined />
               </template>
             </a-avatar>
-          </template>
-          
-          <!-- Title Column -->
-          <template v-else-if="column.key === 'title'">
-            <div class="course-info">
-              <div class="course-title">{{ record.title || record.name || 'Chưa có tiêu đề' }}</div>
-              <div class="course-code">{{ record.code || 'N/A' }}</div>
+            <div class="mobile-card-title-section">
+              <div class="mobile-course-title">{{ record.title || record.name || 'Chưa có tiêu đề' }}</div>
+              <div class="mobile-course-code">{{ record.code || 'N/A' }}</div>
             </div>
-          </template>
-          
-          <!-- Description Column -->
-          <template v-else-if="column.key === 'description'">
-            <div class="course-description">
-              {{ record.shortDescription || record.description || 'Chưa có mô tả' }}
+          </div>
+
+          <div class="mobile-card-body">
+            <div class="mobile-card-row">
+              <span class="mobile-label">Mô tả:</span>
+              <span class="mobile-value">{{ record.shortDescription || record.description || 'Chưa có mô tả' }}</span>
             </div>
-          </template>
-          
-          <!-- Price Column -->
-          <template v-else-if="column.key === 'price'">
-            <div>
-              <div class="price-current">{{ formatCurrency(record.price || 0) }}</div>
-              <div v-if="record.originalPrice && record.originalPrice > record.price" class="price-original">
-                {{ formatCurrency(record.originalPrice) }}
+            
+            <div class="mobile-card-row">
+              <span class="mobile-label">Giá:</span>
+              <div class="mobile-value">
+                <div class="price-current">{{ formatCurrency(record.price || 0) }}</div>
+                <div v-if="record.originalPrice && record.originalPrice > record.price" class="price-original">
+                  {{ formatCurrency(record.originalPrice) }}
+                </div>
               </div>
             </div>
-          </template>
-          
-          <!-- Status Column -->
-          <template v-else-if="column.key === 'status'">
-            <a-tag :color="record.status === 'active' ? 'success' : 'default'">
-              {{ record.status === 'active' ? 'Hoạt động' : 'Tạm dừng' }}
-            </a-tag>
-          </template>
-          
-          <!-- Created At Column -->
-          <template v-else-if="column.key === 'createdAt'">
-            {{ formatDate(record.createdAt) }}
-          </template>
-          
-          <!-- Actions Column -->
-          <template v-else-if="column.key === 'actions'">
-            <a-space>
-              <a-button 
-                type="link" 
-                size="small" 
-                @click="viewCourse(record)"
-              >
-                <EyeOutlined /> Xem
+            
+            <div class="mobile-card-row">
+              <span class="mobile-label">Trạng thái:</span>
+              <a-tag :color="record.status === 'active' ? 'success' : 'default'">
+                {{ record.status === 'active' ? 'Hoạt động' : 'Tạm dừng' }}
+              </a-tag>
+            </div>
+            
+            <div class="mobile-card-row">
+              <span class="mobile-label">Ngày tạo:</span>
+              <span class="mobile-value">{{ formatDate(record.createdAt) }}</span>
+            </div>
+          </div>
+
+          <div class="mobile-card-actions">
+            <a-button 
+              type="link" 
+              size="small" 
+              block
+              @click="viewCourse(record)"
+              class="mobile-action-btn"
+            >
+              <EyeOutlined /> Xem
+            </a-button>
+            <a-button 
+              type="link" 
+              size="small"
+              block
+              @click="editCourse(record)"
+              class="mobile-action-btn"
+            >
+              <EditOutlined /> Sửa
+            </a-button>
+            <a-button 
+              type="link" 
+              size="small"
+              block
+              :danger="record.status === 'active'"
+              @click="toggleCourseStatus(record)"
+              class="mobile-action-btn"
+            >
+              <template v-if="record.status === 'active'">
+                <PauseCircleOutlined /> Tạm dừng
+              </template>
+              <template v-else>
+                <PlayCircleOutlined /> Kích hoạt
+              </template>
+            </a-button>
+            <a-popconfirm
+              title="Bạn có chắc muốn xóa khóa học này?"
+              ok-text="Xóa"
+              cancel-text="Hủy"
+              ok-type="danger"
+              @confirm="deleteCourse(record)"
+            >
+              <a-button type="link" size="small" danger block class="mobile-action-btn">
+                <DeleteOutlined /> Xóa
               </a-button>
-              <a-button 
-                type="link" 
-                size="small"
-                @click="editCourse(record)"
-              >
-                <EditOutlined /> Sửa
-              </a-button>
-              <a-button 
-                type="link" 
-                size="small"
-                :danger="record.status === 'active'"
-                @click="toggleCourseStatus(record)"
-              >
-                <template v-if="record.status === 'active'">
-                  <PauseCircleOutlined /> Tạm dừng
-                </template>
-                <template v-else>
-                  <PlayCircleOutlined /> Kích hoạt
-                </template>
-              </a-button>
-              <a-popconfirm
-                title="Bạn có chắc muốn xóa khóa học này?"
-                ok-text="Xóa"
-                cancel-text="Hủy"
-                ok-type="danger"
-                @confirm="deleteCourse(record)"
-              >
-                <a-button type="link" size="small" danger>
-                  <DeleteOutlined /> Xóa
-                </a-button>
-              </a-popconfirm>
-            </a-space>
-          </template>
-        </template>
-      </a-table>
+            </a-popconfirm>
+          </div>
+        </div>
+
+        <!-- Mobile Pagination -->
+        <div class="mobile-pagination">
+          <a-pagination
+            v-model:current="pagination.current"
+            v-model:page-size="pagination.pageSize"
+            :total="pagination.total"
+            :page-size-options="['10', '20', '50']"
+            show-size-changer
+            show-total
+            :show-total="(total) => `Tổng ${total} khóa học`"
+            @change="handleTableChange"
+            @showSizeChange="handleTableChange"
+            size="small"
+            simple
+          />
+        </div>
+      </div>
     </a-card>
 
     <!-- Create/Edit Modal - UPDATED -->
@@ -444,6 +562,16 @@
                     <a-form :model="lesson" :label-col="{ span: 4 }" :wrapper-col="{ span: 20 }">
                       <a-form-item label="Mô tả">
                         <a-textarea v-model:value="lesson.description" :rows="2" />
+                      </a-form-item>
+
+                      <!-- Thêm checkbox Học thử ở đây -->
+                      <a-form-item label="Học thử">
+                        <a-checkbox v-model:checked="lesson.isPreview">
+                          Cho phép học thử bài này
+                        </a-checkbox>
+                        <div style="font-size: 12px; color: #8c8c8c; margin-top: 4px;">
+                          Người dùng chưa mua khóa học vẫn có thể xem bài này
+                        </div>
                       </a-form-item>
 
                       <!-- Video Type -->
@@ -943,7 +1071,8 @@ const addLesson = (chapterIndex: number) => {
     description: '',
     content: '',
     type: 'video',
-    isPreview: false,
+    isPreview: false, // Đảm bảo có field này
+    isLocked: false,
     status: 'active',
     videos: [],
     documents: [],
@@ -1270,6 +1399,9 @@ const ensureLessonProperties = (lesson: any) => {
   if (!lesson.documentFileList) {
     lesson.documentFileList = []
   }
+  if (lesson.isPreview === undefined) {
+    lesson.isPreview = false // Đảm bảo có giá trị mặc định
+  }
   if (!lesson.quiz) {
     lesson.quiz = {
       title: '',
@@ -1509,9 +1641,18 @@ const handleLessonDocumentChange = async (chapterIndex: number, lessonIndex: num
 
 .page-header {
   display: flex;
+  flex-direction: column;
+  gap: 16px;
   justify-content: space-between;
-  align-items: center;
+  align-items: flex-start;
   margin-bottom: 24px;
+}
+
+@media (min-width: 768px) {
+  .page-header {
+    flex-direction: row;
+    align-items: center;
+  }
 }
 
 .page-title {
@@ -1525,6 +1666,10 @@ const handleLessonDocumentChange = async (chapterIndex: number, lessonIndex: num
   font-size: 14px;
   color: #8c8c8c;
   margin: 4px 0 0 0;
+}
+
+.header-actions {
+  width: 100%;
 }
 
 .stats-grid {
@@ -1592,12 +1737,151 @@ const handleLessonDocumentChange = async (chapterIndex: number, lessonIndex: num
 
 .filters-container {
   display: flex;
-  gap: 16px;
+  flex-direction: column;
+  gap: 12px;
   flex-wrap: wrap;
+}
+
+@media (min-width: 640px) {
+  .filters-container {
+    flex-direction: row;
+    gap: 16px;
+  }
+}
+
+.filters-container .ant-input-search {
+  width: 100% !important;
+}
+
+@media (min-width: 640px) {
+  .filters-container .ant-input-search {
+    width: 300px !important;
+  }
+}
+
+.filters-container .ant-select {
+  width: 100% !important;
+}
+
+@media (min-width: 640px) {
+  .filters-container .ant-select {
+    width: 150px !important;
+  }
 }
 
 .table-card {
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+/* Desktop Table - Ẩn trên mobile */
+.desktop-table {
+  display: none;
+}
+
+@media (min-width: 1024px) {
+  .desktop-table {
+    display: block;
+  }
+}
+
+/* Mobile Cards - Hiển thị trên mobile, ẩn trên desktop */
+.mobile-cards {
+  display: block;
+}
+
+@media (min-width: 1024px) {
+  .mobile-cards {
+    display: none;
+  }
+}
+
+.mobile-course-card {
+  background: white;
+  border-radius: 8px;
+  padding: 16px;
+  margin-bottom: 16px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+.mobile-card-header {
+  display: flex;
+  gap: 12px;
+  margin-bottom: 16px;
+  padding-bottom: 16px;
+  border-bottom: 1px solid #f0f0f0;
+}
+
+.mobile-card-title-section {
+  flex: 1;
+  min-width: 0;
+}
+
+.mobile-course-title {
+  font-size: 16px;
+  font-weight: 600;
+  color: #1a1a1a;
+  margin-bottom: 4px;
+  word-wrap: break-word;
+}
+
+.mobile-course-code {
+  font-size: 12px;
+  color: #8c8c8c;
+}
+
+.mobile-card-body {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  margin-bottom: 16px;
+}
+
+.mobile-card-row {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+@media (min-width: 640px) {
+  .mobile-card-row {
+    flex-direction: row;
+    align-items: flex-start;
+  }
+}
+
+.mobile-label {
+  font-size: 12px;
+  font-weight: 600;
+  color: #8c8c8c;
+  min-width: 80px;
+  flex-shrink: 0;
+}
+
+.mobile-value {
+  font-size: 14px;
+  color: #1a1a1a;
+  flex: 1;
+  word-wrap: break-word;
+}
+
+.mobile-card-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding-top: 16px;
+  border-top: 1px solid #f0f0f0;
+}
+
+.mobile-action-btn {
+  text-align: left !important;
+  padding: 8px 0 !important;
+  height: auto !important;
+}
+
+.mobile-pagination {
+  margin-top: 24px;
+  display: flex;
+  justify-content: center;
 }
 
 .course-info {
