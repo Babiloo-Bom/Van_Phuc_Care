@@ -78,13 +78,6 @@
             </NuxtLink>
           </a-menu-item>
           
-          <a-menu-item key="orders">
-            <NuxtLink to="/orders" class="flex items-center">
-              <ShoppingCartOutlined class="mr-3 text-lg" />
-              <span>Đơn hàng</span>
-            </NuxtLink>
-          </a-menu-item>
-          
           <a-menu-item key="customers">
             <NuxtLink to="/customers" class="flex items-center">
               <UserOutlined class="mr-3 text-lg" />
@@ -148,7 +141,6 @@ import {
   TeamOutlined, 
   InfoCircleOutlined, 
   DashboardOutlined,
-  ShoppingCartOutlined,
   UserOutlined,
   AppstoreOutlined,
   SettingOutlined,
@@ -172,7 +164,6 @@ watch(() => route.path, () => {
 const selectedKeys = computed(() => {
   const path = route.path
   if (path === '/') return ['dashboard']
-  if (path.startsWith('/orders')) return ['orders']
   if (path.startsWith('/customers')) return ['customers']
   if (path.startsWith('/products')) return ['products']
   if (path.startsWith('/admin/users')) return ['users']

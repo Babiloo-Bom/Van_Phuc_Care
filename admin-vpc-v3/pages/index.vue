@@ -77,34 +77,34 @@
 
     <!-- Content Grid -->
     <div class="content-grid">
-      <!-- Recent Orders -->
+      <!-- Recent Courses (thay thế Recent Orders) -->
       <div class="content-card">
         <div class="card-header">
-          <h3 class="card-title">Đơn hàng gần đây</h3>
-          <NuxtLink to="/orders" class="view-all-link">
+          <h3 class="card-title">Khóa học gần đây</h3>
+          <NuxtLink to="/elearning/courses" class="view-all-link">
             Xem tất cả <RightOutlined />
           </NuxtLink>
         </div>
         <div v-if="loading" class="loading-container">
           <a-spin size="large" />
         </div>
-        <div v-else-if="recentOrders.length === 0" class="empty-container">
-          <a-empty description="Chưa có đơn hàng nào" />
+        <div v-else-if="recentCourses.length === 0" class="empty-container">
+          <a-empty description="Chưa có khóa học nào" />
         </div>
         <div v-else class="orders-list">
           <div
-            v-for="order in recentOrders"
-            :key="order._id || order.orderId"
+            v-for="course in recentCourses"
+            :key="course._id"
             class="order-item"
           >
             <div class="order-info">
-              <div class="order-id">{{ order.orderId }}</div>
-              <div class="order-customer">{{ order.customerInfo?.fullName || 'N/A' }}</div>
+              <div class="order-id">{{ course.title || 'Chưa có tiêu đề' }}</div>
+              <div class="order-customer">{{ course.category || course.categoryName || 'Chưa phân loại' }}</div>
             </div>
             <div class="order-details">
-              <div class="order-amount">{{ formatCurrency(order.totalAmount) }}</div>
-              <a-tag :color="getStatusColor(order.status)">
-                {{ getStatusText(order.status) }}
+              <div class="order-amount">{{ formatCurrency(course.price || course.originalPrice || 0) }}</div>
+              <a-tag :color="course.status === 'active' ? 'green' : 'default'">
+                {{ course.status === 'active' ? 'Đang hoạt động' : 'Tạm dừng' }}
               </a-tag>
             </div>
           </div>
@@ -117,11 +117,11 @@
           <h3 class="card-title">Thao tác nhanh</h3>
         </div>
         <div class="quick-actions-grid">
-          <NuxtLink to="/orders" class="quick-action-item">
+          <NuxtLink to="/elearning/courses" class="quick-action-item">
             <div class="quick-action-icon blue">
-              <ShoppingCartOutlined />
+              <BookOutlined />
             </div>
-            <p class="quick-action-label">Quản lý đơn hàng</p>
+            <p class="quick-action-label">Quản lý khóa học</p>
           </NuxtLink>
           <NuxtLink to="/customers" class="quick-action-item">
             <div class="quick-action-icon green">
@@ -204,7 +204,6 @@
 
 <script setup lang="ts">
 import {
-  ShoppingCartOutlined,
   DollarOutlined,
   ClockCircleOutlined,
   UserOutlined,
@@ -217,7 +216,6 @@ import {
   BookOutlined,  // Thêm icon này
 } from '@ant-design/icons-vue'
 import { message } from 'ant-design-vue'
-import { useOrdersApi } from '~/composables/api/useOrdersApi'
 import { useCustomersApi } from '~/composables/api/useCustomersApi'
 import { useUsersApi } from '~/composables/api/useUsersApi'
 import { useCoursesApi } from '~/composables/api/useCoursesApi'  // Thêm import này
@@ -232,7 +230,6 @@ useHead({
 })
 
 const authStore = useAuthStore()
-const ordersApi = useOrdersApi()
 const customersApi = useCustomersApi()
 const usersApi = useUsersApi()
 const coursesApi = useCoursesApi()  // Thêm instance này
@@ -252,7 +249,7 @@ const stats = reactive({
   completedPercentage: 0,
   pendingPercentage: 0,
 })
-const recentOrders = ref<any[]>([])
+const recentCourses = ref<any[]>([]) // Thêm state này
 
 // Format number
 const formatNumber = (num: number) => {
@@ -315,22 +312,22 @@ const getRoleText = (role?: string) => {
 const fetchDashboardData = async () => {
   loading.value = true
   try {
-    // Fetch order statistics
-    const orderStatsRes = await ordersApi.getOrderStats()
-    if (orderStatsRes.status && orderStatsRes.data?.stats) {
-      const orderStats = orderStatsRes.data.stats
-      stats.totalOrders = orderStats.totalOrders || 0
-      stats.completedOrders = orderStats.completedOrders || 0
-      stats.pendingOrders = orderStats.pendingOrders || 0
-      stats.totalRevenue = orderStats.totalRevenue || 0
-      stats.completionRate = parseFloat(orderStats.completionRate || '0')
-      
-      // Calculate percentages
-      if (stats.totalOrders > 0) {
-        stats.completedPercentage = (stats.completedOrders / stats.totalOrders) * 100
-        stats.pendingPercentage = (stats.pendingOrders / stats.totalOrders) * 100
-      }
-    }
+    // Xóa phần fetch order statistics vì không còn dùng ordersApi
+    // const orderStatsRes = await ordersApi.getOrderStats()
+    // if (orderStatsRes.status && orderStatsRes.data?.stats) {
+    //   const orderStats = orderStatsRes.data.stats
+    //   stats.totalOrders = orderStats.totalOrders || 0
+    //   stats.completedOrders = orderStats.completedOrders || 0
+    //   stats.pendingOrders = orderStats.pendingOrders || 0
+    //   stats.totalRevenue = orderStats.totalRevenue || 0
+    //   stats.completionRate = parseFloat(orderStats.completionRate || '0')
+    //   
+    //   // Calculate percentages
+    //   if (stats.totalOrders > 0) {
+    //     stats.completedPercentage = (stats.completedOrders / stats.totalOrders) * 100
+    //     stats.pendingPercentage = (stats.pendingOrders / stats.totalOrders) * 100
+    //   }
+    // }
 
     // Fetch courses statistics
     try {
@@ -379,10 +376,15 @@ const fetchDashboardData = async () => {
       }
     }
 
-    // Fetch recent orders
-    const ordersRes = await ordersApi.getOrders({ limit: 5 })
-    if (ordersRes.status && ordersRes.data?.data) {
-      recentOrders.value = ordersRes.data.data || []
+    // Fetch recent courses (thay thế recent orders)
+    try {
+      const coursesRes = await coursesApi.getCourses({ limit: 5, sort: 'createdAt', order: 'desc' })
+      if (coursesRes.status && coursesRes.data) {
+        const courses = coursesRes.data?.data?.courses || coursesRes.data?.courses || []
+        recentCourses.value = Array.isArray(courses) ? courses : []
+      }
+    } catch (error) {
+      console.warn('Failed to fetch recent courses:', error)
     }
   } catch (error: any) {
     console.error('Failed to fetch dashboard data:', error)
