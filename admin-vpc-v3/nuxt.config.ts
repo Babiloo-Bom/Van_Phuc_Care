@@ -13,7 +13,7 @@ export default defineNuxtConfig({
     '@nuxtjs/tailwindcss',
     '@pinia/nuxt'
   ],
-  
+  //
   // Enable pages module for routing
   pages: true,
   
