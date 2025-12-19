@@ -5,6 +5,7 @@ import ChaptersModel from "@mongodb/chapters";
 import LessonsModel from "@mongodb/lessons";
 import QuizzesModel from "@mongodb/quizzes";
 import MinioService from "@services/minio";
+import CloudflareService from "@services/cloudflare"; // Thêm import này
 import { coursesData } from "../../../constants/courses-data-seed";
 // Course schema for E-Learning
 const courseSchema = new mongoose.Schema(
@@ -962,13 +963,160 @@ class CourseController {
     try {
       const { id } = req.params;
 
-      const course = await Course.findByIdAndDelete(id);
+      // Tìm course trước khi xóa để lấy thông tin
+      const course = await Course.findById(id);
       if (!course) {
         return sendError(res, 404, "Khóa học không tồn tại");
       }
 
-      sendSuccess(res, { message: "Khóa học đã được xóa" });
+      const courseData = course.toObject() as any;
+
+      // 1. Tìm tất cả chapters của course
+      const chapters = await ChaptersModel.model.find({ courseId: id });
+
+      // 2. Xóa tất cả lessons và quizzes của từng chapter
+      for (const chapter of chapters) {
+        const lessons = await LessonsModel.model.find({ chapterId: chapter._id });
+        
+        for (const lesson of lessons) {
+          const lessonData = lesson.toObject() as any;
+          
+          // Xóa quiz nếu có
+          if (lessonData.quizId) {
+            await QuizzesModel.findByIdAndDelete(lessonData.quizId);
+          }
+          
+          // Xóa files của lesson (videos từ R2)
+          if (lessonData.videos && Array.isArray(lessonData.videos)) {
+            for (const video of lessonData.videos) {
+              if (video.videoUrl) {
+                try {
+                  // Extract object name from URL
+                  const url = video.videoUrl;
+                  let objectName = '';
+                  
+                  // Nếu là URL từ R2/CDN
+                  if (url.includes(process.env.CLOUDFLARE_R2_PUBLIC_URL || '')) {
+                    objectName = url.replace(process.env.CLOUDFLARE_R2_PUBLIC_URL || '', '').replace(/^\//, '');
+                  } else if (url.includes('/')) {
+                    // Extract từ path
+                    const urlParts = url.split('/');
+                    objectName = urlParts.slice(urlParts.indexOf('courses') || 0).join('/');
+                  }
+                  
+                  if (objectName) {
+                    await CloudflareService.deleteFile(objectName);
+                  }
+                } catch (err) {
+                  console.error('Error deleting video from R2:', err);
+                }
+              }
+            }
+          }
+          
+          // Xóa files của lesson (documents từ R2)
+          if (lessonData.documents && Array.isArray(lessonData.documents)) {
+            for (const doc of lessonData.documents) {
+              if (doc.fileUrl) {
+                try {
+                  const url = doc.fileUrl;
+                  let objectName = '';
+                  
+                  if (url.includes(process.env.CLOUDFLARE_R2_PUBLIC_URL || '')) {
+                    objectName = url.replace(process.env.CLOUDFLARE_R2_PUBLIC_URL || '', '').replace(/^\//, '');
+                  } else if (url.includes('/')) {
+                    const urlParts = url.split('/');
+                    objectName = urlParts.slice(urlParts.indexOf('courses') || 0).join('/');
+                  }
+                  
+                  if (objectName) {
+                    await CloudflareService.deleteFile(objectName);
+                  }
+                } catch (err) {
+                  console.error('Error deleting document from R2:', err);
+                }
+              }
+            }
+          }
+          
+          // Xóa lesson
+          await LessonsModel.model.findByIdAndDelete(lesson._id);
+        }
+        
+        // Xóa chapter
+        await ChaptersModel.model.findByIdAndDelete(chapter._id);
+      }
+
+      // 3. Xóa quizzes trực tiếp liên quan đến course (nếu có)
+      await QuizzesModel.deleteMany({ courseId: id });
+
+      // 4. Xóa files của course (thumbnail từ MinIO, introVideo từ R2)
+      try {
+        // Xóa thumbnail từ MinIO
+        if (courseData.thumbnail) {
+          try {
+            const thumbnailUrl = courseData.thumbnail;
+            // Extract object name từ URL
+            if (thumbnailUrl.includes(process.env.MINIO_ENDPOINT || '')) {
+              const urlParts = thumbnailUrl.split('/');
+              const bucketIndex = urlParts.findIndex((part: string) => part === process.env.MINIO_BUCKET_NAME);
+              if (bucketIndex !== -1) {
+                const objectName = urlParts.slice(bucketIndex + 1).join('/');
+                await MinioService.deleteFile(objectName);
+              }
+            }
+          } catch (err) {
+            console.error('Error deleting thumbnail from MinIO:', err);
+          }
+        }
+        
+        // Xóa introVideo từ R2
+        if (courseData.introVideo) {
+          try {
+            const videoUrl = courseData.introVideo;
+            let objectName = '';
+            
+            if (videoUrl.includes(process.env.CLOUDFLARE_R2_PUBLIC_URL || '')) {
+              objectName = videoUrl.replace(process.env.CLOUDFLARE_R2_PUBLIC_URL || '', '').replace(/^\//, '');
+            } else if (videoUrl.includes('/')) {
+              const urlParts = videoUrl.split('/');
+              objectName = urlParts.slice(urlParts.indexOf('courses') || 0).join('/');
+            }
+            
+            if (objectName) {
+              await CloudflareService.deleteFile(objectName);
+            }
+          } catch (err) {
+            console.error('Error deleting intro video from R2:', err);
+          }
+        }
+        
+        // Xóa instructor avatar từ MinIO (nếu có)
+        if (courseData.instructor?.avatar) {
+          try {
+            const avatarUrl = courseData.instructor.avatar;
+            if (avatarUrl.includes(process.env.MINIO_ENDPOINT || '')) {
+              const urlParts = avatarUrl.split('/');
+              const bucketIndex = urlParts.findIndex((part: string) => part === process.env.MINIO_BUCKET_NAME);
+              if (bucketIndex !== -1) {
+                const objectName = urlParts.slice(bucketIndex + 1).join('/');
+                await MinioService.deleteFile(objectName);
+              }
+            }
+          } catch (err) {
+            console.error('Error deleting instructor avatar from MinIO:', err);
+          }
+        }
+      } catch (err) {
+        console.error('Error deleting course files:', err);
+      }
+
+      // 5. Cuối cùng mới xóa course
+      await Course.findByIdAndDelete(id);
+
+      sendSuccess(res, { message: "Khóa học và tất cả dữ liệu liên quan đã được xóa" });
     } catch (error: any) {
+      console.error('Delete course error:', error);
       sendError(res, 500, error.message, error as Error);
     }
   }

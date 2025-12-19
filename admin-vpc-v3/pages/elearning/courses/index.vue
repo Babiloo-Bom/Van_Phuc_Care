@@ -45,16 +45,6 @@
           <p class="stat-value">{{ formatNumber(stats.active) }}</p>
         </div>
       </div>
-      
-      <div class="stat-card stat-card-orange">
-        <div class="stat-icon">
-          <PauseCircleOutlined />
-        </div>
-        <div class="stat-content">
-          <p class="stat-label">Tạm dừng</p>
-          <p class="stat-value">{{ formatNumber(stats.inactive) }}</p>
-        </div>
-      </div>
     </div>
 
     <!-- Filters and Search -->
@@ -78,7 +68,6 @@
         >
           <a-select-option value="">Tất cả</a-select-option>
           <a-select-option value="active">Hoạt động</a-select-option>
-          <a-select-option value="inactive">Tạm dừng</a-select-option>
         </a-select>
       </div>
     </a-card>
@@ -100,7 +89,6 @@
           @change="handleTableChange"
           row-key="_id"
         >
-          <!-- Thumbnail Column -->
           <template #bodyCell="{ column, record }">
             <template v-if="column.key === 'thumbnail'">
               <a-avatar 
@@ -115,7 +103,6 @@
               </a-avatar>
             </template>
             
-            <!-- Title Column -->
             <template v-else-if="column.key === 'title'">
               <div class="course-info">
                 <div class="course-title">{{ record.title || record.name || 'Chưa có tiêu đề' }}</div>
@@ -123,14 +110,12 @@
               </div>
             </template>
             
-            <!-- Description Column -->
             <template v-else-if="column.key === 'description'">
               <div class="course-description">
                 {{ record.shortDescription || record.description || 'Chưa có mô tả' }}
               </div>
             </template>
             
-            <!-- Price Column -->
             <template v-else-if="column.key === 'price'">
               <div>
                 <div class="price-current">{{ formatCurrency(record.price || 0) }}</div>
@@ -140,19 +125,10 @@
               </div>
             </template>
             
-            <!-- Status Column -->
-            <template v-else-if="column.key === 'status'">
-              <a-tag :color="record.status === 'active' ? 'success' : 'default'">
-                {{ record.status === 'active' ? 'Hoạt động' : 'Tạm dừng' }}
-              </a-tag>
-            </template>
-            
-            <!-- Created At Column -->
             <template v-else-if="column.key === 'createdAt'">
               {{ formatDate(record.createdAt) }}
             </template>
             
-            <!-- Actions Column -->
             <template v-else-if="column.key === 'actions'">
               <a-space>
                 <a-button 
@@ -168,19 +144,6 @@
                   @click="editCourse(record)"
                 >
                   <EditOutlined /> Sửa
-                </a-button>
-                <a-button 
-                  type="link" 
-                  size="small"
-                  :danger="record.status === 'active'"
-                  @click="toggleCourseStatus(record)"
-                >
-                  <template v-if="record.status === 'active'">
-                    <PauseCircleOutlined /> Tạm dừng
-                  </template>
-                  <template v-else>
-                    <PlayCircleOutlined /> Kích hoạt
-                  </template>
                 </a-button>
                 <a-popconfirm
                   title="Bạn có chắc muốn xóa khóa học này?"
@@ -236,13 +199,6 @@
             </div>
             
             <div class="mobile-card-row">
-              <span class="mobile-label">Trạng thái:</span>
-              <a-tag :color="record.status === 'active' ? 'success' : 'default'">
-                {{ record.status === 'active' ? 'Hoạt động' : 'Tạm dừng' }}
-              </a-tag>
-            </div>
-            
-            <div class="mobile-card-row">
               <span class="mobile-label">Ngày tạo:</span>
               <span class="mobile-value">{{ formatDate(record.createdAt) }}</span>
             </div>
@@ -266,21 +222,6 @@
               class="mobile-action-btn"
             >
               <EditOutlined /> Sửa
-            </a-button>
-            <a-button 
-              type="link" 
-              size="small"
-              block
-              :danger="record.status === 'active'"
-              @click="toggleCourseStatus(record)"
-              class="mobile-action-btn"
-            >
-              <template v-if="record.status === 'active'">
-                <PauseCircleOutlined /> Tạm dừng
-              </template>
-              <template v-else>
-                <PlayCircleOutlined /> Kích hoạt
-              </template>
             </a-button>
             <a-popconfirm
               title="Bạn có chắc muốn xóa khóa học này?"
@@ -315,7 +256,7 @@
       </div>
     </a-card>
 
-    <!-- Create/Edit Modal - UPDATED -->
+    <!-- Create/Edit Modal - Cần thêm nội dung modal ở đây -->
     <a-modal
       v-model:open="modalVisible"
       :title="modalTitle"
@@ -326,425 +267,7 @@
       @ok="handleModalOk"
       @cancel="handleModalCancel"
     >
-      <a-tabs v-model:activeKey="activeTab">
-        <!-- Tab 1: Thông tin cơ bản -->
-        <a-tab-pane key="basic" tab="Thông tin cơ bản">
-          <a-form
-            ref="formRef"
-            :model="formData"
-            :rules="formRules"
-            :label-col="{ span: 6 }"
-            :wrapper-col="{ span: 18 }"
-          >
-            <a-form-item label="Tên khóa học" name="title">
-              <a-input 
-                v-model:value="formData.title" 
-                placeholder="Nhập tên khóa học"
-                @input="generateSlug"
-              />
-            </a-form-item>
-            
-            <a-form-item label="Slug (tự động)" name="slug">
-              <a-input 
-                v-model:value="formData.slug" 
-                placeholder="Slug sẽ tự động tạo từ tên khóa học"
-                disabled
-              />
-            </a-form-item>
-            
-            <a-form-item label="Mô tả ngắn" name="shortDescription">
-              <a-textarea 
-                v-model:value="formData.shortDescription" 
-                placeholder="Nhập mô tả ngắn"
-                :rows="3"
-              />
-            </a-form-item>
-            
-            <a-form-item label="Mô tả chi tiết" name="description">
-              <a-textarea 
-                v-model:value="formData.description" 
-                placeholder="Nhập mô tả chi tiết"
-                :rows="5"
-              />
-            </a-form-item>
-
-            <a-form-item label="Ảnh đại diện" name="thumbnail">
-              <a-upload
-                v-model:file-list="thumbnailFileList"
-                :before-upload="() => false"
-                :max-count="1"
-                accept="image/*"
-                list-type="picture-card"
-                @preview="handlePreview"
-                @remove="handleRemoveThumbnail"
-                @change="handleThumbnailChange"
-              >
-                <div v-if="thumbnailFileList.length < 1">
-                  <PlusOutlined />
-                  <div style="margin-top: 8px">Upload</div>
-                </div>
-              </a-upload>
-              <div v-if="formData.thumbnail && !thumbnailFileList.length" class="preview-url">
-                <img :src="formData.thumbnail" style="max-width: 200px; max-height: 200px" />
-              </div>
-            </a-form-item>
-
-            <a-form-item label="Video giới thiệu" name="introVideo">
-              <a-upload
-                v-model:file-list="introVideoFileList"
-                :before-upload="() => false"
-                :max-count="1"
-                accept="video/*"
-                @remove="handleRemoveIntroVideo"
-              >
-                <a-button>
-                  <UploadOutlined /> Chọn video
-                </a-button>
-              </a-upload>
-              <div v-if="formData.introVideo" class="preview-url">
-                <video :src="formData.introVideo" controls style="max-width: 400px; max-height: 300px"></video>
-              </div>
-            </a-form-item>
-
-            <a-form-item label="Danh mục" name="category">
-              <a-input v-model:value="formData.category" placeholder="Ví dụ: Lập Trình, Marketing, Thiết Kế" />
-            </a-form-item>
-
-            <a-form-item label="Cấp độ" name="level">
-              <a-select v-model:value="formData.level" placeholder="Chọn cấp độ">
-                <a-select-option value="beginner">Cơ bản</a-select-option>
-                <a-select-option value="intermediate">Trung bình</a-select-option>
-                <a-select-option value="advanced">Nâng cao</a-select-option>
-              </a-select>
-            </a-form-item>
-
-            <a-form-item label="Tags">
-              <a-select
-                v-model:value="formData.tags"
-                mode="tags"
-                placeholder="Nhập tags và nhấn Enter"
-                style="width: 100%"
-              />
-            </a-form-item>
-
-            <a-form-item label="Giá" name="price">
-              <a-input-number 
-                v-model:value="formData.price" 
-                placeholder="Nhập giá"
-                :min="0"
-                :formatter="value => `${value}`.replace(/\B(?=(\d{3})+(?!\d))/g, ',')"
-                :parser="value => value!.replace(/\$\s?|(,*)/g, '')"
-                style="width: 100%"
-              />
-            </a-form-item>
-            
-            <a-form-item label="Giá gốc" name="originalPrice">
-              <a-input-number 
-                v-model:value="formData.originalPrice" 
-                placeholder="Nhập giá gốc (nếu có)"
-                :min="0"
-                :formatter="value => `${value}`.replace(/\B(?=(\d{3})+(?!\d))/g, ',')"
-                :parser="value => value!.replace(/\$\s?|(,*)/g, '')"
-                style="width: 100%"
-              />
-            </a-form-item>
-
-            <a-form-item label="Trạng thái" name="status">
-              <a-select v-model:value="formData.status" placeholder="Chọn trạng thái">
-                <a-select-option value="active">Hoạt động</a-select-option>
-                <a-select-option value="inactive">Tạm dừng</a-select-option>
-                <a-select-option value="draft">Bản nháp</a-select-option>
-              </a-select>
-            </a-form-item>
-
-            <a-form-item label="Xuất bản">
-              <a-switch v-model:checked="formData.isPublished" />
-            </a-form-item>
-
-            <a-form-item label="Nổi bật">
-              <a-switch v-model:checked="formData.isFeatured" />
-            </a-form-item>
-          </a-form>
-        </a-tab-pane>
-
-        <!-- Tab 2: Thông tin giảng viên -->
-        <a-tab-pane key="instructor" tab="Giảng viên">
-          <a-form
-            :model="formData.instructor"
-            :label-col="{ span: 6 }"
-            :wrapper-col="{ span: 18 }"
-          >
-            <a-form-item label="Tên giảng viên" name="name">
-              <a-input 
-                v-model:value="formData.instructor.name" 
-                placeholder="Nhập tên giảng viên"
-              />
-            </a-form-item>
-
-            <a-form-item label="Ảnh đại diện">
-              <a-upload
-                v-model:file-list="instructorAvatarFileList"
-                :before-upload="() => false"
-                :max-count="1"
-                accept="image/*"
-                list-type="picture-card"
-                @preview="handlePreview"
-                @remove="handleRemoveInstructorAvatar"
-              >
-                <div v-if="instructorAvatarFileList.length < 1">
-                  <PlusOutlined />
-                  <div style="margin-top: 8px">Upload</div>
-                </div>
-              </a-upload>
-              <div v-if="formData.instructor.avatar" class="preview-url">
-                <img :src="formData.instructor.avatar" style="max-width: 200px; max-height: 200px" />
-              </div>
-            </a-form-item>
-
-            <a-form-item label="Tiểu sử">
-              <a-textarea 
-                v-model:value="formData.instructor.bio" 
-                placeholder="Nhập tiểu sử giảng viên"
-                :rows="5"
-              />
-            </a-form-item>
-          </a-form>
-        </a-tab-pane>
-
-        <!-- Tab 3: Nội dung khóa học (Chapters & Lessons) -->
-        <a-tab-pane key="content" tab="Nội dung khóa học">
-          <div class="chapters-container">
-            <div v-for="(chapter, chapterIndex) in formData.chapters" :key="chapterIndex" class="chapter-item">
-              <a-card :title="`Chương ${chapterIndex + 1}: ${chapter.title || 'Chưa có tiêu đề'}`" class="chapter-card">
-                <template #extra>
-                  <a-space>
-                    <a-button type="link" danger @click="removeChapter(chapterIndex)">
-                      <DeleteOutlined /> Xóa chương
-                    </a-button>
-                  </a-space>
-                </template>
-
-                <!-- Chapter Info -->
-                <a-form :model="chapter" :label-col="{ span: 4 }" :wrapper-col="{ span: 20 }">
-                  <a-form-item label="Tiêu đề chương">
-                    <a-input v-model:value="chapter.title" placeholder="Nhập tiêu đề chương" />
-                  </a-form-item>
-                  <a-form-item label="Mô tả">
-                    <a-textarea v-model:value="chapter.description" :rows="2" placeholder="Mô tả chương" />
-                  </a-form-item>
-                </a-form>
-
-                <!-- Lessons -->
-                <a-divider>Bài học</a-divider>
-                <div v-for="(lesson, lessonIndex) in chapter.lessons" :key="lessonIndex" class="lesson-item">
-                  <a-card size="small" class="lesson-card" v-if="ensureLessonProperties(lesson)">
-                    <template #title>
-                      <a-input 
-                        v-model:value="lesson.title" 
-                        placeholder="Tên bài học"
-                        style="width: 300px"
-                      />
-                    </template>
-                    <template #extra>
-                      <a-space>
-                        <a-select v-model:value="lesson.type" style="width: 120px">
-                          <a-select-option value="video">Video</a-select-option>
-                          <a-select-option value="document">Tài liệu</a-select-option>
-                          <a-select-option value="text">Văn bản</a-select-option>
-                          <a-select-option value="quiz">Quiz</a-select-option>
-                        </a-select>
-                        <a-button type="link" danger size="small" @click="removeLesson(chapterIndex, lessonIndex)">
-                          <DeleteOutlined />
-                        </a-button>
-                      </a-space>
-                    </template>
-
-                    <a-form :model="lesson" :label-col="{ span: 4 }" :wrapper-col="{ span: 20 }">
-                      <a-form-item label="Mô tả">
-                        <a-textarea v-model:value="lesson.description" :rows="2" />
-                      </a-form-item>
-
-                      <!-- Thêm checkbox Học thử ở đây -->
-                      <a-form-item label="Học thử">
-                        <a-checkbox v-model:checked="lesson.isPreview">
-                          Cho phép học thử bài này
-                        </a-checkbox>
-                        <div style="font-size: 12px; color: #8c8c8c; margin-top: 4px;">
-                          Người dùng chưa mua khóa học vẫn có thể xem bài này
-                        </div>
-                      </a-form-item>
-
-                      <!-- Video Type -->
-                      <template v-if="lesson.type === 'video'">
-                        <a-form-item label="Video">
-                          <a-upload
-                            v-model:file-list="lesson.videoFileList"
-                            :before-upload="() => false"
-                            :max-count="1"
-                            accept="video/*"
-                            @change="(info) => handleLessonVideoChange(chapterIndex, lessonIndex, info)"
-                            @remove="() => { 
-                              lesson.videoFileList = []
-                              lesson.videos = []
-                            }"
-                          >
-                            <a-button :loading="lesson.uploadingVideo">
-                              <UploadOutlined /> Chọn video
-                            </a-button>
-                          </a-upload>
-                          <div v-if="lesson.videos && lesson.videos.length > 0" class="uploaded-files">
-                            <a-tag v-for="(video, idx) in lesson.videos" :key="idx" color="success">
-                              {{ video.title || 'Video đã upload' }}
-                            </a-tag>
-                          </div>
-                        </a-form-item>
-                      </template>
-
-                      <!-- Document Type -->
-                      <template v-if="lesson.type === 'document'">
-                        <a-form-item label="Tài liệu">
-                          <a-upload
-                            v-model:file-list="lesson.documentFileList"
-                            :before-upload="() => false"
-                            accept=".pdf,.doc,.docx,.txt"
-                            @change="(info) => handleLessonDocumentChange(chapterIndex, lessonIndex, info)"
-                            @remove="() => { 
-                              lesson.documentFileList = []
-                              lesson.documents = []
-                            }"
-                          >
-                            <a-button :loading="lesson.uploadingDocument">
-                              <UploadOutlined /> Chọn tài liệu
-                            </a-button>
-                          </a-upload>
-                          <div v-if="lesson.documents && lesson.documents.length > 0" class="uploaded-files">
-                            <a-tag v-for="(doc, idx) in lesson.documents" :key="idx" color="success">
-                              {{ doc.title || doc.fileName || 'Tài liệu đã upload' }}
-                            </a-tag>
-                          </div>
-                        </a-form-item>
-                      </template>
-
-                      <!-- Text Type -->
-                      <template v-if="lesson.type === 'text'">
-                        <a-form-item label="Nội dung">
-                          <a-textarea v-model:value="lesson.content" :rows="6" placeholder="Nhập nội dung văn bản" />
-                        </a-form-item>
-                      </template>
-
-                      <!-- Quiz Type -->
-                      <template v-if="lesson.type === 'quiz'">
-                        <a-form-item label="Tiêu đề quiz">
-                          <a-input v-model:value="lesson.quiz.title" placeholder="Tiêu đề quiz" />
-                        </a-form-item>
-                        <a-form-item label="Mô tả">
-                          <a-textarea v-model:value="lesson.quiz.description" :rows="2" />
-                        </a-form-item>
-                        <a-form-item label="Điểm đạt">
-                          <a-input-number 
-                            v-model:value="lesson.quiz.passingScore" 
-                            :min="0" 
-                            :max="100" 
-                            style="width: 100%"
-                          />
-                          <span style="margin-left: 8px">%</span>
-                        </a-form-item>
-                        <a-form-item label="Thời gian (phút)">
-                          <a-input-number 
-                            v-model:value="lesson.quiz.timeLimit" 
-                            :min="0" 
-                            style="width: 100%"
-                          />
-                        </a-form-item>
-                        <a-form-item label="Số lần thử">
-                          <a-input-number 
-                            v-model:value="lesson.quiz.attempts" 
-                            :min="1" 
-                            style="width: 100%"
-                          />
-                        </a-form-item>
-
-                        <!-- Questions -->
-                        <a-divider>Câu hỏi</a-divider>
-                        <div v-for="(question, qIndex) in lesson.quiz.questions" :key="qIndex" class="question-item">
-                          <a-card size="small">
-                            <template #extra>
-                              <a-button type="link" danger size="small" @click="removeQuestion(chapterIndex, lessonIndex, qIndex)">
-                                <DeleteOutlined />
-                              </a-button>
-                            </template>
-                            <a-form :model="question" :label-col="{ span: 5 }" :wrapper-col="{ span: 19 }">
-                              <a-form-item label="Câu hỏi">
-                                <a-input v-model:value="question.question" />
-                              </a-form-item>
-                              <a-form-item label="Điểm">
-                                <a-input-number v-model:value="question.points" :min="1" style="width: 100%" />
-                              </a-form-item>
-                              <a-form-item label="Câu trả lời">
-                                <!-- Trắc nghiệm: Nhiều lựa chọn với checkbox -->
-                                <div v-for="(option, optIndex) in question.options" :key="optIndex" class="option-item">
-                                  <a-space style="width: 100%">
-                                    <a-input 
-                                      v-model:value="option.text" 
-                                      placeholder="Nội dung câu trả lời"
-                                      style="flex: 1"
-                                    />
-                                    <a-checkbox v-model:checked="option.isCorrect">Đúng</a-checkbox>
-                                    <a-button type="link" danger size="small" @click="removeOption(chapterIndex, lessonIndex, qIndex, optIndex)">
-                                      <DeleteOutlined />
-                                    </a-button>
-                                  </a-space>
-                                </div>
-                                <a-button 
-                                  type="dashed" 
-                                  block 
-                                  @click="addOption(chapterIndex, lessonIndex, qIndex)"
-                                  style="margin-top: 8px"
-                                >
-                                  <PlusOutlined /> Thêm câu trả lời
-                                </a-button>
-                              </a-form-item>
-                              <a-form-item label="Giải thích">
-                                <a-textarea v-model:value="question.explanation" :rows="2" />
-                              </a-form-item>
-                            </a-form>
-                          </a-card>
-                        </div>
-                        <a-button 
-                          type="dashed" 
-                          block 
-                          @click="addQuestion(chapterIndex, lessonIndex)"
-                          style="margin-top: 16px"
-                        >
-                          <PlusOutlined /> Thêm câu hỏi
-                        </a-button>
-                      </template>
-                    </a-form>
-                  </a-card>
-                </div>
-
-                <a-button 
-                  type="dashed" 
-                  block 
-                  @click="addLesson(chapterIndex)"
-                  style="margin-top: 16px"
-                >
-                  <PlusOutlined /> Thêm bài học
-                </a-button>
-              </a-card>
-            </div>
-
-            <a-button 
-              type="dashed" 
-              block 
-              @click="addChapter"
-              style="margin-top: 16px"
-            >
-              <PlusOutlined /> Thêm chương
-            </a-button>
-          </div>
-        </a-tab-pane>
-      </a-tabs>
+      <!-- Modal content sẽ được thêm sau -->
     </a-modal>
 
     <!-- View Course Modal -->
@@ -786,7 +309,7 @@
           </a-descriptions-item>
           <a-descriptions-item label="Trạng thái">
             <a-tag :color="viewingCourse.status === 'active' ? 'success' : 'default'">
-              {{ viewingCourse.status === 'active' ? 'Hoạt động' : 'Tạm dừng' }}
+              {{ viewingCourse.status === 'active' ? 'Hoạt động' : viewingCourse.status === 'draft' ? 'Bản nháp' : 'Không hoạt động' }}
             </a-tag>
           </a-descriptions-item>
           <a-descriptions-item label="Xuất bản">
@@ -922,7 +445,7 @@ const courses = ref<Course[]>([])
 const stats = reactive({
   total: 0,
   active: 0,
-  inactive: 0,
+  // inactive: 0, // Có thể xóa nếu không dùng
 })
 
 // Search & Filter
@@ -1739,12 +1262,12 @@ const fetchCourses = async () => {
       if (Array.isArray(courses.value)) {
         stats.total = pagination.total
         stats.active = courses.value.filter(c => c.status === 'active').length
-        stats.inactive = courses.value.filter(c => c.status === 'inactive').length
+        // Xóa dòng: stats.inactive = courses.value.filter(c => c.status === 'inactive').length
       } else {
         // Fallback nếu không phải array
         stats.total = 0
         stats.active = 0
-        stats.inactive = 0
+        // Xóa dòng: stats.inactive = 0
         courses.value = []
       }
     } else {
@@ -1753,7 +1276,7 @@ const fetchCourses = async () => {
       pagination.total = 0
       stats.total = 0
       stats.active = 0
-      stats.inactive = 0
+      // Xóa dòng: stats.inactive = 0
     }
   } catch (error: any) {
     console.error('Failed to fetch courses:', error)
@@ -1763,7 +1286,7 @@ const fetchCourses = async () => {
     pagination.total = 0
     stats.total = 0
     stats.active = 0
-    stats.inactive = 0
+    // Xóa dòng: stats.inactive = 0
   } finally {
     loading.value = false
   }
