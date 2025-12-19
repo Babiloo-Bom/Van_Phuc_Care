@@ -23,18 +23,18 @@ app.use(express.urlencoded({ extended: true })); // Middleware để parse form 
 
 // Cấu hình CORS tường minh
 const allowedOrigins = [
-  "http://localhost:3101", // CRM dev
-  "http://localhost:3100", // Admin dev
-  "http://localhost:3102", // Elearning dev
-  "http://localhost:3000", // API itself (for swagger, etc.)
+  "https://localhost:3101", // CRM dev
+  "https://localhost:3100", // Admin dev
+  "https://localhost:3102", // Elearning dev
+  "https://localhost:3000", // API itself (for swagger, etc.)
   // Production domains
-  "http://elearning.vanphuccare.com",
-  "http://admin.vanphuccare.com",  // Thêm dòng này
-  "http://crm.vanphuccare.com",    // Thêm dòng này
+  "https://elearning.vanphuccare.com",
+  "https://admin.vanphuccare.com",  // Thêm dòng này
+  "httpss://crm.vanphuccare.com",    // Thêm dòng này
   // Nếu có IP trực tiếp
-  "http://103.216.119.104:3100",   // Admin port
-  "http://103.216.119.104:3101",   // CRM port
-  "http://103.216.119.104:3102",   // Elearning port
+  "https://103.216.119.104:3100",   // Admin port
+  "https://103.216.119.104:3101",   // CRM port
+  "https://103.216.119.104:3102",   // Elearning port
 ];
 
 const corsOptions = {
