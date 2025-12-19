@@ -21,9 +21,9 @@ services:
       - NODE_ENV=production
       - PORT=3000
       - MONGODB_URI=${MONGODB_URI:-mongodb://admin:vanphuccare2025@mongodb:27017/vanphuccare?authSource=admin}
-      - JWT_SECRET=${JWT_SECRET:-your_jwt_secret_here}
-      - JWT_ADMIN_SECRET=${JWT_ADMIN_SECRET:-your_jwt_admin_secret_here}
-      - JWT_USER_SECRET=${JWT_USER_SECRET:-your_jwt_user_secret_here}
+      - JWT_SECRET=${JWT_SECRET:-d0d9aa332c94acf2d4e6850d5832366b4ef8da7a8be8c83810490d6da2bb5efc}
+      - JWT_ADMIN_SECRET=${JWT_ADMIN_SECRET:-d0d9aa332c94acf2d4e6850d5832366b4ef8da7a8be8c83810490d6da2bb5efc}
+      - JWT_USER_SECRET=${JWT_USER_SECRET:-d0d9aa332c94acf2d4e6850d5832366b4ef8da7a8be8c83810490d6da2bb5efc}
       - JWT_TTL=${JWT_TTL:-7d}
       # SePay Configuration - Sandbox Mode for development
       - SEPAY_SANDBOX=${SEPAY_SANDBOX:-true}

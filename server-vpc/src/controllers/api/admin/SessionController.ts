@@ -36,6 +36,12 @@ class SessionController {
         return sendError(res, 400, 'Mật khẩu không được để trống');
       }
       
+      // Validate JWT secret before proceeding
+      if (!settings.jwt.adminSecret) {
+        console.error('❌ JWT Admin Secret is not configured');
+        return sendError(res, 500, 'Cấu hình hệ thống không hợp lệ');
+      }
+      
       let admin = null;
       // Check both status and isActive for admin login
       admin = await MongoDbAdmins.model.findOne({ 
@@ -77,14 +83,83 @@ class SessionController {
       }
       
       console.log('✅ Login successful for:', username);
-      const accessToken = jwt.sign({ id: admin.get('_id') }, settings.jwt.adminSecret, { expiresIn: settings.jwt.ttl });
-      const timestampNow = Date.now()
-      const tokenExpireAt = new Date(timestampNow + settings.jwt.ttl)
+      
+      // Get admin ID and ensure it's a string
+      const adminId = admin.get('_id');
+      const adminIdString = adminId?.toString ? adminId.toString() : String(adminId);
+      
+      if (!adminIdString) {
+        console.error('❌ Admin ID is invalid');
+        return sendError(res, 500, 'Lỗi hệ thống: Không thể lấy ID người dùng');
+      }
+      
+      // Convert TTL to proper format for jwt.sign
+      let ttlString: string;
+      if (typeof settings.jwt.ttl === 'string') {
+        // Already a string like "7d", "24h"
+        ttlString = settings.jwt.ttl;
+      } else if (typeof settings.jwt.ttl === 'number') {
+        // Convert milliseconds to days string
+        const days = Math.floor(settings.jwt.ttl / (1000 * 60 * 60 * 24));
+        ttlString = `${days}d`;
+      } else {
+        // Default to 7 days
+        ttlString = '7d';
+      }
+      
+      // Sign JWT token
+      const accessToken = jwt.sign(
+        { id: adminIdString }, 
+        settings.jwt.adminSecret, 
+        { expiresIn: ttlString }
+      );
+      
+      // Calculate tokenExpireAt properly
+      let ttlMs: number;
+      const jwtTtl = settings.jwt.ttl;
+      
+      if (typeof jwtTtl === 'number') {
+        ttlMs = jwtTtl;
+      } else if (typeof jwtTtl === 'string') {
+        // Parse string like "7d", "24h" - gán vào biến string để TypeScript hiểu
+        const ttlString: string = jwtTtl;
+        const match = ttlString.match(/^(\d+)([dhms])$/);
+        if (match) {
+          const value = parseInt(match[1]);
+          const unit = match[2];
+          const multipliers: Record<string, number> = {
+            s: 1000,
+            m: 60 * 1000,
+            h: 60 * 60 * 1000,
+            d: 24 * 60 * 60 * 1000
+          };
+          ttlMs = value * (multipliers[unit] || 86400000);
+        } else {
+          ttlMs = 7 * 24 * 60 * 60 * 1000; // Default 7 days
+        }
+      } else {
+        ttlMs = 7 * 24 * 60 * 60 * 1000; // Default 7 days
+      }
+      
+      const timestampNow = Date.now();
+      const tokenExpireAt = new Date(timestampNow + ttlMs);
+      
       sendSuccess(res, { accessToken, tokenExpireAt });
     } catch (error: any) {
       console.error('❌ Admin login error:', error);
       console.error('❌ Error stack:', error.stack);
-      sendError(res, 500, error.message, error as Error);
+      console.error('❌ Error details:', {
+        message: error.message,
+        name: error.name,
+        code: error.code,
+        settings: {
+          hasAdminSecret: !!settings.jwt.adminSecret,
+          adminSecretLength: settings.jwt.adminSecret?.length,
+          ttl: settings.jwt.ttl,
+          ttlType: typeof settings.jwt.ttl
+        }
+      });
+      sendError(res, 500, error.message || 'Lỗi hệ thống khi đăng nhập', error as Error);
     }
   }
 

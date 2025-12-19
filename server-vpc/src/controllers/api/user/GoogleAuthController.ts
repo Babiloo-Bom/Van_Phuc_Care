@@ -9,6 +9,7 @@ import { sendSuccess, sendError } from '@libs/response'
 import { InternalError } from '@libs/errors'
 import jwt from 'jsonwebtoken'
 import settings from '@configs/settings'
+import { getJwtTtlConfig } from '@libs/jwtHelper';
 
 export default class GoogleAuthController {
   /**
@@ -149,8 +150,9 @@ export default class GoogleAuthController {
       }
 
       // Generate JWT token (using userSecret)
-      const timestampNow = Date.now()
-      const tokenExpireAt = new Date(timestampNow + settings.jwt.ttl)
+      const { ttlString, ttlMs } = getJwtTtlConfig();
+      const timestampNow = Date.now();
+      const tokenExpireAt = new Date(timestampNow + ttlMs);
       
       const accessToken = jwt.sign(
         { 
@@ -158,7 +160,7 @@ export default class GoogleAuthController {
           email: user.get('email'),
         },
         settings.jwt.userSecret,
-        { expiresIn: settings.jwt.ttl }
+        { expiresIn: ttlString }
       )
       sendSuccess(res, {
         user: {
@@ -319,8 +321,9 @@ export default class GoogleAuthController {
       }
 
       // Generate JWT token (using userSecret)
-      const timestampNow = Date.now()
-      const tokenExpireAt = new Date(timestampNow + settings.jwt.ttl)
+      const { ttlString, ttlMs } = getJwtTtlConfig();
+      const timestampNow = Date.now();
+      const tokenExpireAt = new Date(timestampNow + ttlMs);
       
       const accessToken = jwt.sign(
         { 
@@ -328,7 +331,7 @@ export default class GoogleAuthController {
           email: user.get('email'),
         },
         settings.jwt.userSecret,
-        { expiresIn: settings.jwt.ttl }
+        { expiresIn: ttlString }
       )
 
       // Redirect to frontend with token

@@ -70,7 +70,7 @@
 
       <!-- Navigation Menu -->
       <nav class="p-4">
-        <a-menu mode="inline" :selected-keys="selectedKeys" class="border-0">
+        <a-menu mode="inline" :selected-keys="selectedKeys" :open-keys="openKeys" class="border-0">
           <a-menu-item key="dashboard">
             <NuxtLink to="/" class="flex items-center">
               <DashboardOutlined class="mr-3 text-lg" />
@@ -106,6 +106,21 @@
             </NuxtLink>
           </a-menu-item>
 
+          <!-- Elearning Menu với Submenu -->
+          <a-sub-menu key="elearning" :title="null">
+            <template #title>
+              <span class="flex items-center">
+                <BookOutlined class="mr-3 text-lg" />
+                <span>Elearning</span>
+              </span>
+            </template>
+            <a-menu-item key="courses">
+              <NuxtLink to="/elearning/courses" class="flex items-center">
+                <span>Quản lý khóa học</span>
+              </NuxtLink>
+            </a-menu-item>
+          </a-sub-menu>
+
           <a-menu-divider />
 
           <a-menu-item key="faqs">
@@ -137,7 +152,8 @@ import {
   UserOutlined,
   AppstoreOutlined,
   SettingOutlined,
-  MenuOutlined
+  MenuOutlined,
+  BookOutlined
 } from '@ant-design/icons-vue'
 import { message } from 'ant-design-vue'
 
@@ -160,7 +176,15 @@ const selectedKeys = computed(() => {
   if (path.startsWith('/customers')) return ['customers']
   if (path.startsWith('/products')) return ['products']
   if (path.startsWith('/admin/users')) return ['users']
+  if (path.startsWith('/elearning/courses')) return ['courses']
   if (path.startsWith('/faqs')) return ['faqs']
+  return []
+})
+
+// Get open submenu keys based on current route
+const openKeys = computed(() => {
+  const path = route.path
+  if (path.startsWith('/elearning')) return ['elearning']
   return []
 })
 

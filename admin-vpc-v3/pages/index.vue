@@ -18,16 +18,16 @@
 
     <!-- Stats Cards -->
     <div class="stats-grid">
-      <!-- Total Orders -->
+      <!-- Total Courses (thay thế Total Orders) -->
       <div class="stat-card stat-card-blue">
         <div class="stat-icon">
-          <ShoppingCartOutlined />
+          <BookOutlined />
         </div>
         <div class="stat-content">
-          <p class="stat-label">Tổng đơn hàng</p>
-          <p class="stat-value">{{ formatNumber(stats.totalOrders) }}</p>
+          <p class="stat-label">Tổng khóa học</p>
+          <p class="stat-value">{{ formatNumber(stats.totalCourses) }}</p>
           <p class="stat-change positive">
-            <ArrowUpOutlined /> {{ stats.completedOrders }} đã hoàn thành
+            <ArrowUpOutlined /> {{ stats.activeCourses }} đang hoạt động
           </p>
         </div>
       </div>
@@ -214,11 +214,13 @@ import {
   RightOutlined,
   AppstoreOutlined,
   TeamOutlined,
+  BookOutlined,  // Thêm icon này
 } from '@ant-design/icons-vue'
 import { message } from 'ant-design-vue'
 import { useOrdersApi } from '~/composables/api/useOrdersApi'
 import { useCustomersApi } from '~/composables/api/useCustomersApi'
 import { useUsersApi } from '~/composables/api/useUsersApi'
+import { useCoursesApi } from '~/composables/api/useCoursesApi'  // Thêm import này
 
 definePageMeta({
   layout: 'default',
@@ -233,6 +235,7 @@ const authStore = useAuthStore()
 const ordersApi = useOrdersApi()
 const customersApi = useCustomersApi()
 const usersApi = useUsersApi()
+const coursesApi = useCoursesApi()  // Thêm instance này
 const { apiBase, isDevelopment } = useEnvConfig()
 
 // State
@@ -244,6 +247,8 @@ const stats = reactive({
   totalRevenue: 0,
   completionRate: 0,
   totalUsers: 0,
+  totalCourses: 0,  // Thêm field này
+  activeCourses: 0,  // Thêm field này cho số khóa học đang hoạt động
   completedPercentage: 0,
   pendingPercentage: 0,
 })
@@ -327,13 +332,35 @@ const fetchDashboardData = async () => {
       }
     }
 
+    // Fetch courses statistics
+    try {
+      const coursesRes = await coursesApi.getCourses({ limit: 1 })
+      
+      if (coursesRes.status && coursesRes.data) {
+        // Thử lấy từ pagination trước
+        const pagination = coursesRes.data?.data?.pagination || coursesRes.data?.pagination
+        
+        if (pagination?.total) {
+          stats.totalCourses = pagination.total
+        } else {
+          // Fallback: fetch tất cả và đếm
+          const allCoursesRes = await coursesApi.getCourses({ limit: 1000 })
+          const courses = allCoursesRes.data?.data?.courses || allCoursesRes.data?.courses || []
+          
+          if (Array.isArray(courses)) {
+            stats.totalCourses = courses.length
+            stats.activeCourses = courses.filter((c: any) => c.status === 'active').length
+          }
+        }
+      }
+    } catch (error) {
+      console.warn('Failed to fetch courses stats:', error)
+    }
+
     // Fetch user statistics (users, not customers)
     try {
       const userStatsRes = await usersApi.getUserStats()
       if (userStatsRes.status && userStatsRes.data) {
-        // Backend returns: { message: "", data: { total, active, google, local, byRole } }
-        // apiClient wraps it: { status: true, data: { message: "", data: { total, ... } } }
-        // So we need: userStatsRes.data.data.total
         const statsData = userStatsRes.data.data || userStatsRes.data
         stats.totalUsers = statsData?.total ?? 0
       }

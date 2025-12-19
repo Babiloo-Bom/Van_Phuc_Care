@@ -37,9 +37,45 @@ class SessionController {
         return sendError(res, 404, BadAuthentication);
       }
       
-      const accessToken = jwt.sign({ id: userAnyStatus.get('_id') }, settings.jwt.userSecret, { expiresIn: settings.jwt.ttl });
-      const timestampNow = Date.now()
-      const tokenExpireAt = new Date(timestampNow + settings.jwt.ttl)
+      // Convert TTL to proper format for jwt.sign
+      const jwtTtl = settings.jwt.ttl;
+      let ttlString: string;
+      if (typeof jwtTtl === 'string') {
+        ttlString = jwtTtl;
+      } else if (typeof jwtTtl === 'number') {
+        const days = Math.floor(jwtTtl / (1000 * 60 * 60 * 24));
+        ttlString = `${days}d`;
+      } else {
+        ttlString = '7d';
+      }
+      
+      // Calculate tokenExpireAt
+      let ttlMs: number;
+      if (typeof jwtTtl === 'number') {
+        ttlMs = jwtTtl;
+      } else if (typeof jwtTtl === 'string') {
+        const ttlStr: string = jwtTtl;
+        const match = ttlStr.match(/^(\d+)([dhms])$/);
+        if (match) {
+          const value = parseInt(match[1]);
+          const unit = match[2];
+          const multipliers: Record<string, number> = {
+            s: 1000,
+            m: 60 * 1000,
+            h: 60 * 60 * 1000,
+            d: 24 * 60 * 60 * 1000
+          };
+          ttlMs = value * (multipliers[unit] || 86400000);
+        } else {
+          ttlMs = 7 * 24 * 60 * 60 * 1000;
+        }
+      } else {
+        ttlMs = 7 * 24 * 60 * 60 * 1000;
+      }
+      
+      const accessToken = jwt.sign({ id: userAnyStatus.get('_id') }, settings.jwt.userSecret, { expiresIn: ttlString });
+      const timestampNow = Date.now();
+      const tokenExpireAt = new Date(timestampNow + ttlMs);
       sendSuccess(res, { accessToken, tokenExpireAt: tokenExpireAt, id: userAnyStatus.get('_id') as string });
     } catch (error: any) {
       console.error('❌ Login error:', error);
@@ -106,9 +142,46 @@ class SessionController {
         return sendError(res, 400, InvalidOtp);
       }
       await user.update({ status: MongoDbUsers.STATUS_ENUM.ACTIVE, verifyOtp: null });
-      const accessToken = jwt.sign({ id: user.get('_id') }, settings.jwt.userSecret, { expiresIn: settings.jwt.ttl });
-      const timestampNow = Date.now()
-      const tokenExpireAt = new Date(timestampNow + settings.jwt.ttl)
+      
+      // Convert TTL to proper format for jwt.sign
+      const jwtTtl = settings.jwt.ttl;
+      let ttlString: string;
+      if (typeof jwtTtl === 'string') {
+        ttlString = jwtTtl;
+      } else if (typeof jwtTtl === 'number') {
+        const days = Math.floor(jwtTtl / (1000 * 60 * 60 * 24));
+        ttlString = `${days}d`;
+      } else {
+        ttlString = '7d';
+      }
+      
+      // Calculate tokenExpireAt
+      let ttlMs: number;
+      if (typeof jwtTtl === 'number') {
+        ttlMs = jwtTtl;
+      } else if (typeof jwtTtl === 'string') {
+        const ttlStr: string = jwtTtl;
+        const match = ttlStr.match(/^(\d+)([dhms])$/);
+        if (match) {
+          const value = parseInt(match[1]);
+          const unit = match[2];
+          const multipliers: Record<string, number> = {
+            s: 1000,
+            m: 60 * 1000,
+            h: 60 * 60 * 1000,
+            d: 24 * 60 * 60 * 1000
+          };
+          ttlMs = value * (multipliers[unit] || 86400000);
+        } else {
+          ttlMs = 7 * 24 * 60 * 60 * 1000;
+        }
+      } else {
+        ttlMs = 7 * 24 * 60 * 60 * 1000;
+      }
+      
+      const accessToken = jwt.sign({ id: user.get('_id') }, settings.jwt.userSecret, { expiresIn: ttlString });
+      const timestampNow = Date.now();
+      const tokenExpireAt = new Date(timestampNow + ttlMs);
       sendSuccess(res, { 
         accessToken, 
         tokenExpireAt: tokenExpireAt, 

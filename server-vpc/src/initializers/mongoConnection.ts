@@ -17,14 +17,22 @@ class MongoDB {
       mongoose.set('strictQuery', false);
 
       // Kết nối tới MongoDB
-      await mongoose.connect(this.uri, { dbName: 'vanphuccare' });
+      await mongoose.connect(this.uri, { 
+        dbName: 'vanphuccare',
+        serverSelectionTimeoutMS: 5000, // Timeout sau 5 giây
+        socketTimeoutMS: 45000,
+      });
 
       console.log('\x1b[32mMongoDB database connection successfully\x1b[0m');
 
-      // Bật chế độ debug để log query
-      mongoose.set('debug', true);
-    } catch (error) {
-      console.error('MongoDB connection error:', error.message);
+      // Bật chế độ debug để log query (chỉ trong development)
+      if (process.env.NODE_ENV !== 'production') {
+        mongoose.set('debug', true);
+      }
+    } catch (error: any) {
+      console.error('❌ MongoDB connection error:', error.message);
+      console.error('❌ MongoDB error stack:', error.stack);
+      // Không throw error để server vẫn có thể start, nhưng sẽ log lỗi
     }
   }
 }
