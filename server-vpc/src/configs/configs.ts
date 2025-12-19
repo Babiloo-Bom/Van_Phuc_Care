@@ -20,23 +20,30 @@ export default {
   sepayConfig: {
     // Sandbox/Test mode: Chỉ bật khi SEPAY_SANDBOX=true HOẶC NODE_ENV=development (và không có SEPAY_SANDBOX=false)
     // Production: Set NODE_ENV=production và SEPAY_SANDBOX=false (hoặc không set) để dùng SePay thật
-    isSandbox: process.env.SEPAY_SANDBOX === 'true' || (process.env.NODE_ENV === 'development' && process.env.SEPAY_SANDBOX !== 'false'),
+    isSandbox:
+      process.env.SEPAY_SANDBOX === "true" ||
+      (process.env.NODE_ENV === "development" && process.env.SEPAY_SANDBOX !== "false"),
     // API Token - có thể dùng token test nếu SePay cung cấp
     apiToken: process.env.SEPAY_API_TOKEN || "GL23FZNXPG7O2QVFMNTY8AWIX46WUIXSWTC4BYVALU5Q93CA05BHMFXLVJGFN6JK",
     // Sandbox API Token (nếu SePay có token riêng cho sandbox)
-    sandboxApiToken: process.env.SEPAY_SANDBOX_API_TOKEN || process.env.SEPAY_API_TOKEN || "GL23FZNXPG7O2QVFMNTY8AWIX46WUIXSWTC4BYVALU5Q93CA05BHMFXLVJGFN6JK",
+    sandboxApiToken:
+      process.env.SEPAY_SANDBOX_API_TOKEN ||
+      process.env.SEPAY_API_TOKEN ||
+      "GL23FZNXPG7O2QVFMNTY8AWIX46WUIXSWTC4BYVALU5Q93CA05BHMFXLVJGFN6JK",
     qrApiUrl: process.env.SEPAY_QR_API_URL || "https://qr.sepay.vn/qr-mbbank.html",
     qrImgApiUrl: process.env.SEPAY_QR_IMG_API_URL || "https://qr.sepay.vn/img",
     // API Base URL - có thể có sandbox endpoint riêng
-    apiBaseUrl: process.env.SEPAY_API_BASE_URL || "https://api.sepay.vn",
-    sandboxApiBaseUrl: process.env.SEPAY_SANDBOX_API_BASE_URL || process.env.SEPAY_API_BASE_URL || "https://api.sepay.vn",
+    apiBaseUrl: process.env.SEPAY_API_BASE_URL || "https://my.sepay.vn/api",
+    sandboxApiBaseUrl:
+      process.env.SEPAY_SANDBOX_API_BASE_URL || process.env.SEPAY_API_BASE_URL || "https://my.sepay.vn/api",
     bankCode: "MB",
     // Production account
     accountNo: process.env.SEPAY_ACCOUNT_NO || "655123456888",
     accountName: process.env.SEPAY_ACCOUNT_NAME || "Công Ty TNHH Vạn Phúc Care",
     // Sandbox/Test account (dùng để test, không thực sự nhận tiền)
     sandboxAccountNo: process.env.SEPAY_SANDBOX_ACCOUNT_NO || process.env.SEPAY_ACCOUNT_NO || "655123456888",
-    sandboxAccountName: process.env.SEPAY_SANDBOX_ACCOUNT_NAME || process.env.SEPAY_ACCOUNT_NAME || "Công Ty TNHH Vạn Phúc Care (TEST)",
+    sandboxAccountName:
+      process.env.SEPAY_SANDBOX_ACCOUNT_NAME || process.env.SEPAY_ACCOUNT_NAME || "Công Ty TNHH Vạn Phúc Care (TEST)",
     webhookUrl: process.env.SEPAY_WEBHOOK_URL || "http://localhost:3000/api/u/orders/payment/sepay-webhook",
   },
   mailerTransporter: {
