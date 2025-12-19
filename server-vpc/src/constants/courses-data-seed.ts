@@ -13,6 +13,7 @@ export const coursesData = [
         avatar: '/images/instructors/instructor-1.jpg',
         bio: 'Senior Frontend Developer với 5+ năm kinh nghiệm tại các công ty công nghệ hàng đầu'
       },
+      //
       category: 'Lập Trình',
       level: 'beginner',
       duration: 1200,
