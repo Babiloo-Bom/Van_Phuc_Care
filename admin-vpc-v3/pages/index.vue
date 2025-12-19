@@ -244,8 +244,8 @@ const stats = reactive({
   totalRevenue: 0,
   completionRate: 0,
   totalUsers: 0,
-  totalCourses: 0,  // Thêm field này
-  activeCourses: 0,  // Thêm field này cho số khóa học đang hoạt động
+  totalCourses: 0,
+  activeCourses: 0,
   completedPercentage: 0,
   pendingPercentage: 0,
 })
@@ -331,27 +331,33 @@ const fetchDashboardData = async () => {
 
     // Fetch courses statistics
     try {
-      const coursesRes = await coursesApi.getCourses({ limit: 1 })
+      const coursesRes = await coursesApi.getCourses({ limit: 1000 })
       
       if (coursesRes.status && coursesRes.data) {
-        // Thử lấy từ pagination trước
-        const pagination = coursesRes.data?.data?.pagination || coursesRes.data?.pagination
+        // Structure thực tế: coursesRes.data.data.data.pagination.total
+        // coursesRes.data = { message: "", data: { data: { courses: [], pagination: {} } } }
+        const responseData = coursesRes.data.data?.data
         
-        if (pagination?.total) {
-          stats.totalCourses = pagination.total
-        } else {
-          // Fallback: fetch tất cả và đếm
-          const allCoursesRes = await coursesApi.getCourses({ limit: 1000 })
-          const courses = allCoursesRes.data?.data?.courses || allCoursesRes.data?.courses || []
+        if (responseData) {
+          // Lấy pagination
+          if (responseData.pagination?.total !== undefined) {
+            stats.totalCourses = responseData.pagination.total
+          }
           
-          if (Array.isArray(courses)) {
-            stats.totalCourses = courses.length
+          // Lấy courses để đếm active
+          const courses = responseData.courses || []
+          if (Array.isArray(courses) && courses.length > 0) {
             stats.activeCourses = courses.filter((c: any) => c.status === 'active').length
+            
+            // Fallback nếu không có pagination.total
+            if (stats.totalCourses === 0) {
+              stats.totalCourses = courses.length
+            }
           }
         }
       }
     } catch (error) {
-      console.warn('Failed to fetch courses stats:', error)
+      console.error('❌ Failed to fetch courses stats:', error)
     }
 
     // Fetch user statistics (users, not customers)

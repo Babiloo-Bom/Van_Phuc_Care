@@ -451,20 +451,52 @@ const fetchCourses = async () => {
     const response = await coursesApi.getCourses(params)
     
     if (response.status && response.data) {
-      const data = response.data.data || response.data
-      courses.value = data.courses || data || []
+      // Structure: response.data.data.data.courses
+      // Backend trả về: { message: "", data: { data: { courses: [], pagination: {} } } }
+      const nestedData = response.data.data?.data || response.data.data || response.data
       
-      const paginationData = data.pagination || {}
-      pagination.total = paginationData.total || courses.value.length
+      // Đảm bảo courses là array
+      const coursesArray = Array.isArray(nestedData?.courses) 
+        ? nestedData.courses 
+        : Array.isArray(nestedData) 
+          ? nestedData 
+          : []
       
-      // Calculate stats
-      stats.total = pagination.total
-      stats.active = courses.value.filter(c => c.status === 'active').length
-      stats.inactive = courses.value.filter(c => c.status === 'inactive').length
+      courses.value = coursesArray
+      
+      // Lấy pagination
+      const paginationData = nestedData?.pagination || {}
+      pagination.total = paginationData.total || coursesArray.length
+      
+      // Calculate stats - đảm bảo courses.value là array trước khi filter
+      if (Array.isArray(courses.value)) {
+        stats.total = pagination.total
+        stats.active = courses.value.filter(c => c.status === 'active').length
+        stats.inactive = courses.value.filter(c => c.status === 'inactive').length
+      } else {
+        // Fallback nếu không phải array
+        stats.total = 0
+        stats.active = 0
+        stats.inactive = 0
+        courses.value = []
+      }
+    } else {
+      // Nếu response không hợp lệ, set về mảng rỗng
+      courses.value = []
+      pagination.total = 0
+      stats.total = 0
+      stats.active = 0
+      stats.inactive = 0
     }
   } catch (error: any) {
     console.error('Failed to fetch courses:', error)
     message.error('Không thể tải danh sách khóa học')
+    // Đảm bảo courses luôn là array khi có lỗi
+    courses.value = []
+    pagination.total = 0
+    stats.total = 0
+    stats.active = 0
+    stats.inactive = 0
   } finally {
     loading.value = false
   }

@@ -156,12 +156,45 @@ class CourseController {
    */
   public static async getAllCourses(req: Request, res: Response) {
     try {
-      const courses = await Course.find({ status: "active" }).sort({
-        createdAt: -1,
-      });
+      // Pagination
+      const page = parseInt((req.query.page as string) || '1', 10);
+      const limit = parseInt((req.query.limit as string) || '10', 10);
+      const offset = (page - 1) * limit;
 
-      const LessonsModel = (await import("@mongodb/lessons")).default;
-      const QuizzesModel = (await import("@mongodb/quizzes")).default;
+      // Filters
+      const search = (req.query.search as string) || '';
+      const status = (req.query.status as string) || '';
+
+      const query: any = {};
+
+      if (status && status !== 'all') {
+        query.status = status;
+      }
+
+      if (search) {
+        const regex = new RegExp(search, 'i');
+        query.$or = [
+          { title: regex },
+          { slug: regex },
+          { description: regex },
+          { shortDescription: regex },
+          { category: regex },
+          { 'instructor.name': regex },
+          { tags: regex },
+        ];
+      }
+
+      // Lấy dữ liệu + tổng số bản ghi
+      const [courses, total] = await Promise.all([
+        Course.find(query)
+          .sort({ createdAt: -1 })
+          .skip(offset)
+          .limit(limit),
+        Course.countDocuments(query),
+      ]);
+
+      const LessonsModel = (await import('@mongodb/lessons')).default;
+      const QuizzesModel = (await import('@mongodb/quizzes')).default;
 
       const coursesWithStats = await Promise.all(
         courses.map(async (course: any) => {
@@ -169,7 +202,7 @@ class CourseController {
 
           const chapters = await ChaptersModel.model.find({
             courseId: course._id,
-            status: "active",
+            status: 'active',
           });
 
           let totalVideoCount = 0;
@@ -178,7 +211,7 @@ class CourseController {
           for (const chapter of chapters) {
             const lessons = await LessonsModel.model.find({
               chapterId: chapter._id,
-              status: "active",
+              status: 'active',
             });
 
             for (const lesson of lessons) {
@@ -186,14 +219,14 @@ class CourseController {
 
               if (lessonData.videos && Array.isArray(lessonData.videos)) {
                 totalVideoCount += lessonData.videos.length;
-              } else if (lessonData.type === "video" && lessonData.videoUrl) {
+              } else if (lessonData.type === 'video' && lessonData.videoUrl) {
                 totalVideoCount += 1;
               }
 
               if (lessonData.documents && Array.isArray(lessonData.documents)) {
                 totalDocumentCount += lessonData.documents.length;
               } else if (
-                lessonData.type === "document" &&
+                lessonData.type === 'document' &&
                 lessonData.documentUrl
               ) {
                 totalDocumentCount += 1;
@@ -203,7 +236,7 @@ class CourseController {
 
           const totalQuizCount = await QuizzesModel.countDocuments({
             courseId: course._id.toString(),
-            status: "active",
+            status: 'active',
           });
 
           return {
@@ -236,10 +269,20 @@ class CourseController {
             createdAt: courseData.createdAt,
             updatedAt: courseData.updatedAt,
           };
-        })
+        }),
       );
 
-      sendSuccess(res, { courses: coursesWithStats });
+      // Format trả về khớp với admin-vpc-v3/pages/elearning/courses/index.vue
+      sendSuccess(res, {
+        data: {
+          courses: coursesWithStats,
+          pagination: {
+            page,
+            pageSize: limit,
+            total,
+          },
+        },
+      });
     } catch (error: any) {
       sendError(res, 500, error.message, error as Error);
     }

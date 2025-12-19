@@ -23,10 +23,10 @@ app.use(express.urlencoded({ extended: true })); // Middleware để parse form 
 
 // Cấu hình CORS tường minh
 const allowedOrigins = [
-  "https://localhost:3101", // CRM dev
-  "https://localhost:3100", // Admin dev
-  "https://localhost:3102", // Elearning dev
-  "https://localhost:3000", // API itself (for swagger, etc.)
+  "http://localhost:3101", // CRM dev
+  "http://localhost:3100", // Admin dev
+  "http://localhost:3102", // Elearning dev
+  "http://localhost:3000", // API itself (for swagger, etc.)
   // Production domains
   "https://elearning.vanphuccare.com",
   "https://admin.vanphuccare.com",  // Thêm dòng này
