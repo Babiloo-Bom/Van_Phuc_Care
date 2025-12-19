@@ -194,8 +194,6 @@ services:
       - NUXT_GOOGLE_CLIENT_SECRET=${GOOGLE_CLIENT_SECRET}
       - NUXT_PUBLIC_BASE_URL=https://elearning.vanphuccare.com  # Nên dùng https
       - BASE_URL_CRM=https://crm.vanphuccare.com  # Nên dùng https
-      - API_BASE_URL=http://api:3000
-
 networks:
   vpc-network:
     driver: bridge
