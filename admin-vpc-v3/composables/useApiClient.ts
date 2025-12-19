@@ -14,9 +14,31 @@ export const useApiClient = () => {
   const authStore = useAuthStore()
   const router = useRouter()
   
-  // Base API URL - nếu apiHost rỗng, dùng apiBase (relative path)
-  const baseURL = config.public.apiHost || config.public.apiBase || ''
-
+  // Base API URL
+  // Trong production, phải dùng absolute URL để gọi external API
+  // Nếu apiHost rỗng, dùng apiHostInternal (server-side) hoặc window.location.origin
+  let baseURL = (config.public.apiHost || '').replace(/\/+$/, '')
+  
+  // Nếu baseURL rỗng, cần xử lý đặc biệt
+  if (!baseURL) {
+    if (process.server) {
+      // Server-side: dùng apiHostInternal
+      baseURL = (config.apiHostInternal || 'http://localhost:3000').replace(/\/+$/, '')
+    } else {
+      // Client-side: trong production, cần absolute URL
+      // Nếu không có, có thể dùng window.location.origin nhưng cần đảm bảo API cùng domain
+      // Hoặc tốt nhất là set NUXT_PUBLIC_API_HOST trong docker-compose
+      if (process.env.NODE_ENV === 'production') {
+        // Trong production, nếu không có apiHost, có thể API đang ở cùng domain
+        // Nhưng để chắc chắn, nên set NUXT_PUBLIC_API_HOST
+        baseURL = ''
+      } else {
+        // Development: dùng localhost
+        baseURL = 'http://localhost:3000'
+      }
+    }
+  }
+  
   /**
    * Create fetch options with defaults
    */
