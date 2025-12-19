@@ -27,7 +27,14 @@ const allowedOrigins = [
   "http://localhost:3100", // Admin dev
   "http://localhost:3102", // Elearning dev
   "http://localhost:3000", // API itself (for swagger, etc.)
-  "http://elearning.vanphuccare.com"
+  // Production domains
+  "http://elearning.vanphuccare.com",
+  "http://admin.vanphuccare.com",  // Thêm dòng này
+  "http://crm.vanphuccare.com",    // Thêm dòng này
+  // Nếu có IP trực tiếp
+  "http://103.216.119.104:3100",   // Admin port
+  "http://103.216.119.104:3101",   // CRM port
+  "http://103.216.119.104:3102",   // Elearning port
 ];
 
 const corsOptions = {
@@ -35,10 +42,17 @@ const corsOptions = {
     // Allow requests with no origin (like mobile apps or curl requests)
     if (!origin) return callback(null, true);
 
-    if (allowedOrigins.indexOf(origin) !== -1 || process.env.NODE_ENV !== "production") {
-      callback(null, true);
+    // Trong production, chỉ allow các origins trong danh sách
+    if (process.env.NODE_ENV === "production") {
+      if (allowedOrigins.indexOf(origin) !== -1) {
+        callback(null, true);
+      } else {
+        console.warn('⚠️ CORS blocked origin:', origin);
+        callback(new Error("Not allowed by CORS"));
+      }
     } else {
-      callback(new Error("Not allowed by CORS"));
+      // Development: allow tất cả
+      callback(null, true);
     }
   },
   methods: ["GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"],

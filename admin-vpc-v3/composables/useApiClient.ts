@@ -14,8 +14,8 @@ export const useApiClient = () => {
   const authStore = useAuthStore()
   const router = useRouter()
   
-  // Base API URL
-  const baseURL = config.public.apiHost
+  // Base API URL - nếu apiHost rỗng, dùng apiBase (relative path)
+  const baseURL = config.public.apiHost || config.public.apiBase || ''
 
   /**
    * Create fetch options with defaults

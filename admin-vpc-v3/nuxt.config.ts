@@ -60,7 +60,8 @@ export default defineNuxtConfig({
     
     public: {
       // API Configuration
-      apiHost: process.env.NUXT_PUBLIC_API_HOST || 'http://localhost:3000',
+      // Nếu NUXT_PUBLIC_API_HOST rỗng hoặc không set, dùng empty string (relative path)
+      apiHost: process.env.NUXT_PUBLIC_API_HOST || '',
       apiBase: process.env.NUXT_PUBLIC_API_BASE || (process.env.NODE_ENV === 'production' ? '/api/a' : 'http://localhost:3000/api/a'),
       
       // Google OAuth Configuration
