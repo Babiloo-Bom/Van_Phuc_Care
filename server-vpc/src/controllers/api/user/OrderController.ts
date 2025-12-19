@@ -916,7 +916,7 @@ class OrderController {
             orderId,
             order.totalAmount
           );
-
+          console.log('🔍 SePay API transaction result:', transactionResult);
           if (transactionResult.found && transactionResult.transaction) {
             // Tìm thấy giao dịch thành công từ SePay API
             console.log(`✅ Found payment from SePay API for order ${orderId}, updating order status`);

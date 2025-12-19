@@ -238,6 +238,7 @@ class SePayService {
     amount?: number;
   }> {
     try {
+      console.log('findTransactionByOrderId: ', { orderId, expectedAmount });
       // Lấy transactions trong 24h gần đây
       const fromDate = new Date();
       fromDate.setHours(fromDate.getHours() - 24);
@@ -250,13 +251,14 @@ class SePayService {
         amount_in: expectedAmount !== undefined ? Math.round(expectedAmount) : undefined,
         limit: 100 // Lấy tối đa 100 giao dịch gần nhất
       });
-
+      console.log(`🔍 Retrieved ${transactions.length} transactions from SePay for orderId ${orderId}`);
       // Tìm transaction có content chứa orderId
       for (const transaction of transactions) {
         const content = (transaction.transaction_content || transaction.transactionContent || transaction.content || transaction.description || transaction.message || '').toString();
-        
+        console.log('checking transaction:', content)
         // Kiểm tra nếu content hoặc reference_number chứa orderId
         const reference = (transaction.reference_number || transaction.referenceNumber || '').toString();
+        console.log('checking reference:', reference)
         if (content.includes(orderId) || reference.includes(orderId)) {
           const transactionAmount = Number(transaction.amount_in || transaction.amount || transaction.money || transaction.amount_out || 0);
           
