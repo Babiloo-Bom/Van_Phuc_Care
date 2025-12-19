@@ -15,6 +15,12 @@ interface SePayTransaction {
   transactionId?: string;
   amount?: number;
   money?: number; // SePay có thể dùng field này
+  amount_in?: string;
+  amount_out?: string;
+  transaction_content?: string;
+  reference_number?: string;
+  transaction_date?: string;
+  account_number?: string;
   content?: string;
   description?: string;
   message?: string;
@@ -143,25 +149,80 @@ class SePayService {
   }
 
   /**
+   * Format Date to 'YYYY-MM-DD HH:mm:ss' for SePay
+   */
+  private static formatDateForSepay(date: Date): string {
+    const pad = (n: number) => n.toString().padStart(2, '0');
+    const yyyy = date.getFullYear();
+    const mm = pad(date.getMonth() + 1);
+    const dd = pad(date.getDate());
+    const HH = pad(date.getHours());
+    const MM = pad(date.getMinutes());
+    const SS = pad(date.getSeconds());
+    return `${yyyy}-${mm}-${dd} ${HH}:${MM}:${SS}`;
+  }
+
+  /**
    * Lấy danh sách giao dịch từ SePay API
+   * Hỗ trợ cả key chính thức của SePay và alias (for backward compatibility):
+   * - SePay keys: account_number, transaction_date_min, transaction_date_max, since_id, limit, reference_number, amount_in, amount_out
+   * - Aliases: fromDate -> transaction_date_min, toDate -> transaction_date_max, offset -> since_id
    */
   public static async getTransactions(params?: {
+    account_number?: string;
+    transaction_date_min?: string;
+    transaction_date_max?: string;
+    since_id?: string | number;
+    limit?: number;
+    reference_number?: string;
+    amount_in?: number | string;
+    amount_out?: number | string;
+    // backward compatible aliases
     fromDate?: string;
     toDate?: string;
-    status?: string;
-    limit?: number;
-    offset?: number;
+    offset?: string | number;
   }): Promise<SePayTransaction[]> {
     try {
-      const response = await axios.get(`${this.API_BASE_URL}/v1/transactions`, {
+      // Map friendly/legacy keys to SePay's expected keys
+      const query: any = {};
+
+      if (params) {
+        if (params.transaction_date_min) query.transaction_date_min = params.transaction_date_min;
+        else if ((params as any).fromDate) query.transaction_date_min = (params as any).fromDate;
+
+        if (params.transaction_date_max) query.transaction_date_max = params.transaction_date_max;
+        else if ((params as any).toDate) query.transaction_date_max = (params as any).toDate;
+
+        if (params.since_id) query.since_id = params.since_id;
+        else if ((params as any).offset) query.since_id = (params as any).offset;
+
+        if (params.account_number) query.account_number = params.account_number;
+        if (params.reference_number) query.reference_number = params.reference_number;
+        if (params.amount_in !== undefined) query.amount_in = params.amount_in;
+        if (params.amount_out !== undefined) query.amount_out = params.amount_out;
+
+        if (params.limit !== undefined) {
+          const limitNum = Number(params.limit) || 0;
+          // SePay cap at 5000 per docs
+          query.limit = Math.min(limitNum, 5000);
+        }
+      }
+
+      const response = await axios.get(`${this.API_BASE_URL}/userapi/transactions/list`, {
         headers: {
           'Authorization': `Bearer ${this.API_TOKEN}`,
           'Content-Type': 'application/json'
         },
-        params: params || {}
+        params: query
       });
 
-      return response.data.data || [];
+      // SePay returns `transactions` (array) or `transaction` (single) per docs
+      const resp = response.data || {};
+      const transactions = resp.transactions || resp.transaction || [];
+
+      if (Array.isArray(transactions)) return transactions;
+      if (transactions) return [transactions];
+      return [];
     } catch (error: any) {
       console.error('❌ SePay get transactions error:', error);
       throw new Error(`Failed to get transactions: ${error.message}`);
@@ -183,19 +244,21 @@ class SePayService {
       const toDate = new Date();
 
       const transactions = await this.getTransactions({
-        fromDate: fromDate.toISOString(),
-        toDate: toDate.toISOString(),
-        status: 'success', // Chỉ lấy giao dịch thành công
+        transaction_date_min: this.formatDateForSepay(fromDate),
+        transaction_date_max: this.formatDateForSepay(toDate),
+        // Nếu cung cấp expectedAmount, lọc theo amount_in để giảm số lượng data trả về từ SePay
+        amount_in: expectedAmount !== undefined ? Math.round(expectedAmount) : undefined,
         limit: 100 // Lấy tối đa 100 giao dịch gần nhất
       });
 
       // Tìm transaction có content chứa orderId
       for (const transaction of transactions) {
-        const content = (transaction.content || transaction.description || transaction.message || '').toString();
+        const content = (transaction.transaction_content || transaction.transactionContent || transaction.content || transaction.description || transaction.message || '').toString();
         
-        // Kiểm tra nếu content chứa orderId
-        if (content.includes(orderId)) {
-          const transactionAmount = transaction.amount || transaction.money || 0;
+        // Kiểm tra nếu content hoặc reference_number chứa orderId
+        const reference = (transaction.reference_number || transaction.referenceNumber || '').toString();
+        if (content.includes(orderId) || reference.includes(orderId)) {
+          const transactionAmount = Number(transaction.amount_in || transaction.amount || transaction.money || transaction.amount_out || 0);
           
           // Nếu có expectedAmount, kiểm tra số tiền với tolerance
           if (expectedAmount !== undefined) {

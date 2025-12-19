@@ -33,9 +33,9 @@ export default {
     qrApiUrl: process.env.SEPAY_QR_API_URL || "https://qr.sepay.vn/qr-mbbank.html",
     qrImgApiUrl: process.env.SEPAY_QR_IMG_API_URL || "https://qr.sepay.vn/img",
     // API Base URL - có thể có sandbox endpoint riêng
-    apiBaseUrl: process.env.SEPAY_API_BASE_URL || "https://my.sepay.vn/api",
+    apiBaseUrl: process.env.SEPAY_API_BASE_URL || "https://my.sepay.vn",
     sandboxApiBaseUrl:
-      process.env.SEPAY_SANDBOX_API_BASE_URL || process.env.SEPAY_API_BASE_URL || "https://my.sepay.vn/api",
+      process.env.SEPAY_SANDBOX_API_BASE_URL || process.env.SEPAY_API_BASE_URL || "https://my.sepay.vn",
     bankCode: "MB",
     // Production account
     accountNo: process.env.SEPAY_ACCOUNT_NO || "655123456888",
