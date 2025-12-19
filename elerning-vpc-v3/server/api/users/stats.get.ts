@@ -8,7 +8,8 @@ export default defineEventHandler(async event => {
     const config = useRuntimeConfig();
     
     // Call backend API
-    const response = await $fetch(`${config.public.apiHost}/api/a/users-management/stats`, {
+    const apiHost = config.apiHostInternal || config.public.apiHost || 'http://localhost:3000'
+    const response = await $fetch(`${apiHost}/api/a/users-management/stats`, {
       method: 'GET',
       headers: {
         'Authorization': `Bearer ${getHeader(event, 'authorization')?.replace('Bearer ', '') || ''}`,

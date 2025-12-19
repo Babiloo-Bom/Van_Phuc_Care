@@ -183,9 +183,9 @@ services:
       - "3102:3000"
     environment:
       - NODE_ENV=production
-      - NUXT_PUBLIC_API_HOST=  # Để trống hoặc dùng relative path
+      - NUXT_PUBLIC_API_HOST=  # Phải rỗng hoặc không có dòng này
       - NUXT_PUBLIC_API_BASE=/api/u
-      - NUXT_API_HOST_INTERNAL=http://api:3000
+      - NUXT_API_HOST_INTERNAL=http://api:3000  # Chỉ dùng cho server-side
       - NUXT_PUBLIC_TINYMCE_KEY=${TINYMCE_KEY}
       - NUXT_PUBLIC_APP_NAME=E-Learning Portal - Van Phuc Care
       - NUXT_PUBLIC_APP_URL=http://elearning.vanphuccare.com  # Nên dùng https

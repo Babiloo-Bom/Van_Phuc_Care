@@ -15,7 +15,18 @@ export const useApiClient = () => {
   const router = useRouter();
   
   // Base API URL
-  const baseURL = config.public.apiHost;
+  // Trong production, nếu apiHost rỗng, dùng relative path
+  // Trong development, dùng localhost:3000
+  let baseURL = config.public.apiHost || ''
+  
+  // Nếu baseURL rỗng và đang ở client-side, dùng relative path
+  // Nếu baseURL có giá trị nhưng là Docker internal hostname, cần xử lý
+  if (baseURL && (baseURL.includes('api:3000') || baseURL.includes('api:'))) {
+    // Nếu là client-side và baseURL là Docker internal, không dùng
+    if (process.client) {
+      baseURL = '' // Dùng relative path
+    }
+  }
 
   /**
    * Create fetch options with defaults

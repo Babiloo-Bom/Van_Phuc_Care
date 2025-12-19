@@ -9,7 +9,8 @@ export default defineEventHandler(async event => {
     const query = getQuery(event);
     
     // Call backend API
-    const response = await $fetch(`${config.public.apiHost}/api/a/users-management`, {
+    const apiHost = config.apiHostInternal || config.public.apiHost || 'http://localhost:3000'
+    const response = await $fetch(`${apiHost}/api/a/users-management`, {
       method: 'GET',
       query,
       headers: {

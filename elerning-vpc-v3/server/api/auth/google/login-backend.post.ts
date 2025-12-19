@@ -19,6 +19,12 @@ export default defineEventHandler(async (event): Promise<GoogleLoginResponse> =>
 
     const config = useRuntimeConfig(event);
     
+    // Debug log
+    console.log('🔍 Google login backend config:', {
+      apiHostInternal: config.apiHostInternal,
+      publicApiHost: config.public.apiHost,
+    })
+    
     // Build redirectUri for this site (prefer provided in body)
     const host = getHeader(event, 'host');
     const forwardedProto = getHeader(event, 'x-forwarded-proto');
@@ -30,8 +36,12 @@ export default defineEventHandler(async (event): Promise<GoogleLoginResponse> =>
 
     // Delegate code exchange to main backend
     try {
-      const apiHost = config.apiHostInternal || config.public.apiHost;
-      const backendResponse = await $fetch<any>(`${apiHost}/api/u/auth/google/login`, {
+      const apiHost = config.apiHostInternal || config.public.apiHost || 'http://localhost:3000';
+      const backendUrl = `${apiHost}/api/u/auth/google/login`;
+      
+      console.log('🔗 Calling backend:', backendUrl);
+      
+      const backendResponse = await $fetch<any>(backendUrl, {
         method: 'POST',
         body: {
           code,
