@@ -1,11 +1,69 @@
 /**
  * ====================================
- * Health Books API Composable
+ * HealthBooks API Composable
  * ====================================
  * All health book-related API calls
  */
 
-import type { HealthBook, BaseQueryParams, PaginatedResponse } from '~/types/api'
+export interface HealthBook {
+  _id?: string
+  userId?: string
+  customerId?: string
+  customerEmail?: string
+  name?: string
+  dob?: string
+  avatar?: string
+  weight?: string
+  height?: string
+  gender?: string
+  skinConditions?: string
+  tooth?: {
+    count?: string
+    descriptions?: string
+  }
+  nutrition?: {
+    count?: string
+    descriptions?: string
+  }
+  sleep?: {
+    time?: string
+    descriptions?: string
+  }
+  frequencyOfDefecation?: string
+  fecalCondition?: string
+  digestiveProblems?: string
+  healthCondition?: string
+  vaccination?: string
+  vaccinationDate?: string
+  vaccinationContent?: string
+  note?: string
+  method?: {
+    status?: string
+    descriptions?: string
+  }
+  exerciseAndSkills?: string
+  domain?: string
+  recordedAt?: string
+  createdAt?: string
+  updatedAt?: string
+}
+
+export interface BaseQueryParams {
+  page?: number
+  limit?: number
+  searchKey?: string
+  category?: string
+  date?: string
+}
+
+export interface PaginatedResponse<T> {
+  data: T[]
+  pagination: {
+    total: number
+    page: number
+    limit: number
+  }
+}
 
 export const useHealthBooksApi = () => {
   const apiClient = useApiClient()
@@ -15,7 +73,7 @@ export const useHealthBooksApi = () => {
      * Get health books list
      */
     async getHealthBooks(params?: BaseQueryParams) {
-      return apiClient.get<PaginatedResponse<HealthBook>>('/api/a/health-book/all', {
+      return apiClient.get<{ healthBooks: HealthBook[], pagination: { total: number, page: number, limit: number } }>('/api/a/health-book/all', {
         params,
         showError: false
       })
@@ -24,16 +82,9 @@ export const useHealthBooksApi = () => {
     /**
      * Get health book by ID
      */
-    async getHealthBook(id: string) {
-      return apiClient.get<{ healthBook: HealthBook }>(`/api/a/health-book/${id}`)
-    },
-
-    /**
-     * Get health book by customer and date
-     */
-    async getHealthBookByDate(customerId: string, date: string) {
-      return apiClient.get<{ healthBook: HealthBook }>(`/api/a/health-book/byDate/${customerId}`, {
-        params: { date }
+    async getHealthBook(id: string, date?: string) {
+      return apiClient.get<{ data: HealthBook }>(`/api/a/health-book/${id}`, {
+        params: date ? { date } : undefined
       })
     },
 
@@ -41,8 +92,8 @@ export const useHealthBooksApi = () => {
      * Create new health book
      */
     async createHealthBook(data: Partial<HealthBook>) {
-      return apiClient.post<{ healthBook: HealthBook }>('/api/a/health-book', data, {
-        errorMessage: 'Không thể tạo sổ sức khỏe'
+      return apiClient.post<{ status: boolean }>('/api/a/health-book', data, {
+        errorMessage: 'Không thể tạo sổ SKĐT'
       })
     },
 
@@ -50,8 +101,8 @@ export const useHealthBooksApi = () => {
      * Update health book
      */
     async updateHealthBook(id: string, data: Partial<HealthBook>) {
-      return apiClient.patch<{ healthBook: HealthBook }>(`/api/a/health-book/${id}`, data, {
-        errorMessage: 'Không thể cập nhật sổ sức khỏe'
+      return apiClient.patch<{ healthBookCheck: HealthBook }>(`/api/a/health-book/${id}`, data, {
+        errorMessage: 'Không thể cập nhật sổ SKĐT'
       })
     },
 
@@ -60,34 +111,7 @@ export const useHealthBooksApi = () => {
      */
     async deleteHealthBook(id: string) {
       return apiClient.delete(`/api/a/health-book/${id}`, {
-        errorMessage: 'Không thể xóa sổ sức khỏe'
-      })
-    },
-
-    /**
-     * Get health book comments
-     */
-    async getComments(healthBookId: string) {
-      return apiClient.get('/api/a/comments', {
-        params: { healthBookId }
-      })
-    },
-
-    /**
-     * Add comment to health book
-     */
-    async addComment(healthBookId: string, content: string) {
-      return apiClient.post('/api/a/comments', { healthBookId, content }, {
-        errorMessage: 'Không thể thêm ghi chú'
-      })
-    },
-
-    /**
-     * Delete comment
-     */
-    async deleteComment(id: string) {
-      return apiClient.delete(`/api/a/comments/${id}`, {
-        errorMessage: 'Không thể xóa ghi chú'
+        errorMessage: 'Không thể xóa sổ SKĐT'
       })
     }
   }

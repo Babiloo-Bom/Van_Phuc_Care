@@ -78,12 +78,7 @@
             </NuxtLink>
           </a-menu-item>
           
-          <a-menu-item key="customers">
-            <NuxtLink to="/customers" class="flex items-center">
-              <UserOutlined class="mr-3 text-lg" />
-              <span>Khách hàng</span>
-            </NuxtLink>
-          </a-menu-item>
+          <!-- Xóa menu item "Khách hàng" này -->
           
           <a-menu-item key="products">
             <NuxtLink to="/products" class="flex items-center">
@@ -99,8 +94,8 @@
             </NuxtLink>
           </a-menu-item>
 
-          <!-- Elearning Menu với Submenu -->
-          <a-sub-menu key="elearning" :title="null">
+          <!-- Elearning Menu với Submenu - Chỉ Admin và Manager -->
+          <a-sub-menu v-if="isAdminOrManager" key="elearning" :title="null">
             <template #title>
               <span class="flex items-center">
                 <BookOutlined class="mr-3 text-lg" />
@@ -110,6 +105,22 @@
             <a-menu-item key="courses">
               <NuxtLink to="/elearning/courses" class="flex items-center">
                 <span>Quản lý khóa học</span>
+              </NuxtLink>
+            </a-menu-item>
+          </a-sub-menu>
+
+          <!-- My Menu với Submenu - Admin, Manager, Worker -->
+          <a-sub-menu v-if="isAdminManagerOrWorker" key="my" :title="null">
+            <template #title>
+              <span class="flex items-center">
+                <UserOutlined class="mr-3 text-lg" />
+                <span>My</span>
+              </span>
+            </template>
+            <a-menu-item key="so-skdt">
+              <NuxtLink to="/my/so-skdt" class="flex items-center">
+                <FileTextOutlined class="mr-3 text-lg" />
+                <span>Quản lý Sổ SKĐT</span>
               </NuxtLink>
             </a-menu-item>
           </a-sub-menu>
@@ -145,7 +156,8 @@ import {
   AppstoreOutlined,
   SettingOutlined,
   MenuOutlined,
-  BookOutlined
+  BookOutlined,
+  FileTextOutlined  // Thêm icon này cho Sổ SKĐT
 } from '@ant-design/icons-vue'
 import { message } from 'ant-design-vue'
 
@@ -164,10 +176,10 @@ watch(() => route.path, () => {
 const selectedKeys = computed(() => {
   const path = route.path
   if (path === '/') return ['dashboard']
-  if (path.startsWith('/customers')) return ['customers']
   if (path.startsWith('/products')) return ['products']
   if (path.startsWith('/admin/users')) return ['users']
   if (path.startsWith('/elearning/courses')) return ['courses']
+  if (path.startsWith('/my/so-skdt')) return ['so-skdt']
   if (path.startsWith('/faqs')) return ['faqs']
   return []
 })
@@ -176,6 +188,7 @@ const selectedKeys = computed(() => {
 const openKeys = computed(() => {
   const path = route.path
   if (path.startsWith('/elearning')) return ['elearning']
+  if (path.startsWith('/my')) return ['my']
   return []
 })
 
@@ -210,6 +223,18 @@ const userRoleText = computed(() => {
 // Check if current user is admin
 const isAdmin = computed(() => {
   return authStore.user?.role === 'admin'
+})
+
+// Check if current user is admin or manager
+const isAdminOrManager = computed(() => {
+  const role = authStore.user?.role
+  return role === 'admin' || role === 'manager'
+})
+
+// Check if current user is admin, manager, or worker
+const isAdminManagerOrWorker = computed(() => {
+  const role = authStore.user?.role
+  return role === 'admin' || role === 'manager' || role === 'worker'
 })
 
 // Logout handler

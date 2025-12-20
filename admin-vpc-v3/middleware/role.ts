@@ -2,14 +2,16 @@
  * ====================================
  * Role-based Middleware
  * ====================================
- * Checks if user has required role
+ * Checks if user has required role(s)
  * Usage: definePageMeta({ 
- *   middleware: 'auth',
- *   requiredRole: 'admin' 
+ *   middleware: ['auth', 'role'],
+ *   requiredRole: 'admin'  // Single role
+ *   // OR
+ *   requiredRole: ['admin', 'manager']  // Multiple roles
  * })
  */
 
-export default defineNuxtRouteMiddleware((to, from) => {
+export default defineNuxtRouteMiddleware(async (to, from) => {
   const authStore = useAuthStore()
 
   // First check if authenticated
@@ -19,21 +21,36 @@ export default defineNuxtRouteMiddleware((to, from) => {
   }
 
   // Get required role from route meta
-  const requiredRole = to.meta.requiredRole as string | undefined
+  const requiredRole = to.meta.requiredRole as string | string[] | undefined
 
   if (!requiredRole) {
     // No role requirement, allow access
     return
   }
 
-  // Check if user has the required role
+  // Check if user has the required role(s)
   const userRole = authStore.user?.role
 
-  if (!userRole || userRole !== requiredRole) {
-    console.warn('[Role Middleware] User does not have required role:', requiredRole)
-    
-    // Redirect to unauthorized page or dashboard
+  if (!userRole) {
+    console.warn('[Role Middleware] User has no role')
     return navigateTo('/unauthorized')
+  }
+
+  // Support both single role and array of roles
+  const allowedRoles = Array.isArray(requiredRole) ? requiredRole : [requiredRole]
+  const hasRequiredRole = allowedRoles.includes(userRole)
+
+  if (!hasRequiredRole) {
+    console.warn('[Role Middleware] User does not have required role(s):', allowedRoles, 'User role:', userRole)
+    
+    // Show error message
+    if (process.client) {
+      const { message } = await import('ant-design-vue')
+      message.error('Bạn không có quyền truy cập trang này')
+    }
+    
+    // Redirect to dashboard
+    return navigateTo('/')
   }
 })
 

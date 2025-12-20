@@ -4,6 +4,7 @@ import { NoData } from '@libs/errors';
 import MonggoDbCustomer from '@mongodb/customers';
 import MongoDbOrder from '@mongodb/orders';
 import moment from 'moment';
+import MongoDbUsers from '@mongodb/users';
 
 class CustomerController {
   public async create (req: Request, res: Response) {
@@ -21,45 +22,84 @@ class CustomerController {
 
   public async index (req: Request, res: Response) {
     try {
+      console.log('🔍 CustomerController.index called');
+      console.log('📥 Query params:', req.query);
+      
       const page = parseInt(req.query.page as string || '1');
       const limit = parseInt(req.query.limit as string || '12');
       const offset = (page - 1) * limit;
       const { from, to, categoryId, searchKey, status } = req.query;
-      let queryString: any = {
-      };
-      if (from && to) {
-        Object.assign(queryString, {
-          'createdAt': {
-            $gte: moment(from.toString()),
-            $lte: moment(to.toString()),
-          },
-        });
-      }
-      if (categoryId) {
-        Object.assign(queryString, {
-          'categoryId': categoryId,
-        });
-      }
-      if (status) {
-        Object.assign(queryString, {
-          'status': status,
-        });
-      }
+      
+      // Search trong cả customers và users collections
+      let customers: any[] = [];
+      let total = 0;
+      
       if (searchKey) {
-        queryString = {
-          ...queryString,
-          $or: [
-            { fullname: { $regex: searchKey, $options: 'i' } },
-            { email: { $regex: searchKey, $options: 'i' } },
-            { phone: { $regex: searchKey, $options: 'i' } },
-          ],
-        };
+        const searchKeyStr = (typeof searchKey === 'string' ? searchKey : String(searchKey)).trim();
+        console.log('🔎 Searching with key (trimmed):', searchKeyStr);
+        
+        if (searchKeyStr.length > 0) {
+          // Search trong customers collection
+          const customerQuery: any = {
+            $or: [
+              { firstname: { $regex: searchKeyStr, $options: 'i' } },
+              { lastname: { $regex: searchKeyStr, $options: 'i' } },
+              { email: { $regex: searchKeyStr, $options: 'i' } },
+              { phone: { $regex: searchKeyStr, $options: 'i' } },
+            ],
+          };
+          
+          // Search trong users collection
+          const userQuery: any = {
+            type: 'normal', // Chỉ lấy customers (type: 'normal')
+            $or: [
+              { fullname: { $regex: searchKeyStr, $options: 'i' } },
+              { email: { $regex: searchKeyStr, $options: 'i' } },
+              { phoneNumber: { $regex: searchKeyStr, $options: 'i' } },
+            ],
+          };
+          
+          const [customersFromCustomers, usersFromUsers, customerCount, userCount] = await Promise.all([
+            MonggoDbCustomer.model.find(customerQuery).skip(offset).limit(limit).sort({ createdAt: -1 }).lean(),
+            MongoDbUsers.model.find(userQuery).skip(offset).limit(limit).sort({ createdAt: -1 }).select('-password').lean(),
+            MonggoDbCustomer.model.countDocuments(customerQuery),
+            MongoDbUsers.model.countDocuments(userQuery),
+          ]);
+          
+          // Merge và normalize data
+          customers = [
+            ...customersFromCustomers.map((c: any) => ({
+              ...c,
+              _source: 'customers',
+              fullname: c.firstname && c.lastname ? `${c.firstname} ${c.lastname}` : c.firstname || c.lastname || '',
+            })),
+            ...usersFromUsers.map((u: any) => ({
+              ...u,
+              _source: 'users',
+              firstname: u.fullname ? u.fullname.split(' ')[0] : '',
+              lastname: u.fullname ? u.fullname.split(' ').slice(1).join(' ') : '',
+              phone: u.phoneNumber || '',
+            })),
+          ];
+          
+          total = customerCount + userCount;
+        }
+      } else {
+        // Nếu không có searchKey, chỉ lấy từ customers
+        const [customersData, totalCount] = await Promise.all([
+          MonggoDbCustomer.model.find({}).skip(offset).limit(limit).sort({ createdAt: -1 }).lean(),
+          MonggoDbCustomer.model.countDocuments({}),
+        ]);
+        customers = customersData.map((c: any) => ({
+          ...c,
+          _source: 'customers',
+          fullname: c.firstname && c.lastname ? `${c.firstname} ${c.lastname}` : c.firstname || c.lastname || '',
+        }));
+        total = totalCount;
       }
-      const [customers, total] = await Promise.all([
-        MonggoDbCustomer.model.find(queryString).skip(offset).limit(limit).sort({ createdAt: -1 }),
-        MonggoDbCustomer.model.find(queryString).countDocuments(),
-      ]);
-      // Standardized pagination response format
+      
+      console.log('✅ Found customers:', customers.length, 'Total:', total);
+      
       const responseData = { 
         data: customers, 
         pagination: { 
@@ -70,6 +110,7 @@ class CustomerController {
       };
       sendSuccess(res, responseData);
     } catch (error: any) {
+      console.error('❌ CustomerController.index error:', error);
       sendError(res, 500, error.message, error as Error);
     }
   }

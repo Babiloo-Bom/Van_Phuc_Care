@@ -430,7 +430,8 @@ import { watch, nextTick } from 'vue'
 
 definePageMeta({
   layout: 'default',
-  middleware: 'auth'
+  middleware: ['auth', 'role'],
+  requiredRole: ['admin', 'manager']  // Chỉ Admin và Manager
 })
 
 useHead({

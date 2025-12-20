@@ -32,16 +32,16 @@
         </div>
       </div>
 
-      <!-- Total Revenue -->
+      <!-- Sổ SKĐT (thay thế Total Revenue) -->
       <div class="stat-card stat-card-green">
         <div class="stat-icon">
-          <DollarOutlined />
+          <FileTextOutlined />
         </div>
         <div class="stat-content">
-          <p class="stat-label">Tổng doanh thu</p>
-          <p class="stat-value">{{ formatCurrency(stats.totalRevenue) }}</p>
+          <p class="stat-label">Tổng Sổ SKĐT</p>
+          <p class="stat-value">{{ formatNumber(stats.totalHealthBooks) }}</p>
           <p class="stat-change positive">
-            <ArrowUpOutlined /> {{ stats.completionRate }}% hoàn thành
+            <ArrowUpOutlined /> {{ stats.activeHealthBooks || 0 }} đang hoạt động
           </p>
         </div>
       </div>
@@ -123,11 +123,11 @@
             </div>
             <p class="quick-action-label">Quản lý khóa học</p>
           </NuxtLink>
-          <NuxtLink to="/customers" class="quick-action-item">
+          <NuxtLink to="/my/so-skdt" class="quick-action-item">
             <div class="quick-action-icon green">
-              <UserOutlined />
+              <FileTextOutlined />
             </div>
-            <p class="quick-action-label">Quản lý khách hàng</p>
+            <p class="quick-action-label">Quản lý Sổ SKĐT</p>
           </NuxtLink>
           <NuxtLink to="/products" class="quick-action-item">
             <div class="quick-action-icon orange">
@@ -213,12 +213,14 @@ import {
   RightOutlined,
   AppstoreOutlined,
   TeamOutlined,
-  BookOutlined,  // Thêm icon này
+  BookOutlined,
+  FileTextOutlined,  // Thêm icon này
 } from '@ant-design/icons-vue'
 import { message } from 'ant-design-vue'
 import { useCustomersApi } from '~/composables/api/useCustomersApi'
 import { useUsersApi } from '~/composables/api/useUsersApi'
-import { useCoursesApi } from '~/composables/api/useCoursesApi'  // Thêm import này
+import { useCoursesApi } from '~/composables/api/useCoursesApi'
+import { useHealthBooksApi } from '~/composables/api/useHealthBooksApi'  // Thêm import này
 
 definePageMeta({
   layout: 'default',
@@ -232,7 +234,8 @@ useHead({
 const authStore = useAuthStore()
 const customersApi = useCustomersApi()
 const usersApi = useUsersApi()
-const coursesApi = useCoursesApi()  // Thêm instance này
+const coursesApi = useCoursesApi()
+const healthBooksApi = useHealthBooksApi()  // Thêm instance này
 const { apiBase, isDevelopment } = useEnvConfig()
 
 // State
@@ -241,13 +244,15 @@ const stats = reactive({
   totalOrders: 0,
   completedOrders: 0,
   pendingOrders: 0,
-  totalRevenue: 0,
+  totalRevenue: 0,  // Có thể giữ lại hoặc xóa
   completionRate: 0,
   totalUsers: 0,
   totalCourses: 0,
   activeCourses: 0,
   completedPercentage: 0,
   pendingPercentage: 0,
+  totalHealthBooks: 0,  // Thêm field này
+  activeHealthBooks: 0,  // Thêm field này
 })
 const recentCourses = ref<any[]>([]) // Thêm state này
 
@@ -382,15 +387,58 @@ const fetchDashboardData = async () => {
       }
     }
 
+    // Fetch health books statistics
+    try {
+      const healthBooksRes = await healthBooksApi.getHealthBooks({ limit: 1000 })
+      
+      if (healthBooksRes.status && healthBooksRes.data) {
+        const responseData = healthBooksRes.data.data || healthBooksRes.data
+        
+        if (responseData) {
+          // Lấy pagination
+          if (responseData.pagination?.total !== undefined) {
+            stats.totalHealthBooks = responseData.pagination.total
+          }
+          
+          // Lấy health books để đếm active
+          const healthBooks = responseData.healthBooks || []
+          if (Array.isArray(healthBooks) && healthBooks.length > 0) {
+            // Có thể filter theo status nếu có
+            stats.activeHealthBooks = healthBooks.length
+            
+            // Fallback nếu không có pagination.total
+            if (stats.totalHealthBooks === 0) {
+              stats.totalHealthBooks = healthBooks.length
+            }
+          }
+        }
+      }
+    } catch (error) {
+      console.error('❌ Failed to fetch health books stats:', error)
+    }
+
     // Fetch recent courses (thay thế recent orders)
     try {
       const coursesRes = await coursesApi.getCourses({ limit: 5, sort: 'createdAt', order: 'desc' })
       if (coursesRes.status && coursesRes.data) {
-        const courses = coursesRes.data?.data?.courses || coursesRes.data?.courses || []
-        recentCourses.value = Array.isArray(courses) ? courses : []
+        // Structure: response.data.data.data.courses
+        // Backend trả về: { message: "", data: { data: { courses: [], pagination: {} } } }
+        const nestedData = coursesRes.data.data?.data || coursesRes.data.data || coursesRes.data
+        
+        // Đảm bảo courses là array
+        const coursesArray = Array.isArray(nestedData?.courses) 
+          ? nestedData.courses 
+          : Array.isArray(nestedData) 
+            ? nestedData 
+            : []
+        
+        recentCourses.value = coursesArray
+      } else {
+        recentCourses.value = []
       }
     } catch (error) {
       console.warn('Failed to fetch recent courses:', error)
+      recentCourses.value = []
     }
   } catch (error: any) {
     console.error('Failed to fetch dashboard data:', error)
