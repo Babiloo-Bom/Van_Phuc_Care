@@ -63,8 +63,9 @@ export default defineNuxtConfig({
     
     public: {
       // API Configuration
-      apiHost: process.env.NUXT_PUBLIC_API_HOST || 'http://localhost:3000',
-      apiBase: process.env.NUXT_PUBLIC_API_BASE || 'http://localhost:3000',
+      // Để rỗng để sử dụng relative path (proxied by Nuxt server)
+      apiHost: process.env.NUXT_PUBLIC_API_HOST || '',
+      apiBase: process.env.NUXT_PUBLIC_API_BASE || '/api/u',
       
       // Google OAuth Configuration
       googleClientId: process.env.NUXT_PUBLIC_GOOGLE_CLIENT_ID || '',

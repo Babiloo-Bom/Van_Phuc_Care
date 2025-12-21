@@ -800,6 +800,8 @@ class OrderController {
       // Xử lý webhook
       const webhookResult = await SePayService.handleWebhook(req.body);
 
+      console.log('ℹ️ SePay webhook processed result:', webhookResult);
+
       if (!webhookResult.success || !webhookResult.orderId) {
         console.error('❌ SePay webhook: Invalid webhook data', {
           success: webhookResult.success,
