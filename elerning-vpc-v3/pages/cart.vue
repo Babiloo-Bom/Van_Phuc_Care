@@ -327,6 +327,15 @@
           <p class="mt-4 text-xs text-gray-500">
             Sau khi thanh toán thành công, hệ thống sẽ tự động kích hoạt khóa học và chuyển bạn đến trang học.
           </p>
+
+          <div class="mt-4 text-sm text-center">
+            <div v-if="qrError" class="text-red-500 font-semibold">{{ qrError }}</div>
+            <div v-else class="text-gray-600">Hết hạn sau: <span class="font-semibold">{{ formatSeconds(qrCountdown) }}</span></div>
+            <div class="mt-3 flex justify-center gap-3">
+              <a-button v-if="qrError" type="primary" :loading="isProcessingOrderQr" @click="retryQr">Tạo mã QR mới</a-button>
+              <a-button type="default" @click="closeQrModal">Đóng</a-button>
+            </div>
+          </div>
         </div>
 
         <div v-else class="text-center text-gray-500 py-8">
@@ -338,7 +347,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, onMounted } from 'vue'
+import { ref, computed, onMounted, onUnmounted, watch } from 'vue'
 import { message } from 'ant-design-vue'
 import { useCartStore } from '~/stores/cart'
 import { useAuthStore } from '~/stores/auth'
@@ -360,8 +369,22 @@ const isProcessingOrderQr = ref(false)
 // QR payment state (SePay)
 const showQrModal = ref(false)
 const qrInfo = ref<any | null>(null)
-const qrPaymentStatus = ref<'pending' | 'completed'>('pending')
+const qrPaymentStatus = ref<'pending' | 'completed' | 'expired'>('pending')
 let qrStatusInterval: any = null
+
+// Polling / TTL control
+const QR_POLL_INTERVAL_MS = 5000
+const QR_TTL_SECONDS = 15 * 60 // 15 minutes
+const MAX_POLLING_ATTEMPTS = Math.ceil(QR_TTL_SECONDS / (QR_POLL_INTERVAL_MS / 1000))
+
+const qrExpiresAt = ref<number | null>(null) // timestamp ms when QR expires
+const qrPollingAttempts = ref(0)
+const qrError = ref<string | null>(null)
+
+const qrCountdown = computed(() => {
+  if (!qrExpiresAt.value) return 0
+  return Math.max(0, Math.floor((qrExpiresAt.value - Date.now()) / 1000))
+})
 
 // Reactive data
 const cartItems = computed(() => {
@@ -525,16 +548,41 @@ const clearQrInterval = () => {
     clearInterval(qrStatusInterval)
     qrStatusInterval = null
   }
+  // reset client-side tracking
+  qrExpiresAt.value = null
+  qrPollingAttempts.value = 0
 }
 
 const startQrStatusPolling = (orderId: string) => {
   if (!process.client) return
 
   clearQrInterval()
+  qrPollingAttempts.value = 0
+  qrError.value = null
+  // set expiry from now
+  qrExpiresAt.value = Date.now() + QR_TTL_SECONDS * 1000
   const { apiUser } = useApiBase()
 
   qrStatusInterval = setInterval(async () => {
     try {
+      qrPollingAttempts.value++
+
+      // Stop if expired or reached max attempts
+      if (qrExpiresAt.value && Date.now() > qrExpiresAt.value) {
+        clearQrInterval()
+        qrPaymentStatus.value = 'pending'
+        qrError.value = 'Mã QR đã hết hạn. Vui lòng tạo mã mới.'
+        isProcessingOrderQr.value = false
+        return
+      }
+
+      if (qrPollingAttempts.value > MAX_POLLING_ATTEMPTS) {
+        clearQrInterval()
+        qrError.value = 'Mã QR đã hết hạn. Vui lòng tạo mã mới.'
+        isProcessingOrderQr.value = false
+        return
+      }
+
       const res: any = await $fetch(`${apiUser}/orders/payment/qr/status/${orderId}?t=${Date.now()}`)
       if (res?.data?.paid) {
         qrPaymentStatus.value = 'completed'
@@ -569,8 +617,55 @@ const startQrStatusPolling = (orderId: string) => {
       }
     } catch (error) {
       console.error('❌ Check QR payment status failed (cart):', error)
+
+      // If too many consecutive failures, stop polling and show error
+      qrPollingAttempts.value++
+      if (qrPollingAttempts.value >= MAX_POLLING_ATTEMPTS) {
+        clearQrInterval()
+        qrError.value = 'Không thể kiểm tra trạng thái. Vui lòng thử lại sau.'
+        isProcessingOrderQr.value = false
+      }
     }
-  }, 5000)
+  }, QR_POLL_INTERVAL_MS)
+}
+
+// Clean up interval on unmount and when modal closed
+onUnmounted(() => {
+  clearQrInterval()
+})
+
+watch(showQrModal, (val) => {
+  if (!val) {
+    // If user closes modal manually, stop polling and reset transient state
+    clearQrInterval()
+    qrError.value = null
+    qrInfo.value = null
+    isProcessingOrderQr.value = false
+  }
+})
+
+// Utility to format seconds to mm:ss
+const formatSeconds = (s: number) => {
+  const mm = Math.floor(s / 60).toString().padStart(2, '0')
+  const ss = (s % 60).toString().padStart(2, '0')
+  return `${mm}:${ss}`
+}
+
+const closeQrModal = () => {
+  showQrModal.value = false
+  qrInfo.value = null
+  qrError.value = null
+  qrPaymentStatus.value = 'pending'
+  isProcessingOrderQr.value = false
+  clearQrInterval()
+}
+
+const retryQr = async () => {
+  if (isProcessingOrderQr.value) return
+  qrError.value = null
+  qrInfo.value = null
+  qrPaymentStatus.value = 'pending'
+  await processQrOrder()
 }
 
 const processQrOrder = async () => {
