@@ -415,7 +415,13 @@ class OrderController {
     try {
       const totalOrders = await Order.countDocuments();
       const completedOrders = await Order.countDocuments({ status: 'completed' });
-      const pendingOrders = await Order.countDocuments({ status: 'pending' });
+      // Đếm cả pending và processing để khớp với logic frontend
+      const pendingOrders = await Order.countDocuments({ 
+        $or: [
+          { status: 'pending' },
+          { status: 'processing' }
+        ]
+      });
       const totalRevenue = await Order.aggregate([
         { $match: { status: 'completed' } },
         { $group: { _id: null, total: { $sum: '$totalAmount' } } }

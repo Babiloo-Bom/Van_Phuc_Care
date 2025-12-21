@@ -123,6 +123,13 @@
                 <span>Quản lý Sổ SKĐT</span>
               </NuxtLink>
             </a-menu-item>
+            <!-- Thêm menu item Quản lý giao dịch - Chỉ Admin và Manager -->
+            <a-menu-item v-if="isAdminOrManager" key="transactions">
+              <NuxtLink to="/my/transactions" class="flex items-center">
+                <ShoppingCartOutlined class="mr-3 text-lg" />
+                <span>Quản lý giao dịch</span>
+              </NuxtLink>
+            </a-menu-item>
           </a-sub-menu>
 
           <a-menu-divider />
@@ -157,7 +164,8 @@ import {
   SettingOutlined,
   MenuOutlined,
   BookOutlined,
-  FileTextOutlined  // Thêm icon này cho Sổ SKĐT
+  FileTextOutlined,
+  ShoppingCartOutlined  // Thêm icon này
 } from '@ant-design/icons-vue'
 import { message } from 'ant-design-vue'
 
@@ -180,6 +188,7 @@ const selectedKeys = computed(() => {
   if (path.startsWith('/admin/users')) return ['users']
   if (path.startsWith('/elearning/courses')) return ['courses']
   if (path.startsWith('/my/so-skdt')) return ['so-skdt']
+  if (path.startsWith('/my/transactions')) return ['transactions']  // Thêm dòng này
   if (path.startsWith('/faqs')) return ['faqs']
   return []
 })
@@ -294,4 +303,3 @@ const handleLogout = async () => {
   }
 }
 </style>
-//

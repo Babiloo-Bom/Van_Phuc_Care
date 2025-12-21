@@ -46,16 +46,17 @@
         </div>
       </div>
 
-      <!-- Pending Orders -->
+      <!-- Giao dịch (thay thế Pending Orders) -->
       <div class="stat-card stat-card-orange">
         <div class="stat-icon">
           <ClockCircleOutlined />
         </div>
         <div class="stat-content">
-          <p class="stat-label">Đơn hàng chờ xử lý</p>
+          <p class="stat-label">Giao dịch</p>
           <p class="stat-value">{{ formatNumber(stats.pendingOrders) }}</p>
           <p class="stat-change" :class="stats.pendingOrders > 0 ? 'warning' : 'positive'">
-            <InfoCircleOutlined /> Cần xử lý
+            <InfoCircleOutlined /> 
+            {{ stats.pendingOrders > 0 ? 'Cần xử lý' : 'Tất cả đã xử lý' }}
           </p>
         </div>
       </div>
@@ -221,6 +222,7 @@ import { useCustomersApi } from '~/composables/api/useCustomersApi'
 import { useUsersApi } from '~/composables/api/useUsersApi'
 import { useCoursesApi } from '~/composables/api/useCoursesApi'
 import { useHealthBooksApi } from '~/composables/api/useHealthBooksApi'  // Thêm import này
+import { useOrdersApi } from '~/composables/api/useOrdersApi'  // Thêm import này
 
 definePageMeta({
   layout: 'default',
@@ -236,6 +238,7 @@ const customersApi = useCustomersApi()
 const usersApi = useUsersApi()
 const coursesApi = useCoursesApi()
 const healthBooksApi = useHealthBooksApi()  // Thêm instance này
+const ordersApi = useOrdersApi()  // Thêm instance này
 const { apiBase, isDevelopment } = useEnvConfig()
 
 // State
@@ -317,22 +320,31 @@ const getRoleText = (role?: string) => {
 const fetchDashboardData = async () => {
   loading.value = true
   try {
-    // Xóa phần fetch order statistics vì không còn dùng ordersApi
-    // const orderStatsRes = await ordersApi.getOrderStats()
-    // if (orderStatsRes.status && orderStatsRes.data?.stats) {
-    //   const orderStats = orderStatsRes.data.stats
-    //   stats.totalOrders = orderStats.totalOrders || 0
-    //   stats.completedOrders = orderStats.completedOrders || 0
-    //   stats.pendingOrders = orderStats.pendingOrders || 0
-    //   stats.totalRevenue = orderStats.totalRevenue || 0
-    //   stats.completionRate = parseFloat(orderStats.completionRate || '0')
-    //   
-    //   // Calculate percentages
-    //   if (stats.totalOrders > 0) {
-    //     stats.completedPercentage = (stats.completedOrders / stats.totalOrders) * 100
-    //     stats.pendingPercentage = (stats.pendingOrders / stats.totalOrders) * 100
-    //   }
-    // }
+    // Fetch order statistics để lấy số lượng giao dịch thực tế
+    try {
+      const orderStatsRes = await ordersApi.getOrderStats()
+      if (orderStatsRes.status && orderStatsRes.data) {
+        // Backend trả về: { message: "", data: { stats: { pendingOrders: 11, ... } } }
+        // orderStatsRes.data = { message: "", data: { stats: {...} } }
+        const responseData = orderStatsRes.data.data || orderStatsRes.data
+        const orderStats = responseData?.stats || responseData
+        
+        stats.totalOrders = orderStats?.totalOrders || 0
+        stats.completedOrders = orderStats?.completedOrders || 0
+        stats.pendingOrders = orderStats?.pendingOrders || 0  // Số lượng giao dịch chờ xử lý
+        stats.totalRevenue = orderStats?.totalRevenue || 0
+        stats.completionRate = parseFloat(orderStats?.completionRate || '0')
+        
+        // Calculate percentages
+        if (stats.totalOrders > 0) {
+          stats.completedPercentage = (stats.completedOrders / stats.totalOrders) * 100
+          stats.pendingPercentage = (stats.pendingOrders / stats.totalOrders) * 100
+        }
+      }
+    } catch (error) {
+      console.error('❌ Failed to fetch order stats:', error)
+      // Không hiển thị error để không làm phiền user
+    }
 
     // Fetch courses statistics
     try {
