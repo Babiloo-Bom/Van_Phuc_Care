@@ -381,10 +381,20 @@ const qrExpiresAt = ref<number | null>(null) // timestamp ms when QR expires
 const qrPollingAttempts = ref(0)
 const qrError = ref<string | null>(null)
 
+const now = ref(Date.now())
+let qrTickInterval: any = null
+
 const qrCountdown = computed(() => {
   if (!qrExpiresAt.value) return 0
-  return Math.max(0, Math.floor((qrExpiresAt.value - Date.now()) / 1000))
+  return Math.max(0, Math.floor((qrExpiresAt.value - now.value) / 1000))
 })
+
+const clearQrTick = () => {
+  if (qrTickInterval) {
+    clearInterval(qrTickInterval)
+    qrTickInterval = null
+  }
+}
 
 // Reactive data
 const cartItems = computed(() => {
@@ -551,6 +561,8 @@ const clearQrInterval = () => {
   // reset client-side tracking
   qrExpiresAt.value = null
   qrPollingAttempts.value = 0
+  // also clear the tick used for countdown
+  clearQrTick()
 }
 
 const startQrStatusPolling = (orderId: string) => {
@@ -561,6 +573,14 @@ const startQrStatusPolling = (orderId: string) => {
   qrError.value = null
   // set expiry from now
   qrExpiresAt.value = Date.now() + QR_TTL_SECONDS * 1000
+
+  // start tick to update countdown every second
+  clearQrTick()
+  now.value = Date.now()
+  qrTickInterval = setInterval(() => {
+    now.value = Date.now()
+  }, 1000)
+
   const { apiUser } = useApiBase()
 
   qrStatusInterval = setInterval(async () => {
@@ -632,12 +652,14 @@ const startQrStatusPolling = (orderId: string) => {
 // Clean up interval on unmount and when modal closed
 onUnmounted(() => {
   clearQrInterval()
+  clearQrTick()
 })
 
 watch(showQrModal, (val) => {
   if (!val) {
     // If user closes modal manually, stop polling and reset transient state
     clearQrInterval()
+    clearQrTick()
     qrError.value = null
     qrInfo.value = null
     isProcessingOrderQr.value = false
