@@ -573,61 +573,75 @@ class OrderController {
     }
   }
   public async paymentVnpayVerify(req: Request, res: Response) {
-    const params = req.body;
+    try {
+      const params = req.body;
 
-    const secureHash = params.vnp_SecureHash;
-    delete params.vnp_SecureHash;
-    delete params.vnp_SecureHashType;
+      const secureHash = params.vnp_SecureHash;
+      delete params.vnp_SecureHash;
+      delete params.vnp_SecureHashType;
 
-    const signData = qs.stringify(sortObj(params), { encode: false });
-    const signed = crypto.createHmac("sha512", configs.vnpayConfig.vnp_HashSecret)
-      .update(signData, "utf-8")
-      .digest("hex");
+      const signData = qs.stringify(sortObj(params), { encode: false });
+      const signed = crypto.createHmac("sha512", configs.vnpayConfig.vnp_HashSecret)
+        .update(signData, "utf-8")
+        .digest("hex");
 
-    // Sai chữ ký → từ chối
-    if (secureHash !== signed) {
-      return sendError(res, 500, 'Invalid signature');
-    }
+      // Sai chữ ký → từ chối
+      if (secureHash !== signed) {
+        return sendError(res, 400, 'Invalid signature');
+      }
 
-    const transactionId = params.vnp_TxnRef;
-    const responseCode = params.vnp_ResponseCode;
+      const transactionId = params.vnp_TxnRef;
+      const responseCode = params.vnp_ResponseCode;
 
-    const transaction = await ModelTransaction.model.findById(transactionId);
-    if (!transaction) {
-      return sendError(res, 500, 'Invalid Transaction');
-    }
+      const transaction = await ModelTransaction.model.findById(transactionId);
+      if (!transaction) {
+        return sendError(res, 404, 'Transaction not found');
+      }
 
-    // Nếu đã xử lý trước đó → OK
-    if (transaction.get('status') === "success") {
-      return sendError(res, 500, 'Order completed');
-    }
+      // Nếu đã xử lý thành công trước đó (bởi IPN) → trả về success
+      if (transaction.get('status') === "success") {
+        return sendSuccess(res, { success: true }, 'Payment already confirmed');
+      }
 
-    if (responseCode === "00") {
-      // Thành công
+      // Nếu đã failed trước đó
+      if (transaction.get('status') === "failed") {
+        return sendError(res, 400, 'Payment failed');
+      }
+
+      // Transaction còn pending → xử lý (fallback khi IPN chưa được gọi)
+      if (responseCode === "00") {
+        // Thành công
+        await ModelTransaction.model.findByIdAndUpdate(transactionId, {
+          status: "success",
+          paidAt: new Date(),
+          referenceId: params.vnp_TransactionNo,
+          metadata: params,
+        });
+
+        const order = await OrderModel.findOneAndUpdate(
+          { orderId: transaction.get('orderId') }, 
+          {
+            paymentStatus: 'completed',
+            status: 'completed'
+          }
+        );
+        
+        await this.updateCourseForUser(order);
+
+        return sendSuccess(res, { success: true }, 'Payment success');
+      }
+
+      // Thất bại
       await ModelTransaction.model.findByIdAndUpdate(transactionId, {
-        status: "success",
-        paidAt: new Date(),
-        referenceId: params.vnp_TransactionNo,
-        metadata: params,
+        status: "failed",
+        errorCode: responseCode,
       });
 
-      const order = await OrderModel.findOneAndUpdate({ orderId: transaction.get('orderId') }, {
-        paymentStatus: 'completed',
-        status: 'completed'
-      });
-      
-      await this.updateCourseForUser(order);
-
-      return sendSuccess(res, {success: true}, 'Payment success')
+      return sendError(res, 400, 'Payment failed');
+    } catch (error: any) {
+      console.error("❌ paymentVnpayVerify error:", error);
+      return sendError(res, 500, error.message, error as Error);
     }
-
-    // Thất bại
-    await ModelTransaction.model.findByIdAndUpdate(transactionId, {
-      status: "failed",
-      errorCode: responseCode,
-    });
-
-    return sendError(res, 500, 'Payment fail');
   }
 
   /**
