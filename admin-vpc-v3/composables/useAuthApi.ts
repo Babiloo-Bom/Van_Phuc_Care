@@ -22,29 +22,42 @@ const RETRY_CONFIG = {
 
 export const useAuthApi = () => {
   const config = useRuntimeConfig()
-  // Use /api/a for admin endpoints
-  let apiBase = config.public.apiBase || '/api/a'
   
-  // Normalize API base URL
-  if (apiBase.startsWith('http://') || apiBase.startsWith('https://')) {
-    // Absolute path - ensure it ends with /api/a
-    apiBase = apiBase.replace(/\/+$/, '')
-    if (!apiBase.endsWith('/api/a')) {
-      apiBase = apiBase.replace(/\/api\/u\/?$/, '/api/a').replace(/\/u\/?$/, '/api/a')
-      if (!apiBase.endsWith('/api/a')) {
-        apiBase = apiBase + '/api/a'
+  // Use apiHost for absolute URL, fallback to apiBase
+  const apiHost = (config.public.apiHost || '').replace(/\/+$/, '')
+  const apiBase = config.public.apiBase || '/api/a'
+  
+  // Build full API base URL
+  let fullApiBase: string
+  if (apiHost) {
+    // Use absolute URL with apiHost
+    fullApiBase = `${apiHost}/api/a`
+  } else if (apiBase.startsWith('http://') || apiBase.startsWith('https://')) {
+    // Already absolute URL
+    fullApiBase = apiBase.replace(/\/+$/, '')
+    if (!fullApiBase.endsWith('/api/a')) {
+      fullApiBase = fullApiBase.replace(/\/api\/u\/?$/, '/api/a').replace(/\/u\/?$/, '/api/a')
+      if (!fullApiBase.endsWith('/api/a')) {
+        fullApiBase = fullApiBase + '/api/a'
       }
     }
   } else {
-    // Relative path - ensure it's /api/a
-    apiBase = apiBase.replace(/\/+$/, '')
-    if (!apiBase.endsWith('/api/a') && !apiBase.endsWith('/a')) {
-      apiBase = apiBase.replace(/\/api\/u\/?$/, '/api/a').replace(/\/u\/?$/, '/api/a')
-      if (!apiBase.endsWith('/api/a') && !apiBase.endsWith('/a')) {
-        apiBase = '/api/a'
+    // Relative path - use as is (will work if Nuxt proxy is configured)
+    fullApiBase = apiBase.replace(/\/+$/, '')
+    if (!fullApiBase.endsWith('/api/a') && !fullApiBase.endsWith('/a')) {
+      fullApiBase = fullApiBase.replace(/\/api\/u\/?$/, '/api/a').replace(/\/u\/?$/, '/api/a')
+      if (!fullApiBase.endsWith('/api/a') && !fullApiBase.endsWith('/a')) {
+        fullApiBase = '/api/a'
       }
     }
   }
+
+  console.log('🔍 useAuthApi config:', {
+    apiHost,
+    apiBase,
+    fullApiBase,
+    isAbsolute: fullApiBase.startsWith('http')
+  })
 
   /**
    * Exponential backoff delay
@@ -140,9 +153,16 @@ export const useAuthApi = () => {
      */
     async login(username: string, password: string, remindAccount = false) {
       try {
-        return await withRetry(() => 
-          fetchWithTimeout(`${apiBase}/sessions/login`, {
+        const url = `${fullApiBase}/sessions/login`
+        console.log('🔍 Login URL:', url)
+        console.log('🔍 Login payload:', { username, hasPassword: !!password, remindAccount })
+        
+        const response = await withRetry(() => 
+          fetchWithTimeout(url, {
             method: 'POST',
+            headers: {
+              'Content-Type': 'application/json'
+            },
             body: {
               username,
               password,
@@ -151,7 +171,19 @@ export const useAuthApi = () => {
             }
           })
         )
+        
+        console.log('🔍 Login API response type:', typeof response)
+        console.log('🔍 Login API response:', response)
+        
+        return response
       } catch (error: any) {
+        console.error('❌ Login API error:', error)
+        console.error('❌ Error details:', {
+          message: error.message,
+          status: error.status,
+          statusCode: error.statusCode,
+          data: error.data
+        })
         throw transformError(error)
       }
     },
@@ -161,19 +193,12 @@ export const useAuthApi = () => {
      */
     async getUserProfile() {
       try {
-        const authStore = useAuthStore()
-        const token = authStore.token
-        
-        return await withRetry(() =>
-          fetchWithTimeout(`${apiBase}/sessions/current_admin`, {
-            method: 'GET',
-            headers: {
-              Authorization: `Bearer ${token}`,
-            },
+        return await withRetry(() => 
+          fetchWithTimeout(`${fullApiBase}/sessions/current_admin`, {
+            method: 'GET'
           })
         )
       } catch (error: any) {
-        console.error('❌ getUserProfile error:', error)
         throw transformError(error)
       }
     },
@@ -185,7 +210,7 @@ export const useAuthApi = () => {
     async updateProfile(data: Record<string, any>) {
       try {
         return await withRetry(() =>
-          fetchWithTimeout(`${apiBase}/sessions`, {
+          fetchWithTimeout(`${fullApiBase}/sessions`, {
             method: 'PATCH',
             body: data
           })
@@ -203,7 +228,7 @@ export const useAuthApi = () => {
     async changePassword(oldPassword: string, newPassword: string) {
       try {
         await withRetry(() =>
-          fetchWithTimeout(`${apiBase}/sessions/change_password`, {
+          fetchWithTimeout(`${fullApiBase}/sessions/change_password`, {
             method: 'PATCH',
             body: {
               oldPassword,
@@ -223,7 +248,7 @@ export const useAuthApi = () => {
     async forgotPassword(email: string) {
       try {
         return await withRetry(() =>
-          fetchWithTimeout(`${apiBase}/sessions/forgot_password`, {
+          fetchWithTimeout(`${fullApiBase}/sessions/forgot_password`, {
             method: 'POST',
             body: { email }
           })
@@ -241,7 +266,7 @@ export const useAuthApi = () => {
     async verifyOtp(email: string, otp: string) {
       try {
         return await withRetry(() =>
-          fetchWithTimeout(`${apiBase}/sessions/verify_otp`, {
+          fetchWithTimeout(`${fullApiBase}/sessions/verify_otp`, {
             method: 'POST',
             body: { email, otp }
           })
@@ -261,7 +286,7 @@ export const useAuthApi = () => {
     async resetPassword(email: string, token: string, newPassword: string) {
       try {
         return await withRetry(() =>
-          fetchWithTimeout(`${apiBase}/passwords`, {
+          fetchWithTimeout(`${fullApiBase}/passwords`, {
             method: 'POST',
             params: { email, token },
             body: { password: newPassword }
@@ -279,7 +304,7 @@ export const useAuthApi = () => {
     async getActiveLogs(params?: Record<string, any>) {
       try {
         return await withRetry(() =>
-          fetchWithTimeout(`${apiBase}/active-logs`, {
+          fetchWithTimeout(`${fullApiBase}/active-logs`, {
             method: 'GET',
             params
           })
@@ -296,7 +321,7 @@ export const useAuthApi = () => {
     async writeLog(data: Record<string, any>) {
       try {
         return await withRetry(() =>
-          fetchWithTimeout(`${apiBase}/active-logs`, {
+          fetchWithTimeout(`${fullApiBase}/active-logs`, {
             method: 'POST',
             body: data
           })
@@ -315,7 +340,7 @@ export const useAuthApi = () => {
         // Try to call logout endpoint if it exists
         // If it doesn't exist (404), that's fine - we'll just clear local state
         return await withRetry(() =>
-          fetchWithTimeout(`${apiBase}/active-logs/logout`, {
+          fetchWithTimeout(`${fullApiBase}/active-logs/logout`, {
             method: 'PATCH',
             showError: false // Don't show error if endpoint doesn't exist
           })
@@ -371,7 +396,7 @@ export const useAuthApi = () => {
         }
         
         return await withRetry(() =>
-          fetchWithTimeout(`${apiBase}/auth/google/login`, {
+          fetchWithTimeout(`${fullApiBase}/auth/google/login`, {
             method: 'POST',
             body: { 
               code, 
@@ -391,7 +416,7 @@ export const useAuthApi = () => {
     async getGoogleAuthUrl() {
       try {
         return await withRetry(() =>
-          fetchWithTimeout(`${apiBase}/auth/google/url`, {
+          fetchWithTimeout(`${fullApiBase}/auth/google/url`, {
             method: 'GET'
           })
         )

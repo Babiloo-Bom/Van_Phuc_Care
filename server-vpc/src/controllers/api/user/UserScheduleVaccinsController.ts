@@ -3,6 +3,56 @@ import { sendError, sendSuccess } from "@libs/response";
 import ScheduleVaccins from "@mongodb/vanphuccare/schedule-vaccin";
 import VaccinationRecords from "@mongodb/vanphuccare/vaccination-record";
 
+// Helper function to parse age string to months
+function parseAgeInMonths(ageString: string): number {
+  if (!ageString) return 0;
+  
+  const ageStr = ageString.toLowerCase().trim();
+  
+  // Map Vietnamese age strings to months
+  const ageMap: Record<string, number> = {
+    'sơ sinh': 0,
+    '0 ngày': 0,
+    '1 tháng': 1,  // Thêm format của seed data
+    '2 tháng': 2,
+    '3 tháng': 3,
+    '4 tháng': 4,
+    '9 tháng': 9,
+    '12 tháng': 12,
+    '18 tháng': 18,
+    '1 tháng tuổi': 1,  // Giữ format của admin panel
+    '2 tháng tuổi': 2,
+    '3 tháng tuổi': 3,
+    '4 tháng tuổi': 4,
+    '5 tháng tuổi': 5,
+    '6 tháng tuổi': 6,
+    '9 tháng tuổi': 9,
+    '12 tháng tuổi': 12,
+    '18 tháng tuổi': 18,
+    '24 tháng tuổi': 24,
+  };
+  
+  // Check exact match first
+  if (ageMap[ageStr]) {
+    return ageMap[ageStr];
+  }
+  
+  // Try to extract number from string like "1 tháng", "2 tháng tuổi", etc.
+  const match = ageStr.match(/(\d+)\s*tháng/);
+  if (match) {
+    return parseInt(match[1], 10);
+  }
+  
+  // Try to extract from range like "0-2 tháng tuổi"
+  const rangeMatch = ageStr.match(/(\d+)\s*-\s*(\d+)\s*tháng/);
+  if (rangeMatch) {
+    // Use the lower bound
+    return parseInt(rangeMatch[1], 10);
+  }
+  
+  return 0;
+}
+
 class UserScheduleVaccinsController {
   /**
    * Lấy danh sách lịch tiêm cho user
@@ -16,17 +66,101 @@ class UserScheduleVaccinsController {
     try {
       const { page = 1, limit = 50, customerId, healthBookId, ageInMonths } = req.query;
       const skip = (Number(page) - 1) * Number(limit);
-      const query: any = { status: "active" };
+      
+      // Build query - get all schedules (no domain filter for user-facing API)
+      const query: any = {};
+      
+      // Only exclude inactive status
+      query.status = { $ne: "inactive" };
 
-      // Filter by age if provided
+      console.log('🔍 UserScheduleVaccinsController.index query:', JSON.stringify(query, null, 2));
+      console.log('🔍 Query params:', { page, limit, customerId, healthBookId, ageInMonths });
+
+      // Sort: items with order first (ascending), then items without order (by createdAt desc)
+      const [schedules, total] = await Promise.all([
+        ScheduleVaccins.model.find(query)
+          .sort({ 
+            order: 1,  // Sort by order if exists
+            createdAt: -1  // Then by newest first for items without order
+          })
+          .skip(skip)
+          .limit(Number(limit))
+          .lean(),
+        ScheduleVaccins.model.countDocuments(query),
+      ]) as [any[], number];
+
+      console.log('🔍 Found schedules:', schedules.length, 'Total:', total);
+      
+      // Log all schedules with full details
+      console.log('🔍 All schedules details:', schedules.map((s: any) => ({
+        _id: String(s._id),
+        title: s.title,
+        name: s.name,
+        time: s.time,
+        age: s.age,
+        status: s.status,
+        domain: s.domain,
+        ageInMonths: s.ageInMonths,
+        order: s.order,
+        createdAt: s.createdAt,
+        hasTitle: !!s.title,
+        hasName: !!s.name,
+        hasOrder: s.order !== undefined && s.order !== null
+      })));
+      
+      console.log('🔍 Sample schedule (full):', schedules[0] ? JSON.stringify(schedules[0], null, 2) : 'No schedules');
+
+      // Normalize data: map title -> name, time -> age, and calculate ageInMonths if missing
+      const normalizedSchedules = schedules.map((schedule: any) => {
+        // Map title to name (prefer latest title so CRM always sees updated text)
+        const name = schedule.title || schedule.name || '';
+        
+        // Map time to age (for backward compatibility)
+        const age = schedule.age || schedule.time || '';
+        
+        // Calculate ageInMonths from time if not present
+        let ageInMonthsValue = schedule.ageInMonths;
+        if (ageInMonthsValue === undefined || ageInMonthsValue === null) {
+          // Try to extract from time string
+          if (schedule.time) {
+            ageInMonthsValue = parseAgeInMonths(schedule.time);
+          } else if (schedule.age) {
+            ageInMonthsValue = parseAgeInMonths(schedule.age);
+          } else {
+            ageInMonthsValue = 0;
+          }
+        }
+        
+        return {
+          ...schedule,
+          name, // Ensure name exists, prefer title
+          age,  // Ensure age exists
+          ageInMonths: ageInMonthsValue, // Ensure ageInMonths exists
+          // Keep original fields for backward compatibility
+          title: schedule.title || name,
+          time: schedule.time || age,
+        };
+      });
+
+      // Filter by ageInMonths after normalization if provided
+      let filteredSchedules = normalizedSchedules;
       if (ageInMonths !== undefined) {
-        query.ageInMonths = { $lte: Number(ageInMonths) };
+        const ageFilter = Number(ageInMonths);
+        filteredSchedules = normalizedSchedules.filter((schedule: any) => {
+          return schedule.ageInMonths <= ageFilter;
+        });
       }
 
-      const [schedules, total] = await Promise.all([
-        ScheduleVaccins.model.find(query).sort({ order: 1, createdAt: 1 }).skip(skip).limit(Number(limit)).lean(),
-        ScheduleVaccins.model.countDocuments(query),
-      ]);
+      console.log('🔍 After normalization and filtering:', {
+        totalBefore: normalizedSchedules.length,
+        totalAfter: filteredSchedules.length,
+        sampleSchedule: filteredSchedules[0] ? {
+          _id: String(filteredSchedules[0]._id),
+          name: filteredSchedules[0].name,
+          age: filteredSchedules[0].age,
+          ageInMonths: filteredSchedules[0].ageInMonths
+        } : null
+      });
 
       // If healthBookId or customerId is provided, merge with vaccination records
       if (healthBookId || customerId) {
@@ -39,9 +173,13 @@ class UserScheduleVaccinsController {
           recordQuery.customerId = String(customerId);
         }
 
+        console.log('🔍 Looking for vaccination records with query:', recordQuery);
+
         const vaccinationRecords = await VaccinationRecords.model
           .find(recordQuery)
           .lean();
+
+        console.log('🔍 Found vaccination records:', vaccinationRecords.length);
 
         // Create a map of vaccineId -> record
         const recordsMap = new Map();
@@ -50,8 +188,11 @@ class UserScheduleVaccinsController {
           recordsMap.set(key, record);
         });
 
+        console.log('🔍 Records map size:', recordsMap.size);
+        console.log('🔍 Records map keys:', Array.from(recordsMap.keys()));
+
         // Merge schedule with records
-        const mergedSchedules = schedules.map((schedule: any) => {
+        const mergedSchedules = filteredSchedules.map((schedule: any) => {
           const key = `${schedule._id}_1`; // Default injection number 1
           const record = recordsMap.get(key);
 
@@ -60,31 +201,35 @@ class UserScheduleVaccinsController {
             vaccinationRecord: record || null,
             injectionStatus: record ? record.status : "pending",
             injectionDate: record ? record.injectionDate : null,
-            scheduledDate: record ? record.scheduledDate : null,
-            location: record ? record.location : null,
-            notes: record ? record.notes : null,
+            // Giữ scheduledDate từ record nếu có, nếu không lấy từ schedule gốc
+            scheduledDate: record && record.scheduledDate ? record.scheduledDate : schedule.scheduledDate || null,
+            location: record ? record.location : schedule.location || null,
+            notes: record ? record.notes : schedule.notes || null,
           };
         });
+
+        console.log('🔍 Final merged schedules count:', mergedSchedules.length);
 
         return sendSuccess(res, {
           scheduleVaccin: mergedSchedules,
           pagination: {
             page: Number(page),
             limit: Number(limit),
-            total,
-            totalPages: Math.ceil(total / Number(limit)),
+            total: filteredSchedules.length,
+            totalPages: Math.ceil(filteredSchedules.length / Number(limit)),
           },
         });
       }
 
       // Return schedules only (no customer-specific data)
+      console.log('🔍 Returning schedules without merging:', filteredSchedules.length);
       return sendSuccess(res, {
-        scheduleVaccin: schedules,
+        scheduleVaccin: filteredSchedules,
         pagination: {
           page: Number(page),
           limit: Number(limit),
-          total,
-          totalPages: Math.ceil(total / Number(limit)),
+          total: filteredSchedules.length,
+          totalPages: Math.ceil(filteredSchedules.length / Number(limit)),
         },
       });
     } catch (error: any) {

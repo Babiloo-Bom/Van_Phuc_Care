@@ -70,13 +70,61 @@ export const useAuthStore = defineStore('auth', {
           remindAccount,
         )
 
-        // Backend returns: { data: { accessToken, tokenExpireAt } }
-        const token =
-          response.data?.accessToken || response.accessToken || response.token
-        const tokenExpireAt =
-          response.data?.tokenExpireAt || response.tokenExpireAt
+        console.log('🔍 Login response (full):', JSON.stringify(response, null, 2))
+        console.log('🔍 Response type:', typeof response)
+        console.log('🔍 Response keys:', response ? Object.keys(response) : 'null/undefined')
+        console.log('🔍 Response structure check:', {
+          hasData: !!response?.data,
+          hasAccessToken: !!response?.data?.accessToken,
+          hasDirectAccessToken: !!response?.accessToken,
+          hasToken: !!response?.token,
+          responseDataKeys: response?.data ? Object.keys(response.data) : [],
+          fullResponse: response
+        })
+
+        // Backend returns: { message: "", data: { accessToken, tokenExpireAt } }
+        // $fetch may unwrap response, so check multiple structures
+        let token: string | undefined
+        let tokenExpireAt: any
+
+        // Try different response structures
+        if (response?.data?.accessToken) {
+          // Structure: { message: "", data: { accessToken, tokenExpireAt } }
+          token = response.data.accessToken
+          tokenExpireAt = response.data.tokenExpireAt
+          console.log('✅ Found token in response.data.accessToken')
+        } else if (response?.data?.data?.accessToken) {
+          // Structure: { message: "", data: { data: { accessToken, tokenExpireAt } } }
+          token = response.data.data.accessToken
+          tokenExpireAt = response.data.data.tokenExpireAt
+          console.log('✅ Found token in response.data.data.accessToken')
+        } else if (response?.accessToken) {
+          // Structure: { accessToken, tokenExpireAt } (unwrapped)
+          token = response.accessToken
+          tokenExpireAt = response.tokenExpireAt
+          console.log('✅ Found token in response.accessToken (unwrapped)')
+        } else if (response?.token) {
+          // Structure: { token, tokenExpireAt }
+          token = response.token
+          tokenExpireAt = response.tokenExpireAt
+          console.log('✅ Found token in response.token')
+        } else if (response?.data?.token) {
+          // Structure: { message: "", data: { token, tokenExpireAt } }
+          token = response.data.token
+          tokenExpireAt = response.data.tokenExpireAt
+          console.log('✅ Found token in response.data.token')
+        }
+
+        console.log('🔍 Extracted values:', { 
+          hasToken: !!token, 
+          tokenLength: token?.length,
+          tokenPreview: token ? `${token.substring(0, 20)}...` : 'none',
+          tokenExpireAt: tokenExpireAt 
+        })
 
         if (!token) {
+          console.error('❌ No token found in response. Full response:', response)
+          console.error('❌ Response stringified:', JSON.stringify(response, null, 2))
           throw new Error('No token received from server')
         }
 
@@ -109,113 +157,41 @@ export const useAuthStore = defineStore('auth', {
           const userRole = userData?.role || userData?.type
           const allowedRoles = ['admin', 'manager', 'worker']
           
-          if (!userRole || !allowedRoles.includes(userRole)) {
-            // Clear token and logout
-            this.token = null
-            this.isAuthenticated = false
-            if (process.client) {
-              localStorage.removeItem('auth_token')
-              localStorage.removeItem('user')
-              localStorage.removeItem('authData')
-            }
-            throw new Error('Bạn không có quyền truy cập hệ thống này. Chỉ admin, manager và worker mới được phép đăng nhập.')
+          if (!allowedRoles.includes(userRole)) {
+            throw new Error('Bạn không có quyền truy cập vào hệ thống quản trị')
           }
           
-          this.user = {
-            id: userData?._id || userData?.id || 'temp-id',
-            email: userData?.email || username,
-            username: userData?.username || userData?.email || username,
-            fullname: userData?.fullname || userData?.name || username,
-            name: userData?.name || userData?.fullname,
-            phone: userData?.phoneNumber || userData?.phone,
-            avatar: userData?.avatar,
-            role: userRole,
-            verified: userData?.verified,
-            status: userData?.status,
-            fullAddress: userData?.fullAddress || '',
-            address: userData?.address || '',
+          this.user = userData
+          
+          // Save user to localStorage
+          if (process.client) {
+            localStorage.setItem('user', JSON.stringify(userData))
           }
           
+          return { success: true, user: userData, token }
         } catch (profileError: any) {
-          console.error('⚠️ Failed to fetch user profile or role check failed:', profileError)
-          // If it's a role check error, throw it
-          if (profileError.message?.includes('không có quyền') || profileError.message?.includes('Không thể lấy thông tin')) {
-            // Clear auth state on critical errors
-            this.token = null
-            this.isAuthenticated = false
-            if (process.client) {
-              localStorage.removeItem('auth_token')
-              localStorage.removeItem('user')
-              localStorage.removeItem('authData')
-            }
-            throw profileError
-          }
-          // Fallback to basic user data if profile fetch fails (non-critical)
-          console.warn('⚠️ Using fallback user data due to profile fetch error')
-          this.user = {
-            id: response.id || response._id || 'temp-id',
-            email: username,
-            username: username,
-            fullname: response.fullname || username,
-            role: 'user', // Default role, but middleware will check
-          }
+          console.error('❌ Failed to fetch user profile:', profileError)
+          // Even if profile fetch fails, login is still successful if we have token
+          return { success: true, user: null, token, error: profileError.message }
         }
-
-        // Save to localStorage (ensure isAuthenticated is saved)
-        if (process.client && this.token) {
-          localStorage.setItem('auth_token', this.token)
-          if (this.tokenExpireAt) {
-            localStorage.setItem('token_expire_at', this.tokenExpireAt)
-          }
-          localStorage.setItem('user', JSON.stringify(this.user))
-          // Also save authData for initAuth compatibility
-          const authData = {
-            user: this.user,
-            token: this.token,
-            tokenExpireAt: this.tokenExpireAt,
-            rememberAccount: this.rememberAccount,
-            isAuthenticated: this.isAuthenticated,
-          }
-          localStorage.setItem('authData', JSON.stringify(authData))
-
-          if (remindAccount) {
-            localStorage.setItem(
-              'auth_data',
-              JSON.stringify({
-                username,
-                remindAccount,
-                origin: 'vanphuccare.gensi.vn',
-              }),
-            )
-          }
-        }
-
-        // Set justLoggedIn flag to prevent auto-logout for 15 seconds
-        this.justLoggedIn = true
-        this.loginTimestamp = Date.now()
-        console.log('[Login] Set justLoggedIn flag, timestamp:', this.loginTimestamp)
-        
-        setTimeout(() => {
-          this.justLoggedIn = false
-          console.log('[Login] Cleared justLoggedIn flag after 15 seconds')
-        }, 15000) // 15 seconds grace period
-
-        return { success: true, user: this.user, token }
       } catch (error: any) {
-        // Ignore AbortError (request cancelled due to navigation/reload)
-        if (
-          error?.name === 'AbortError' ||
-          error?.message?.includes('aborted')
-        ) {
-          return { success: false, error: 'Request cancelled' }
+        console.error('❌ Login error:', error)
+        console.error('❌ Error stack:', error.stack)
+        this.isLoading = false
+        this.isAuthenticated = false
+        this.token = null
+        this.user = null
+        
+        // Clear localStorage on error
+        if (process.client) {
+          localStorage.removeItem('auth_token')
+          localStorage.removeItem('token_expire_at')
+          localStorage.removeItem('user')
         }
-        console.error('Login error:', error)
+        
         return {
           success: false,
-          error:
-            error.data?.message ||
-            error.message ||
-            'Tên đăng nhập hoặc mật khẩu không chính xác',
+          error: error.message || 'Đăng nhập thất bại. Vui lòng thử lại.'
         }
       } finally {
         this.isLoading = false

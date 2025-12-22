@@ -130,6 +130,13 @@
                 <span>Quản lý giao dịch</span>
               </NuxtLink>
             </a-menu-item>
+            <!-- Thêm menu item Quản lý Lịch tiêm - Chỉ Admin và Manager -->
+            <a-menu-item v-if="isAdminOrManager" key="schedule-vaccins">
+              <NuxtLink to="/my/schedule-vaccins" class="flex items-center">
+                <MedicineBoxOutlined class="mr-3 text-lg" />
+                <span>Quản lý Lịch tiêm</span>
+              </NuxtLink>
+            </a-menu-item>
           </a-sub-menu>
 
           <a-menu-divider />
@@ -165,7 +172,8 @@ import {
   MenuOutlined,
   BookOutlined,
   FileTextOutlined,
-  ShoppingCartOutlined  // Thêm icon này
+  ShoppingCartOutlined,  // Thêm icon này
+  MedicineBoxOutlined
 } from '@ant-design/icons-vue'
 import { message } from 'ant-design-vue'
 
@@ -189,6 +197,7 @@ const selectedKeys = computed(() => {
   if (path.startsWith('/elearning/courses')) return ['courses']
   if (path.startsWith('/my/so-skdt')) return ['so-skdt']
   if (path.startsWith('/my/transactions')) return ['transactions']  // Thêm dòng này
+  if (path.startsWith('/my/schedule-vaccins')) return ['schedule-vaccins']
   if (path.startsWith('/faqs')) return ['faqs']
   return []
 })

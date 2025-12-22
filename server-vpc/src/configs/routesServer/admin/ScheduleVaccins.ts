@@ -15,5 +15,7 @@ router.post('/', ScheduleVaccinsController.create);
 // Cập nhật schedule vaccin theo id
 router.patch('/:id', ScheduleVaccinsController.update);
 
+// Xóa schedule vaccin theo id
+router.delete('/:id', ScheduleVaccinsController.delete);
 
 export default router;

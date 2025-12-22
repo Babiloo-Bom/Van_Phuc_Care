@@ -66,18 +66,39 @@ const vaccinations = ref<any[]>([]);
 const { loading, error, getVaccinationSchedule, createVaccinationRecord, deleteVaccinationRecordByVaccine } = useVaccinationsApi();
 
 const fetchVaccinations = async () => {
-  // Pass healthBookId (preferred) or customerId to get merged schedule + records
-  const data = await getVaccinationSchedule({
+  console.log('🔍 VaccinationSchedule.fetchVaccinations called', {
     healthBookId: props.healthBookId,
-    customerId: props.customerId,
-  });
-  vaccinations.value = data;
+    customerId: props.customerId
+  })
+  
+  // Pass healthBookId (preferred) or customerId to get merged schedule + records
+  try {
+    const data = await getVaccinationSchedule({
+      healthBookId: props.healthBookId,
+      customerId: props.customerId,
+    });
+    console.log('✅ VaccinationSchedule data received:', data)
+    console.log('✅ VaccinationSchedule data length:', data?.length)
+    vaccinations.value = data;
+  } catch (error: any) {
+    console.error('❌ VaccinationSchedule fetch error:', error)
+    vaccinations.value = []
+  }
 };
 
 onMounted(() => {
+  console.log('🔍 VaccinationSchedule onMounted', {
+    hasSchedule: !!props.schedule,
+    scheduleIsArray: Array.isArray(props.schedule),
+    healthBookId: props.healthBookId,
+    customerId: props.customerId
+  })
+  
   if (props.schedule && Array.isArray(props.schedule)) {
+    console.log('✅ Using provided schedule prop')
     vaccinations.value = props.schedule;
   } else {
+    console.log('📡 Fetching vaccinations from API...')
     fetchVaccinations();
   }
 });
