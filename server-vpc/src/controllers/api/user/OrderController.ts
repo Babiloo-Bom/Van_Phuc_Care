@@ -482,72 +482,86 @@ class OrderController {
 
   public async paymentVnpayIpn(req: Request, res: Response) {
     console.log("🔔 ----------------VNPay IPN received:", req.query);
-    const params = req.query;
+    try {
+      const rawParams: any = { ...(req.query || {}) };
 
-    const secureHash = params.vnp_SecureHash;
-    delete params.vnp_SecureHash;
-    delete params.vnp_SecureHashType;
+      // Keep original secure hash for metadata but don't include it in signing payload
+      const secureHash = rawParams.vnp_SecureHash;
+      const secureHashType = rawParams.vnp_SecureHashType;
 
-    const signData = qs.stringify(sortObj(params), { encode: false });
-    const signed = crypto.createHmac("sha512", configs.vnpayConfig.vnp_HashSecret)
-      .update(signData, "utf-8")
-      .digest("hex");
+      // Clone params for signing and remove secure hash fields
+      const paramsForSign = { ...rawParams };
+      delete paramsForSign.vnp_SecureHash;
+      delete paramsForSign.vnp_SecureHashType;
 
-    // Sai chữ ký → từ chối
-    if (secureHash !== signed) {
-      // VNPay expects a specific code for invalid checksum
-      return res.json({ RspCode: "97", Message: "Invalid Checksum" });
-    }
+      const signData = qs.stringify(sortObj(paramsForSign), { encode: false });
+      const signed = crypto.createHmac("sha512", configs.vnpayConfig.vnp_HashSecret)
+        .update(signData, "utf-8")
+        .digest("hex");
 
-    const transactionId = params.vnp_TxnRef;
-    const responseCode = params.vnp_ResponseCode;
-    const vnpAmount = Number(params['vnp_Amount'] || 0);
+      // Sai chữ ký → từ chối (97)
+      if (!secureHash || secureHash !== signed) {
+        return res.json({ Message: "Invalid Checksum", RspCode: "97" });
+      }
 
-    const transaction = await ModelTransaction.model.findById(transactionId);
-    if (!transaction) {
-      // Order not found
-      return res.json({ RspCode: "01", Message: "Order Not Found" });
-    }
+      const transactionId = String(rawParams.vnp_TxnRef || "");
+      const responseCode = String(rawParams.vnp_ResponseCode || "");
 
-    // Nếu đã xử lý trước đó → trả mã 02 (order already confirmed)
-    if (transaction.get('status') === "success") {
-      return res.json({ RspCode: "02", Message: "Order already confirmed" });
-    }
+      // Parse amount robustly (strip non-digits)
+      const rawAmountStr = String(rawParams.vnp_Amount || "").replace(/[^0-9]/g, "");
+      const vnpAmount = rawAmountStr ? parseInt(rawAmountStr, 10) : 0;
 
-    // Validate amount (VNPay sends amount in VND * 100)
-    const expectedAmount = Math.round(transaction.get('total') || 0) * 100;
-    if (!isNaN(vnpAmount) && expectedAmount !== vnpAmount) {
-      // Invalid amount
-      return res.json({ RspCode: "04", Message: "Invalid amount" });
-    }
+      const transaction = await ModelTransaction.model.findById(transactionId);
+      if (!transaction) {
+        // Order not found (01)
+        return res.json({ Message: "Order Not Found", RspCode: "01" });
+      }
 
-    if (responseCode === "00") {
-      // Thành công
+      // Nếu đã xử lý trước đó → trả mã 02 (order already confirmed)
+      if (transaction.get('status') === "success" || transaction.get('status') === "completed") {
+        return res.json({ Message: "Order already confirmed", RspCode: "02" });
+      }
+
+      // Validate amount (VNPay sends amount in VND * 100)
+      const expectedAmount = Math.round(transaction.get('total') || 0) * 100;
+
+      // If vnpAmount is present and doesn't match expected, return 04
+      if (vnpAmount && expectedAmount !== vnpAmount) {
+        return res.json({ Message: "Invalid amount", RspCode: "04" });
+      }
+
+      if (responseCode === "00") {
+        // Thành công
+        await ModelTransaction.model.findByIdAndUpdate(transactionId, {
+          status: "success",
+          paidAt: new Date(),
+          referenceId: rawParams.vnp_TransactionNo || null,
+          metadata: { ...rawParams, vnp_SecureHash: secureHash, vnp_SecureHashType: secureHashType },
+        });
+
+        const order = await OrderModel.findOneAndUpdate({ orderId: transaction.get('orderId') }, {
+          paymentStatus: 'completed',
+          status: 'completed'
+        });
+
+        await this.updateCourseForUser(order);
+
+        // Acknowledge receipt to VNPay
+        return res.json({ Message: "Confirm Success", RspCode: "00" });
+      }
+
+      // Thất bại (transaction not successful) - mark failed and still acknowledge receipt
       await ModelTransaction.model.findByIdAndUpdate(transactionId, {
-        status: "success",
-        paidAt: new Date(),
-        referenceId: params.vnp_TransactionNo,
-        metadata: params,
+        status: "failed",
+        errorCode: responseCode,
       });
 
-      const order = await OrderModel.findOneAndUpdate({ orderId: transaction.get('orderId') }, {
-        paymentStatus: 'completed',
-        status: 'completed'
-      });
-      
-      await this.updateCourseForUser(order);
-
-      // Acknowledge receipt to VNPay
-      return res.json({ RspCode: "00", Message: "Confirm Success" });
+      return res.json({ Message: "Confirm Success", RspCode: "00" });
+    } catch (error: any) {
+      console.error("❌ paymentVnpayIpn error:", error);
+      // Avoid returning 5xx to VNPay test runner; return a JSON error code 99
+      return res.json({ Message: `Exception: ${error?.message || 'Unknown error'}`, RspCode: "99" });
     }
-
-    // Thất bại (transaction not successful) - mark failed and still acknowledge receipt
-    await ModelTransaction.model.findByIdAndUpdate(transactionId, {
-      status: "failed",
-      errorCode: responseCode,
-    });
-
-    return res.json({ RspCode: "00", Message: "Confirm Success" });
   }
   public async paymentVnpayVerify(req: Request, res: Response) {
     const params = req.body;
