@@ -373,7 +373,7 @@ const qrPaymentStatus = ref<'pending' | 'completed' | 'expired'>('pending')
 let qrStatusInterval: any = null
 
 // Polling / TTL control
-const QR_POLL_INTERVAL_MS = 5000
+const QR_POLL_INTERVAL_MS = 10000
 const QR_TTL_SECONDS = 15 * 60 // 15 minutes
 const MAX_POLLING_ATTEMPTS = Math.ceil(QR_TTL_SECONDS / (QR_POLL_INTERVAL_MS / 1000))
 
@@ -555,7 +555,7 @@ const handlePayment = async (method: string) => {
 
 const clearQrInterval = () => {
   if (qrStatusInterval) {
-    clearInterval(qrStatusInterval)
+    clearTimeout(qrStatusInterval)
     qrStatusInterval = null
   }
   // reset client-side tracking
@@ -583,7 +583,13 @@ const startQrStatusPolling = (orderId: string) => {
 
   const { apiUser } = useApiBase()
 
-  qrStatusInterval = setInterval(async () => {
+  // Adaptive polling with exponential backoff + jitter
+  let baseInterval = QR_POLL_INTERVAL_MS
+  let currentInterval = baseInterval
+  let consecutiveFailures = 0
+  const maxInterval = 60 * 1000 // 1 minute cap
+
+  const poll = async () => {
     try {
       qrPollingAttempts.value++
 
@@ -604,6 +610,10 @@ const startQrStatusPolling = (orderId: string) => {
       }
 
       const res: any = await $fetch(`${apiUser}/orders/payment/qr/status/${orderId}?t=${Date.now()}`)
+      // success path
+      consecutiveFailures = 0
+      currentInterval = baseInterval
+
       if (res?.data?.paid) {
         qrPaymentStatus.value = 'completed'
         clearQrInterval()
@@ -634,19 +644,31 @@ const startQrStatusPolling = (orderId: string) => {
         } else {
           await navigateTo('/my-learning')
         }
+        return
       }
     } catch (error) {
       console.error('❌ Check QR payment status failed (cart):', error)
+      consecutiveFailures++
+      // increase interval with exponential backoff and jitter
+      currentInterval = Math.min(maxInterval, Math.pow(2, consecutiveFailures) * baseInterval)
+      currentInterval = currentInterval + Math.floor(Math.random() * 1000) // jitter up to 1s
 
-      // If too many consecutive failures, stop polling and show error
-      qrPollingAttempts.value++
-      if (qrPollingAttempts.value >= MAX_POLLING_ATTEMPTS) {
+      // If too many consecutive failures, show error and stop
+      if (consecutiveFailures >= 6) {
         clearQrInterval()
         qrError.value = 'Không thể kiểm tra trạng thái. Vui lòng thử lại sau.'
         isProcessingOrderQr.value = false
+        return
       }
+    } finally {
+      // schedule next poll
+      if (qrStatusInterval) clearTimeout(qrStatusInterval)
+      qrStatusInterval = setTimeout(poll, currentInterval)
     }
-  }, QR_POLL_INTERVAL_MS)
+  }
+
+  // start first poll immediately
+  poll()
 }
 
 // Clean up interval on unmount and when modal closed

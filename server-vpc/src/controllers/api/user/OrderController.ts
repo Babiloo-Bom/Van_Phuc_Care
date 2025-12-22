@@ -173,6 +173,9 @@ const cartSchema = new mongoose.Schema({
 // Create Cart model if it doesn't exist
 const Cart = mongoose.models.Cart || mongoose.model('Cart', cartSchema);
 
+// Simple in-memory cache to reduce repeated SePay lookup pressure (short TTL)
+const sepayCheckCache: Map<string, { found: boolean; transaction?: any; amount?: number; expiresAt: number }> = new Map();
+
 class OrderController {
   public async create(req: Request, res: Response) {
     try {
@@ -478,7 +481,7 @@ class OrderController {
   }
 
   public async paymentVnpayIpn(req: Request, res: Response) {
-    console.log("🔔 VNPay IPN received:", req.query);
+    console.log("🔔 ----------------VNPay IPN received:", req.query);
     const params = req.query;
 
     const secureHash = params.vnp_SecureHash;
@@ -505,7 +508,7 @@ class OrderController {
 
     // Nếu đã xử lý trước đó → OK
     if (transaction.get('status') === "success") {
-      return res.json({ RspCode: "00", Message: "Already confirmed" });
+      return res.json({ RspCode: "00", Message: "Confirm Success" });
     }
 
     if (responseCode === "00") {
@@ -863,6 +866,13 @@ class OrderController {
       // Xóa giỏ hàng
       await this.clearCartUser(order);
 
+      // Clear any recent SePay cache for this order so subsequent checks see new status
+      try {
+        sepayCheckCache.delete(webhookResult.orderId);
+      } catch (e) {
+        // ignore
+      }
+
       console.log(`✅ QR payment confirmed for order ${webhookResult.orderId}`, {
         orderAmount,
         paymentAmount,
@@ -914,12 +924,51 @@ class OrderController {
       if (orderAge < maxAge && order.paymentMethod === 'qr') {
         try {
           console.log(`🔍 Checking SePay API for order ${orderId} (fallback check)`);
+
+          // Check short-lived cache first
+          const cacheEntry = sepayCheckCache.get(orderId);
+          if (cacheEntry && cacheEntry.expiresAt > Date.now()) {
+            console.log(`ℹ️ Using cached SePay result for order ${orderId}`, { cached: cacheEntry });
+            if (cacheEntry.found) {
+              // Update order as paid using cached info
+              order.paymentStatus = 'completed';
+              order.status = 'completed';
+              if (cacheEntry.transaction?.id || cacheEntry.transaction?.transactionId) {
+                order.transactionId = cacheEntry.transaction.id || cacheEntry.transaction.transactionId;
+              }
+              await order.save();
+              await this.updateCourseForUser(order);
+              await this.clearCartUser(order);
+
+              return sendSuccess(res, {
+                message: "Payment completed (verified via cached SePay result)",
+                order,
+                paid: true
+              });
+            } else {
+              // Cached negative result -> continue as pending
+              return sendSuccess(res, {
+                message: "Payment pending",
+                order,
+                paid: false
+              });
+            }
+          }
+
           const transactionResult = await SePayService.findTransactionByOrderId(
             orderId,
             order.totalAmount
           );
           console.log('🔍 SePay API transaction result:', transactionResult);
           if (transactionResult.found && transactionResult.transaction) {
+            // cache the positive result for 30s to avoid repeated SePay requests
+            sepayCheckCache.set(orderId, {
+              found: true,
+              transaction: transactionResult.transaction,
+              amount: transactionResult.amount,
+              expiresAt: Date.now() + 30 * 1000
+            });
+
             // Tìm thấy giao dịch thành công từ SePay API
             console.log(`✅ Found payment from SePay API for order ${orderId}, updating order status`);
 

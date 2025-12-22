@@ -181,101 +181,188 @@ class SePayService {
     fromDate?: string;
     toDate?: string;
     offset?: string | number;
-  }, options?: { fallback?: boolean }): Promise<SePayTransaction[]> {
-    try {
-      // Map friendly/legacy keys to SePay's expected keys
-      const query: any = {};
+  }, options?: { fallback?: boolean; maxRetries?: number; retryBaseMs?: number }): Promise<SePayTransaction[]> {
+    // Helper sleep
+    const sleep = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
 
-      if (params) {
-        if (params.transaction_date_min) query.transaction_date_min = params.transaction_date_min;
-        else if ((params as any).fromDate) query.transaction_date_min = (params as any).fromDate;
+    // Build the query
+    const query: any = {};
+    if (params) {
+      if (params.transaction_date_min) query.transaction_date_min = params.transaction_date_min;
+      else if ((params as any).fromDate) query.transaction_date_min = (params as any).fromDate;
 
-        if (params.transaction_date_max) query.transaction_date_max = params.transaction_date_max;
-        else if ((params as any).toDate) query.transaction_date_max = (params as any).toDate;
+      if (params.transaction_date_max) query.transaction_date_max = params.transaction_date_max;
+      else if ((params as any).toDate) query.transaction_date_max = (params as any).toDate;
 
-        if (params.since_id) query.since_id = params.since_id;
-        else if ((params as any).offset) query.since_id = (params as any).offset;
+      if (params.since_id) query.since_id = params.since_id;
+      else if ((params as any).offset) query.since_id = (params as any).offset;
 
-        if (params.account_number) query.account_number = params.account_number;
-        if (params.reference_number) query.reference_number = params.reference_number;
-        if (params.amount_in !== undefined) query.amount_in = params.amount_in;
-        if (params.amount_out !== undefined) query.amount_out = params.amount_out;
+      if (params.account_number) query.account_number = params.account_number;
+      if (params.reference_number) query.reference_number = params.reference_number;
+      if (params.amount_in !== undefined) query.amount_in = params.amount_in;
+      if (params.amount_out !== undefined) query.amount_out = params.amount_out;
 
-        if (params.limit !== undefined) {
-          const limitNum = Number(params.limit) || 0;
-          // SePay cap at 5000 per docs
-          query.limit = Math.min(limitNum, 5000);
-        }
+      if (params.limit !== undefined) {
+        const limitNum = Number(params.limit) || 0;
+        // SePay cap at 5000 per docs
+        query.limit = Math.min(limitNum, 5000);
       }
+    }
 
-      // Default to configured account if not explicitly provided
-      if (!query.account_number && this.ACCOUNT_NO) {
-        query.account_number = this.ACCOUNT_NO;
-      }
+    // Default to configured account if not explicitly provided
+    if (!query.account_number && this.ACCOUNT_NO) {
+      query.account_number = this.ACCOUNT_NO;
+    }
 
-      // Debug/logging for troubleshooting
-      if (this.IS_SANDBOX) {
-        console.log('🧪 SePay getTransactions request', {
-          url: `${this.API_BASE_URL}/userapi/transactions/list`,
+    // Retry/backoff settings
+    const maxRetries = options?.maxRetries ?? 3;
+    const baseMs = options?.retryBaseMs ?? 500;
+
+    if (this.IS_SANDBOX) {
+      console.log('🧪 SePay getTransactions request', {
+        url: `${this.API_BASE_URL}/userapi/transactions/list`,
+        params: query,
+        maxRetries
+      });
+    }
+
+    let lastError: any = null;
+    let response: any = null;
+
+    for (let attempt = 0; attempt <= maxRetries; attempt++) {
+      try {
+        response = await axios.get(`${this.API_BASE_URL}/userapi/transactions/list`, {
+          headers: {
+            'Authorization': `Bearer ${this.API_TOKEN}`,
+            'Content-Type': 'application/json'
+          },
           params: query
         });
+        // success
+        break;
+      } catch (error: any) {
+        lastError = error;
+        const status = error?.response?.status;
+
+        // Handle rate limit / transient errors with backoff
+        if ((status === 429 || status === 502 || status === 503 || status === 504) && attempt < maxRetries) {
+          // Respect Retry-After header if present
+          let waitMs = 0;
+          const retryAfter = error?.response?.headers?.['retry-after'] || error?.response?.headers?.['Retry-After'];
+          if (retryAfter) {
+            const ra = retryAfter.toString();
+            if (/^\d+$/.test(ra)) {
+              waitMs = Number(ra) * 1000; // seconds
+            } else {
+              const parsed = Date.parse(ra);
+              if (!isNaN(parsed)) {
+                waitMs = Math.max(0, parsed - Date.now());
+              }
+            }
+          }
+
+          if (!waitMs) {
+            // exponential backoff with jitter
+            waitMs = Math.pow(2, attempt) * baseMs + Math.floor(Math.random() * 100);
+          }
+
+          console.warn(`⚠️ SePay API returned ${status}. Backing off ${waitMs}ms (attempt ${attempt + 1}/${maxRetries})`);
+          await sleep(waitMs);
+          continue; // retry
+        }
+
+        // Otherwise break and throw
+        console.error('❌ SePay get transactions error (non-retriable):', error?.response?.data || error?.message || error);
+        throw new Error(`Failed to get transactions: ${error.message}`);
       }
+    }
 
-      const response = await axios.get(`${this.API_BASE_URL}/userapi/transactions/list`, {
-        headers: {
-          'Authorization': `Bearer ${this.API_TOKEN}`,
-          'Content-Type': 'application/json'
-        },
-        params: query
-      });
+    if (!response) {
+      console.error('❌ SePay get transactions final error:', lastError?.response?.data || lastError?.message || lastError);
+      throw new Error(`Failed to get transactions: ${lastError?.message || 'unknown error'}`);
+    }
 
-      // SePay can return different shapes. Normalize the result to an array of transactions.
-      const resp = response.data || {};
+    // SePay can return different shapes. Normalize the result to an array of transactions.
+    const resp = response.data || {};
 
-      // Common variants
-      let transactions: any = [];
-      if (Array.isArray(resp.transactions)) transactions = resp.transactions;
-      else if (Array.isArray(resp.transaction)) transactions = resp.transaction;
-      else if (Array.isArray(resp.data?.transactions)) transactions = resp.data.transactions;
-      else if (Array.isArray(resp.data)) transactions = resp.data;
-      else if (resp.transaction) transactions = [resp.transaction];
-      else if (resp.transactions) transactions = [resp.transactions];
+    // Common variants
+    let transactions: any = [];
+    if (Array.isArray(resp.transactions)) transactions = resp.transactions;
+    else if (Array.isArray(resp.transaction)) transactions = resp.transaction;
+    else if (Array.isArray(resp.data?.transactions)) transactions = resp.data.transactions;
+    else if (Array.isArray(resp.data)) transactions = resp.data;
+    else if (resp.transaction) transactions = [resp.transaction];
+    else if (resp.transactions) transactions = [resp.transactions];
 
-      // If no transactions found and fallback allowed, retry with looser filters (remove amount_in) once
-      if ((Array.isArray(transactions) && transactions.length === 0) && options?.fallback) {
-        console.log('ℹ️ SePay getTransactions: no results, retrying with relaxed filters');
-        const relaxedQuery = { ...query };
-        delete (relaxedQuery as any).amount_in;
+    // If no transactions found and fallback allowed, retry with looser filters (remove amount_in) once
+    if ((Array.isArray(transactions) && transactions.length === 0) && options?.fallback) {
+      console.log('ℹ️ SePay getTransactions: no results, retrying with relaxed filters');
+      const relaxedQuery = { ...query };
+      delete (relaxedQuery as any).amount_in;
+
+      // Single relaxed retry with same retry logic
+      try {
+        let relaxedResp: any = null;
         try {
-          const retryResp = await axios.get(`${this.API_BASE_URL}/userapi/transactions/list`, {
+          relaxedResp = await axios.get(`${this.API_BASE_URL}/userapi/transactions/list`, {
             headers: {
               'Authorization': `Bearer ${this.API_TOKEN}`,
               'Content-Type': 'application/json'
             },
             params: relaxedQuery
           });
-          const r = retryResp.data || {};
-          if (Array.isArray(r.transactions)) transactions = r.transactions;
-          else if (Array.isArray(r.transaction)) transactions = r.transaction;
-          else if (Array.isArray(r.data?.transactions)) transactions = r.data.transactions;
-          else if (Array.isArray(r.data)) transactions = r.data;
-          else if (r.transaction) transactions = [r.transaction];
-          else if (r.transactions) transactions = [r.transactions];
-        } catch (retryError: any) {
-          console.warn('⚠️ SePay getTransactions retry failed:', retryError?.message || retryError);
+        } catch (err: any) {
+          // If rate-limited on relaxed retry, respect header or short backoff and try once more
+          const s = err?.response?.status;
+          const retryAfter = err?.response?.headers?.['retry-after'] || err?.response?.headers?.['Retry-After'];
+          let waitMs = 0;
+          if (retryAfter) {
+            const ra = retryAfter.toString();
+            if (/^\d+$/.test(ra)) waitMs = Number(ra) * 1000;
+            else {
+              const parsed = Date.parse(ra);
+              if (!isNaN(parsed)) waitMs = Math.max(0, parsed - Date.now());
+            }
+          }
+          if (!waitMs) waitMs = baseMs;
+          if (s === 429) {
+            console.warn(`⚠️ SePay relaxed retry got 429, waiting ${waitMs}ms then trying one more time`);
+            await sleep(waitMs);
+            try {
+              relaxedResp = await axios.get(`${this.API_BASE_URL}/userapi/transactions/list`, {
+                headers: {
+                  'Authorization': `Bearer ${this.API_TOKEN}`,
+                  'Content-Type': 'application/json'
+                },
+                params: relaxedQuery
+              });
+            } catch (err2: any) {
+              console.warn('⚠️ SePay relaxed second retry failed:', err2?.message || err2);
+            }
+          } else {
+            console.warn('⚠️ SePay relaxed retry failed:', err?.message || err);
+          }
+
         }
-      }
 
-      if (this.IS_SANDBOX) {
-        console.log(`🔍 SePay API returned ${Array.isArray(transactions) ? transactions.length : 0} transactions`);
+        const r = relaxedResp?.data || {};
+        if (Array.isArray(r.transactions)) transactions = r.transactions;
+        else if (Array.isArray(r.transaction)) transactions = r.transaction;
+        else if (Array.isArray(r.data?.transactions)) transactions = r.data.transactions;
+        else if (Array.isArray(r.data)) transactions = r.data;
+        else if (r.transaction) transactions = [r.transaction];
+        else if (r.transactions) transactions = [r.transactions];
+      } catch (retryError: any) {
+        console.warn('⚠️ SePay getTransactions relaxed retry failed:', retryError?.message || retryError);
       }
-
-      if (Array.isArray(transactions)) return transactions as SePayTransaction[];
-      return [];
-    } catch (error: any) {
-      console.error('❌ SePay get transactions error:', error?.response?.data || error?.message || error);
-      throw new Error(`Failed to get transactions: ${error.message}`);
     }
+
+    if (this.IS_SANDBOX) {
+      console.log(`🔍 SePay API returned ${Array.isArray(transactions) ? transactions.length : 0} transactions`);
+    }
+
+    if (Array.isArray(transactions)) return transactions as SePayTransaction[];
+    return [];
   }
 
   /**
@@ -412,6 +499,39 @@ class SePayService {
         }
       }
 
+      // As a last resort, try searching across all accounts (no account_number filter)
+      try {
+        console.log('ℹ️ Trying a wider search across all accounts for order', orderId);
+        const widerFrom = new Date();
+        widerFrom.setHours(widerFrom.getHours() - Math.max(hours, 168)); // search up to 7 days
+        const allAccountTransactions = await this.getTransactions({
+          transaction_date_min: this.formatDateForSepay(widerFrom),
+          transaction_date_max: this.formatDateForSepay(toDate),
+          limit: 1000
+        }, { fallback: true, maxRetries: 2 });
+
+        console.log(`🔍 Wider search retrieved ${allAccountTransactions.length} transactions`);
+        for (const transaction of allAccountTransactions) {
+          if (txMatchesOrder(transaction)) {
+            const transactionAmount = extractAmount(transaction);
+            // If expectedAmount is present, verify with tolerance
+            if (expectedAmount !== undefined) {
+              const amountDiff = Math.abs(Math.round(expectedAmount) - Math.round(transactionAmount));
+              if (amountDiff <= 1) {
+                console.log(`✅ Found matching transaction on wide search for order ${orderId}`, { transactionId: transaction.id || transaction.transactionId });
+                return { found: true, transaction, amount: transactionAmount };
+              } else {
+                console.warn(`⚠️ Wide search found transaction but amount mismatch for order ${orderId}`);
+              }
+            } else {
+              return { found: true, transaction, amount: transactionAmount };
+            }
+          }
+        }
+      } catch (wideErr: any) {
+        console.warn('⚠️ Wider search across accounts failed:', wideErr?.message || wideErr);
+      }
+
       return { found: false };
     } catch (error: any) {
       console.error(`❌ SePay find transaction by orderId error for ${orderId}:`, error);
@@ -425,7 +545,7 @@ class SePayService {
   public static verifyWebhook(token: string, payload: any): boolean {
     // Xác thực Bearer Token
     console.log('this.API_TOKEN:', this.API_TOKEN);
-    const isValid = token === `Bearer ${this.API_TOKEN}` || token === this.API_TOKEN;
+    const isValid = token === `Apikey Bearer ${this.API_TOKEN}` || token === `Bearer ${this.API_TOKEN}` || token === this.API_TOKEN;
     
     if (this.IS_SANDBOX && isValid) {
       console.log('🧪 SePay SANDBOX webhook verified - TEST mode');
