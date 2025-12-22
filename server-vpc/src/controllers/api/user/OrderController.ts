@@ -794,7 +794,7 @@ class OrderController {
       }
       console.log('authHeader:', authHeader)
       // Xác thực token
-      const isValid = SePayService.verifyWebhook(authHeader, req.body);
+      const isValid = SePayService.verifyWebhook(authHeader);
       if (!isValid) {
         console.error('❌ SePay webhook: Invalid webhook token');
         return sendError(res, 401, "Invalid webhook token");
