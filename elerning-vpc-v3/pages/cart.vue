@@ -371,6 +371,7 @@ const showQrModal = ref(false)
 const qrInfo = ref<any | null>(null)
 const qrPaymentStatus = ref<'pending' | 'completed' | 'expired'>('pending')
 let qrStatusInterval: any = null
+let qrPollingActive = ref(false)
 
 // Polling / TTL control
 const QR_POLL_INTERVAL_MS = 10000
@@ -554,6 +555,9 @@ const handlePayment = async (method: string) => {
 }
 
 const clearQrInterval = () => {
+  // disable scheduling
+  qrPollingActive.value = false
+
   if (qrStatusInterval) {
     clearTimeout(qrStatusInterval)
     qrStatusInterval = null
@@ -661,13 +665,22 @@ const startQrStatusPolling = (orderId: string) => {
         return
       }
     } finally {
-      // schedule next poll
-      if (qrStatusInterval) clearTimeout(qrStatusInterval)
-      qrStatusInterval = setTimeout(poll, currentInterval)
+      // schedule next poll only if polling is still active
+      if (qrPollingActive.value) {
+        if (qrStatusInterval) clearTimeout(qrStatusInterval)
+        qrStatusInterval = setTimeout(poll, currentInterval)
+      } else {
+        // ensure we clean up any stray timeout
+        if (qrStatusInterval) {
+          clearTimeout(qrStatusInterval)
+          qrStatusInterval = null
+        }
+      }
     }
   }
 
-  // start first poll immediately
+  // mark active then start first poll immediately
+  qrPollingActive.value = true
   poll()
 }
 
