@@ -789,7 +789,7 @@ class OrderController {
         console.error('❌ SePay webhook: Missing authorization header');
         return sendError(res, 401, "Missing authorization header");
       }
-
+      console.log('authHeader:', authHeader)
       // Xác thực token
       const isValid = SePayService.verifyWebhook(authHeader, req.body);
       if (!isValid) {

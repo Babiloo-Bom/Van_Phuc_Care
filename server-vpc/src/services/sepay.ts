@@ -181,7 +181,7 @@ class SePayService {
     fromDate?: string;
     toDate?: string;
     offset?: string | number;
-  }): Promise<SePayTransaction[]> {
+  }, options?: { fallback?: boolean }): Promise<SePayTransaction[]> {
     try {
       // Map friendly/legacy keys to SePay's expected keys
       const query: any = {};
@@ -208,6 +208,19 @@ class SePayService {
         }
       }
 
+      // Default to configured account if not explicitly provided
+      if (!query.account_number && this.ACCOUNT_NO) {
+        query.account_number = this.ACCOUNT_NO;
+      }
+
+      // Debug/logging for troubleshooting
+      if (this.IS_SANDBOX) {
+        console.log('🧪 SePay getTransactions request', {
+          url: `${this.API_BASE_URL}/userapi/transactions/list`,
+          params: query
+        });
+      }
+
       const response = await axios.get(`${this.API_BASE_URL}/userapi/transactions/list`, {
         headers: {
           'Authorization': `Bearer ${this.API_TOKEN}`,
@@ -216,15 +229,51 @@ class SePayService {
         params: query
       });
 
-      // SePay returns `transactions` (array) or `transaction` (single) per docs
+      // SePay can return different shapes. Normalize the result to an array of transactions.
       const resp = response.data || {};
-      const transactions = resp.transactions || resp.transaction || [];
 
-      if (Array.isArray(transactions)) return transactions;
-      if (transactions) return [transactions];
+      // Common variants
+      let transactions: any = [];
+      if (Array.isArray(resp.transactions)) transactions = resp.transactions;
+      else if (Array.isArray(resp.transaction)) transactions = resp.transaction;
+      else if (Array.isArray(resp.data?.transactions)) transactions = resp.data.transactions;
+      else if (Array.isArray(resp.data)) transactions = resp.data;
+      else if (resp.transaction) transactions = [resp.transaction];
+      else if (resp.transactions) transactions = [resp.transactions];
+
+      // If no transactions found and fallback allowed, retry with looser filters (remove amount_in) once
+      if ((Array.isArray(transactions) && transactions.length === 0) && options?.fallback) {
+        console.log('ℹ️ SePay getTransactions: no results, retrying with relaxed filters');
+        const relaxedQuery = { ...query };
+        delete (relaxedQuery as any).amount_in;
+        try {
+          const retryResp = await axios.get(`${this.API_BASE_URL}/userapi/transactions/list`, {
+            headers: {
+              'Authorization': `Bearer ${this.API_TOKEN}`,
+              'Content-Type': 'application/json'
+            },
+            params: relaxedQuery
+          });
+          const r = retryResp.data || {};
+          if (Array.isArray(r.transactions)) transactions = r.transactions;
+          else if (Array.isArray(r.transaction)) transactions = r.transaction;
+          else if (Array.isArray(r.data?.transactions)) transactions = r.data.transactions;
+          else if (Array.isArray(r.data)) transactions = r.data;
+          else if (r.transaction) transactions = [r.transaction];
+          else if (r.transactions) transactions = [r.transactions];
+        } catch (retryError: any) {
+          console.warn('⚠️ SePay getTransactions retry failed:', retryError?.message || retryError);
+        }
+      }
+
+      if (this.IS_SANDBOX) {
+        console.log(`🔍 SePay API returned ${Array.isArray(transactions) ? transactions.length : 0} transactions`);
+      }
+
+      if (Array.isArray(transactions)) return transactions as SePayTransaction[];
       return [];
     } catch (error: any) {
-      console.error('❌ SePay get transactions error:', error);
+      console.error('❌ SePay get transactions error:', error?.response?.data || error?.message || error);
       throw new Error(`Failed to get transactions: ${error.message}`);
     }
   }
@@ -232,40 +281,79 @@ class SePayService {
   /**
    * Tìm giao dịch từ SePay API theo orderId (fallback khi webhook không hoạt động)
    */
-  public static async findTransactionByOrderId(orderId: string, expectedAmount?: number): Promise<{
+  public static async findTransactionByOrderId(orderId: string, expectedAmount?: number, opts?: { accountNumber?: string; hours?: number }): Promise<{
     found: boolean;
     transaction?: any;
     amount?: number;
   }> {
     try {
-      console.log('findTransactionByOrderId: ', { orderId, expectedAmount });
-      // Lấy transactions trong 24h gần đây
+      console.log('findTransactionByOrderId: ', { orderId, expectedAmount, opts });
+
+      const hours = opts?.hours ?? 24;
       const fromDate = new Date();
-      fromDate.setHours(fromDate.getHours() - 24);
+      fromDate.setHours(fromDate.getHours() - hours);
       const toDate = new Date();
 
+      // First attempt: use amount filter if provided and default account number
       const transactions = await this.getTransactions({
         transaction_date_min: this.formatDateForSepay(fromDate),
         transaction_date_max: this.formatDateForSepay(toDate),
-        // Nếu cung cấp expectedAmount, lọc theo amount_in để giảm số lượng data trả về từ SePay
         amount_in: expectedAmount !== undefined ? Math.round(expectedAmount) : undefined,
-        limit: 100 // Lấy tối đa 100 giao dịch gần nhất
-      });
+        account_number: opts?.accountNumber || this.ACCOUNT_NO,
+        limit: 200 // Lấy một số lượng hợp lý
+      }, { fallback: true });
+
       console.log(`🔍 Retrieved ${transactions.length} transactions from SePay for orderId ${orderId}`);
-      // Tìm transaction có content chứa orderId
+
+      // Helper to extract amount from diverse field names
+      const extractAmount = (tx: any) => {
+        const cand = tx.transferAmount || tx.transfer_amount || tx.transfer || tx.amount_in || tx.amount || tx.money || tx.amount_out || tx.value || 0;
+        return Number(cand || 0);
+      };
+
+      // Helper to stringify and look for orderId in any field
+      const txMatchesOrder = (tx: any) => {
+        const fields = [
+          tx.transaction_content,
+          tx.transactionContent,
+          tx.content,
+          tx.description,
+          tx.message,
+          tx.reference_number,
+          tx.referenceNumber,
+          tx.referenceCode,
+          tx.order_code,
+          tx.code,
+          tx.id
+        ];
+        for (const f of fields) {
+          try {
+            if (f && f.toString().includes(orderId)) return true;
+          } catch (e) {
+            // ignore
+          }
+        }
+        // As last resort, stringified whole object
+        try {
+          if (JSON.stringify(tx).includes(orderId)) return true;
+        } catch (e) {
+          // ignore
+        }
+        return false;
+      };
+
       for (const transaction of transactions) {
         const content = (transaction.transaction_content || transaction.transactionContent || transaction.content || transaction.description || transaction.message || '').toString();
-        console.log('checking transaction:', content)
-        // Kiểm tra nếu content hoặc reference_number chứa orderId
-        const reference = (transaction.reference_number || transaction.referenceNumber || '').toString();
-        console.log('checking reference:', reference)
-        if (content.includes(orderId) || reference.includes(orderId)) {
-          const transactionAmount = Number(transaction.amount_in || transaction.amount || transaction.money || transaction.amount_out || 0);
-          
-          // Nếu có expectedAmount, kiểm tra số tiền với tolerance
+        const reference = (transaction.reference_number || transaction.referenceNumber || transaction.referenceCode || '').toString();
+
+        console.log('checking transaction content/ref:', content, reference);
+
+        if (txMatchesOrder(transaction) || content.includes(orderId) || reference.includes(orderId)) {
+          const transactionAmount = extractAmount(transaction);
+
           if (expectedAmount !== undefined) {
             const amountDiff = Math.abs(Math.round(expectedAmount) - Math.round(transactionAmount));
-            // Cho phép sai lệch ±1 VND
+            // Allow small rounding diffs
             if (amountDiff <= 1) {
               console.log(`✅ Found matching transaction for order ${orderId}`, {
                 transactionId: transaction.id || transaction.transactionId,
@@ -286,12 +374,40 @@ class SePayService {
               });
             }
           } else {
-            // Không có expectedAmount, chỉ cần match orderId
+            // No amount to verify, accept match
             return {
               found: true,
               transaction: transaction,
-              amount: transactionAmount
+              amount: extractAmount(transaction)
             };
+          }
+        }
+      }
+
+      // If none found and we used amount filter, try again without amount and wider window as last resort
+      if (expectedAmount !== undefined) {
+        console.log('ℹ️ No matching transaction found with amount filter, retrying without amount and wider window');
+        const widerFrom = new Date();
+        widerFrom.setHours(widerFrom.getHours() - Math.max(hours, 72));
+        const fallbackTransactions = await this.getTransactions({
+          transaction_date_min: this.formatDateForSepay(widerFrom),
+          transaction_date_max: this.formatDateForSepay(toDate),
+          account_number: opts?.accountNumber || this.ACCOUNT_NO,
+          limit: 500
+        }, { fallback: true });
+
+        console.log(`🔍 Fallback retrieved ${fallbackTransactions.length} transactions`);
+
+        for (const transaction of fallbackTransactions) {
+          if (txMatchesOrder(transaction)) {
+            const transactionAmount = extractAmount(transaction);
+            const amountDiff = Math.abs(Math.round(expectedAmount) - Math.round(transactionAmount));
+            if (amountDiff <= 1) {
+              console.log(`✅ Found matching transaction on fallback for order ${orderId}`, { transactionId: transaction.id || transaction.transactionId });
+              return { found: true, transaction, amount: transactionAmount };
+            } else {
+              console.warn(`⚠️ Fallback found transaction but amount mismatch for order ${orderId}`);
+            }
           }
         }
       }
@@ -308,6 +424,7 @@ class SePayService {
    */
   public static verifyWebhook(token: string, payload: any): boolean {
     // Xác thực Bearer Token
+    console.log('this.API_TOKEN:', this.API_TOKEN);
     const isValid = token === `Bearer ${this.API_TOKEN}` || token === this.API_TOKEN;
     
     if (this.IS_SANDBOX && isValid) {
