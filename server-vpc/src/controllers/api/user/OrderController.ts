@@ -525,17 +525,18 @@ class OrderController {
         return res.json({ RspCode: "01", Message: "Order Not Found" });
       }
 
-      // Nếu đã xử lý trước đó → trả mã 02 (order already confirmed)
-      if (transaction.get('status') === "success" || transaction.get('status') === "completed") {
-        return res.json({ RspCode: "02", Message: "Order already confirmed" });
-      }
-
       // Validate amount (VNPay sends amount in VND * 100)
+      // MUST check amount BEFORE checking transaction status
       const expectedAmount = Math.round(transaction.get('total') || 0) * 100;
 
       // If vnpAmount is present and doesn't match expected, return 04
       if (vnpAmount && expectedAmount !== vnpAmount) {
         return res.json({ RspCode: "04", Message: "Invalid amount" });
+      }
+
+      // Nếu đã xử lý trước đó → trả mã 02 (order already confirmed)
+      if (transaction.get('status') === "success" || transaction.get('status') === "completed") {
+        return res.json({ RspCode: "02", Message: "Order already confirmed" });
       }
 
       if (responseCode === "00") {
