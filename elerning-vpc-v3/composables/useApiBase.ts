@@ -26,8 +26,15 @@ export const useApiBase = () => {
       return origin
     }
     
-    // Server-side: use internal Docker hostname
-    return config.public.apiBase || 'http://localhost:3000'
+    // Server-side: Read directly from process.env at RUNTIME (not build time)
+    // This ensures we get the value from Docker Compose environment, not baked-in value
+    if (process.server) {
+      const runtimeApiHost = process.env.NUXT_API_HOST_INTERNAL || config.apiHostInternal
+      return runtimeApiHost || 'http://localhost:3000'
+    }
+    
+    // Fallback (should not reach here)
+    return config.public.apiHost || 'http://localhost:3000'
   }
   
   const baseUrl = getBaseUrl()
