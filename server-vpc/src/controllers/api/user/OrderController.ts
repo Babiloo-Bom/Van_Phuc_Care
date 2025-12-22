@@ -501,7 +501,7 @@ class OrderController {
 
       // Sai chữ ký → từ chối (97)
       if (!secureHash || secureHash !== signed) {
-        return res.json({ Message: "Invalid Checksum", RspCode: "97" });
+        return res.json({ RspCode: "97", Message: "Invalid Checksum" });
       }
 
       const transactionId = String(rawParams.vnp_TxnRef || "");
@@ -511,15 +511,23 @@ class OrderController {
       const rawAmountStr = String(rawParams.vnp_Amount || "").replace(/[^0-9]/g, "");
       const vnpAmount = rawAmountStr ? parseInt(rawAmountStr, 10) : 0;
 
-      const transaction = await ModelTransaction.model.findById(transactionId);
+      // Try to find transaction - handle invalid ObjectId
+      let transaction;
+      try {
+        transaction = await ModelTransaction.model.findById(transactionId);
+      } catch (err) {
+        // Invalid ObjectId format
+        return res.json({ RspCode: "01", Message: "Order Not Found" });
+      }
+
       if (!transaction) {
         // Order not found (01)
-        return res.json({ Message: "Order Not Found", RspCode: "01" });
+        return res.json({ RspCode: "01", Message: "Order Not Found" });
       }
 
       // Nếu đã xử lý trước đó → trả mã 02 (order already confirmed)
       if (transaction.get('status') === "success" || transaction.get('status') === "completed") {
-        return res.json({ Message: "Order already confirmed", RspCode: "02" });
+        return res.json({ RspCode: "02", Message: "Order already confirmed" });
       }
 
       // Validate amount (VNPay sends amount in VND * 100)
@@ -527,7 +535,7 @@ class OrderController {
 
       // If vnpAmount is present and doesn't match expected, return 04
       if (vnpAmount && expectedAmount !== vnpAmount) {
-        return res.json({ Message: "Invalid amount", RspCode: "04" });
+        return res.json({ RspCode: "04", Message: "Invalid amount" });
       }
 
       if (responseCode === "00") {
@@ -547,7 +555,7 @@ class OrderController {
         await this.updateCourseForUser(order);
 
         // Acknowledge receipt to VNPay
-        return res.json({ Message: "Confirm Success", RspCode: "00" });
+        return res.json({ RspCode: "00", Message: "Confirm Success" });
       }
 
       // Thất bại (transaction not successful) - mark failed and still acknowledge receipt
@@ -556,11 +564,11 @@ class OrderController {
         errorCode: responseCode,
       });
 
-      return res.json({ Message: "Confirm Success", RspCode: "00" });
+      return res.json({ RspCode: "00", Message: "Confirm Success" });
     } catch (error: any) {
       console.error("❌ paymentVnpayIpn error:", error);
       // Avoid returning 5xx to VNPay test runner; return a JSON error code 99
-      return res.json({ Message: `Exception: ${error?.message || 'Unknown error'}`, RspCode: "99" });
+      return res.json({ RspCode: "99", Message: `Exception: ${error?.message || 'Unknown error'}` });
     }
   }
   public async paymentVnpayVerify(req: Request, res: Response) {
