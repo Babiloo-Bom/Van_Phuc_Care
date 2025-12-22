@@ -542,15 +542,21 @@ class SePayService {
   /**
    * Xác thực webhook từ SePay
    */
-  public static verifyWebhook(token: string, payload: any): boolean {
-    // Xác thực Bearer Token
-    console.log('this.API_TOKEN:', this.API_TOKEN);
-    const isValid = token === `Apikey Bearer ${this.API_TOKEN}` || token === `Bearer ${this.API_TOKEN}` || token === this.API_TOKEN;
-    
-    if (this.IS_SANDBOX && isValid) {
-      console.log('🧪 SePay SANDBOX webhook verified - TEST mode');
+  public static verifyWebhook(authHeader: string | undefined): boolean {
+    // Accept headers like: "Apikey <API_KEY>" or "Bearer <token>" or raw token
+    if (!authHeader) return false;
+
+    // Normalize and extract token
+    const token = authHeader.toString().replace(/^\s*(Apikey|ApiKey|APIKEY|Bearer)\s+/i, '').trim();
+
+    const isValid = token === this.API_TOKEN;
+
+    if (this.IS_SANDBOX) {
+      console.log('this.API_TOKEN:', this.API_TOKEN ? '[REDACTED]' : '(missing)');
+      if (isValid) console.log('🧪 SePay SANDBOX webhook verified - TEST mode');
+      else console.warn('❌ SePay webhook: invalid token');
     }
-    
+
     return isValid;
   }
 
@@ -600,23 +606,26 @@ class SePayService {
         }
       }
 
-      // Kiểm tra status - SePay có thể dùng nhiều format
-      const isSuccess = 
-        status === 'success' || 
-        status === 'completed' || 
-        status === 'paid' ||
-        status === 'SUCCESS' ||
-        status === 'COMPLETED' ||
-        status === 'PAID' ||
-        (typeof status === 'number' && status === 1) ||
-        (typeof status === 'boolean' && status === true);
+      // Determine transaction success robustly
+      // Prefer checking transferType (in/out) and transferAmount; fall back to 'status' if present
+      const transferType = payload.transferType || payload.transfer_type || payload.transfer;
+      const rawAmount = payload.transferAmount || payload.transfer_amount || payload.transfer_amount || payload.amount || payload.money || payload.transferAmount || 0;
+      const transferAmount = Number(rawAmount || 0);
+
+      const statusField = status;
+      const statusSuccessValues = new Set(['success', 'completed', 'paid', 'SUCCESS', 'COMPLETED', 'PAID']);
+      const statusIsSuccess = statusField !== undefined && (statusSuccessValues.has(statusField) || statusField === 1 || statusField === true);
+
+      // SePay typically sends webhooks for real transactions; a reliable sign of an inbound payment is transferType === 'in' and transferAmount > 0
+      const isIncoming = typeof transferType === 'string' && transferType.toLowerCase() === 'in';
+      const isSuccess = (isIncoming && transferAmount > 0) || statusIsSuccess;
 
       return {
-        success: isSuccess,
+        success: !!isSuccess,
         orderId: orderId,
         transactionId: transactionId || payload.id || payload.transaction_id,
-        amount: amount || payload.amount || payload.money,
-        status: status
+        amount: transferAmount,
+        status: statusField
       };
     } catch (error: any) {
       console.error('❌ SePay webhook handling error:', error);
