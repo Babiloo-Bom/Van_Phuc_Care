@@ -542,21 +542,15 @@ class SePayService {
   /**
    * Xác thực webhook từ SePay
    */
-  public static verifyWebhook(authHeader: string | undefined): boolean {
-    // Accept headers like: "Apikey <API_KEY>" or "Bearer <token>" or raw token
-    if (!authHeader) return false;
-
-    // Normalize and extract token
-    const token = authHeader.toString().replace(/^\s*(Apikey|ApiKey|APIKEY|Bearer)\s+/i, '').trim();
-
-    const isValid = token === this.API_TOKEN;
-
-    if (this.IS_SANDBOX) {
-      console.log('this.API_TOKEN:', this.API_TOKEN ? '[REDACTED]' : '(missing)');
-      if (isValid) console.log('🧪 SePay SANDBOX webhook verified - TEST mode');
-      else console.warn('❌ SePay webhook: invalid token');
+  public static verifyWebhook(token: string): boolean {
+    // Xác thực Bearer Token
+    console.log('this.API_TOKEN:', this.API_TOKEN);
+    const isValid = token === `Apikey Bearer ${this.API_TOKEN}` || token === `Bearer ${this.API_TOKEN}` || token === this.API_TOKEN;
+    
+    if (this.IS_SANDBOX && isValid) {
+      console.log('🧪 SePay SANDBOX webhook verified - TEST mode');
     }
-
+    
     return isValid;
   }
 

@@ -495,20 +495,30 @@ class OrderController {
 
     // Sai chữ ký → từ chối
     if (secureHash !== signed) {
-      return res.json({ RspCode: "97", Message: "Invalid signature" });
+      // VNPay expects a specific code for invalid checksum
+      return res.json({ RspCode: "97", Message: "Invalid Checksum" });
     }
 
     const transactionId = params.vnp_TxnRef;
     const responseCode = params.vnp_ResponseCode;
+    const vnpAmount = Number(params['vnp_Amount'] || 0);
 
     const transaction = await ModelTransaction.model.findById(transactionId);
     if (!transaction) {
-      return res.json({ RspCode: "01", Message: "Transaction not found" });
+      // Order not found
+      return res.json({ RspCode: "01", Message: "Order Not Found" });
     }
 
-    // Nếu đã xử lý trước đó → OK
+    // Nếu đã xử lý trước đó → trả mã 02 (order already confirmed)
     if (transaction.get('status') === "success") {
-      return res.json({ RspCode: "00", Message: "Confirm Success" });
+      return res.json({ RspCode: "02", Message: "Order already confirmed" });
+    }
+
+    // Validate amount (VNPay sends amount in VND * 100)
+    const expectedAmount = Math.round(transaction.get('total') || 0) * 100;
+    if (!isNaN(vnpAmount) && expectedAmount !== vnpAmount) {
+      // Invalid amount
+      return res.json({ RspCode: "04", Message: "Invalid amount" });
     }
 
     if (responseCode === "00") {
@@ -527,16 +537,17 @@ class OrderController {
       
       await this.updateCourseForUser(order);
 
-      return res.json({ RspCode: "00", Message: "Success" });
+      // Acknowledge receipt to VNPay
+      return res.json({ RspCode: "00", Message: "Confirm Success" });
     }
 
-    // Thất bại
+    // Thất bại (transaction not successful) - mark failed and still acknowledge receipt
     await ModelTransaction.model.findByIdAndUpdate(transactionId, {
       status: "failed",
       errorCode: responseCode,
     });
 
-    return res.json({ RspCode: "00", Message: "Failed" });
+    return res.json({ RspCode: "00", Message: "Confirm Success" });
   }
   public async paymentVnpayVerify(req: Request, res: Response) {
     const params = req.body;
