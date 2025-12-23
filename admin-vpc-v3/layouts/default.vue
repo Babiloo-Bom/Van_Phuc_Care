@@ -80,13 +80,6 @@
           
           <!-- Xóa menu item "Khách hàng" này -->
           
-          <a-menu-item key="products">
-            <NuxtLink to="/products" class="flex items-center">
-              <AppstoreOutlined class="mr-3 text-lg" />
-              <span>Sản phẩm</span>
-            </NuxtLink>
-          </a-menu-item>
-
           <a-menu-item v-if="isAdmin" key="users">
             <NuxtLink to="/admin/users" class="flex items-center">
               <TeamOutlined class="mr-3 text-lg" />
@@ -137,6 +130,13 @@
                 <span>Quản lý Lịch tiêm</span>
               </NuxtLink>
             </a-menu-item>
+            <!-- Thêm menu item Quản lý Dịch vụ và Đơn hàng khoá học - Chỉ Admin và Manager -->
+            <a-menu-item v-if="isAdminOrManager" key="services-and-orders">
+              <NuxtLink to="/my/services-and-orders" class="flex items-center">
+                <AppstoreAddOutlined class="mr-3 text-lg" />
+                <span>Dịch vụ và Đơn hàng khoá học</span>
+              </NuxtLink>
+            </a-menu-item>
           </a-sub-menu>
 
           <a-menu-divider />
@@ -173,7 +173,8 @@ import {
   BookOutlined,
   FileTextOutlined,
   ShoppingCartOutlined,  // Thêm icon này
-  MedicineBoxOutlined
+  MedicineBoxOutlined,
+  AppstoreAddOutlined  // Icon cho Dịch vụ và Đơn hàng khoá học
 } from '@ant-design/icons-vue'
 import { message } from 'ant-design-vue'
 
@@ -192,12 +193,12 @@ watch(() => route.path, () => {
 const selectedKeys = computed(() => {
   const path = route.path
   if (path === '/') return ['dashboard']
-  if (path.startsWith('/products')) return ['products']
   if (path.startsWith('/admin/users')) return ['users']
   if (path.startsWith('/elearning/courses')) return ['courses']
   if (path.startsWith('/my/so-skdt')) return ['so-skdt']
   if (path.startsWith('/my/transactions')) return ['transactions']  // Thêm dòng này
   if (path.startsWith('/my/schedule-vaccins')) return ['schedule-vaccins']
+  if (path.startsWith('/my/services-and-orders')) return ['services-and-orders']
   if (path.startsWith('/faqs')) return ['faqs']
   return []
 })

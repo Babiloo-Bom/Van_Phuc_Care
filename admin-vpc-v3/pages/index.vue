@@ -178,16 +178,6 @@
         </div>
         <div class="system-info">
           <div class="info-item">
-            <span class="info-label">Môi trường:</span>
-            <a-tag :color="isDevelopment ? 'orange' : 'green'">
-              {{ isDevelopment ? 'Development' : 'Production' }}
-            </a-tag>
-          </div>
-          <div class="info-item">
-            <span class="info-label">API Base:</span>
-            <span class="info-value">{{ apiBase }}</span>
-          </div>
-          <div class="info-item">
             <span class="info-label">Người dùng hiện tại:</span>
             <span class="info-value">{{ authStore.user?.fullname || authStore.user?.email }}</span>
           </div>
@@ -239,7 +229,6 @@ const usersApi = useUsersApi()
 const coursesApi = useCoursesApi()
 const healthBooksApi = useHealthBooksApi()  // Thêm instance này
 const ordersApi = useOrdersApi()  // Thêm instance này
-const { apiBase, isDevelopment } = useEnvConfig()
 
 // State
 const loading = ref(false)

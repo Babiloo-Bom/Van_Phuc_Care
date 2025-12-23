@@ -31,9 +31,10 @@ class ServiceController {
       const limit = parseInt(req.query.limit as string || '20');
       const offset = (page - 1) * limit;
       const { searchKey } = req.query;
-      const queryString: any = {
-        origin: req.currentAdmin.domain,
-      };
+
+      // Hiện tại: bỏ filter theo origin để admin thấy đầy đủ danh sách dịch vụ
+      // (bao gồm cả dữ liệu seed cũ và dữ liệu theo domain)
+      const queryString: any = {};
       if (searchKey) {
         Object.assign(queryString, {
           $or: [

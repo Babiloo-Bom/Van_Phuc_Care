@@ -124,6 +124,26 @@ export const useApiClient = () => {
   }
 
   /**
+   * Build full URL from baseURL and path
+   */
+  const buildUrl = (url: string): string => {
+    // If URL is already absolute, use it as is
+    if (url.startsWith('http://') || url.startsWith('https://')) {
+      return url
+    }
+    
+    // If baseURL is empty, use URL as is (for relative paths with Nuxt proxy)
+    if (!baseURL) {
+      return url
+    }
+    
+    // Combine baseURL and url
+    const base = baseURL.replace(/\/+$/, '')
+    const path = url.startsWith('/') ? url : `/${url}`
+    return `${base}${path}`
+  }
+
+  /**
    * GET request
    */
   const get = async <T = any>(
@@ -132,12 +152,16 @@ export const useApiClient = () => {
   ): Promise<ApiResponse<T>> => {
     try {
       const fetchOptions = createFetchOptions(options)
+      const fullUrl = buildUrl(url)
       
-      const response = await $fetch<T>(url, {
+      console.log('🔍 GET request:', { url, baseURL, fullUrl })
+      
+      const response = await $fetch<T>(fullUrl, {
         method: 'GET',
         params: options.params,
-        ...fetchOptions
-      })
+        headers: fetchOptions.headers,
+        timeout: fetchOptions.timeout
+      } as any)
 
       return {
         status: true,
@@ -158,13 +182,15 @@ export const useApiClient = () => {
   ): Promise<ApiResponse<T>> => {
     try {
       const fetchOptions = createFetchOptions(options)
+      const fullUrl = buildUrl(url)
       
-      const response = await $fetch<T>(url, {
+      const response = await $fetch<T>(fullUrl, {
         method: 'POST',
         body,
         params: options.params,
-        ...fetchOptions
-      })
+        headers: fetchOptions.headers,
+        timeout: fetchOptions.timeout
+      } as any)
 
       return {
         status: true,
@@ -212,13 +238,15 @@ export const useApiClient = () => {
   ): Promise<ApiResponse<T>> => {
     try {
       const fetchOptions = createFetchOptions(options)
+      const fullUrl = buildUrl(url)
       
-      const response = await $fetch<T>(url, {
+      const response = await $fetch<T>(fullUrl, {
         method: 'PATCH',
         body,
         params: options.params,
-        ...fetchOptions
-      })
+        headers: fetchOptions.headers,
+        timeout: fetchOptions.timeout
+      } as any)
 
       return {
         status: true,
@@ -238,12 +266,14 @@ export const useApiClient = () => {
   ): Promise<ApiResponse<T>> => {
     try {
       const fetchOptions = createFetchOptions(options)
+      const fullUrl = buildUrl(url)
       
-      const response = await $fetch<T>(url, {
+      const response = await $fetch<T>(fullUrl, {
         method: 'DELETE',
         params: options.params,
-        ...fetchOptions
-      })
+        headers: fetchOptions.headers,
+        timeout: fetchOptions.timeout
+      } as any)
 
       return {
         status: true,
@@ -273,10 +303,10 @@ export const useApiClient = () => {
       }
 
       // Don't set Content-Type for FormData (browser will set it with boundary)
-      const response = await $fetch(url, {
+      const fullUrl = buildUrl(url)
+      const response = await $fetch(fullUrl, {
         method: 'POST',
         body: formData,
-        baseURL,
         headers,
         timeout: options.timeout || 60000, // 60s for uploads
       })
