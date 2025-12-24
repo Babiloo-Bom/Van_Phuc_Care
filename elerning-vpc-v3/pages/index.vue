@@ -595,7 +595,7 @@ const handleViewDetail = (course: any) => {
     }
     navigateTo(`/courses/${course.slug}`);
   } catch (error) {
-    console.error("❌ Error viewing detail:", error);
+    console.error("❌ Error viewing detail: ", error);
   }
 };
 

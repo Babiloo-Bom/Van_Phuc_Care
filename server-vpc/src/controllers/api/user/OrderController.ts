@@ -603,41 +603,20 @@ class OrderController {
         return sendSuccess(res, { success: true }, 'Payment already confirmed');
       }
 
-      // Nếu đã failed trước đó
+      // Nếu đã failed trước đó → trả về lỗi
       if (transaction.get('status') === "failed") {
         return sendError(res, 400, 'Payment failed');
       }
 
-      // Transaction còn pending → xử lý (fallback khi IPN chưa được gọi)
+      // Strict-IPN-only: Do NOT update DB here. Return a pending response so client waits for IPN.
       if (responseCode === "00") {
-        // Thành công
-        await ModelTransaction.model.findByIdAndUpdate(transactionId, {
-          status: "success",
-          paidAt: new Date(),
-          referenceId: params.vnp_TransactionNo,
-          metadata: params,
-        });
-
-        const order = await OrderModel.findOneAndUpdate(
-          { orderId: transaction.get('orderId') }, 
-          {
-            paymentStatus: 'completed',
-            status: 'completed'
-          }
-        );
-        
-        await this.updateCourseForUser(order);
-
-        return sendSuccess(res, { success: true }, 'Payment success');
+        // Payment gateway indicates success but we only accept IPN as source of truth.
+        console.log(`ℹ️ VNPay Verify received success for transaction ${transactionId} but will not update DB; waiting for IPN.`);
+        return sendSuccess(res, { success: false }, 'Payment pending, confirmation will be handled by IPN');
       }
 
-      // Thất bại
-      await ModelTransaction.model.findByIdAndUpdate(transactionId, {
-        status: "failed",
-        errorCode: responseCode,
-      });
-
-      return sendError(res, 400, 'Payment failed');
+      // Non-success response from gateway — do not modify DB here under Strict-IPN-only policy.
+      return sendError(res, 400, 'Payment not successful (handled via IPN)');
     } catch (error: any) {
       console.error("❌ paymentVnpayVerify error:", error);
       return sendError(res, 500, error.message, error as Error);
