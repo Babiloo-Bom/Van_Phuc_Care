@@ -28,8 +28,11 @@
       <!-- Logo -->
       <div class="p-6 border-b border-gray-200">
         <NuxtLink to="/" class="flex items-center">
-          <span class="text-2xl font-bold text-primary-500">🏥</span>
-          <span class="ml-2 text-xl font-semibold text-gray-900">Admin Portal</span>
+          <img 
+            src="/images/logo-vanphuc-new.png" 
+            alt="Vạn Phúc Care" 
+            class="h-10 object-contain"
+          />
         </NuxtLink>
       </div>
 
@@ -84,6 +87,14 @@
             <NuxtLink to="/admin/users" class="flex items-center">
               <TeamOutlined class="mr-3 text-lg" />
               <span>Quản lý người dùng</span>
+            </NuxtLink>
+          </a-menu-item>
+
+          <!-- Quản lý khách hàng Menu - Ngang hàng với My và Elearning -->
+          <a-menu-item key="customers">
+            <NuxtLink to="/customers" class="flex items-center">
+              <UsergroupAddOutlined class="mr-3 text-lg" />
+              <span>Quản lý khách hàng</span>
             </NuxtLink>
           </a-menu-item>
 
@@ -174,7 +185,8 @@ import {
   FileTextOutlined,
   ShoppingCartOutlined,  // Thêm icon này
   MedicineBoxOutlined,
-  AppstoreAddOutlined  // Icon cho Dịch vụ và Đơn hàng khoá học
+  AppstoreAddOutlined,  // Icon cho Dịch vụ và Đơn hàng khoá học
+  UsergroupAddOutlined  // Icon cho Khách hàng
 } from '@ant-design/icons-vue'
 import { message } from 'ant-design-vue'
 
@@ -194,6 +206,7 @@ const selectedKeys = computed(() => {
   const path = route.path
   if (path === '/') return ['dashboard']
   if (path.startsWith('/admin/users')) return ['users']
+  if (path.startsWith('/customers')) return ['customers']
   if (path.startsWith('/elearning/courses')) return ['courses']
   if (path.startsWith('/my/so-skdt')) return ['so-skdt']
   if (path.startsWith('/my/transactions')) return ['transactions']  // Thêm dòng này

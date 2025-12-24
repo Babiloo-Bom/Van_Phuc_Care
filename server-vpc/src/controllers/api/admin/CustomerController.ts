@@ -28,75 +28,104 @@ class CustomerController {
       const page = parseInt(req.query.page as string || '1');
       const limit = parseInt(req.query.limit as string || '12');
       const offset = (page - 1) * limit;
-      const { from, to, categoryId, searchKey, status } = req.query;
+      const { from, to, categoryId, searchKey, status, gender } = req.query;
       
-      // Search trong cả customers và users collections
+      // Chỉ query từ users collection với role customer hoặc type normal
       let customers: any[] = [];
       let total = 0;
       
+      // Build base query cho users collection
+      // Customers có type: 'normal' hoặc role: 'customer'
+      const baseQuery: any = {
+        $or: [
+          { type: 'normal' }, // type: 'normal' là customers
+          { role: 'customer' }, // hoặc role: 'customer' (nếu có field role)
+        ],
+      };
+      
+      // Add status filter
+      if (status) {
+        const statusStr = String(status);
+        if (statusStr === 'active') {
+          baseQuery.$and = [
+            ...(baseQuery.$and || []),
+            {
+              $or: [
+                { status: 'active' },
+                { isActive: true },
+              ],
+            },
+          ];
+        } else if (statusStr === 'inactive') {
+          baseQuery.$and = [
+            ...(baseQuery.$and || []),
+            {
+              $or: [
+                { status: 'inactive' },
+                { isActive: false },
+              ],
+            },
+          ];
+        }
+      }
+      
+      // Add gender filter
+      if (gender) {
+        baseQuery.gender = String(gender);
+      }
+      
+      // Add search query
       if (searchKey) {
         const searchKeyStr = (typeof searchKey === 'string' ? searchKey : String(searchKey)).trim();
         console.log('🔎 Searching with key (trimmed):', searchKeyStr);
         
         if (searchKeyStr.length > 0) {
-          // Search trong customers collection
-          const customerQuery: any = {
-            $or: [
-              { firstname: { $regex: searchKeyStr, $options: 'i' } },
-              { lastname: { $regex: searchKeyStr, $options: 'i' } },
-              { email: { $regex: searchKeyStr, $options: 'i' } },
-              { phone: { $regex: searchKeyStr, $options: 'i' } },
-            ],
-          };
-          
-          // Search trong users collection
-          const userQuery: any = {
-            type: 'normal', // Chỉ lấy customers (type: 'normal')
-            $or: [
-              { fullname: { $regex: searchKeyStr, $options: 'i' } },
-              { email: { $regex: searchKeyStr, $options: 'i' } },
-              { phoneNumber: { $regex: searchKeyStr, $options: 'i' } },
-            ],
-          };
-          
-          const [customersFromCustomers, usersFromUsers, customerCount, userCount] = await Promise.all([
-            MonggoDbCustomer.model.find(customerQuery).skip(offset).limit(limit).sort({ createdAt: -1 }).lean(),
-            MongoDbUsers.model.find(userQuery).skip(offset).limit(limit).sort({ createdAt: -1 }).select('-password').lean(),
-            MonggoDbCustomer.model.countDocuments(customerQuery),
-            MongoDbUsers.model.countDocuments(userQuery),
-          ]);
-          
-          // Merge và normalize data
-          customers = [
-            ...customersFromCustomers.map((c: any) => ({
-              ...c,
-              _source: 'customers',
-              fullname: c.firstname && c.lastname ? `${c.firstname} ${c.lastname}` : c.firstname || c.lastname || '',
-            })),
-            ...usersFromUsers.map((u: any) => ({
-              ...u,
-              _source: 'users',
-              firstname: u.fullname ? u.fullname.split(' ')[0] : '',
-              lastname: u.fullname ? u.fullname.split(' ').slice(1).join(' ') : '',
-              phone: u.phoneNumber || '',
-            })),
+          baseQuery.$and = [
+            ...(baseQuery.$and || []),
+            {
+              $or: [
+                { fullname: { $regex: searchKeyStr, $options: 'i' } },
+                { email: { $regex: searchKeyStr, $options: 'i' } },
+                { phoneNumber: { $regex: searchKeyStr, $options: 'i' } },
+              ],
+            },
           ];
-          
-          total = customerCount + userCount;
         }
-      } else {
-        // Nếu không có searchKey, chỉ lấy từ customers
-        const [customersData, totalCount] = await Promise.all([
-          MonggoDbCustomer.model.find({}).skip(offset).limit(limit).sort({ createdAt: -1 }).lean(),
-          MonggoDbCustomer.model.countDocuments({}),
-        ]);
-        customers = customersData.map((c: any) => ({
-          ...c,
-          _source: 'customers',
-          fullname: c.firstname && c.lastname ? `${c.firstname} ${c.lastname}` : c.firstname || c.lastname || '',
-        }));
-        total = totalCount;
       }
+      
+      // Query users collection
+      const [usersData, totalCount] = await Promise.all([
+        MongoDbUsers.model.find(baseQuery).skip(offset).limit(limit).sort({ createdAt: -1 }).select('-password').lean(),
+        MongoDbUsers.model.countDocuments(baseQuery),
+      ]);
+      
+      // Normalize data từ users collection
+      customers = usersData.map((u: any) => {
+        const fullname = u.fullname || '';
+        const nameParts = fullname.split(' ').filter((p: string) => p.length > 0);
+        const firstname = nameParts[0] || '';
+        const lastname = nameParts.slice(1).join(' ') || '';
+        
+        return {
+          ...u,
+          _id: u._id,
+          _source: 'users',
+          firstname,
+          lastname,
+          fullname,
+          phone: u.phoneNumber || '',
+          email: u.email || '',
+          address: u.fullAddress || (u.address ? JSON.stringify(u.address) : ''),
+          city: u.address?.province?.name || '',
+          gender: u.gender || '',
+          status: u.status || (u.isActive ? 'active' : 'inactive'),
+          isActive: u.isActive !== undefined ? u.isActive : (u.status === 'active'),
+          createdAt: u.createdAt,
+          updatedAt: u.updatedAt,
+        };
+      });
+      
+      total = totalCount;
       
       console.log('✅ Found customers:', customers.length, 'Total:', total);
       
