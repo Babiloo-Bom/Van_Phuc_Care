@@ -90,26 +90,6 @@
           <template v-else-if="column.key === 'createdAt'">
             <span>{{ formatDate(record.createdAt) }}</span>
           </template>
-          <template v-else-if="column.key === 'actions'">
-            <a-space>
-              <a-button type="link" size="small" @click="handleView(record)">
-                <EyeOutlined /> Xem
-              </a-button>
-              <a-button type="link" size="small" @click="handleEdit(record)">
-                <EditOutlined /> Sửa
-              </a-button>
-              <a-popconfirm
-                title="Bạn có chắc chắn muốn xóa khách hàng này?"
-                ok-text="Xóa"
-                cancel-text="Hủy"
-                @confirm="handleDelete(record)"
-              >
-                <a-button type="link" size="small" danger>
-                  <DeleteOutlined /> Xóa
-                </a-button>
-              </a-popconfirm>
-            </a-space>
-          </template>
         </template>
       </a-table>
 
@@ -372,12 +352,6 @@ const columns = [
     key: 'createdAt',
     dataIndex: 'createdAt',
     width: 150,
-  },
-  {
-    title: 'Thao tác',
-    key: 'actions',
-    fixed: 'right',
-    width: 180,
   },
 ]
 
