@@ -73,8 +73,8 @@ export const useAuth = () => {
       const result = await authStore.login(username, password, remindAccount)
       
       if (result.success) {
-        // Redirect to intended page or dashboard
-        const redirectPath = localStorage.getItem('redirect_after_login') || '/dashboard'
+        // Redirect to intended page or home
+        const redirectPath = localStorage.getItem('redirect_after_login') || '/'
         localStorage.removeItem('redirect_after_login')
         await router.push(redirectPath)
       }

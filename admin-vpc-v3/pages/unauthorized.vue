@@ -73,7 +73,7 @@ const goBack = () => {
 }
 
 const goHome = () => {
-  navigateTo('/dashboard')
+  navigateTo('/')
 }
 
 const logout = async () => {

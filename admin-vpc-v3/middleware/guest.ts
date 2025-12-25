@@ -24,7 +24,7 @@ export default defineNuxtRouteMiddleware((to, from) => {
       }
     }
 
-    // Default redirect to dashboard
-    return navigateTo('/dashboard')
+    // Default redirect to home
+    return navigateTo('/')
   }
 })

@@ -148,6 +148,13 @@
                 <span>Dịch vụ và Đơn hàng khoá học</span>
               </NuxtLink>
             </a-menu-item>
+            <!-- Thêm menu item Quản lý CSKH Support Tickets - Admin, Manager, Worker -->
+            <a-menu-item key="support-tickets">
+              <NuxtLink to="/my/support-tickets" class="flex items-center">
+                <CustomerServiceOutlined class="mr-3 text-lg" />
+                <span>Quản lý CSKH Support Tickets</span>
+              </NuxtLink>
+            </a-menu-item>
           </a-sub-menu>
 
           <a-menu-divider />
@@ -186,7 +193,8 @@ import {
   ShoppingCartOutlined,  // Thêm icon này
   MedicineBoxOutlined,
   AppstoreAddOutlined,  // Icon cho Dịch vụ và Đơn hàng khoá học
-  UsergroupAddOutlined  // Icon cho Khách hàng
+  UsergroupAddOutlined,  // Icon cho Khách hàng
+  CustomerServiceOutlined  // Icon cho Support Tickets
 } from '@ant-design/icons-vue'
 import { message } from 'ant-design-vue'
 
@@ -212,6 +220,7 @@ const selectedKeys = computed(() => {
   if (path.startsWith('/my/transactions')) return ['transactions']  // Thêm dòng này
   if (path.startsWith('/my/schedule-vaccins')) return ['schedule-vaccins']
   if (path.startsWith('/my/services-and-orders')) return ['services-and-orders']
+  if (path.startsWith('/my/support-tickets')) return ['support-tickets']
   if (path.startsWith('/faqs')) return ['faqs']
   return []
 })
