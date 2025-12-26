@@ -1,5 +1,5 @@
 <template>
-  <header :class="['bg-prim-100 text-white shadow-lg', props.className]">
+  <header :class="['bg-[#317BC4] text-white shadow-lg', props.className]">
     <div class="container mx-auto px-4">
       <div class="flex items-center justify-between h-16">
         <!-- Logo -->
@@ -21,7 +21,10 @@
           <nav class="hidden lg:flex items-center gap-4">
             <NuxtLink
               to="/courses"
-              class="hover:text-gray-200 transition-colors rounded p-2 flex items-center justify-center gap-2"
+              :class="[
+                'hover:text-gray-200 transition-colors rounded p-2 flex items-center justify-center gap-2',
+                { 'bg-[#155E96]': $route.path.startsWith('/courses') }
+              ]"
             >
               <svg
                 xmlns="http://www.w3.org/2000/svg"
@@ -46,7 +49,10 @@
             </NuxtLink>
             <NuxtLink
               to="/my-learning"
-              class="hover:text-gray-200 transition-colors rounded p-2 flex items-center justify-center gap-2"
+              :class="[
+                'hover:text-gray-200 transition-colors rounded p-2 flex items-center justify-center gap-2',
+                { 'bg-[#155E96]': $route.path.startsWith('/my-learning') }
+              ]"
             >
               <svg
                 xmlns="http://www.w3.org/2000/svg"

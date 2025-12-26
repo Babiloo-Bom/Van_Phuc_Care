@@ -49,7 +49,8 @@ export default defineNuxtConfig({
   // CSS
   css: [
     '~/assets/css/tailwind.css',
-    'ant-design-vue/dist/reset.css'
+    'ant-design-vue/dist/reset.css',
+    '~/assets/css/font.css'
   ],
 
   // Runtime config - Environment variables

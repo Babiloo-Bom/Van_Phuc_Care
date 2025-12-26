@@ -687,7 +687,9 @@ const handleFinishQuiz = async (quizResult: any) => {
   navigateTo(
     `/my-learning/${slug.value}?chapter=${chapterParam || 0}&lesson=${lessonParam || 0}`
   );
-  fetchCourseDetail();
+  await fetchCourseDetail();
+  // Đồng bộ cache courses để trang /courses cập nhật đúng trạng thái
+  await coursesStore.fetchAll();
 };
 
 const onLoadedMetadata = () => {
@@ -767,6 +769,13 @@ watch(
           currentChapterIndex.value,
           currentLessonIndex.value
         );
+        
+        // Đồng bộ cache courses để trang /courses cập nhật đúng trạng thái
+        try {
+          await coursesStore.fetchAll();
+        } catch (e) {
+          console.warn('Failed to sync courses cache:', e);
+        }
       } catch (error) {
         console.error('Error marking lesson completed:', error);
       } finally {
