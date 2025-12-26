@@ -758,9 +758,13 @@ class CourseController {
             completedLessonIds: { $setUnion: [ { $map: { input: '$lessonProgresses', as: 'p', in: '$$p.lessonId' } }, { $map: { input: '$quizAttempts', as: 'q', in: '$$q.lessonId' } } ] }
         } },
         { $addFields: {
-            completedLessons: { $size: '$completedLessonIds' },
-            progressPercentage: { $cond: [ { $gt: ['$totalLessons', 0] }, { $round: [ { $multiply: [ { $divide: ['$completedLessons', '$totalLessons'] }, 100 ] }, 0 ] }, 0 ] },
-            isCompleted: { $eq: [ '$progressPercentage', 100 ] }
+            completedLessons: { $size: '$completedLessonIds' }
+        } },
+        { $addFields: {
+            progressPercentage: { $cond: [ { $gt: ['$totalLessons', 0] }, { $round: [ { $multiply: [ { $divide: ['$completedLessons', '$totalLessons'] }, 100 ] }, 0 ] }, 0 ] }
+        } },
+        { $addFields: {
+            isCompleted: { $cond: [ { $gte: ['$progressPercentage', 100] }, true, false ] }
         } },
         { $project: { _id: 1, isCompleted: 1, progressPercentage: 1, completedLessons: 1, totalLessons: 1, createdAt: 1 } },
         { $sort: { isCompleted: 1, createdAt: -1 } }
