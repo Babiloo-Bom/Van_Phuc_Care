@@ -244,6 +244,25 @@ class CourseController {
         })
       );
 
+      // Sort courses: purchased & not completed -> not purchased -> purchased & completed
+      // Tie-breaker: createdAt descending (newest first)
+      coursesWithStats.sort((a: any, b: any) => {
+        const rank = (c: any) => {
+          if (c.isPurchased && !c.isCompleted) return 0;
+          if (!c.isPurchased) return 1;
+          return 2; // purchased && completed
+        };
+
+        const ra = rank(a);
+        const rb = rank(b);
+        if (ra === rb) {
+          const at = new Date(a.createdAt).getTime() || 0;
+          const bt = new Date(b.createdAt).getTime() || 0;
+          return bt - at;
+        }
+        return ra - rb;
+      });
+
       sendSuccess(res, { courses: coursesWithStats });
     } catch (error: any) {
       sendError(res, 500, error.message, error as Error);
@@ -700,32 +719,67 @@ class CourseController {
         return sendSuccess(res, { courses: [] });
       }
 
-      const courses = await Course.find({
-        _id: { $in: purchasedCourseIds.map(id => new mongoose.Types.ObjectId(id)) },
-        status: 'active'
-      }).sort({ createdAt: -1 });
+      // Aggregation: compute per-course progress (totalLessons, completedLessons, percentage, isCompleted) for the current user
+      const purchasedObjectIds = purchasedCourseIds.map(id => new mongoose.Types.ObjectId(id));
+      const userIdStr = userId.toString();
+
+      const agg = await Course.aggregate([
+        { $match: { _id: { $in: purchasedObjectIds }, status: 'active' } },
+        { $lookup: { from: 'chapters', localField: '_id', foreignField: 'courseId', as: 'chapters' } },
+        { $lookup: {
+            from: 'lessons',
+            let: { chapterIds: '$chapters._id' },
+            pipeline: [
+              { $match: { $expr: { $and: [ { $in: ['$chapterId', '$$chapterIds'] }, { $eq: ['$status', 'active'] } ] } } },
+              { $project: { _id: 1 } }
+            ],
+            as: 'lessons'
+        } },
+        { $lookup: {
+            from: 'lessonprogresses',
+            let: { courseId: '$_id' },
+            pipeline: [
+              { $match: { $expr: { $and: [ { $eq: ['$userId', userIdStr] }, { $eq: ['$courseId', { $toString: '$$courseId' }] }, { $eq: ['$completed', true] } ] } } },
+              { $project: { lessonId: 1, _id: 0 } }
+            ],
+            as: 'lessonProgresses'
+        } },
+        { $lookup: {
+            from: 'quiz_attempts',
+            let: { courseId: '$_id' },
+            pipeline: [
+              { $match: { $expr: { $and: [ { $eq: ['$userId', userIdStr] }, { $eq: ['$courseId', { $toString: '$$courseId' }] }, { $eq: ['$status', 'completed'] }, { $eq: ['$passed', true] } ] } } },
+              { $project: { lessonId: 1, _id: 0 } }
+            ],
+            as: 'quizAttempts'
+        } },
+        { $addFields: {
+            totalLessons: { $size: '$lessons' },
+            completedLessonIds: { $setUnion: [ { $map: { input: '$lessonProgresses', as: 'p', in: '$$p.lessonId' } }, { $map: { input: '$quizAttempts', as: 'q', in: '$$q.lessonId' } } ] }
+        } },
+        { $addFields: {
+            completedLessons: { $size: '$completedLessonIds' },
+            progressPercentage: { $cond: [ { $gt: ['$totalLessons', 0] }, { $round: [ { $multiply: [ { $divide: ['$completedLessons', '$totalLessons'] }, 100 ] }, 0 ] }, 0 ] },
+            isCompleted: { $eq: [ '$progressPercentage', 100 ] }
+        } },
+        { $project: { _id: 1, isCompleted: 1, progressPercentage: 1, completedLessons: 1, totalLessons: 1, createdAt: 1 } },
+        { $sort: { isCompleted: 1, createdAt: -1 } }
+      ]);
+
+      const orderedCourseIds = agg.map((c: any) => c._id);
+      const aggMap = new Map(agg.map((c: any) => [String(c._id), c]));
 
       const LessonsModel = (await import("@mongodb/lessons")).default;
       const QuizzesModel = (await import("@mongodb/quizzes")).default;
 
-      const LessonProgress = mongoose.model("LessonProgress");
-      const MongoDbQuizAttempts = (await import("@mongodb/quiz-attempts")).default;
-
-      const [allLessonProgress, allQuizAttempts] = await Promise.all([
-        LessonProgress.find({
-          userId: userId.toString(),
-          courseId: { $in: purchasedCourseIds.map(id => new mongoose.Types.ObjectId(id)) }
-        }),
-        MongoDbQuizAttempts.find({
-          userId: userId.toString(),
-          courseId: { $in: purchasedCourseIds.map(id => new mongoose.Types.ObjectId(id)) },
-          status: "completed",
-          passed: true,
-        }),
-      ]);
+      // Fetch course docs (unordered) and preserve order using orderedCourseIds
+      const courseDocs = await Course.find({ _id: { $in: orderedCourseIds } });
+      const courseDocsById = new Map(courseDocs.map((c: any) => [String(c._id), c]));
 
       const coursesWithStats = await Promise.all(
-        courses.map(async (course: any) => {
+        orderedCourseIds.map(async (orderedCourseId: any) => {
+          const course: any = courseDocsById.get(String(orderedCourseId));
+          if (!course) return null;
           const courseData = course.toObject();
           const courseId = course._id.toString();
 
@@ -737,14 +791,7 @@ class CourseController {
           let totalVideoCount = 0;
           let totalDocumentCount = 0;
           let totalLessons = 0;
-          let completedLessons = 0;
-
-          const courseLessonProgress = allLessonProgress.filter(
-            (p: any) => p.courseId?.toString() === courseId
-          );
-          const courseQuizAttempts = allQuizAttempts.filter(
-            (attempt: any) => attempt.courseId?.toString() === courseId
-          );
+          let completedLessons = 0; // will be overridden by aggregation when available
 
           for (const chapter of chapters) {
             const lessons = await LessonsModel.model.find({
@@ -754,8 +801,6 @@ class CourseController {
 
             for (const lesson of lessons) {
               const lessonData: any = lesson.toObject();
-              const lessonId = lesson._id.toString();
-              const chapterId = chapter._id.toString();
 
               if (lessonData.videos && Array.isArray(lessonData.videos)) {
                 totalVideoCount += lessonData.videos.length;
@@ -773,29 +818,6 @@ class CourseController {
               }
 
               totalLessons += 1;
-              const hasQuiz = !!lessonData.quizId || !!lessonData.quiz;
-
-              if (hasQuiz) {
-                const passedAttempt = courseQuizAttempts.find(
-                  (attempt: any) =>
-                    attempt.chapterId?.toString() === chapterId &&
-                    attempt.lessonId?.toString() === lessonId &&
-                    attempt.passed === true
-                );
-                if (passedAttempt) {
-                  completedLessons += 1;
-                }
-              } else {
-                const progress = courseLessonProgress.find(
-                  (p: any) =>
-                    p.chapterId?.toString() === chapterId &&
-                    p.lessonId?.toString() === lessonId &&
-                    p.completed === true
-                );
-                if (progress) {
-                  completedLessons += 1;
-                }
-              }
             }
           }
 
@@ -843,17 +865,19 @@ class CourseController {
             documentCount: totalDocumentCount,
             quizCount: totalQuizCount,
             progress: {
-              totalLessons,
-              completedLessons,
-              progressPercentage,
-              isCompleted: progressPercentage === 100,
+              totalLessons: aggMap.get(courseId)?.totalLessons ?? totalLessons,
+              completedLessons: aggMap.get(courseId)?.completedLessons ?? completedLessons,
+              progressPercentage: aggMap.get(courseId)?.progressPercentage ?? progressPercentage,
+              isCompleted: (aggMap.get(courseId)?.isCompleted ?? ((aggMap.get(courseId)?.progressPercentage ?? progressPercentage) === 100)),
             },
+
             createdAt: courseData.createdAt,
             updatedAt: courseData.updatedAt,
           };
         })
       );
 
+      // courses are already ordered by aggregation (incomplete first, then completed; ties by createdAt desc)
       sendSuccess(res, { courses: coursesWithStats });
     } catch (error: any) {
       console.error('❌ Get my courses error:', error);
