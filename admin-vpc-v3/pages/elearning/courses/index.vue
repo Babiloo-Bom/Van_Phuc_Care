@@ -256,7 +256,7 @@
       </div>
     </a-card>
 
-    <!-- Create/Edit Modal - Cần thêm nội dung modal ở đây -->
+    <!-- Create/Edit Modal -->
     <a-modal
       v-model:open="modalVisible"
       :title="modalTitle"
@@ -267,7 +267,442 @@
       @ok="handleModalOk"
       @cancel="handleModalCancel"
     >
-      <!-- Modal content sẽ được thêm sau -->
+      <a-form
+        ref="formRef"
+        :model="formData"
+        :rules="formRules"
+        layout="vertical"
+        class="course-form"
+      >
+        <a-tabs v-model:activeKey="activeTab">
+          <!-- Tab 1: Thông tin cơ bản -->
+          <a-tab-pane key="basic" tab="Thông tin cơ bản">
+            <a-row :gutter="16">
+              <a-col :span="24">
+                <a-form-item label="Tên khóa học" name="title">
+                  <a-input
+                    v-model:value="formData.title"
+                    placeholder="Nhập tên khóa học"
+                    @blur="generateSlug"
+                  />
+                </a-form-item>
+              </a-col>
+              <a-col :span="24">
+                <a-form-item label="Slug" name="slug">
+                  <a-input
+                    v-model:value="formData.slug"
+                    placeholder="Slug sẽ được tạo tự động từ tên khóa học"
+                  />
+                </a-form-item>
+              </a-col>
+              <a-col :span="24">
+                <a-form-item label="Mô tả ngắn" name="shortDescription">
+                  <a-textarea
+                    v-model:value="formData.shortDescription"
+                    placeholder="Nhập mô tả ngắn về khóa học"
+                    :rows="3"
+                  />
+                </a-form-item>
+              </a-col>
+              <a-col :span="24">
+                <a-form-item label="Mô tả chi tiết" name="description">
+                  <a-textarea
+                    v-model:value="formData.description"
+                    placeholder="Nhập mô tả chi tiết về khóa học"
+                    :rows="5"
+                  />
+                </a-form-item>
+              </a-col>
+              <a-col :span="12">
+                <a-form-item label="Danh mục" name="category">
+                  <a-input
+                    v-model:value="formData.category"
+                    placeholder="Nhập danh mục"
+                  />
+                </a-form-item>
+              </a-col>
+              <a-col :span="12">
+                <a-form-item label="Cấp độ" name="level">
+                  <a-select v-model:value="formData.level">
+                    <a-select-option value="beginner">Cơ bản</a-select-option>
+                    <a-select-option value="intermediate">Trung bình</a-select-option>
+                    <a-select-option value="advanced">Nâng cao</a-select-option>
+                  </a-select>
+                </a-form-item>
+              </a-col>
+              <a-col :span="8">
+                <a-form-item label="Giá (VND)" name="price">
+                  <a-input-number
+                    v-model:value="formData.price"
+                    :min="0"
+                    :formatter="value => `${value}`.replace(/\B(?=(\d{3})+(?!\d))/g, ',')"
+                    :parser="value => value!.replace(/\$\s?|(,*)/g, '')"
+                    style="width: 100%"
+                    placeholder="0"
+                  />
+                </a-form-item>
+              </a-col>
+              <a-col :span="8">
+                <a-form-item label="Giá gốc (VND)" name="originalPrice">
+                  <a-input-number
+                    v-model:value="formData.originalPrice"
+                    :min="0"
+                    :formatter="value => `${value}`.replace(/\B(?=(\d{3})+(?!\d))/g, ',')"
+                    :parser="value => value!.replace(/\$\s?|(,*)/g, '')"
+                    style="width: 100%"
+                    placeholder="0"
+                  />
+                </a-form-item>
+              </a-col>
+              <a-col :span="8">
+                <a-form-item label="Giảm giá (%)" name="discount">
+                  <a-input-number
+                    v-model:value="formData.discount"
+                    :min="0"
+                    :max="100"
+                    style="width: 100%"
+                    placeholder="0"
+                  />
+                </a-form-item>
+              </a-col>
+              <a-col :span="24">
+                <a-form-item label="Ảnh đại diện" name="thumbnail">
+                  <a-upload
+                    v-model:file-list="thumbnailFileList"
+                    list-type="picture-card"
+                    :max-count="1"
+                    :before-upload="() => false"
+                    @change="handleThumbnailChange"
+                    @remove="handleRemoveThumbnail"
+                    accept="image/*"
+                  >
+                    <div v-if="thumbnailFileList.length < 1">
+                      <PlusOutlined />
+                      <div style="margin-top: 8px">Upload</div>
+                    </div>
+                  </a-upload>
+                  <div v-if="formData.thumbnail && thumbnailFileList.length === 0" style="margin-top: 8px">
+                    <img :src="formData.thumbnail" alt="Thumbnail" style="max-width: 200px; max-height: 200px; border-radius: 4px;" />
+                  </div>
+                </a-form-item>
+              </a-col>
+              <a-col :span="24">
+                <a-form-item label="Video giới thiệu">
+                  <a-upload
+                    v-model:file-list="introVideoFileList"
+                    :before-upload="() => false"
+                    @change="handleIntroVideoChange"
+                    @remove="handleRemoveIntroVideo"
+                    accept="video/*"
+                    :max-count="1"
+                  >
+                    <a-button :loading="uploadingIntroVideo">
+                      <UploadOutlined /> Chọn video
+                    </a-button>
+                  </a-upload>
+                  <div v-if="formData.introVideo && introVideoFileList.length === 0" style="margin-top: 8px">
+                    <video :src="formData.introVideo" controls style="max-width: 100%; max-height: 300px;" />
+                  </div>
+                  <div v-if="introVideoFileList.length > 0 && introVideoFileList[0] && !introVideoFileList[0].url && !uploadingIntroVideo" style="margin-top: 8px; color: #8c8c8c; font-size: 12px;">
+                    Video sẽ được upload khi bạn nhấn "Tạo mới" hoặc "Cập nhật"
+                  </div>
+                </a-form-item>
+              </a-col>
+              <a-col :span="24">
+                <a-form-item label="Tags">
+                  <a-select
+                    v-model:value="formData.tags"
+                    mode="tags"
+                    placeholder="Nhập tags và nhấn Enter"
+                    style="width: 100%"
+                  />
+                </a-form-item>
+              </a-col>
+              <a-col :span="8">
+                <a-form-item label="Trạng thái" name="status">
+                  <a-select v-model:value="formData.status">
+                    <a-select-option value="active">Hoạt động</a-select-option>
+                    <a-select-option value="inactive">Không hoạt động</a-select-option>
+                    <a-select-option value="draft">Bản nháp</a-select-option>
+                  </a-select>
+                </a-form-item>
+              </a-col>
+              <a-col :span="8">
+                <a-form-item label="Xuất bản">
+                  <a-switch v-model:checked="formData.isPublished" />
+                </a-form-item>
+              </a-col>
+              <a-col :span="8">
+                <a-form-item label="Nổi bật">
+                  <a-switch v-model:checked="formData.isFeatured" />
+                </a-form-item>
+              </a-col>
+            </a-row>
+          </a-tab-pane>
+
+          <!-- Tab 2: Thông tin giảng viên -->
+          <a-tab-pane key="instructor" tab="Giảng viên">
+            <a-row :gutter="16">
+              <a-col :span="24">
+                <a-form-item label="Tên giảng viên" name="instructor.name">
+                  <a-input
+                    v-model:value="formData.instructor.name"
+                    placeholder="Nhập tên giảng viên"
+                    @blur="() => formRef?.clearValidate('instructor.name')"
+                    @input="() => formRef?.clearValidate('instructor.name')"
+                  />
+                </a-form-item>
+              </a-col>
+              <a-col :span="24">
+                <a-form-item label="Ảnh đại diện giảng viên">
+                  <a-upload
+                    v-model:file-list="instructorAvatarFileList"
+                    list-type="picture-card"
+                    :max-count="1"
+                    :before-upload="() => false"
+                    @remove="handleRemoveInstructorAvatar"
+                    accept="image/*"
+                  >
+                    <div v-if="instructorAvatarFileList.length < 1">
+                      <PlusOutlined />
+                      <div style="margin-top: 8px">Upload</div>
+                    </div>
+                  </a-upload>
+                  <div v-if="formData.instructor.avatar && instructorAvatarFileList.length === 0" style="margin-top: 8px">
+                    <img :src="formData.instructor.avatar" alt="Avatar" style="max-width: 200px; max-height: 200px; border-radius: 4px;" />
+                  </div>
+                </a-form-item>
+              </a-col>
+              <a-col :span="24">
+                <a-form-item label="Tiểu sử">
+                  <a-textarea
+                    v-model:value="formData.instructor.bio"
+                    placeholder="Nhập tiểu sử giảng viên"
+                    :rows="5"
+                  />
+                </a-form-item>
+              </a-col>
+            </a-row>
+          </a-tab-pane>
+
+          <!-- Tab 3: Chương và bài học -->
+          <a-tab-pane key="chapters" tab="Chương & Bài học">
+            <div class="chapters-section">
+              <div v-for="(chapter, chapterIndex) in formData.chapters" :key="chapterIndex" class="chapter-item" style="margin-bottom: 24px; padding: 16px; border: 1px solid #d9d9d9; border-radius: 4px;">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px;">
+                  <h4>Chương {{ chapterIndex + 1 }}: {{ chapter.title || 'Chưa có tiêu đề' }}</h4>
+                  <a-button type="text" danger @click="removeChapter(chapterIndex)">
+                    <DeleteOutlined /> Xóa chương
+                  </a-button>
+                </div>
+                <a-row :gutter="16">
+                  <a-col :span="24">
+                    <a-form-item :label="`Tiêu đề chương ${chapterIndex + 1}`">
+                      <a-input
+                        v-model:value="chapter.title"
+                        placeholder="Nhập tiêu đề chương"
+                      />
+                    </a-form-item>
+                  </a-col>
+                  <a-col :span="24">
+                    <a-form-item :label="`Mô tả chương ${chapterIndex + 1}`">
+                      <a-textarea
+                        v-model:value="chapter.description"
+                        placeholder="Nhập mô tả chương"
+                        :rows="2"
+                      />
+                    </a-form-item>
+                  </a-col>
+                </a-row>
+                <div style="margin-top: 16px;">
+                  <h5>Bài học trong chương này:</h5>
+                  <div v-for="(lesson, lessonIndex) in chapter.lessons" :key="lessonIndex" style="margin-top: 12px; padding: 16px; background: #f5f5f5; border-radius: 4px; border: 1px solid #d9d9d9;">
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px;">
+                      <strong>Bài {{ lessonIndex + 1 }}: {{ lesson.title || 'Chưa có tiêu đề' }}</strong>
+                      <a-button type="text" danger size="small" @click="removeLesson(chapterIndex, lessonIndex)">
+                        <DeleteOutlined /> Xóa
+                      </a-button>
+                    </div>
+                    <a-row :gutter="16">
+                      <a-col :span="24">
+                        <a-form-item label="Tiêu đề bài học">
+                          <a-input
+                            v-model:value="lesson.title"
+                            placeholder="Nhập tiêu đề bài học"
+                          />
+                        </a-form-item>
+                      </a-col>
+                      <a-col :span="24">
+                        <a-form-item label="Mô tả bài học">
+                          <a-textarea
+                            v-model:value="lesson.description"
+                            placeholder="Nhập mô tả bài học"
+                            :rows="2"
+                          />
+                        </a-form-item>
+                      </a-col>
+                      <a-col :span="12">
+                        <a-form-item label="Loại bài học">
+                          <a-select v-model:value="lesson.type" style="width: 100%">
+                            <a-select-option value="video">Video</a-select-option>
+                            <a-select-option value="document">Tài liệu</a-select-option>
+                            <a-select-option value="quiz">Quiz</a-select-option>
+                            <a-select-option value="text">Văn bản</a-select-option>
+                          </a-select>
+                        </a-form-item>
+                      </a-col>
+                      <a-col :span="12">
+                        <a-form-item label="Cho phép học thử">
+                          <a-switch 
+                            v-model:checked="lesson.isPreview" 
+                            checked-children="Có"
+                            un-checked-children="Không"
+                          />
+                          <span style="margin-left: 8px; color: #8c8c8c; font-size: 12px;">
+                            {{ lesson.isPreview ? 'Bài học này có thể học thử' : 'Bài học này không được học thử' }}
+                          </span>
+                        </a-form-item>
+                      </a-col>
+
+                      <!-- Video Type -->
+                      <template v-if="lesson.type === 'video'">
+                        <a-col :span="24">
+                          <a-form-item label="Upload Video">
+                            <a-upload
+                              v-model:file-list="lesson.videoFileList"
+                              :before-upload="() => false"
+                              @change="(info) => handleLessonVideoChange(chapterIndex, lessonIndex, info)"
+                              accept="video/*"
+                              :max-count="1"
+                            >
+                              <a-button :loading="lesson.uploadingVideo">
+                                <UploadOutlined /> Chọn video
+                              </a-button>
+                            </a-upload>
+                            <div v-if="lesson.videos && lesson.videos.length > 0" style="margin-top: 8px;">
+                              <a-tag color="success">Đã upload: {{ lesson.videos[0].title }}</a-tag>
+                            </div>
+                          </a-form-item>
+                        </a-col>
+                      </template>
+
+                      <!-- Document Type -->
+                      <template v-if="lesson.type === 'document'">
+                        <a-col :span="24">
+                          <a-form-item label="Upload Tài liệu">
+                            <a-upload
+                              v-model:file-list="lesson.documentFileList"
+                              :before-upload="() => false"
+                              @change="(info) => handleLessonDocumentChange(chapterIndex, lessonIndex, info)"
+                              accept=".pdf,.doc,.docx,.xls,.xlsx,.ppt,.pptx"
+                              :max-count="1"
+                            >
+                              <a-button :loading="lesson.uploadingDocument">
+                                <UploadOutlined /> Chọn tài liệu
+                              </a-button>
+                            </a-upload>
+                            <div v-if="lesson.documents && lesson.documents.length > 0" style="margin-top: 8px;">
+                              <a-tag color="success">Đã upload: {{ lesson.documents[0].title }}</a-tag>
+                            </div>
+                          </a-form-item>
+                        </a-col>
+                      </template>
+
+                      <!-- Quiz Type -->
+                      <template v-if="lesson.type === 'quiz'">
+                        <a-col :span="24">
+                          <a-form-item label="Tiêu đề Quiz">
+                            <a-input
+                              v-model:value="lesson.quiz.title"
+                              placeholder="Nhập tiêu đề quiz"
+                            />
+                          </a-form-item>
+                        </a-col>
+                        <a-col :span="24">
+                          <a-form-item label="Mô tả Quiz">
+                            <a-textarea
+                              v-model:value="lesson.quiz.description"
+                              placeholder="Nhập mô tả quiz"
+                              :rows="2"
+                            />
+                          </a-form-item>
+                        </a-col>
+                        <a-col :span="24">
+                          <div style="margin-bottom: 16px;">
+                            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
+                              <strong>Câu hỏi:</strong>
+                              <a-button type="primary" size="small" @click="addQuestion(chapterIndex, lessonIndex)">
+                                <PlusOutlined /> Thêm câu hỏi
+                              </a-button>
+                            </div>
+                            <div v-for="(question, questionIndex) in (lesson.quiz.questions || [])" :key="questionIndex" style="margin-bottom: 16px; padding: 12px; background: white; border-radius: 4px; border: 1px solid #e8e8e8;">
+                              <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+                                <strong>Câu {{ questionIndex + 1 }}:</strong>
+                                <a-button type="text" danger size="small" @click="removeQuestion(chapterIndex, lessonIndex, questionIndex)">
+                                  <DeleteOutlined /> Xóa
+                                </a-button>
+                              </div>
+                              <a-form-item label="Câu hỏi">
+                                <a-input
+                                  v-model:value="question.question"
+                                  placeholder="Nhập câu hỏi"
+                                />
+                              </a-form-item>
+                              <div style="margin-bottom: 12px;">
+                                <strong>Đáp án:</strong>
+                                <div v-for="(option, optionIndex) in (question.options || [])" :key="optionIndex" style="display: flex; gap: 8px; margin-top: 8px; align-items: center;">
+                                  <a-checkbox v-model:checked="option.isCorrect" />
+                                  <a-input
+                                    v-model:value="option.text"
+                                    :placeholder="`Đáp án ${optionIndex + 1}`"
+                                    style="flex: 1"
+                                  />
+                                  <a-button type="text" danger size="small" @click="removeOption(chapterIndex, lessonIndex, questionIndex, optionIndex)">
+                                    <DeleteOutlined />
+                                  </a-button>
+                                </div>
+                                <a-button type="dashed" size="small" style="width: 100%; margin-top: 8px;" @click="addOption(chapterIndex, lessonIndex, questionIndex)">
+                                  <PlusOutlined /> Thêm đáp án
+                                </a-button>
+                              </div>
+                              <a-form-item label="Giải thích (tùy chọn)">
+                                <a-textarea
+                                  v-model:value="question.explanation"
+                                  placeholder="Nhập giải thích cho câu trả lời đúng"
+                                  :rows="2"
+                                />
+                              </a-form-item>
+                            </div>
+                          </div>
+                        </a-col>
+                      </template>
+
+                      <!-- Text Type -->
+                      <template v-if="lesson.type === 'text'">
+                        <a-col :span="24">
+                          <a-form-item label="Nội dung văn bản">
+                            <a-textarea
+                              v-model:value="lesson.content"
+                              placeholder="Nhập nội dung văn bản"
+                              :rows="10"
+                            />
+                          </a-form-item>
+                        </a-col>
+                      </template>
+                    </a-row>
+                  </div>
+                  <a-button type="dashed" style="width: 100%; margin-top: 8px;" @click="addLesson(chapterIndex)">
+                    <PlusOutlined /> Thêm bài học
+                  </a-button>
+                </div>
+              </div>
+              <a-button type="dashed" style="width: 100%;" @click="addChapter">
+                <PlusOutlined /> Thêm chương mới
+              </a-button>
+            </div>
+          </a-tab-pane>
+        </a-tabs>
+      </a-form>
     </a-modal>
 
     <!-- View Course Modal -->
@@ -475,6 +910,7 @@ const viewingCourse = ref<Course | null>(null)
 const thumbnailFileList = ref<UploadFile[]>([])
 const introVideoFileList = ref<UploadFile[]>([])
 const instructorAvatarFileList = ref<UploadFile[]>([])
+const uploadingIntroVideo = ref(false)
 const activeTab = ref('basic')
 
 // Updated formData - THÊM LẠI ĐỊNH NGHĨA NÀY
@@ -622,6 +1058,43 @@ const handleRemoveThumbnail = () => {
   formData.thumbnail = ''
   thumbnailFileList.value = []
   formRef.value?.clearValidate('thumbnail')
+}
+
+const handleIntroVideoChange = async (info: any) => {
+  const { fileList } = info
+  
+  if (fileList.length > 0 && fileList[0].originFileObj) {
+    const file = fileList[0].originFileObj as File
+    uploadingIntroVideo.value = true
+    
+    try {
+      // Upload video to R2/CDN
+      const videoUrl = await uploadVideoToR2(file, 'courses/intro-videos')
+      
+      // Lưu URL vào formData
+      formData.introVideo = videoUrl
+      
+      // Cập nhật fileList với URL
+      introVideoFileList.value = [{
+        ...fileList[0],
+        url: videoUrl,
+        status: 'done',
+      }]
+      
+      message.success('Upload video giới thiệu thành công')
+    } catch (error: any) {
+      console.error('Upload intro video error:', error)
+      message.error('Upload video giới thiệu thất bại: ' + (error.message || 'Unknown error'))
+      // Xóa file khỏi fileList nếu upload thất bại
+      introVideoFileList.value = []
+      formData.introVideo = ''
+    } finally {
+      uploadingIntroVideo.value = false
+    }
+  } else {
+    // File removed
+    formData.introVideo = ''
+  }
 }
 
 const handleRemoveIntroVideo = () => {
@@ -820,7 +1293,21 @@ const formRules = {
     }
   ],
   category: [{ required: true, message: 'Vui lòng nhập danh mục', trigger: 'blur' }],
-  'instructor.name': [{ required: true, message: 'Vui lòng nhập tên giảng viên', trigger: 'blur' }],
+  'instructor.name': [
+    {
+      required: true,
+      message: 'Vui lòng nhập tên giảng viên',
+      trigger: ['blur', 'change'],
+      validator: (_rule: any, _value: any) => {
+        // Kiểm tra trực tiếp từ formData vì nested object có thể không pass value đúng cách
+        const instructorName = formData.instructor?.name
+        if (!instructorName || !instructorName.trim()) {
+          return Promise.reject('Vui lòng nhập tên giảng viên')
+        }
+        return Promise.resolve()
+      }
+    }
+  ],
   status: [{ required: true, message: 'Vui lòng chọn trạng thái', trigger: 'change' }],
 }
 
@@ -1015,14 +1502,16 @@ const handleModalOk = async () => {
       formData.thumbnail = thumbnailFileList.value[0].url
     }
     
-    // Upload intro video to R2/CDN - CHỈ KHI CÓ FILE MỚI
-    if (introVideoFileList.value.length > 0 && introVideoFileList.value[0].originFileObj) {
+    // Upload intro video to R2/CDN - CHỈ KHI CÓ FILE MỚI VÀ CHƯA CÓ URL
+    // Nếu đã upload qua handleIntroVideoChange thì sẽ có URL rồi, không cần upload lại
+    if (introVideoFileList.value.length > 0 && introVideoFileList.value[0].originFileObj && !formData.introVideo) {
       formData.introVideo = await uploadVideoToR2(introVideoFileList.value[0].originFileObj as File, 'courses/intro-videos')
     }
-    // Nếu không có file mới nhưng có URL (khi edit), giữ nguyên URL
+    // Nếu không có file mới nhưng có URL (khi edit hoặc đã upload), giữ nguyên URL
     else if (introVideoFileList.value.length > 0 && introVideoFileList.value[0].url) {
       formData.introVideo = introVideoFileList.value[0].url
     }
+    // Nếu formData.introVideo đã có (đã upload qua handleIntroVideoChange), giữ nguyên
     
     // Upload instructor avatar to MinIO - CHỈ KHI CÓ FILE MỚI
     if (instructorAvatarFileList.value.length > 0 && instructorAvatarFileList.value[0].originFileObj) {
@@ -1049,8 +1538,8 @@ const handleModalOk = async () => {
             title: lesson.title,
             description: lesson.description,
             content: lesson.content || '',
-            // Map 'text' thành 'document' nếu schema không hỗ trợ 'text'
-            type: lesson.type === 'text' ? 'document' : lesson.type,
+            // Giữ nguyên type, không map 'text' thành 'document' nữa
+            type: lesson.type || 'video',
             isPreview: lesson.isPreview || false,
             status: lesson.status || 'active',
             videos: lesson.videos || [],
@@ -1194,6 +1683,15 @@ const ensureLessonProperties = (lesson: any) => {
 }
 
 // Thêm vào script setup, sau phần khai báo reactive
+// Watch instructor.name để clear validation khi thay đổi
+watch(() => formData.instructor.name, (newVal) => {
+  if (newVal && newVal.trim()) {
+    nextTick(() => {
+      formRef.value?.clearValidate('instructor.name')
+    })
+  }
+}, { immediate: false })
+
 watch(() => formData.chapters, (chapters) => {
   chapters.forEach((chapter) => {
     if (chapter.lessons) {
