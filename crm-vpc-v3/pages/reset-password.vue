@@ -331,6 +331,7 @@ const handlePasswordSubmit = async () => {
   cursor: pointer;
   transition: all 0.2s ease;
   margin-top: 12px;
+  color: #fff;
 }
 
 .submit-btn:hover:not(:disabled) {

@@ -18,7 +18,7 @@ export const getCrmBaseUrl = () => {
 // Group 1: Tất cả khóa học, Khóa học của tôi, Giỏ hàng
 export const MENU_GROUP_1: MenuItem[] = [
   {
-    path: "/",
+    path: "/courses",
     label: "Tất cả khóa học",
     icon: `<svg width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
             <g clip-path="url(#clip0_1546_4025)">

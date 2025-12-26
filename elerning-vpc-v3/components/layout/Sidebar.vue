@@ -199,7 +199,7 @@ const getMenuItemClass = (item: MenuItem) => {
   }
   
   if (active) {
-    return 'text-gray-900 font-semibold';
+    return 'text-gray-900 font-semibold bg-gray-200';
   }
   
   return 'text-[#020618] hover:text-gray-600 hover:bg-gray-50';

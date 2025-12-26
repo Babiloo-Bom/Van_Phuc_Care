@@ -46,7 +46,7 @@
                 <input
                   v-model="form.email"
                   type="email"
-                  placeholder="Email/SĐT"
+                  placeholder="Email"
                   class="form-input"
                   required
                 />
