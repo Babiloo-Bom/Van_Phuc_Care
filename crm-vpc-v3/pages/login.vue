@@ -591,7 +591,7 @@ const handleGoogleLogin = async () => {
   }
 
   .submit-btn:hover {
-    background: #2563eb;
+    background: #317bc4de;
   }
 
   .submit-btn:disabled {

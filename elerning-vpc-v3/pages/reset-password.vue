@@ -489,10 +489,11 @@ const handleSubmit = async () => {
   transition: all 0.2s ease;
   margin-top: 12px;
   color: #fff;
+  font-weight: 700;
 }
 
 .submit-btn:hover:not(:disabled) {
-  background: #2563eb;
+  background: #317bc4de;
 }
 
 .submit-btn:disabled {

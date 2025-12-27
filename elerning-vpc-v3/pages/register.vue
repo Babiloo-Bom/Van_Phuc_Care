@@ -769,7 +769,7 @@ const handleSuccessClose = () => {
 }
 
 .register-btn:hover:not(:disabled) {
-  background: #2563eb;
+  background: #317bc4de;
 }
 
 .register-btn:disabled {
@@ -793,7 +793,6 @@ const handleSuccessClose = () => {
   flex-direction: row;
   align-items: center;
   gap: 5px;
-  width: 242px;
   height: 24px;
   margin: 0 auto;
 }
@@ -1085,7 +1084,7 @@ const handleSuccessClose = () => {
   }
 
   .register-btn:hover:not(:disabled) {
-    background: #2563eb;
+    background: #317bc4de;
   }
 
   .register-btn:disabled {
@@ -1099,7 +1098,6 @@ const handleSuccessClose = () => {
     align-items: center;
     gap: 5px;
     justify-content: center;
-    margin-top: 20px;
   }
 
   .login-link span {
@@ -1321,7 +1319,6 @@ const handleSuccessClose = () => {
   }
 
   .login-link {
-    width: 242px;
     height: 24px;
     display: flex;
     flex-direction: row;
