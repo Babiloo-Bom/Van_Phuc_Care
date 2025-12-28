@@ -4,6 +4,7 @@
   src: url("../fonts/SVN-Gilroy Thin.otf") format("opentype");
   font-weight: 100;
   font-style: normal;
+  font-display: swap;
 }
 
 /* Gilroy Thin Italic */
@@ -12,6 +13,7 @@
   src: url("../fonts/SVN-Gilroy Thin Italic.otf") format("opentype");
   font-weight: 100;
   font-style: italic;
+  font-display: swap;
 }
 
 /* Gilroy Light */
@@ -20,6 +22,7 @@
   src: url("../fonts/SVN-Gilroy Light.otf") format("opentype");
   font-weight: 300;
   font-style: normal;
+  font-display: swap;
 }
 
 /* Gilroy Light Italic */
@@ -28,6 +31,7 @@
   src: url("../fonts/SVN-Gilroy Light Italic.otf") format("opentype");
   font-weight: 300;
   font-style: italic;
+  font-display: swap;
 }
 
 /* Gilroy Regular */
@@ -36,6 +40,7 @@
   src: url("../fonts/SVN-Gilroy Regular.otf") format("opentype");
   font-weight: 400;
   font-style: normal;
+  font-display: swap;
 }
 
 /* Gilroy Italic */
@@ -44,6 +49,7 @@
   src: url("../fonts/SVN-Gilroy Italic.otf") format("opentype");
   font-weight: 400;
   font-style: italic;
+  font-display: swap;
 }
 
 /* Gilroy Medium */
@@ -52,6 +58,7 @@
   src: url("../fonts/SVN-Gilroy Medium.otf") format("opentype");
   font-weight: 500;
   font-style: normal;
+  font-display: swap;
 }
 
 /* Gilroy Medium Italic */
@@ -60,6 +67,7 @@
   src: url("../fonts/SVN-Gilroy Medium Italic.otf") format("opentype");
   font-weight: 500;
   font-style: italic;
+  font-display: swap;
 }
 
 /* Gilroy Semibold */
@@ -68,6 +76,7 @@
   src: url("../fonts/SVN-Gilroy SemiBold.otf") format("opentype");
   font-weight: 600;
   font-style: normal;
+  font-display: swap;
 }
 
 /* Gilroy Semibold Italic */
@@ -76,6 +85,7 @@
   src: url("../fonts/SVN-Gilroy SemiBold Italic.otf") format("opentype");
   font-weight: 600;
   font-style: italic;
+  font-display: swap;
 }
 
 /* Gilroy Bold */
@@ -84,6 +94,7 @@
   src: url("../fonts/SVN-Gilroy Bold.otf") format("opentype");
   font-weight: 700;
   font-style: normal;
+  font-display: swap;
 }
 
 /* Gilroy Bold Italic */
@@ -92,6 +103,7 @@
   src: url("../fonts/SVN-Gilroy Bold Italic.otf") format("opentype");
   font-weight: 700;
   font-style: italic;
+  font-display: swap;
 }
 
 /* Gilroy XBold */
@@ -100,6 +112,7 @@
   src: url("../fonts/SVN-Gilroy XBold.otf") format("opentype");
   font-weight: 800;
   font-style: normal;
+  font-display: swap;
 }
 
 /* Gilroy XBold Italic */
@@ -108,6 +121,7 @@
   src: url("../fonts/SVN-Gilroy XBold Italic.otf") format("opentype");
   font-weight: 800;
   font-style: italic;
+  font-display: swap;
 }
 
 /* Gilroy Heavy */
@@ -116,12 +130,7 @@
   src: url("../fonts/SVN-Gilroy Heavy.otf") format("opentype");
   font-weight: 900;
   font-style: normal;
-}
-/* Gilroy Heavy */
-@font-face {
-  font-family: "UTM Aristote";
-  src: url("../fonts/UTM-Aristote.otf") format("opentype");
-  font-style: normal;
+  font-display: swap;
 }
 
 html {
@@ -134,8 +143,5 @@ body {
   font-family: 'Gilroy', 'Segoe UI', 'Roboto', 'Fira Sans', 'Droid Sans', 'Helvetica Neue', sans-serif !important;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
-}
-.font_utm-aristote {
-  font-family: 'UTM Aristote', 'Gilroy', 'Segoe UI', 'Roboto', sans-serif !important;
 }
 

@@ -11,7 +11,8 @@ export default defineNuxtConfig({
   // Modules
   modules: [
     '@nuxtjs/tailwindcss',
-    '@pinia/nuxt'
+    '@pinia/nuxt',
+    '@nuxt/image'
   ],
   
   // Enable pages module for routing
@@ -34,8 +35,25 @@ export default defineNuxtConfig({
   // Vite configuration
   vite: {
     optimizeDeps: {
-      include: ['dayjs', 'dayjs/plugin/customParseFormat', 'dayjs/plugin/advancedFormat', 'dayjs/plugin/weekday', 'dayjs/plugin/localeData', 'dayjs/plugin/weekOfYear', 'dayjs/plugin/weekYear', 'dayjs/plugin/quarterOfYear']
+      include: ['dayjs', 'dayjs/plugin/customParseFormat', 'dayjs/plugin/advancedFormat', 'dayjs/plugin/weekday', 'dayjs/plugin/localeData', 'dayjs/plugin/weekOfYear', 'dayjs/plugin/weekYear', 'dayjs/plugin/quarterOfYear', 'ant-design-vue']
+    },
+    build: {
+      cssCodeSplit: true,
+      rollupOptions: {
+        output: {
+          manualChunks: {
+            'ant-design-vue': ['ant-design-vue'],
+            'dayjs': ['dayjs']
+          }
+        }
+      }
     }
+  },
+
+  // Experimental features for better performance
+  experimental: {
+    inlineSSRStyles: false,
+    payloadExtraction: false
   },
 
   // TailwindCSS configuration
@@ -97,8 +115,29 @@ export default defineNuxtConfig({
         { name: 'description', content: 'Van Phuc Care CRM Portal' }
       ],
       link: [
-        { rel: 'icon', type: 'image/x-icon', href: '/favicon.ico' }
+        { rel: 'icon', type: 'image/x-icon', href: '/favicon.ico' },
+        // Preload critical fonts
+        { rel: 'preload', href: '/fonts/SVN-Gilroy Regular.otf', as: 'font', type: 'font/otf', crossorigin: 'anonymous' },
+        { rel: 'preload', href: '/fonts/SVN-Gilroy SemiBold.otf', as: 'font', type: 'font/otf', crossorigin: 'anonymous' },
+        { rel: 'preload', href: '/fonts/SVN-Gilroy Bold.otf', as: 'font', type: 'font/otf', crossorigin: 'anonymous' }
       ]
+    }
+  },
+
+  // Nitro config for caching
+  nitro: {
+    compressPublicAssets: true,
+    routeRules: {
+      '/images/**': { 
+        headers: { 
+          'Cache-Control': 'public, max-age=31536000, immutable' 
+        } 
+      },
+      '/fonts/**': { 
+        headers: { 
+          'Cache-Control': 'public, max-age=31536000, immutable' 
+        } 
+      }
     }
   }
 })
