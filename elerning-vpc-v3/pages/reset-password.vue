@@ -23,11 +23,24 @@
           <p class="subtitle">Cập nhật thay đổi mật khẩu</p>
         </div>
         <!-- Reset Password Form -->
-        <div v-if="!isVerified" class="reset-password-form" style="min-height:120px; display:flex; align-items:center; justify-content:center;">
+        <div
+          v-if="!isVerified"
+          class="reset-password-form"
+          style="
+            min-height: 120px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+          "
+        >
           <div>Đang kiểm tra liên kết...</div>
         </div>
 
-        <form v-if="isVerified" @submit.prevent="handleSubmit" class="reset-password-form">
+        <form
+          v-if="isVerified"
+          @submit.prevent="handleSubmit"
+          class="reset-password-form"
+        >
           <!-- New Password Field -->
           <div class="form-group">
             <label class="form-label">Mật khẩu</label>
@@ -290,7 +303,7 @@ const handleSubmit = async () => {
     // Get email from verified email or URL query
     const emailFromRoute = route.query.email as string | undefined;
     const email = verifiedEmail.value || emailFromRoute;
-    
+
     // Determine token: prefer verifiedToken (from email+otp), fallback to URL token
     const tokenFromRoute = route.query.token as string | undefined;
     const otpFromRoute = route.query.otp as string | undefined;
@@ -302,7 +315,12 @@ const handleSubmit = async () => {
     }
 
     // Call reset password API with email, token, newPassword, confirmPassword
-    const result = await authStore.resetPassword(email, token, form.newPassword, form.confirmPassword);
+    const result = await authStore.resetPassword(
+      email,
+      token,
+      form.newPassword,
+      form.confirmPassword
+    );
 
     if (result.success) {
       message.success("Mật khẩu đã được cập nhật thành công");
@@ -312,7 +330,7 @@ const handleSubmit = async () => {
       message.error(result.error || "Không thể cập nhật mật khẩu");
     }
   } catch (error: any) {
-    message.error('Không thể cập nhật mật khẩu')
+    message.error("Không thể cập nhật mật khẩu");
   } finally {
     loading.value = false;
   }
@@ -607,8 +625,8 @@ const handleSubmit = async () => {
 
 .dragon-banner {
   position: absolute;
-  width: 603.74px;
-  height: 603.74px;
+  width: 83.75%;
+  aspect-ratio: 1;
   left: 50%;
   top: 35%;
   transform: translate(-50%, -50%);

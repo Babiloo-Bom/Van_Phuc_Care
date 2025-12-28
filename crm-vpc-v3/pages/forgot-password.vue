@@ -127,7 +127,7 @@ const handleSubmit = async () => {
     loading.value = true;
 
     // Call forgot password API (include source so backend builds per-site link)
-    const result = await authStore.forgotPassword(form.emailOrPhone, 'crm');
+    const result = await authStore.forgotPassword(form.emailOrPhone, "crm");
 
     if (result.success) {
       // Show success modal instead of message
@@ -147,8 +147,8 @@ const handleSuccessConfirm = () => {
   showSuccessModal.value = false;
   // Redirect to reset-password page with email as query param
   navigateTo({
-    path: '/reset-password',
-    query: { email: form.emailOrPhone }
+    path: "/reset-password",
+    query: { email: form.emailOrPhone },
   });
 };
 
@@ -402,32 +402,42 @@ const handleSuccessClose = () => {
 }
 
 .circle-1 {
-  width: 488.7px;
-  height: 488.7px;
-  left: 50%;
-  top: 20%;
-  transform: translate(-50%, -50%);
+  position: absolute;
+  width: 450px;
+  height: 450px;
+  left: 15%;
+  top: 6%;
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: 50%;
+  transform: rotate(45deg);
 }
 
 .circle-2 {
-  width: 278.9px;
-  height: 277.38px;
-  right: 10%;
-  top: 5%;
+  position: absolute;
+  width: 200px;
+  height: 200px;
+  right: -40px;
+  top: -40px;
+  background: rgba(255, 255, 255, 0.08);
+  border-radius: 50%;
+  transform: rotate(-30deg);
 }
 
 .circle-3 {
-  width: 109.28px;
-  height: 108.69px;
+  position: absolute;
+  width: 110px;
+  height: 110px;
   left: 5%;
-  bottom: 20%;
+  bottom: 35%;
+  background: rgba(255, 255, 255, 0.06);
+  border-radius: 50%;
   transform: rotate(-32.63deg);
 }
 
 .dragon-banner {
   position: absolute;
-  width: 603.74px;
-  height: 603.74px;
+  width: 83.75%;
+  aspect-ratio: 1;
   left: 50%;
   top: 35%;
   transform: translate(-50%, -50%);

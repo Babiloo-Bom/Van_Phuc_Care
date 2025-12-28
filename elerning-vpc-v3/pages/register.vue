@@ -534,7 +534,7 @@ const handleSuccessClose = () => {
   width: 488.7px;
   height: 488.7px;
   left: 50%;
-  top: 20%;
+  top: 30%;
   transform: translate(-50%, -50%);
 }
 
@@ -556,8 +556,8 @@ const handleSuccessClose = () => {
 
 .dragon-banner {
   position: absolute;
-  width: 603.74px;
-  height: 603.74px;
+  width: 75.8%;
+  aspect-ratio: 1;
   left: 50%;
   top: 35%;
   transform: translate(-50%, -50%);
@@ -855,7 +855,7 @@ const handleSuccessClose = () => {
   width: 488.7px;
   height: 488.7px;
   left: 50%;
-  top: 20%;
+  top: 30%;
   transform: translate(-50%, -50%);
 }
 
@@ -876,8 +876,8 @@ const handleSuccessClose = () => {
 
 .dragon-banner {
   position: absolute;
-  width: 546.06px;
-  height: 546.06px;
+  width: 75.8%;
+  aspect-ratio: 1;
   left: 50%;
   top: 40%;
   transform: translate(-50%, -50%);

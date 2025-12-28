@@ -42,7 +42,10 @@
             <!-- Email Field -->
             <div class="form-group">
               <label class="form-label">Email</label>
-              <div class="input-container" :class="{'input-error': errors.email}">
+              <div
+                class="input-container"
+                :class="{ 'input-error': errors.email }"
+              >
                 <input
                   v-model="form.email"
                   type="email"
@@ -51,7 +54,18 @@
                   required
                 />
               </div>
-              <div v-if="errors.email" style="color: #DE4841; font-size: 12px; font-weight: 500; margin-top: 4px; display: flex; align-items: center; gap: 4px;">
+              <div
+                v-if="errors.email"
+                style="
+                  color: #de4841;
+                  font-size: 12px;
+                  font-weight: 500;
+                  margin-top: 4px;
+                  display: flex;
+                  align-items: center;
+                  gap: 4px;
+                "
+              >
                 <span>&#10006;</span>
                 <span>{{ errors.email }}</span>
               </div>
@@ -75,16 +89,29 @@
                   @paste="onPhonePaste"
                 />
               </div>
-                <div v-if="errors.phone" style="color: #e53935; font-size: 16px; margin-top: 4px; display: flex; align-items: center; gap: 4px;">
-                  <span style="font-size: 18px;">&#10006;</span>
-                  <span>{{ errors.phone }}</span>
-                </div>
+              <div
+                v-if="errors.phone"
+                style="
+                  color: #e53935;
+                  font-size: 16px;
+                  margin-top: 4px;
+                  display: flex;
+                  align-items: center;
+                  gap: 4px;
+                "
+              >
+                <span style="font-size: 18px">&#10006;</span>
+                <span>{{ errors.phone }}</span>
+              </div>
             </div>
 
             <!-- Password Field -->
             <div class="form-group">
               <label class="form-label">Mật khẩu</label>
-              <div class="input-container" :class="{'input-error': errors.password}">
+              <div
+                class="input-container"
+                :class="{ 'input-error': errors.password }"
+              >
                 <input
                   v-model="form.password"
                   :type="showPassword ? 'text' : 'password'"
@@ -100,8 +127,18 @@
                   {{ showPassword ? "👁️" : "👁️‍🗨️" }}
                 </button>
               </div>
-              <div v-if="errors.password" style="color: #e53935; font-size: 16px; margin-top: 4px; display: flex; align-items: center; gap: 4px;">
-                <span style="font-size: 18px;">&#10006;</span>
+              <div
+                v-if="errors.password"
+                style="
+                  color: #e53935;
+                  font-size: 16px;
+                  margin-top: 4px;
+                  display: flex;
+                  align-items: center;
+                  gap: 4px;
+                "
+              >
+                <span style="font-size: 18px">&#10006;</span>
                 <span>{{ errors.password }}</span>
               </div>
             </div>
@@ -128,19 +165,29 @@
             </div>
 
             <!-- Agreement Checkbox -->
-            <div class="form-group" style="margin-top: 4px;">
+            <div class="form-group" style="margin-top: 4px">
               <label class="form-label register-agree-label">
-                <input type="checkbox" v-model="agree" class="register-checkbox" />
+                <input
+                  type="checkbox"
+                  v-model="agree"
+                  class="register-checkbox"
+                />
                 <span class="font-semibold text-sm">
                   Tôi đã đọc và đồng ý với
-                  <a href="/terms" target="_blank" class="register-link">Điều khoản sử dụng</a>
+                  <a href="/terms" target="_blank" class="register-link"
+                    >Điều khoản sử dụng</a
+                  >
                   của VPC
                 </span>
               </label>
             </div>
 
             <!-- Register Button -->
-            <button type="submit" :disabled="loading || !agree" class="register-btn">
+            <button
+              type="submit"
+              :disabled="loading || !agree"
+              class="register-btn"
+            >
               {{ loading ? "Đang tạo tài khoản..." : "Tạo tài khoản" }}
             </button>
 
@@ -247,15 +294,15 @@ const onPhoneKeypress = (e: KeyboardEvent) => {
 const onPhoneInput = (e: Event) => {
   const target = e.target as HTMLInputElement;
   // Remove non-digits and limit to 10 chars
-  target.value = target.value.replace(/\D/g, '').slice(0, 10);
+  target.value = target.value.replace(/\D/g, "").slice(0, 10);
   form.phone = target.value;
 };
 
 const onPhonePaste = (e: ClipboardEvent) => {
   e.preventDefault();
-  const pastedText = e.clipboardData?.getData('text') || '';
+  const pastedText = e.clipboardData?.getData("text") || "";
   // Only keep digits and limit to 10 chars
-  const digitsOnly = pastedText.replace(/\D/g, '').slice(0, 10);
+  const digitsOnly = pastedText.replace(/\D/g, "").slice(0, 10);
   form.phone = digitsOnly;
 };
 
@@ -285,7 +332,7 @@ const handleSubmit = async () => {
 
     // Validate phone: only digits and exactly 10 numbers
     if (!/^[0-9]{10}$/.test(form.phone)) {
-      errors.phone = 'Số điện thoại không hợp lệ, phải gồm 10 chữ số';
+      errors.phone = "Số điện thoại không hợp lệ, phải gồm 10 chữ số";
       return;
     }
     loading.value = true;
@@ -300,35 +347,39 @@ const handleSubmit = async () => {
       showSuccessModal.value = true;
     } else {
       // Extract error message from various possible formats
-      let serverMsg = '';
-      if (typeof result?.error === 'string') {
+      let serverMsg = "";
+      if (typeof result?.error === "string") {
         serverMsg = result.error;
-      } else if (typeof result?.error === 'object' && result?.error?.message) {
+      } else if (typeof result?.error === "object" && result?.error?.message) {
         serverMsg = result.error.message;
-      } else if (result?.data?.error && typeof result.data.error === 'string') {
+      } else if (result?.data?.error && typeof result.data.error === "string") {
         serverMsg = result.data.error;
-      } else if (result?.data?.message && typeof result.data.message === 'string') {
+      } else if (
+        result?.data?.message &&
+        typeof result.data.message === "string"
+      ) {
         serverMsg = result.data.message;
       }
-      
+
       const serverMsgStr = serverMsg ? String(serverMsg).toLowerCase() : "";
-      
+
       // Check for duplicate email error patterns
-      const isDuplicateEmail = serverMsgStr.includes('duplicate') || 
-        serverMsgStr.includes('e11000') || 
-        serverMsgStr.includes('account exists') || 
-        serverMsgStr.includes('accountexists') || 
-        serverMsgStr.includes('email_1') ||
-        serverMsgStr.includes('email đã được sử dụng') ||
-        serverMsgStr.includes('account exists') ||
-        serverMsgStr.includes('đã được đăng ký');
-      
+      const isDuplicateEmail =
+        serverMsgStr.includes("duplicate") ||
+        serverMsgStr.includes("e11000") ||
+        serverMsgStr.includes("account exists") ||
+        serverMsgStr.includes("accountexists") ||
+        serverMsgStr.includes("email_1") ||
+        serverMsgStr.includes("email đã được sử dụng") ||
+        serverMsgStr.includes("account exists") ||
+        serverMsgStr.includes("đã được đăng ký");
+
       if (isDuplicateEmail) {
         // Show error under email input for duplicate email
-        errors.email = 'Email này đã được đăng ký';
+        errors.email = "Email này đã được đăng ký";
       } else {
         // For other errors, show toast notification
-        message.error(serverMsg || 'Đăng ký thất bại, vui lòng thử lại');
+        message.error(serverMsg || "Đăng ký thất bại, vui lòng thử lại");
       }
     }
   } catch (error: any) {
@@ -536,7 +587,7 @@ const handleSuccessClose = () => {
   width: 488.7px;
   height: 488.7px;
   left: 50%;
-  top: 20%;
+  top: 30%;
   transform: translate(-50%, -50%);
 }
 
@@ -558,8 +609,8 @@ const handleSuccessClose = () => {
 
 .dragon-banner {
   position: absolute;
-  width: 603.74px;
-  height: 603.74px;
+  width: 75.8%;
+  aspect-ratio: 1;
   left: 50%;
   top: 35%;
   transform: translate(-50%, -50%);
@@ -857,7 +908,7 @@ const handleSuccessClose = () => {
   width: 488.7px;
   height: 488.7px;
   left: 50%;
-  top: 20%;
+  top: 30%;
   transform: translate(-50%, -50%);
 }
 
@@ -878,8 +929,8 @@ const handleSuccessClose = () => {
 
 .dragon-banner {
   position: absolute;
-  width: 546.06px;
-  height: 546.06px;
+  width: 75.8%;
+  aspect-ratio: 1;
   left: 50%;
   top: 40%;
   transform: translate(-50%, -50%);
@@ -931,7 +982,7 @@ const handleSuccessClose = () => {
   .marketing-section {
     display: none;
   }
-  
+
   .register-container {
     width: 100vw;
     min-height: 100vh;
@@ -1409,12 +1460,12 @@ const handleSuccessClose = () => {
   flex-shrink: 0;
 }
 .register-link {
-  color: #1A75BB;
+  color: #1a75bb;
   text-decoration: underline;
   margin: 0 2px;
 }
 .input-error {
-  border: 1.5px solid #DE4841 !important;
+  border: 1.5px solid #de4841 !important;
   border-radius: 12px;
 }
 </style>

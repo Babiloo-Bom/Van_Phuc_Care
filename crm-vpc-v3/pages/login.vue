@@ -658,10 +658,10 @@ const handleGoogleLogin = async () => {
 
   .circle-1 {
     position: absolute;
-    width: 200px;
-    height: 200px;
-    left: 10%;
-    top: 10%;
+    width: 450px;
+    height: 450px;
+    left: 15%;
+    top: 6%;
     background: rgba(255, 255, 255, 0.1);
     border-radius: 50%;
     transform: rotate(45deg);
@@ -669,10 +669,10 @@ const handleGoogleLogin = async () => {
 
   .circle-2 {
     position: absolute;
-    width: 150px;
-    height: 150px;
-    right: 15%;
-    top: 20%;
+    width: 200px;
+    height: 200px;
+    right: -40px;
+    top: -40px;
     background: rgba(255, 255, 255, 0.08);
     border-radius: 50%;
     transform: rotate(-30deg);
@@ -680,10 +680,10 @@ const handleGoogleLogin = async () => {
 
   .circle-3 {
     position: absolute;
-    width: 109.28px;
-    height: 108.69px;
+    width: 110px;
+    height: 110px;
     left: 5%;
-    bottom: 20%;
+    bottom: 35%;
     background: rgba(255, 255, 255, 0.06);
     border-radius: 50%;
     transform: rotate(-32.63deg);
@@ -691,8 +691,8 @@ const handleGoogleLogin = async () => {
 
   .dragon-banner {
     position: absolute;
-    width: 603.74px;
-    height: 603.74px;
+    width: 83.75%;
+    aspect-ratio: 1;
     left: 50%;
     top: 35%;
     transform: translate(-50%, -50%);
