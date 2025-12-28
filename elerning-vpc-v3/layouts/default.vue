@@ -18,7 +18,7 @@ import { onMounted } from 'vue'
 import { useCartStore } from '~/stores/cart'
 import { useAuthStore } from '~/stores/auth'
 import TheHeader from '~/components/layout/TheHeader.vue'
-import Footer from '~/components/shared/Footer.vue'
+import Footer from '~/components/shared/NewFooter.vue'
 const route = useRoute()
 const cartStore = useCartStore()
 const authStore = useAuthStore()
