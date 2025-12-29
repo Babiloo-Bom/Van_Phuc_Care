@@ -255,7 +255,7 @@
 
             <!-- Instagram -->
             <a
-              href="https://www.instagram.com/"
+              href="https://www.instagram.com/vanphuccare/#"
               target="_blank"
               rel="noopener noreferrer"
               class="flex items-center gap-3 hover:opacity-80 transition-opacity"
@@ -286,7 +286,7 @@
 
             <!-- TikTok -->
             <a
-              href="https://www.tiktok.com/"
+              href="https://www.tiktok.com/@methuylamy"
               target="_blank"
               rel="noopener noreferrer"
               class="flex items-center gap-3 hover:opacity-80 transition-opacity"

@@ -23,12 +23,26 @@
           <p class="subtitle">Cập nhật thay đổi mật khẩu</p>
         </div>
         <!-- Reset Password Form -->
-        <form @submit.prevent="handlePasswordSubmit" class="reset-password-form" v-if="canReset">
+        <form
+          @submit.prevent="handlePasswordSubmit"
+          class="reset-password-form"
+          v-if="canReset"
+        >
           <div class="form-group">
             <label class="form-label">Mật khẩu mới</label>
             <div class="input-container">
-              <input v-model="form.newPassword" :type="showNewPassword ? 'text' : 'password'" placeholder="Mật khẩu mới" class="form-input" required />
-              <button type="button" @click="showNewPassword = !showNewPassword" class="password-toggle">
+              <input
+                v-model="form.newPassword"
+                :type="showNewPassword ? 'text' : 'password'"
+                placeholder="Mật khẩu mới"
+                class="form-input"
+                required
+              />
+              <button
+                type="button"
+                @click="showNewPassword = !showNewPassword"
+                class="password-toggle"
+              >
                 <span v-if="showNewPassword">Ẩn</span>
                 <span v-else>Hiện</span>
               </button>
@@ -37,14 +51,28 @@
           <div class="form-group">
             <label class="form-label">Xác nhận mật khẩu</label>
             <div class="input-container">
-              <input v-model="form.confirmPassword" :type="showConfirmPassword ? 'text' : 'password'" placeholder="Xác nhận mật khẩu" class="form-input" required />
-              <button type="button" @click="showConfirmPassword = !showConfirmPassword" class="password-toggle">
+              <input
+                v-model="form.confirmPassword"
+                :type="showConfirmPassword ? 'text' : 'password'"
+                placeholder="Xác nhận mật khẩu"
+                class="form-input"
+                required
+              />
+              <button
+                type="button"
+                @click="showConfirmPassword = !showConfirmPassword"
+                class="password-toggle"
+              >
                 <span v-if="showConfirmPassword">Ẩn</span>
                 <span v-else>Hiện</span>
               </button>
             </div>
           </div>
-          <button type="submit" :disabled="loading || !isFormValid" class="submit-btn">
+          <button
+            type="submit"
+            :disabled="loading || !isFormValid"
+            class="submit-btn"
+          >
             {{ loading ? "Đang xử lý..." : "Tạo mật khẩu mới" }}
           </button>
         </form>
@@ -91,7 +119,10 @@ definePageMeta({ layout: "auth" });
 useHead({
   title: "Lấy lại mật khẩu - Van Phuc Care E-Learning",
   meta: [
-    { name: "description", content: "Tạo mật khẩu mới tại Van Phuc Care E-Learning" },
+    {
+      name: "description",
+      content: "Tạo mật khẩu mới tại Van Phuc Care E-Learning",
+    },
   ],
 });
 
@@ -104,10 +135,10 @@ const showConfirmPassword = ref(false);
 const canReset = ref(false);
 
 const form = reactive({
-  email: '',
-  otp: '',
-  newPassword: '',
-  confirmPassword: '',
+  email: "",
+  otp: "",
+  newPassword: "",
+  confirmPassword: "",
 });
 
 onMounted(async () => {
@@ -122,12 +153,12 @@ onMounted(async () => {
     if (result.success) {
       canReset.value = true;
     } else {
-      message.error('Liên kết không hợp lệ hoặc đã hết hạn');
-      router.push('/login');
+      message.error("Liên kết không hợp lệ hoặc đã hết hạn");
+      router.push("/login");
     }
   } else {
-    message.error('Liên kết không hợp lệ hoặc đã hết hạn');
-    router.push('/login');
+    message.error("Liên kết không hợp lệ hoặc đã hết hạn");
+    router.push("/login");
   }
 });
 
@@ -141,21 +172,25 @@ const isFormValid = computed(() => {
 
 const handlePasswordSubmit = async () => {
   if (!isFormValid.value) {
-    message.error('Mật khẩu phải có ít nhất 6 ký tự và khớp nhau');
+    message.error("Mật khẩu phải có ít nhất 6 ký tự và khớp nhau");
     return;
   }
   loading.value = true;
   try {
     // Call API reset password
-    const result = await authStore.resetPassword(form.email, form.otp, form.newPassword);
+    const result = await authStore.resetPassword(
+      form.email,
+      form.otp,
+      form.newPassword
+    );
     if (result.success) {
-      message.success('Mật khẩu đã được cập nhật thành công');
-      router.push('/login');
+      message.success("Mật khẩu đã được cập nhật thành công");
+      router.push("/login");
     } else {
-      message.error(result.error || 'Không thể cập nhật mật khẩu');
+      message.error(result.error || "Không thể cập nhật mật khẩu");
     }
   } catch (error: any) {
-    message.error('Lỗi cập nhật mật khẩu');
+    message.error("Lỗi cập nhật mật khẩu");
   } finally {
     loading.value = false;
   }
@@ -450,8 +485,8 @@ const handlePasswordSubmit = async () => {
 
 .dragon-banner {
   position: absolute;
-  width: 603.74px;
-  height: 603.74px;
+  width: 83.75%;
+  aspect-ratio: 1;
   left: 50%;
   top: 35%;
   transform: translate(-50%, -50%);
