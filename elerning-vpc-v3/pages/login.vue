@@ -1138,8 +1138,8 @@ const handleGoogleLogin = async () => {
   }
 
   .login-form-section {
-    width: calc(100% - 32px);
-    left: 16px;
+    width: calc(100% - 20px);
+    left: 10px;
   }
 
   .google-login-section,
