@@ -56,6 +56,11 @@ export default defineNuxtConfig({
     payloadExtraction: false
   },
 
+  // Optimize CSS delivery
+  features: {
+    inlineStyles: true
+  },
+
   // TailwindCSS configuration
   tailwindcss: {
     cssPath: '~/assets/css/tailwind.css',
@@ -116,10 +121,12 @@ export default defineNuxtConfig({
       ],
       link: [
         { rel: 'icon', type: 'image/x-icon', href: '/favicon.ico' },
-        // Preload critical fonts
+        // Preload critical fonts - only load most used weights
         { rel: 'preload', href: '/fonts/SVN-Gilroy Regular.otf', as: 'font', type: 'font/otf', crossorigin: 'anonymous' },
-        { rel: 'preload', href: '/fonts/SVN-Gilroy SemiBold.otf', as: 'font', type: 'font/otf', crossorigin: 'anonymous' },
-        { rel: 'preload', href: '/fonts/SVN-Gilroy Bold.otf', as: 'font', type: 'font/otf', crossorigin: 'anonymous' }
+        { rel: 'preload', href: '/fonts/SVN-Gilroy Medium.otf', as: 'font', type: 'font/otf', crossorigin: 'anonymous' },
+        { rel: 'preload', href: '/fonts/SVN-Gilroy Bold.otf', as: 'font', type: 'font/otf', crossorigin: 'anonymous' },
+        // Preload LCP image for faster discovery
+        { rel: 'preload', href: '/images/baby-default.png', as: 'image', fetchpriority: 'high' }
       ]
     }
   },

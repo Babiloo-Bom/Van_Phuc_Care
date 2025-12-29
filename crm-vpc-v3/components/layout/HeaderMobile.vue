@@ -8,6 +8,8 @@
           src="/images/logo-vanphuc-new-mobile.png" 
           alt="Vạn Phúc Care" 
           class="h-9 w-auto object-contain"
+          width="120"
+          height="36"
         />
       </div>
 
