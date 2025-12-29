@@ -1,6 +1,7 @@
 # ============================================
 # Van Phuc Care - Nginx Site Configuration
 # Reverse proxy với SSL/HTTPS
+# VERSION: Không có redirect domain cũ (dùng khi deploy lần đầu)
 # ============================================
 
 # Upstream definitions
@@ -65,7 +66,7 @@ server {
         proxy_set_header Host $host;
         proxy_set_header X-Real-IP $remote_addr;
         proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
-        proxy_set_header X-Forwarded-Proto https;  # Quan trọng: set https
+        proxy_set_header X-Forwarded-Proto https;
         proxy_set_header X-Forwarded-Host $host;
         proxy_set_header X-Forwarded-Port 443;
         
@@ -94,7 +95,7 @@ server {
         proxy_set_header Host $host;
         proxy_set_header X-Real-IP $remote_addr;
         proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
-        proxy_set_header X-Forwarded-Proto https;  # Quan trọng
+        proxy_set_header X-Forwarded-Proto https;
         proxy_set_header X-Forwarded-Port 443;
         
         proxy_connect_timeout 60s;
@@ -315,58 +316,6 @@ server {
 }
 
 # ============================================
-# Redirect Domain Cũ (vanphuccare.com) → Domain Mới (vanphuccare.vn)
-# ============================================
-
-# Redirect admin.vanphuccare.com → admin.vanphuccare.vn
-server {
-    listen 80;
-    listen 443 ssl http2;
-    server_name admin.vanphuccare.com;
-    
-    ssl_certificate /etc/letsencrypt/live/admin.vanphuccare.com/fullchain.pem;
-    ssl_certificate_key /etc/letsencrypt/live/admin.vanphuccare.com/privkey.pem;
-    
-    return 301 https://admin.vanphuccare.vn$request_uri;
-}
-
-# Redirect crm.vanphuccare.com → crm.vanphuccare.vn
-server {
-    listen 80;
-    listen 443 ssl http2;
-    server_name crm.vanphuccare.com;
-    
-    ssl_certificate /etc/letsencrypt/live/admin.vanphuccare.com/fullchain.pem;
-    ssl_certificate_key /etc/letsencrypt/live/admin.vanphuccare.com/privkey.pem;
-    
-    return 301 https://crm.vanphuccare.vn$request_uri;
-}
-
-# Redirect elearning.vanphuccare.com → edu.vanphuccare.vn
-server {
-    listen 80;
-    listen 443 ssl http2;
-    server_name elearning.vanphuccare.com learning.vanphuccare.com;
-    
-    ssl_certificate /etc/letsencrypt/live/admin.vanphuccare.com/fullchain.pem;
-    ssl_certificate_key /etc/letsencrypt/live/admin.vanphuccare.com/privkey.pem;
-    
-    return 301 https://edu.vanphuccare.vn$request_uri;
-}
-
-# Redirect vanphuccare.com → vanphuccare.vn
-server {
-    listen 80;
-    listen 443 ssl http2;
-    server_name vanphuccare.com www.vanphuccare.com;
-    
-    ssl_certificate /etc/letsencrypt/live/admin.vanphuccare.com/fullchain.pem;
-    ssl_certificate_key /etc/letsencrypt/live/admin.vanphuccare.com/privkey.pem;
-    
-    return 301 https://vanphuccare.vn$request_uri;
-}
-
-# ============================================
 # Default server (catch-all)
 # ============================================
 server {
@@ -377,4 +326,9 @@ server {
     ssl_certificate_key /etc/letsencrypt/live/admin.vanphuccare.vn/privkey.pem;
     return 444;
 }
+
+# ============================================
+# NOTE: Redirect domain cũ được thêm vào SAU KHI domain mới đã hoạt động
+# Xem file default.conf để có version với redirect
+# ============================================
 

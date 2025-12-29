@@ -66,7 +66,7 @@ services:
       - SEPAY_API_TOKEN=${SEPAY_API_TOKEN:-GL23FZNXPG7O2QVFMNTY8AWIX46WUIXSWTC4BYVALU5Q93CA05BHMFXLVJGFN6JK}
       - SEPAY_ACCOUNT_NO=${SEPAY_ACCOUNT_NO:-655123456888}
       - SEPAY_ACCOUNT_NAME=${SEPAY_ACCOUNT_NAME:-Công Ty TNHH Vạn Phúc Care}
-      - SEPAY_WEBHOOK_URL=${SEPAY_WEBHOOK_URL:-https://elearning.vanphuccare.com/api/u/orders/payment/sepay-webhook}
+      - SEPAY_WEBHOOK_URL=${SEPAY_WEBHOOK_URL:-https://edu.vanphuccare.vn/api/u/orders/payment/sepay-webhook}
       # SMTP Configuration
       - SMTP_HOST=${SMTP_HOST:-smtp.gmail.com}
       - SMTP_PORT=${SMTP_PORT:-587}
@@ -89,8 +89,8 @@ services:
       - VNP_TMNCODE=${VNP_TMNCODE:-VPCTEST1}
       - VNP_HASHSECRET=${VNP_HASHSECRET:-95M6E1P08UICHY6HS515HCXC9ORKNZRF}
       - VNP_URL=${VNP_URL:-https://sandbox.vnpayment.vn/paymentv2/vpcpay.html}
-      - VNP_RETURN_URL=${VNP_RETURN_URL:-https://elearning.vanphuccare.com/vnpay-return}
-      - IPN_URL=${IPN_URL:-https://elearning.vanphuccare.com/api/u/orders/payment/vnpay-ipn}
+      - VNP_RETURN_URL=${VNP_RETURN_URL:-https://edu.vanphuccare.vn/vnpay-return}
+      - IPN_URL=${IPN_URL:-https://edu.vanphuccare.vn/api/u/orders/payment/vnpay-ipn}
       # Cloudflare config
       - CLOUDFLARE_R2_BUCKET_NAME=vanphuccare-video-edu
       - CLOUDFLARE_R2_PUBLIC_URL=https://pub-d52b327cd86048b0aff51ec33d95f7fe.r2.dev
@@ -98,9 +98,9 @@ services:
       - CLOUDFLARE_R2_ACCESS_KEY_ID=42f261e5d63b284d51b8f5b3ffa9d894
       - CLOUDFLARE_R2_SECRET_ACCESS_KEY=8fba295a9781fe61e7c0568004c2ec1487184396bb19fd9e30f6d0dd641d8682
       # Base url for email verification links
-      - BASE_URL_ELEARNING=https://elearning.vanphuccare.com
-      - BASE_URL_CRM=https://crm.vanphuccare.com
-      - BASE_URL_ADMIN=https://admin.vanphuccare.com
+      - BASE_URL_ELEARNING=https://edu.vanphuccare.vn
+      - BASE_URL_CRM=https://crm.vanphuccare.vn
+      - BASE_URL_ADMIN=https://admin.vanphuccare.vn
     networks:
       - vpc-network
     depends_on:
@@ -128,11 +128,11 @@ services:
       - NUXT_API_HOST_INTERNAL=http://api:3000
       - NUXT_PUBLIC_TINYMCE_KEY=${TINYMCE_KEY}
       - NUXT_PUBLIC_APP_NAME=Admin Portal - Van Phuc Care
-      - NUXT_PUBLIC_APP_URL=https://admin.vanphuccare.com
+      - NUXT_PUBLIC_APP_URL=https://admin.vanphuccare.vn
       # Google OAuth Configuration
       - NUXT_PUBLIC_GOOGLE_CLIENT_ID=${NUXT_PUBLIC_GOOGLE_CLIENT_ID}
       - NUXT_GOOGLE_CLIENT_SECRET=${GOOGLE_CLIENT_SECRET}
-      - NUXT_PUBLIC_BASE_URL=https://admin.vanphuccare.com
+      - NUXT_PUBLIC_BASE_URL=https://admin.vanphuccare.vn
     networks:
       - vpc-network
     depends_on:
@@ -160,10 +160,10 @@ services:
       - NUXT_API_HOST_INTERNAL=http://api:3000
       - NUXT_PUBLIC_TINYMCE_KEY=${TINYMCE_KEY}
       - NUXT_PUBLIC_APP_NAME=CRM Portal - Van Phuc Care
-      - NUXT_PUBLIC_APP_URL=https://crm.vanphuccare.com
+      - NUXT_PUBLIC_APP_URL=https://crm.vanphuccare.vn
       - NUXT_PUBLIC_GOOGLE_CLIENT_ID=${NUXT_PUBLIC_GOOGLE_CLIENT_ID}
       - NUXT_GOOGLE_CLIENT_SECRET=${GOOGLE_CLIENT_SECRET}
-      - NUXT_PUBLIC_BASE_URL=https://crm.vanphuccare.com
+      - NUXT_PUBLIC_BASE_URL=https://crm.vanphuccare.vn
     networks:
       - vpc-network
     depends_on:
@@ -188,12 +188,12 @@ services:
       - NUXT_API_HOST_INTERNAL=http://api:3000  # Chỉ dùng cho server-side
       - NUXT_PUBLIC_TINYMCE_KEY=${TINYMCE_KEY}
       - NUXT_PUBLIC_APP_NAME=E-Learning Portal - Van Phuc Care
-      - NUXT_PUBLIC_APP_URL=https://elearning.vanphuccare.com  # Nên dùng https
+      - NUXT_PUBLIC_APP_URL=https://edu.vanphuccare.vn  # Nên dùng https
       # Google OAuth Configuration
       - NUXT_PUBLIC_GOOGLE_CLIENT_ID=${NUXT_PUBLIC_GOOGLE_CLIENT_ID}
       - NUXT_GOOGLE_CLIENT_SECRET=${GOOGLE_CLIENT_SECRET}
-      - NUXT_PUBLIC_BASE_URL=https://elearning.vanphuccare.com  # Nên dùng https
-      - BASE_URL_CRM=https://crm.vanphuccare.com  # Nên dùng https
+      - NUXT_PUBLIC_BASE_URL=https://edu.vanphuccare.vn  # Nên dùng https
+      - BASE_URL_CRM=https://crm.vanphuccare.vn  # Nên dùng https
     networks:
       - vpc-network
     depends_on:
