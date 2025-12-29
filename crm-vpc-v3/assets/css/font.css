@@ -1,141 +1,53 @@
-/* Gilroy Thin */
-@font-face {
-  font-family: "Gilroy";
-  src: url("../fonts/SVN-Gilroy Thin.otf") format("opentype");
-  font-weight: 100;
-  font-style: normal;
-}
+/* Gilroy fonts with performance optimization - WOFF2 format */
 
-/* Gilroy Thin Italic */
+/* Gilroy Regular - Most used */
 @font-face {
   font-family: "Gilroy";
-  src: url("../fonts/SVN-Gilroy Thin Italic.otf") format("opentype");
-  font-weight: 100;
-  font-style: italic;
-}
-
-/* Gilroy Light */
-@font-face {
-  font-family: "Gilroy";
-  src: url("../fonts/SVN-Gilroy Light.otf") format("opentype");
-  font-weight: 300;
-  font-style: normal;
-}
-
-/* Gilroy Light Italic */
-@font-face {
-  font-family: "Gilroy";
-  src: url("../fonts/SVN-Gilroy Light Italic.otf") format("opentype");
-  font-weight: 300;
-  font-style: italic;
-}
-
-/* Gilroy Regular */
-@font-face {
-  font-family: "Gilroy";
-  src: url("../fonts/SVN-Gilroy Regular.otf") format("opentype");
+  src: url("../fonts/SVN-Gilroy Regular.woff2") format("woff2"),
+       url("../fonts/SVN-Gilroy Regular.otf") format("opentype");
   font-weight: 400;
   font-style: normal;
+  font-display: swap;
 }
 
-/* Gilroy Italic */
+/* Gilroy Medium - UI elements */
 @font-face {
   font-family: "Gilroy";
-  src: url("../fonts/SVN-Gilroy Italic.otf") format("opentype");
-  font-weight: 400;
-  font-style: italic;
-}
-
-/* Gilroy Medium */
-@font-face {
-  font-family: "Gilroy";
-  src: url("../fonts/SVN-Gilroy Medium.otf") format("opentype");
+  src: url("../fonts/SVN-Gilroy Medium.woff2") format("woff2"),
+       url("../fonts/SVN-Gilroy Medium.otf") format("opentype");
   font-weight: 500;
   font-style: normal;
+  font-display: swap;
 }
 
-/* Gilroy Medium Italic */
+/* Gilroy SemiBold - UI elements */
 @font-face {
   font-family: "Gilroy";
-  src: url("../fonts/SVN-Gilroy Medium Italic.otf") format("opentype");
-  font-weight: 500;
-  font-style: italic;
-}
-
-/* Gilroy Semibold */
-@font-face {
-  font-family: "Gilroy";
-  src: url("../fonts/SVN-Gilroy SemiBold.otf") format("opentype");
+  src: url("../fonts/SVN-Gilroy SemiBold.woff2") format("woff2"),
+       url("../fonts/SVN-Gilroy SemiBold.otf") format("opentype");
   font-weight: 600;
   font-style: normal;
+  font-display: swap;
 }
 
-/* Gilroy Semibold Italic */
+/* Gilroy Bold - Headings */
 @font-face {
   font-family: "Gilroy";
-  src: url("../fonts/SVN-Gilroy SemiBold Italic.otf") format("opentype");
-  font-weight: 600;
-  font-style: italic;
-}
-
-/* Gilroy Bold */
-@font-face {
-  font-family: "Gilroy";
-  src: url("../fonts/SVN-Gilroy Bold.otf") format("opentype");
+  src: url("../fonts/SVN-Gilroy Bold.woff2") format("woff2"),
+       url("../fonts/SVN-Gilroy Bold.otf") format("opentype");
   font-weight: 700;
   font-style: normal;
-}
-
-/* Gilroy Bold Italic */
-@font-face {
-  font-family: "Gilroy";
-  src: url("../fonts/SVN-Gilroy Bold Italic.otf") format("opentype");
-  font-weight: 700;
-  font-style: italic;
-}
-
-/* Gilroy XBold */
-@font-face {
-  font-family: "Gilroy";
-  src: url("../fonts/SVN-Gilroy XBold.otf") format("opentype");
-  font-weight: 800;
-  font-style: normal;
-}
-
-/* Gilroy XBold Italic */
-@font-face {
-  font-family: "Gilroy";
-  src: url("../fonts/SVN-Gilroy XBold Italic.otf") format("opentype");
-  font-weight: 800;
-  font-style: italic;
-}
-
-/* Gilroy Heavy */
-@font-face {
-  font-family: "Gilroy";
-  src: url("../fonts/SVN-Gilroy Heavy.otf") format("opentype");
-  font-weight: 900;
-  font-style: normal;
-}
-/* Gilroy Heavy */
-@font-face {
-  font-family: "UTM Aristote";
-  src: url("../fonts/UTM-Aristote.otf") format("opentype");
-  font-style: normal;
+  font-display: swap;
 }
 
 html {
-    font-family: 'Gilroy', 'Segoe UI', 'Roboto', sans-serif !important;
+    font-family: 'Gilroy', -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen', 'Ubuntu', 'Cantarell', sans-serif !important;
 }
 * {
-  font-family: 'Gilroy', 'Segoe UI', 'Roboto', sans-serif !important;
+  font-family: 'Gilroy', -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen', 'Ubuntu', 'Cantarell', sans-serif !important;
 }
 body {
-  font-family: 'Gilroy', 'Segoe UI', 'Roboto', 'Fira Sans', 'Droid Sans', 'Helvetica Neue', sans-serif !important;
+  font-family: 'Gilroy', -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen', 'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue', sans-serif !important;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
 }
-.font_utm-aristote {
-  font-family: 'UTM Aristote', 'Gilroy', 'Segoe UI', 'Roboto', sans-serif !important;
-}
-

@@ -12,23 +12,15 @@
     </div>
 
     <!-- Loading State -->
-    <div
-      v-else-if="loading"
-      class="flex items-center justify-center min-h-screen"
-    >
+    <div v-else-if="loading" class="flex items-center justify-center min-h-screen">
       <a-spin size="large" tip="Đang tải dữ liệu sổ sức khỏe..." />
     </div>
 
     <!-- Error State -->
-    <div
-      v-else-if="error"
-      class="flex flex-col items-center justify-center min-h-screen px-4"
-    >
+    <div v-else-if="error" class="flex flex-col items-center justify-center min-h-screen px-4">
       <a-result status="error" title="Không thể tải dữ liệu" :sub-title="error">
         <template #extra>
-          <a-button type="primary" @click="navigateTo('/login')">
-            Quay lại đăng nhập
-          </a-button>
+          <a-button type="primary" @click="navigateTo('/login')"> Quay lại đăng nhập </a-button>
         </template>
       </a-result>
     </div>
@@ -37,11 +29,7 @@
     <div v-else-if="!hasHealthBook" class="container mx-auto">
       <!-- Page Title -->
       <div class="mb-6">
-        <h1
-          class="text-xl lg:text-2xl font-bold text-[#1A75BB] text-center lg:text-left"
-        >
-          Sổ sức khỏe điện tử
-        </h1>
+        <h1 class="text-xl lg:text-2xl font-bold text-[#1A75BB] text-center lg:text-left">Sổ sức khỏe điện tử</h1>
       </div>
 
       <div class="w-full bg-white rounded-xl p-5 pt-0 mt-20">
@@ -61,9 +49,7 @@
               </div>
 
               <!-- Name -->
-              <h2 class="text-2xl font-bold text-[#1A75BB] mb-1 text-center">
-                N/A
-              </h2>
+              <h2 class="text-2xl font-bold text-[#1A75BB] mb-1 text-center">N/A</h2>
 
               <!-- Date of Birth & Age -->
               <div class="text-gray-600 text-sm mb-3">
@@ -79,9 +65,7 @@
             <!-- Left: Profile Info -->
             <div class="flex items-center gap-4">
               <!-- Avatar - Van Phuc Mascot -->
-              <div
-                class="absolute -top-20 left-5 border-5 lg:border-8 border-white rounded-full"
-              >
+              <div class="absolute -top-20 left-5 border-5 lg:border-8 border-white rounded-full">
                 <div
                   class="w-32 h-32 rounded-full bg-blue-100 flex items-center justify-center border-4 border-blue-200"
                 >
@@ -107,16 +91,17 @@
           <a-tabs v-model:activeKey="activeTab" class="health-book-tabs">
             <a-tab-pane key="overview" :tab="overviewTabLabel">
               <!-- Empty State Content -->
-              <div
-                class="flex flex-col items-center justify-center min-h-[60vh] px-4"
-              >
+              <div class="flex flex-col items-center justify-center min-h-[60vh] px-4">
                 <div class="text-center max-w-2xl">
                   <!-- Van Phuc Care Mascot Illustration -->
                   <div class="mb-8">
-                    <img
+                    <nuxt-img
                       src="/images/empty-healthbook.png"
                       alt="Vạn Phúc Care"
                       class="w-auto h-52 md:h-72 mx-auto"
+                      format="webp"
+                      width="288"
+                      loading="lazy"
                     />
                   </div>
 
@@ -141,36 +126,18 @@
 
             <!-- Vaccination Schedule Tab -->
             <a-tab-pane key="vaccination" tab="Lịch tiêm">
-              <div
-                class="flex flex-col items-center justify-center min-h-[50vh] px-4"
-              >
-                <a-empty
-                  description="Chưa có thông tin lịch tiêm. Vui lòng tạo hồ sơ trước."
-                >
-                  <a-button
-                    type="primary"
-                    @click="showCreateHealthBookModal = true"
-                  >
-                    Tạo hồ sơ của bé
-                  </a-button>
+              <div class="flex flex-col items-center justify-center min-h-[50vh] px-4">
+                <a-empty description="Chưa có thông tin lịch tiêm. Vui lòng tạo hồ sơ trước.">
+                  <a-button type="primary" @click="showCreateHealthBookModal = true"> Tạo hồ sơ của bé </a-button>
                 </a-empty>
               </div>
             </a-tab-pane>
 
             <!-- Support Request Tab -->
             <a-tab-pane key="support" tab="Yêu cầu hỗ trợ">
-              <div
-                class="flex flex-col items-center justify-center min-h-[50vh] px-4"
-              >
-                <a-empty
-                  description="Chưa có yêu cầu hỗ trợ. Vui lòng tạo hồ sơ trước."
-                >
-                  <a-button
-                    type="primary"
-                    @click="showCreateHealthBookModal = true"
-                  >
-                    Tạo hồ sơ của bé
-                  </a-button>
+              <div class="flex flex-col items-center justify-center min-h-[50vh] px-4">
+                <a-empty description="Chưa có yêu cầu hỗ trợ. Vui lòng tạo hồ sơ trước.">
+                  <a-button type="primary" @click="showCreateHealthBookModal = true"> Tạo hồ sơ của bé </a-button>
                 </a-empty>
               </div>
             </a-tab-pane>
@@ -183,11 +150,7 @@
     <div v-else class="container mx-auto">
       <!-- Page Title -->
       <div class="mb-6">
-        <h1
-          class="text-xl lg:text-2xl font-bold text-[#1A75BB] text-center lg:text-left"
-        >
-          Sổ sức khỏe điện tử
-        </h1>
+        <h1 class="text-xl lg:text-2xl font-bold text-[#1A75BB] text-center lg:text-left">Sổ sức khỏe điện tử</h1>
         <!-- Action Buttons (Mobile) - Only show on overview tab -->
         <div
           v-if="activeTab === 'overview'"
@@ -230,18 +193,28 @@
             <!-- Profile Info (Mobile) -->
             <div class="flex flex-col items-center relative pt-16">
               <!-- Avatar -->
-              <div
-                class="absolute -top-14 mb-3 border-5 lg:border-8 border-white rounded-full"
-              >
+              <div class="absolute -top-14 mb-3 border-5 lg:border-8 border-white rounded-full">
                 <img
-                  :src="
-                    profileInfo.avatar ||
-                    healthBook?.avatar ||
-                    '/images/baby-default.png'
-                  "
+                  v-if="profileInfo.avatar || healthBook?.avatar"
+                  :src="profileInfo.avatar || healthBook?.avatar"
                   :alt="profileInfo.name || healthBook?.name"
                   class="w-24 h-24 rounded-full object-cover"
+                  width="96"
+                  height="96"
+                  fetchpriority="high"
+                  loading="eager"
                   @error="(e) => { const t = e.target as HTMLImageElement; if (t) t.src = '/images/baby-default.png' }"
+                />
+                <nuxt-img
+                  v-else
+                  src="/images/baby-default.png"
+                  :alt="profileInfo.name || healthBook?.name"
+                  class="w-24 h-24 rounded-full object-cover"
+                  width="96"
+                  height="96"
+                  format="webp"
+                  loading="eager"
+                  fetchpriority="high"
                 />
                 <CameraOutlined
                   class="absolute flex items-center justify-center bottom-2.5 right-2.5 size-4 bg-white rounded-full p-0.5 text-gray-500 text-sm shadow cursor-pointer hover:bg-gray-100"
@@ -259,19 +232,13 @@
                 class="text-gray-600 text-sm mb-3 flex flex-col items-center gap-2"
               >
                 <div class="flex items-center gap-2">
-                  <span
-                    >Ngày sinh:
-                    {{
-                      formatDate(profileInfo.dob || healthBook?.dob || "")
-                    }}</span
-                  >
+                  <span>Ngày sinh: {{ formatDate(profileInfo.dob || healthBook?.dob || "") }}</span>
                   <span>—</span>
-                  <span>{{
-                    calculateAge(profileInfo.dob || healthBook?.dob || "")
-                  }}</span>
+                  <span>{{ calculateAge(profileInfo.dob || healthBook?.dob || "") }}</span>
                 </div>
                 <!-- Dòng 2: Nút chỉnh sửa thông tin -->
-                <span class="flex items-center gap-1 text-[#1A75BB] cursor-pointer hover:opacity-80"
+                <span
+                  class="flex items-center gap-1 text-[#1A75BB] cursor-pointer hover:opacity-80"
                   @click="showEditInfoModal = true"
                 >
                   <EditOutlined class="text-sm" />
@@ -286,17 +253,15 @@
             <!-- Left: Profile Info -->
             <div class="flex items-center gap-4">
               <!-- Avatar -->
-              <div
-                class="absolute -top-20 left-5 border-5 lg:border-8 border-white rounded-full"
-              >
+              <div class="absolute -top-20 left-5 border-5 lg:border-8 border-white rounded-full">
                 <img
-                  :src="
-                    profileInfo.avatar ||
-                    healthBook?.avatar ||
-                    '/images/baby-default.png'
-                  "
+                  :src="profileInfo.avatar || healthBook?.avatar || '/images/baby-default.png'"
                   :alt="profileInfo.name || healthBook?.name"
                   class="w-32 h-32 rounded-full object-cover border-5 lg:border-8 border-blue-100"
+                  width="128"
+                  height="128"
+                  fetchpriority="high"
+                  loading="eager"
                   @error="(e) => { const t = e.target as HTMLImageElement; if (t) t.src = '/images/baby-default.png' }"
                 />
                 <CameraOutlined
@@ -310,21 +275,12 @@
                 <h2 class="text-3xl font-bold text-[#1A75BB] mb-2 capitalize">
                   {{ profileInfo.name || healthBook?.name }}
                 </h2>
-                <div
-                  v-if="profileInfo.dob || healthBook?.dob"
-                  class="text-gray-600 flex items-center gap-2 font-bold"
-                >
-                  <span
-                    >Ngày sinh:
-                    {{
-                      formatDate(profileInfo.dob || healthBook?.dob || "")
-                    }}</span
-                  >
+                <div v-if="profileInfo.dob || healthBook?.dob" class="text-gray-600 flex items-center gap-2 font-bold">
+                  <span>Ngày sinh: {{ formatDate(profileInfo.dob || healthBook?.dob || "") }}</span>
                   <span>—</span>
-                  <span>{{
-                    calculateAge(profileInfo.dob || healthBook?.dob || "")
-                  }}</span>
-                  <span class="ml-2 flex items-center gap-1 text-[#1A75BB] cursor-pointer hover:opacity-80"
+                  <span>{{ calculateAge(profileInfo.dob || healthBook?.dob || "") }}</span>
+                  <span
+                    class="ml-2 flex items-center gap-1 text-[#1A75BB] cursor-pointer hover:opacity-80"
                     @click="showEditInfoModal = true"
                   >
                     <EditOutlined class="text-sm" />
@@ -335,10 +291,7 @@
             </div>
 
             <!-- Right: Actions - Only show on overview tab -->
-            <div
-              v-if="activeTab === 'overview'"
-              class="flex items-center gap-3"
-            >
+            <div v-if="activeTab === 'overview'" class="flex items-center gap-3">
               <!-- Date Picker -->
               <a-date-picker
                 v-model:value="selectedDate"
@@ -354,12 +307,7 @@
               </a-date-picker>
 
               <!-- Create Button -->
-              <a-button
-                type="primary"
-                @click="showCreateRecordModal = true"
-                size="large"
-                class="custom-create-button"
-              >
+              <a-button type="primary" @click="showCreateRecordModal = true" size="large" class="custom-create-button">
                 <template #icon>
                   <EditOutlined />
                 </template>
@@ -374,10 +322,7 @@
           <a-tabs v-model:activeKey="activeTab" class="health-book-tabs">
             <a-tab-pane key="overview" :tab="overviewTabLabel">
               <!-- Overview Content -->
-              <div
-                v-if="healthBook && hasHealthBookRecord"
-                class="grid grid-cols-1 lg:grid-cols-12 gap-6"
-              >
+              <div v-if="healthBook && hasHealthBookRecord" class="grid grid-cols-1 lg:grid-cols-12 gap-6">
                 <!-- Left Column: Health Metrics -->
                 <div class="lg:col-span-4 space-y-6">
                   <!-- Health Metrics Card -->
@@ -402,7 +347,9 @@
                         :selected-date="selectedDate"
                       />
                     </div>
-                    <div class="min-[1440px]:col-span-1 flex flex-col min-[1440px]:flex-col-reverse min-[1440px]:justify-end">
+                    <div
+                      class="min-[1440px]:col-span-1 flex flex-col min-[1440px]:flex-col-reverse min-[1440px]:justify-end"
+                    >
                       <!-- Health Status & Vaccination -->
                       <HealthStatusCard :health-book="healthBook" />
 
@@ -419,14 +366,8 @@
               </div>
 
               <!-- Empty State when no health book data in Overview tab -->
-              <div
-                v-else
-                class="flex flex-col items-center justify-center min-h-[50vh] px-4"
-              >
-                <a-empty
-                  description="Không có dữ liệu sổ sức khỏe cho ngày này"
-                  class="healthbook-empty"
-                >
+              <div v-else class="flex flex-col items-center justify-center min-h-[50vh] px-4">
+                <a-empty description="Không có dữ liệu sổ sức khỏe cho ngày này" class="healthbook-empty">
                   <a-button
                     type="primary"
                     size="large"
@@ -444,10 +385,7 @@
 
             <!-- Vaccination Schedule Tab -->
             <a-tab-pane key="vaccination" tab="Lịch tiêm">
-              <VaccinationSchedule
-                :customer-id="customerId"
-                :health-book-id="healthBook?._id"
-              />
+              <VaccinationSchedule :customer-id="customerId" :health-book-id="healthBook?._id" />
             </a-tab-pane>
 
             <!-- Support Request Tab -->
@@ -460,10 +398,7 @@
     </div>
 
     <!-- Create HealthBook Modal -->
-    <CreateHealthBookModal
-      v-model:visible="showCreateHealthBookModal"
-      @success="handleHealthBookCreated"
-    />
+    <CreateHealthBookModal v-model:visible="showCreateHealthBookModal" @success="handleHealthBookCreated" />
 
     <!-- Create Health Record Modal -->
     <CreateHealthRecordModal
@@ -474,22 +409,10 @@
     />
 
     <!-- Hidden file input for avatar upload -->
-    <input
-      ref="avatarFileInput"
-      type="file"
-      accept="image/*"
-      class="hidden"
-      @change="handleAvatarChange"
-    />
+    <input ref="avatarFileInput" type="file" accept="image/*" class="hidden" @change="handleAvatarChange" />
 
     <!-- Avatar Upload Loading Modal -->
-    <a-modal
-      v-model:open="isUploadingAvatar"
-      :closable="false"
-      :footer="null"
-      :maskClosable="false"
-      centered
-    >
+    <a-modal v-model:open="isUploadingAvatar" :closable="false" :footer="null" :maskClosable="false" centered>
       <div class="flex flex-col items-center justify-center py-8">
         <a-spin size="large" />
         <p class="mt-4 text-gray-600">Đang tải ảnh lên...</p>
@@ -507,34 +430,25 @@
       :centered="true"
       class="edit-info-modal"
     >
-      <a-form
-        :model="editInfoForm"
-        layout="vertical"
-        @finish="handleEditInfoSubmit"
-        class="edit-info-form"
-      >
+      <a-form :model="editInfoForm" layout="vertical" @finish="handleEditInfoSubmit" class="edit-info-form">
         <!-- Title -->
         <div class="edit-info-modal-title">CHỈNH SỬA THÔNG TIN</div>
-        
+
         <!-- Họ và tên bé -->
-        <a-form-item 
-          label="Họ và tên bé" 
-          name="name" 
+        <a-form-item
+          label="Họ và tên bé"
+          name="name"
           :rules="[{ required: true, message: 'Vui lòng nhập họ và tên bé' }]"
           class="edit-info-form-item mb-6"
         >
-          <a-input 
-            v-model:value="editInfoForm.name" 
-            placeholder="Nhập họ và tên bé"
-            size="large"
-          />
+          <a-input v-model:value="editInfoForm.name" placeholder="Nhập họ và tên bé" size="large" />
         </a-form-item>
 
         <!-- Ngày sinh và Giới tính - Same Row -->
         <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
-          <a-form-item 
-            label="Ngày sinh" 
-            name="dob" 
+          <a-form-item
+            label="Ngày sinh"
+            name="dob"
             :rules="[{ required: true, message: 'Vui lòng chọn ngày sinh' }]"
             class="edit-info-form-item"
           >
@@ -547,17 +461,13 @@
             />
           </a-form-item>
 
-          <a-form-item 
-            label="Giới tính" 
-            name="gender" 
+          <a-form-item
+            label="Giới tính"
+            name="gender"
             :rules="[{ required: true, message: 'Vui lòng chọn giới tính' }]"
             class="edit-info-form-item"
           >
-            <a-select
-              v-model:value="editInfoForm.gender"
-              placeholder="Chọn giới tính"
-              size="large"
-            >
+            <a-select v-model:value="editInfoForm.gender" placeholder="Chọn giới tính" size="large">
               <a-select-option value="male">Nam</a-select-option>
               <a-select-option value="female">Nữ</a-select-option>
             </a-select>
@@ -566,13 +476,7 @@
 
         <!-- Save Button -->
         <div class="flex justify-center mt-8">
-          <a-button 
-            type="primary" 
-            html-type="submit" 
-            :loading="isUpdatingInfo"
-            size="large"
-            class="edit-info-save-btn"
-          >
+          <a-button type="primary" html-type="submit" :loading="isUpdatingInfo" size="large" class="edit-info-save-btn">
             Lưu thông tin
           </a-button>
         </div>
@@ -583,13 +487,7 @@
 
 <script setup lang="ts">
 import { ref, computed, watch, onMounted, onUnmounted } from "vue";
-import {
-  UserOutlined,
-  CalendarOutlined,
-  CameraOutlined,
-  EditOutlined,
-  PlusOutlined,
-} from "@ant-design/icons-vue";
+import { UserOutlined, CalendarOutlined, CameraOutlined, EditOutlined, PlusOutlined } from "@ant-design/icons-vue";
 import dayjs, { Dayjs } from "dayjs";
 import { message } from "ant-design-vue";
 import type { HealthBook } from "~/types/api";
@@ -627,13 +525,11 @@ const customerId = computed(() => healthBook.value?.customerId || "");
 
 // API composables
 const { getHealthRecordByDate, getHealthRecords } = useHealthRecordsApi();
-const { getHealthBook, getHealthBooks, getCurrentHealthBook, updateUserHealthBook } =
-  useHealthBooksApi();
+const { getHealthBook, getHealthBooks, getCurrentHealthBook, updateUserHealthBook } = useHealthBooksApi();
 
 // Avatar upload state
 const avatarFileInput = ref<HTMLInputElement | null>(null);
 const isUploadingAvatar = ref(false);
-
 
 // State
 const healthBook = ref<HealthBook | null>(null);
@@ -657,20 +553,18 @@ const profileInfo = ref<{
 const editInfoForm = ref<{
   name?: string;
   dob?: Dayjs | null;
-  gender?: 'male' | 'female';
+  gender?: "male" | "female";
 }>({
-  name: '',
+  name: "",
   dob: null,
-  gender: 'male',
+  gender: "male",
 });
 
 // Responsive state for screen size
 const isMobile = ref(true);
 
 // Computed property for overview tab label
-const overviewTabLabel = computed(() =>
-  isMobile.value ? "Tổng quan" : "Tổng quan sức khỏe"
-);
+const overviewTabLabel = computed(() => (isMobile.value ? "Tổng quan" : "Tổng quan sức khỏe"));
 
 // Handle screen resize
 const handleResize = () => {
@@ -775,9 +669,7 @@ const calculateAge = (dob: string) => {
   const remainingMonths = months % 12;
 
   if (years > 0) {
-    return remainingMonths > 0
-      ? `${years} tuổi ${remainingMonths} tháng`
-      : `${years} tuổi`;
+    return remainingMonths > 0 ? `${years} tuổi ${remainingMonths} tháng` : `${years} tuổi`;
   }
   return `${months} tháng tuổi`;
 };
@@ -798,7 +690,7 @@ const fetchHealthRecordByDate = async (date?: string) => {
     // Format date to YYYY-MM-DD for API
     const selectedDateObj = date ? dayjs(date, "DD/MM/YYYY") : dayjs();
     const formattedDate = selectedDateObj.format("YYYY-MM-DD");
-    
+
     // Get health record by date using healthbook ID
     const healthBookId = healthBook.value?._id;
     if (!healthBookId) {
@@ -807,7 +699,7 @@ const fetchHealthRecordByDate = async (date?: string) => {
       hasHealthBookRecord.value = false;
       return;
     }
-    
+
     const response = await getHealthRecordByDate(healthBookId, formattedDate);
     const record = response?.data?.data?.data;
     temperatureHistory.value = response?.data?.data?.temperatureHistory;
@@ -841,9 +733,7 @@ const fetchHealthRecordByDate = async (date?: string) => {
         digestiveProblems: record.digestiveIssues || "",
         healthCondition: record.healthStatus || "",
         vaccination: record.vaccination?.dose || "",
-        vaccinationDate: record.vaccination?.date
-          ? dayjs(record.vaccination.date).format("DD/MM/YYYY")
-          : "",
+        vaccinationDate: record.vaccination?.date ? dayjs(record.vaccination.date).format("DD/MM/YYYY") : "",
         vaccinationContent: record.vaccination?.dose || "",
         method: {
           status: record.method || "",
@@ -962,7 +852,7 @@ const handleAvatarChange = async (event: Event) => {
 
     // Response structure: { message: "", data: { message: "...", data: { avatar: "..." } } }
     const avatarUrl = result?.data?.data?.avatar || result?.data?.avatar;
-    
+
     if (!avatarUrl) {
       throw new Error("Không thể cập nhật ảnh đại diện");
     }
@@ -1012,10 +902,14 @@ const handleRecordCreated = async () => {
 // Handle edit info modal open
 watch(showEditInfoModal, (visible) => {
   if (visible && healthBook.value) {
-    const genderValue = (profileInfo.value.gender || healthBook.value.gender || 'male') as 'male' | 'female';
+    const genderValue = (profileInfo.value.gender || healthBook.value.gender || "male") as "male" | "female";
     editInfoForm.value = {
-      name: profileInfo.value.name || healthBook.value.name || '',
-      dob: profileInfo.value.dob ? dayjs(profileInfo.value.dob) : (healthBook.value.dob ? dayjs(healthBook.value.dob) : null),
+      name: profileInfo.value.name || healthBook.value.name || "",
+      dob: profileInfo.value.dob
+        ? dayjs(profileInfo.value.dob)
+        : healthBook.value.dob
+        ? dayjs(healthBook.value.dob)
+        : null,
       gender: genderValue,
     };
   }
@@ -1042,7 +936,7 @@ const handleEditInfoSubmit = async () => {
       gender?: string;
     } = {
       name: editInfoForm.value.name,
-      dob: editInfoForm.value.dob.format('YYYY-MM-DD'),
+      dob: editInfoForm.value.dob.format("YYYY-MM-DD"),
       gender: editInfoForm.value.gender,
     };
 
@@ -1052,13 +946,13 @@ const handleEditInfoSubmit = async () => {
     profileInfo.value = {
       ...profileInfo.value,
       name: editInfoForm.value.name,
-      dob: editInfoForm.value.dob.format('YYYY-MM-DD'),
+      dob: editInfoForm.value.dob.format("YYYY-MM-DD"),
       gender: editInfoForm.value.gender,
     };
 
     if (healthBook.value) {
       healthBook.value.name = editInfoForm.value.name;
-      healthBook.value.dob = editInfoForm.value.dob.format('YYYY-MM-DD');
+      healthBook.value.dob = editInfoForm.value.dob.format("YYYY-MM-DD");
       healthBook.value.gender = editInfoForm.value.gender;
     }
 
@@ -1111,7 +1005,7 @@ onMounted(async () => {
       message.success("Đăng nhập Google thành công!");
 
       // Clean URL
-      await router.replace('/');
+      await router.replace("/");
 
       // Continue to load healthbook data
       isCheckingAuth.value = false;
@@ -1119,10 +1013,10 @@ onMounted(async () => {
       return;
     } catch (err: any) {
       console.error("❌ Google login error:", err);
-      
+
       // Clean URL first
-      await router.replace('/');
-      
+      await router.replace("/");
+
       error.value = err.message || "Đăng nhập Google thất bại. Vui lòng thử lại.";
       loading.value = false;
       isCheckingAuth.value = false;
@@ -1138,7 +1032,7 @@ onMounted(async () => {
 
   // Case 1b: Google OAuth error
   else if (googleError) {
-    await router.replace('/login');
+    await router.replace("/login");
     message.error("Đăng nhập Google thất bại");
     return;
   }
@@ -1146,12 +1040,12 @@ onMounted(async () => {
   // Case 1c: Google OAuth callback with code (frontend needs to exchange)
   else if (code) {
     // Check if this code was already used (stored in sessionStorage)
-    const usedCodes = JSON.parse(sessionStorage.getItem('usedGoogleCodes') || '[]');
+    const usedCodes = JSON.parse(sessionStorage.getItem("usedGoogleCodes") || "[]");
     if (usedCodes.includes(code)) {
       // Code already used, just clean URL and continue
-      await router.replace('/');
+      await router.replace("/");
       isCheckingAuth.value = false;
-      
+
       // If user is authenticated, load healthbook
       if (authStore.isAuthenticated) {
         await fetchHealthBookProfile();
@@ -1171,45 +1065,34 @@ onMounted(async () => {
       }
       // Mark this code as used
       usedCodes.push(code);
-      sessionStorage.setItem('usedGoogleCodes', JSON.stringify(usedCodes));
+      sessionStorage.setItem("usedGoogleCodes", JSON.stringify(usedCodes));
 
       // Calculate token expiry time
       let tokenExpireAtNum: number;
       if (typeof response.data.tokenExpireAt === "string") {
         tokenExpireAtNum = Date.now() + 7 * 24 * 60 * 60 * 1000; // 7 days
       } else {
-        tokenExpireAtNum =
-          response.data.tokenExpireAt || Date.now() + 7 * 24 * 60 * 60 * 1000;
+        tokenExpireAtNum = response.data.tokenExpireAt || Date.now() + 7 * 24 * 60 * 60 * 1000;
       }
 
       // Prepare user data
       const userData = {
         ...response.data.user,
-        id:
-          (response.data.user as any)?._id ||
-          response.data.user?.id ||
-          `google-user-${Date.now()}`,
+        id: (response.data.user as any)?._id || response.data.user?.id || `google-user-${Date.now()}`,
         email: response.data.user?.email || "user@google.com",
-        fullname:
-          (response.data.user as any)?.fullname ||
-          response.data.user?.name ||
-          "Google User",
+        fullname: (response.data.user as any)?.fullname || response.data.user?.name || "Google User",
         avatar: response.data.user?.avatar || "",
         role: (response.data.user as any)?.role || "user",
         verified: true,
       };
       // Save to auth store
-      await authStore.completeGoogleLogin(
-        response.data.accessToken,
-        tokenExpireAtNum,
-        userData
-      );
+      await authStore.completeGoogleLogin(response.data.accessToken, tokenExpireAtNum, userData);
 
       // Show success message
       message.success("Đăng nhập Google thành công!");
 
       // Clean URL using router.replace to properly update history
-      await router.replace('/');
+      await router.replace("/");
 
       // Continue to load healthbook data
       isCheckingAuth.value = false;
@@ -1217,12 +1100,11 @@ onMounted(async () => {
       return;
     } catch (err: any) {
       console.error("❌ Google login error:", err);
-      
+
       // Clean URL first to prevent reload loop
-      await router.replace('/');
-      
-      error.value =
-        err.message || "Đăng nhập Google thất bại. Vui lòng thử lại.";
+      await router.replace("/");
+
+      error.value = err.message || "Đăng nhập Google thất bại. Vui lòng thử lại.";
       loading.value = false;
       isCheckingAuth.value = false;
 
@@ -1457,7 +1339,7 @@ onMounted(async () => {
   text-align: center;
   font-size: 20px;
   font-weight: 700;
-  color: #317BC4;
+  color: #317bc4;
   text-transform: uppercase;
   letter-spacing: 0.5px;
   margin-bottom: 32px;
@@ -1477,11 +1359,10 @@ onMounted(async () => {
 }
 
 :deep(.edit-info-form-item .ant-form-item-label > label::before) {
-  content: '*';
+  content: "*";
   color: #ff4d4f;
   margin-right: 4px;
 }
-
 
 /* Save Button */
 .edit-info-save-btn {
@@ -1493,13 +1374,13 @@ onMounted(async () => {
 }
 
 :deep(.edit-info-save-btn.ant-btn-primary) {
-  background-color: #1A75BB;
-  border-color: #1A75BB;
+  background-color: #1a75bb;
+  border-color: #1a75bb;
 }
 
 :deep(.edit-info-save-btn.ant-btn-primary:hover) {
-  background-color: #1565A0;
-  border-color: #1565A0;
+  background-color: #1565a0;
+  border-color: #1565a0;
 }
 
 /* Input and Select Styling */
@@ -1513,7 +1394,7 @@ onMounted(async () => {
 :deep(.edit-info-form .ant-input:focus),
 :deep(.edit-info-form .ant-picker:focus),
 :deep(.edit-info-form .ant-select-focused .ant-select-selector) {
-  border-color: #1A75BB;
+  border-color: #1a75bb;
   box-shadow: 0 0 0 2px rgba(26, 117, 187, 0.1);
 }
 
@@ -1523,7 +1404,7 @@ onMounted(async () => {
     width: 90vw !important;
     max-width: 90vw;
   }
-  
+
   :deep(.edit-info-modal .ant-modal-body) {
     padding: 24px;
   }
@@ -1534,15 +1415,15 @@ onMounted(async () => {
     width: 95vw !important;
     max-width: 95vw;
   }
-  
+
   :deep(.edit-info-modal .ant-modal-content) {
     min-height: auto;
   }
-  
+
   :deep(.edit-info-modal .ant-modal-body) {
     padding: 20px;
   }
-  
+
   .edit-info-modal-title {
     font-size: 18px;
     margin-bottom: 24px;

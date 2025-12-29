@@ -11,11 +11,19 @@ export default defineNuxtConfig({
   // Modules
   modules: [
     '@nuxtjs/tailwindcss',
-    '@pinia/nuxt'
+    '@pinia/nuxt',
+    '@nuxt/image'
   ],
   
   // Enable pages module for routing
   pages: true,
+  
+  // Router config for better performance
+  router: {
+    options: {
+      scrollBehaviorType: 'smooth'
+    }
+  },
   
   // SPA mode (can enable SSR later if needed)
   ssr: false,
@@ -34,8 +42,41 @@ export default defineNuxtConfig({
   // Vite configuration
   vite: {
     optimizeDeps: {
-      include: ['dayjs', 'dayjs/plugin/customParseFormat', 'dayjs/plugin/advancedFormat', 'dayjs/plugin/weekday', 'dayjs/plugin/localeData', 'dayjs/plugin/weekOfYear', 'dayjs/plugin/weekYear', 'dayjs/plugin/quarterOfYear']
+      include: ['dayjs', 'dayjs/plugin/customParseFormat', 'dayjs/plugin/advancedFormat', 'dayjs/plugin/weekday', 'dayjs/plugin/localeData', 'dayjs/plugin/weekOfYear', 'dayjs/plugin/weekYear', 'dayjs/plugin/quarterOfYear', 'ant-design-vue']
+    },
+    build: {
+      cssCodeSplit: true,
+      rollupOptions: {
+        output: {
+          manualChunks: (id) => {
+            // Split vendor chunks more aggressively
+            if (id.includes('node_modules')) {
+              if (id.includes('ant-design-vue')) {
+                return 'vendor-antd';
+              }
+              if (id.includes('dayjs')) {
+                return 'vendor-dayjs';
+              }
+              if (id.includes('@ant-design/icons-vue')) {
+                return 'vendor-icons';
+              }
+              return 'vendor-other';
+            }
+          }
+        }
+      },
+      chunkSizeWarningLimit: 1000
     }
+  },
+
+  // Experimental features for better performance
+  experimental: {
+    payloadExtraction: false
+  },
+
+  // Optimize CSS delivery
+  features: {
+    inlineStyles: true
   },
 
   // TailwindCSS configuration
@@ -97,8 +138,31 @@ export default defineNuxtConfig({
         { name: 'description', content: 'Van Phuc Care CRM Portal' }
       ],
       link: [
-        { rel: 'icon', type: 'image/x-icon', href: '/favicon.ico' }
+        { rel: 'icon', type: 'image/x-icon', href: '/favicon.ico' },
+        // Preload critical fonts for faster render
+        { rel: 'preload', href: '/fonts/SVN-Gilroy Regular.otf', as: 'font', type: 'font/otf', crossorigin: 'anonymous' },
+        { rel: 'preload', href: '/fonts/SVN-Gilroy Medium.otf', as: 'font', type: 'font/otf', crossorigin: 'anonymous' },
+        { rel: 'preload', href: '/fonts/SVN-Gilroy Bold.otf', as: 'font', type: 'font/otf', crossorigin: 'anonymous' },
+        // Preload LCP image
+        { rel: 'preload', href: '/images/baby-default.png', as: 'image', fetchpriority: 'high' }
       ]
+    }
+  },
+
+  // Nitro config for caching
+  nitro: {
+    compressPublicAssets: true,
+    routeRules: {
+      '/images/**': { 
+        headers: { 
+          'Cache-Control': 'public, max-age=31536000, immutable' 
+        } 
+      },
+      '/fonts/**': { 
+        headers: { 
+          'Cache-Control': 'public, max-age=31536000, immutable' 
+        } 
+      }
     }
   }
 })

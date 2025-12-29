@@ -33,6 +33,7 @@
             :src="service.thumbnail || '/images/service-thumbnail-default.png'"
             :alt="service.title"
             class="card-image"
+            loading="lazy"
             @error="(e) => (e.target as HTMLImageElement).src = '/images/service-thumbnail-default.png'"
           />
         </div>
@@ -135,7 +136,7 @@
           <!-- Right Side: Image (Desktop only) -->
           <div v-if="!isMobile" class="modal-image-section">
           </div>
-          <img src="/images/service/service-register.png" alt="Register" class="modal-image" />
+          <nuxt-img src="/images/service/service-register.png" alt="Register" class="modal-image" format="webp" loading="lazy" />
         </div>
 
         <!-- Success Screen -->
@@ -143,8 +144,8 @@
           <div class="success-content">
             <!-- Mascot Image -->
             <div class="success-mascot">
-              <img src="/images/service/service-register.png" alt="Register" class="modal-image-success" />
-              <img src="/images/service/service-register-success.png" alt="Success" class="mascot-image" />
+              <nuxt-img src="/images/service/service-register.png" alt="Register" class="modal-image-success" format="webp" loading="lazy" />
+              <nuxt-img src="/images/service/service-register-success.png" alt="Success" class="mascot-image" format="webp" loading="lazy" />
             </div>
 
             <!-- Success Title -->

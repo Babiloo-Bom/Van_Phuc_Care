@@ -17,6 +17,9 @@
             :src="avatarPreview || userInfo?.avatar || '/images/avatar-fallback.png'"
             alt="Avatar"
             class="w-28 h-28 rounded-full mb-4 object-cover"
+            width="112"
+            height="112"
+            loading="eager"
             @error="(e: Event) => (e.target as HTMLImageElement).src = '/images/avatar-fallback.png'"
           />
           <button

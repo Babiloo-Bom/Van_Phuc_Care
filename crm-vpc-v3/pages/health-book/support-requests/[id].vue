@@ -53,7 +53,7 @@
                 class="attachment-item"
                 @click="previewImage(attachment.url)"
               >
-                <img :src="attachment.url" :alt="attachment.filename" />
+                <img :src="attachment.url" :alt="attachment.filename" loading="lazy" />
               </div>
             </div>
           </div>
@@ -89,7 +89,7 @@
                   class="response-attachment"
                   @click="previewImage(img.url)"
                 >
-                  <img :src="img.url" :alt="img.filename" />
+                  <img :src="img.url" :alt="img.filename" loading="lazy" />
                   <div v-if="isVideo(img.url)" class="video-play-icon">
                     <PlayCircleOutlined />
                   </div>
@@ -178,6 +178,7 @@
                   v-if="getFilePreviewUrl(file)"
                   :src="getFilePreviewUrl(file)"
                   alt="preview"
+                  loading="lazy"
                 />
                 <a-button type="text" size="small" @click="removeFile(file)">
                   <CloseOutlined />
