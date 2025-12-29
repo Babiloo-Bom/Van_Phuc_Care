@@ -13,11 +13,10 @@
       >
         <a-spin v-if="loading" />
         <template v-else>
-          <nuxt-img
+          <img
             :src="avatarPreview || userInfo?.avatar || '/images/avatar-fallback.png'"
             alt="Avatar"
             class="w-28 h-28 rounded-full mb-4 object-cover"
-            format="webp"
             width="112"
             height="112"
             loading="eager"

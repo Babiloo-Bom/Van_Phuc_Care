@@ -236,7 +236,7 @@
               <div
                 class="absolute -top-14 mb-3 border-5 lg:border-8 border-white rounded-full"
               >
-                <nuxt-img
+                <img
                   :src="
                     profileInfo.avatar ||
                     healthBook?.avatar ||
@@ -244,7 +244,6 @@
                   "
                   :alt="profileInfo.name || healthBook?.name"
                   class="w-24 h-24 rounded-full object-cover"
-                  format="webp"
                   width="96"
                   height="96"
                   fetchpriority="high"
@@ -297,7 +296,7 @@
               <div
                 class="absolute -top-20 left-5 border-5 lg:border-8 border-white rounded-full"
               >
-                <nuxt-img
+                <img
                   :src="
                     profileInfo.avatar ||
                     healthBook?.avatar ||
@@ -305,7 +304,6 @@
                   "
                   :alt="profileInfo.name || healthBook?.name"
                   class="w-32 h-32 rounded-full object-cover border-5 lg:border-8 border-blue-100"
-                  format="webp"
                   width="128"
                   height="128"
                   fetchpriority="high"

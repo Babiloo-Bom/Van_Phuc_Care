@@ -29,11 +29,10 @@
       >
         <!-- Thumbnail -->
         <div class="card-image-wrapper">
-          <nuxt-img
+          <img
             :src="service.thumbnail || '/images/service-thumbnail-default.png'"
             :alt="service.title"
             class="card-image"
-            format="webp"
             loading="lazy"
             @error="(e) => (e.target as HTMLImageElement).src = '/images/service-thumbnail-default.png'"
           />
