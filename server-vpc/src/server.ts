@@ -27,10 +27,14 @@ const allowedOrigins = [
   "http://localhost:3100", // Admin dev
   "http://localhost:3102", // Elearning dev
   "http://localhost:3000", // API itself (for swagger, etc.)
-  // Production domains
+  // Production domains - Old (.com)
   "https://elearning.vanphuccare.com",
-  "https://admin.vanphuccare.com",  // Thêm dòng này
-  "https://crm.vanphuccare.com",    // Thêm dòng này
+  "https://admin.vanphuccare.com",
+  "https://crm.vanphuccare.com",
+  // Production domains - New (.vn)
+  "https://edu.vanphuccare.vn",
+  "https://admin.vanphuccare.vn",
+  "https://crm.vanphuccare.vn",
   // Nếu có IP trực tiếp
   "https://103.216.119.104:3100",   // Admin port
   "https://103.216.119.104:3101",   // CRM port

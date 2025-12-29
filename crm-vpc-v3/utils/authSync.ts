@@ -4,7 +4,7 @@
  */
 
 const LOGOUT_SYNC_COOKIE = 'auth_logout_sync';
-const COOKIE_DOMAIN = '.vanphuccare.com'; // Adjust based on your domain structure
+const COOKIE_DOMAIN = '.vanphuccare.vn'; // Adjust based on your domain structure
 
 /**
  * Check if running on localhost

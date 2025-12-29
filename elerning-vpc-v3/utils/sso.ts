@@ -5,7 +5,7 @@
  */
 
 const SSO_COOKIE = 'auth_sso_token';
-const COOKIE_DOMAIN = '.vanphuccare.com';
+const COOKIE_DOMAIN = '.vanphuccare.vn';
 
 /**
  * Check if running on localhost
