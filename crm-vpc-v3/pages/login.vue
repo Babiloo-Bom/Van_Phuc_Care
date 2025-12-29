@@ -5,15 +5,25 @@
       <div class="content-wrapper">
         <!-- Logo -->
         <div class="logo-section">
-          <img
+          <nuxt-img
             src="/images/logo-vanphuc-new-mobile.png"
             alt="Van Phuc Care"
             class="lg:hidden logo"
+            format="webp"
+            width="150"
+            height="70"
+            loading="eager"
+            fetchpriority="high"
           />
-          <img
+          <nuxt-img
             src="/images/logo-vanphuc-new.png"
             alt="Van Phuc Care"
             class="hidden lg:block logo"
+            format="webp"
+            width="150"
+            height="70"
+            loading="eager"
+            fetchpriority="high"
           />
           <h2 class="main-title">Đăng nhập</h2>
           <p class="subtitle">Chào mừng bạn đến với Vạn Phúc Care</p>
@@ -137,10 +147,12 @@
 
       <!-- Dragon Banner -->
       <div class="dragon-banner">
-        <img
+        <nuxt-img
           src="/images/dragon_banner.png"
           alt="Dragon Banner"
           class="dragon-image"
+          format="webp"
+          loading="lazy"
         />
       </div>
 

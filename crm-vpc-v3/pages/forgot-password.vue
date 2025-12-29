@@ -5,15 +5,25 @@
       <div class="content-wrapper">
         <!-- Logo (mobile absolute positioning) -->
         <div class="logo-section">
-          <img
+          <nuxt-img
             src="/images/logo-vanphuc-new-mobile.png"
             alt="Van Phuc Care"
             class="lg:hidden logo"
+            format="webp"
+            width="150"
+            height="70"
+            loading="eager"
+            fetchpriority="high"
           />
-          <img
+          <nuxt-img
             src="/images/logo-vanphuc-new.png"
             alt="Van Phuc Care"
             class="hidden lg:block logo"
+            format="webp"
+            width="150"
+            height="70"
+            loading="eager"
+            fetchpriority="high"
           />
         </div>
 
@@ -63,10 +73,12 @@
 
       <!-- Dragon Banner -->
       <div class="dragon-banner">
-        <img
+        <nuxt-img
           src="/images/dragon_banner.png"
           alt="Dragon Character"
           class="dragon-image"
+          format="webp"
+          loading="lazy"
         />
       </div>
 

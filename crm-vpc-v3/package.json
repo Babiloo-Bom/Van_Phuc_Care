@@ -25,6 +25,7 @@
     "vue-router": "^4.6.3"
   },
   "devDependencies": {
+    "@nuxt/image": "^2.0.0",
     "@nuxtjs/tailwindcss": "^6.14.0",
     "@types/node": "^24.9.1",
     "@typescript-eslint/eslint-plugin": "^8.46.3",

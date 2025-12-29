@@ -53,7 +53,7 @@
                 class="attachment-item"
                 @click="previewImage(attachment.url)"
               >
-                <img :src="attachment.url" :alt="attachment.filename" />
+                <nuxt-img :src="attachment.url" :alt="attachment.filename" format="webp" loading="lazy" />
               </div>
             </div>
           </div>
@@ -89,7 +89,7 @@
                   class="response-attachment"
                   @click="previewImage(img.url)"
                 >
-                  <img :src="img.url" :alt="img.filename" />
+                  <nuxt-img :src="img.url" :alt="img.filename" format="webp" loading="lazy" />
                   <div v-if="isVideo(img.url)" class="video-play-icon">
                     <PlayCircleOutlined />
                   </div>
@@ -174,10 +174,12 @@
                 :key="file.uid"
                 class="preview-item"
               >
-                <img
+                <nuxt-img
                   v-if="getFilePreviewUrl(file)"
                   :src="getFilePreviewUrl(file)"
                   alt="preview"
+                  format="webp"
+                  loading="lazy"
                 />
                 <a-button type="text" size="small" @click="removeFile(file)">
                   <CloseOutlined />

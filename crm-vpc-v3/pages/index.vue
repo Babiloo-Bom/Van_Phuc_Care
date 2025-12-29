@@ -113,10 +113,13 @@
                 <div class="text-center max-w-2xl">
                   <!-- Van Phuc Care Mascot Illustration -->
                   <div class="mb-8">
-                    <img
+                    <nuxt-img
                       src="/images/empty-healthbook.png"
                       alt="Vạn Phúc Care"
                       class="w-auto h-52 md:h-72 mx-auto"
+                      format="webp"
+                      width="288"
+                      loading="lazy"
                     />
                   </div>
 
@@ -233,7 +236,7 @@
               <div
                 class="absolute -top-14 mb-3 border-5 lg:border-8 border-white rounded-full"
               >
-                <img
+                <nuxt-img
                   :src="
                     profileInfo.avatar ||
                     healthBook?.avatar ||
@@ -241,6 +244,11 @@
                   "
                   :alt="profileInfo.name || healthBook?.name"
                   class="w-24 h-24 rounded-full object-cover"
+                  format="webp"
+                  width="96"
+                  height="96"
+                  fetchpriority="high"
+                  loading="eager"
                   @error="(e) => { const t = e.target as HTMLImageElement; if (t) t.src = '/images/baby-default.png' }"
                 />
                 <CameraOutlined
@@ -289,7 +297,7 @@
               <div
                 class="absolute -top-20 left-5 border-5 lg:border-8 border-white rounded-full"
               >
-                <img
+                <nuxt-img
                   :src="
                     profileInfo.avatar ||
                     healthBook?.avatar ||
@@ -297,6 +305,11 @@
                   "
                   :alt="profileInfo.name || healthBook?.name"
                   class="w-32 h-32 rounded-full object-cover border-5 lg:border-8 border-blue-100"
+                  format="webp"
+                  width="128"
+                  height="128"
+                  fetchpriority="high"
+                  loading="eager"
                   @error="(e) => { const t = e.target as HTMLImageElement; if (t) t.src = '/images/baby-default.png' }"
                 />
                 <CameraOutlined
