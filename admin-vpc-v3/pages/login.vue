@@ -208,7 +208,6 @@ const handleSubmit = async () => {
     loading.value = false;
   }
 };
-// Rebuild
 </script>
 
 <style scoped>

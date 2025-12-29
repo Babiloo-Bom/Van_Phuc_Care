@@ -1131,7 +1131,6 @@ onMounted(async () => {
   isCheckingAuth.value = false;
   await fetchHealthBookProfile();
 });
-// Rebuild
 </script>
 
 <style scoped>
