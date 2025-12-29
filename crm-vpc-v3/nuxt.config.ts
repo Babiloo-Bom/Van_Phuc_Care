@@ -18,6 +18,13 @@ export default defineNuxtConfig({
   // Enable pages module for routing
   pages: true,
   
+  // Router config for better performance
+  router: {
+    options: {
+      scrollBehaviorType: 'smooth'
+    }
+  },
+  
   // SPA mode (can enable SSR later if needed)
   ssr: false,
   
@@ -41,18 +48,29 @@ export default defineNuxtConfig({
       cssCodeSplit: true,
       rollupOptions: {
         output: {
-          manualChunks: {
-            'ant-design-vue': ['ant-design-vue'],
-            'dayjs': ['dayjs']
+          manualChunks: (id) => {
+            // Split vendor chunks more aggressively
+            if (id.includes('node_modules')) {
+              if (id.includes('ant-design-vue')) {
+                return 'vendor-antd';
+              }
+              if (id.includes('dayjs')) {
+                return 'vendor-dayjs';
+              }
+              if (id.includes('@ant-design/icons-vue')) {
+                return 'vendor-icons';
+              }
+              return 'vendor-other';
+            }
           }
         }
-      }
+      },
+      chunkSizeWarningLimit: 1000
     }
   },
 
   // Experimental features for better performance
   experimental: {
-    inlineSSRStyles: false,
     payloadExtraction: false
   },
 
@@ -121,11 +139,11 @@ export default defineNuxtConfig({
       ],
       link: [
         { rel: 'icon', type: 'image/x-icon', href: '/favicon.ico' },
-        // Preload critical fonts - only load most used weights
+        // Preload critical fonts for faster render
         { rel: 'preload', href: '/fonts/SVN-Gilroy Regular.otf', as: 'font', type: 'font/otf', crossorigin: 'anonymous' },
         { rel: 'preload', href: '/fonts/SVN-Gilroy Medium.otf', as: 'font', type: 'font/otf', crossorigin: 'anonymous' },
         { rel: 'preload', href: '/fonts/SVN-Gilroy Bold.otf', as: 'font', type: 'font/otf', crossorigin: 'anonymous' },
-        // Preload LCP image for faster discovery
+        // Preload LCP image
         { rel: 'preload', href: '/images/baby-default.png', as: 'image', fetchpriority: 'high' }
       ]
     }
