@@ -70,9 +70,10 @@ echo "⏳ Waiting for services to be healthy..."
 sleep 10
 
 # Update Nginx config on host (if Nginx is running on host, not in Docker)
-if [ -d "/etc/nginx/conf.d" ]; then
+if [ -d "/etc/nginx/sites-available" ]; then
     echo "🔄 Updating Nginx configuration..."
-    sudo cp ./nginx/conf.d/default.conf /etc/nginx/conf.d/vanphuccare.conf 2>/dev/null || true
+    sudo cp ./nginx/conf.d/default.conf /etc/nginx/sites-available/vanphuccare 2>/dev/null || true
+    sudo ln -sf /etc/nginx/sites-available/vanphuccare /etc/nginx/sites-enabled/vanphuccare 2>/dev/null || true
     sudo nginx -t && sudo systemctl reload nginx && echo "✅ Nginx reloaded successfully" || echo "⚠️  Nginx reload failed"
 fi
 
