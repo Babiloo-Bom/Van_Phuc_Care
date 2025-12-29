@@ -17,7 +17,7 @@ class UserVaccinationRecordsController {
 
       const query: any = { 
         customerId,
-        domain: req.headers.origin || req.headers.host || "crm.vanphuccare.com",
+        domain: req.headers.origin || req.headers.host || "my.vanphuccare.vn",
       };
 
       const [records, total] = await Promise.all([
@@ -109,7 +109,7 @@ class UserVaccinationRecordsController {
         injectionNumber: injectionNumber || 1,
         sideEffects: sideEffects || "",
         nextDoseDate: nextDoseDate || null,
-        domain: req.headers.origin || req.headers.host || "crm.vanphuccare.com",
+        domain: req.headers.origin || req.headers.host || "my.vanphuccare.vn",
       });
 
       // Populate vaccine info

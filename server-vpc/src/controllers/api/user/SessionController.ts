@@ -261,7 +261,7 @@ class SessionController {
       const source = (req.body.source || 'elearning').toString();
       let baseUrl: string;
       if (source === 'crm') {
-        baseUrl = process.env.BASE_URL_CRM || process.env.FRONTEND_URL || 'http://crm.vanphuccare.com';
+        baseUrl = process.env.BASE_URL_CRM || process.env.FRONTEND_URL || 'https://my.vanphuccare.vn';
       } else if (source === 'admin') {
         baseUrl = process.env.BASE_URL_ADMIN || process.env.FRONTEND_URL || 'http://admin.vanphuccare.com';
       } else {

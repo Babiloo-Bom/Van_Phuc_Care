@@ -23,7 +23,7 @@ export const useBaseUrl = () => {
       }
       
       // Fallback to environment variable
-      return process.env.NUXT_PUBLIC_APP_URL || 'https://crm.vanphuccare.com';
+      return process.env.NUXT_PUBLIC_APP_URL || 'https://my.vanphuccare.vn';
     }
     
     // 3. Development fallback

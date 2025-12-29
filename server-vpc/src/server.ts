@@ -34,7 +34,7 @@ const allowedOrigins = [
   // Production domains - New (.vn)
   "https://edu.vanphuccare.vn",
   "https://admin.vanphuccare.vn",
-  "https://crm.vanphuccare.vn",
+  "https://my.vanphuccare.vn",
   // Nếu có IP trực tiếp
   "https://103.216.119.104:3100",   // Admin port
   "https://103.216.119.104:3101",   // CRM port

@@ -99,7 +99,7 @@ services:
       - CLOUDFLARE_R2_SECRET_ACCESS_KEY=8fba295a9781fe61e7c0568004c2ec1487184396bb19fd9e30f6d0dd641d8682
       # Base url for email verification links
       - BASE_URL_ELEARNING=https://edu.vanphuccare.vn
-      - BASE_URL_CRM=https://crm.vanphuccare.vn
+      - BASE_URL_CRM=https://my.vanphuccare.vn
       - BASE_URL_ADMIN=https://admin.vanphuccare.vn
     networks:
       - vpc-network
@@ -160,10 +160,10 @@ services:
       - NUXT_API_HOST_INTERNAL=http://api:3000
       - NUXT_PUBLIC_TINYMCE_KEY=${TINYMCE_KEY}
       - NUXT_PUBLIC_APP_NAME=CRM Portal - Van Phuc Care
-      - NUXT_PUBLIC_APP_URL=https://crm.vanphuccare.vn
+      - NUXT_PUBLIC_APP_URL=https://my.vanphuccare.vn
       - NUXT_PUBLIC_GOOGLE_CLIENT_ID=${NUXT_PUBLIC_GOOGLE_CLIENT_ID}
       - NUXT_GOOGLE_CLIENT_SECRET=${GOOGLE_CLIENT_SECRET}
-      - NUXT_PUBLIC_BASE_URL=https://crm.vanphuccare.vn
+      - NUXT_PUBLIC_BASE_URL=https://my.vanphuccare.vn
     networks:
       - vpc-network
     depends_on:
@@ -193,7 +193,7 @@ services:
       - NUXT_PUBLIC_GOOGLE_CLIENT_ID=${NUXT_PUBLIC_GOOGLE_CLIENT_ID}
       - NUXT_GOOGLE_CLIENT_SECRET=${GOOGLE_CLIENT_SECRET}
       - NUXT_PUBLIC_BASE_URL=https://edu.vanphuccare.vn  # Nên dùng https
-      - BASE_URL_CRM=https://crm.vanphuccare.vn  # Nên dùng https
+      - BASE_URL_CRM=https://my.vanphuccare.vn  # Nên dùng https
     networks:
       - vpc-network
     depends_on:

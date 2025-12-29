@@ -40,7 +40,7 @@ class MailerService {
     // Determine base URL based on source - must be set in environment variables
     let baseUrl: string;
     if (source === 'crm') {
-      baseUrl = process.env.BASE_URL_CRM || 'http://crm.vanphuccare.com';
+      baseUrl = process.env.BASE_URL_CRM || 'https://my.vanphuccare.vn';
     } else if (source === 'admin') {
       baseUrl = process.env.BASE_URL_ADMIN || 'http://admin.vanphuccare.com';
     } else {
