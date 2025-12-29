@@ -52,7 +52,7 @@ const config = useRuntimeConfig();
 const menuItems = MENU_ITEMS;
 
 // Elearning Base URL
-const elearningBaseUrl = computed(() => config.public.baseUrlElearning || 'http://elearning.vanphuccare.com');
+const elearningBaseUrl = computed(() => config.public.baseUrlElearning || 'https://edu.vanphuccare.vn');
 
 const isExternalLink = (path: string) => {
   return path.startsWith('http://') || path.startsWith('https://');
@@ -76,7 +76,7 @@ const handleElearningLinkClick = async (path: string) => {
   if (path.includes('my-learning') && authStore.isAuthenticated && authStore.token) {
     try {
       const { buildSSOUrl } = await import('~/utils/sso');
-      const baseUrl = String(elearningBaseUrl.value || 'http://elearning.vanphuccare.com');
+      const baseUrl = String(elearningBaseUrl.value || 'https://edu.vanphuccare.vn');
       const ssoUrl = await buildSSOUrl(baseUrl, '/my-learning');
       // Wait a bit for cookie to be set
       await new Promise(resolve => setTimeout(resolve, 200));

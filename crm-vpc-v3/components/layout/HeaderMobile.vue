@@ -111,7 +111,7 @@ const isMenuOpen = ref(false);
 const menuItems = MENU_ITEMS;
 
 // Elearning Base URL
-const elearningBaseUrl = computed(() => config.public.baseUrlElearning || 'http://elearning.vanphuccare.com');
+const elearningBaseUrl = computed(() => config.public.baseUrlElearning || 'https://edu.vanphuccare.vn');
 
 // User data
 const userName = computed(() => authStore.user?.fullname || authStore.user?.name || 'User');
@@ -202,7 +202,7 @@ const handleElearningLinkClick = async (path: string) => {
   if (path.includes('my-learning') && authStore.isAuthenticated && authStore.token) {
     try {
       const { buildSSOUrl } = await import('~/utils/sso');
-      const baseUrl = String(elearningBaseUrl.value || 'http://elearning.vanphuccare.com');
+      const baseUrl = String(elearningBaseUrl.value || 'https://edu.vanphuccare.vn');
       const ssoUrl = await buildSSOUrl(baseUrl, '/my-learning');
       console.log('[SSO] Opening Elearning with SSO:', ssoUrl);
       // Wait a bit for cookie to be set

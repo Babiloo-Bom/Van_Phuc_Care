@@ -48,21 +48,22 @@ export default defineNuxtConfig({
       cssCodeSplit: true,
       rollupOptions: {
         output: {
-          manualChunks: (id) => {
-            // Split vendor chunks more aggressively
-            if (id.includes('node_modules')) {
-              if (id.includes('ant-design-vue')) {
-                return 'vendor-antd';
-              }
-              if (id.includes('dayjs')) {
-                return 'vendor-dayjs';
-              }
-              if (id.includes('@ant-design/icons-vue')) {
-                return 'vendor-icons';
-              }
-              return 'vendor-other';
-            }
-          }
+          // Temporarily disable manual chunks to fix initialization order issues
+          // manualChunks: (id) => {
+          //   // Split vendor chunks more aggressively
+          //   if (id.includes('node_modules')) {
+          //     if (id.includes('ant-design-vue')) {
+          //       return 'vendor-antd';
+          //     }
+          //     if (id.includes('dayjs')) {
+          //       return 'vendor-dayjs';
+          //     }
+          //     if (id.includes('@ant-design/icons-vue')) {
+          //       return 'vendor-icons';
+          //     }
+          //     return 'vendor-other';
+          //   }
+          // }
         }
       },
       chunkSizeWarningLimit: 1000
@@ -121,6 +122,9 @@ export default defineNuxtConfig({
       // App Configuration
       appName: process.env.NUXT_PUBLIC_APP_NAME || 'CRM Portal - Van Phuc Care',
       appUrl: process.env.NUXT_PUBLIC_APP_URL,
+      
+      // Elearning URL
+      baseUrlElearning: process.env.BASE_URL_ELEARNING || 'https://edu.vanphuccare.vn',
       
       // Environment
       isDevelopment: process.env.NODE_ENV === 'development',

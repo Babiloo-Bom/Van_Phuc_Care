@@ -10,9 +10,9 @@ export interface MenuItem {
 export const getCrmBaseUrl = () => {
   if (import.meta.client) {
     const config = useRuntimeConfig();
-    return config.public.baseUrlCrm || 'http://localhost:3101';
+    return config.public.baseUrlCrm || 'https://my.vanphuccare.vn';
   }
-  return process.env.BASE_URL_CRM || 'http://localhost:3101';
+  return process.env.BASE_URL_CRM || 'https://my.vanphuccare.vn';
 };
 
 // Group 1: Tất cả khóa học, Khóa học của tôi, Giỏ hàng

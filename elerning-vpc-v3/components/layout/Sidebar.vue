@@ -165,7 +165,7 @@ const menuGroup1 = MENU_GROUP_1;
 const menuGroup2 = MENU_GROUP_2;
 
 // CRM Base URL
-const crmBaseUrl = computed(() => config.public.baseUrlCrm || 'http://localhost:3101');
+const crmBaseUrl = computed(() => config.public.baseUrlCrm || 'https://my.vanphuccare.vn');
 // Get external URL for CRM links
 const getExternalUrl = (path: string) => {
   if (path.startsWith('/crm')) {

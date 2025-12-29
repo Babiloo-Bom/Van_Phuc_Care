@@ -900,7 +900,7 @@ export const useAuthStore = defineStore('auth', {
   },
 });
 
-// Expose store to window for console debugging
+// Expose store to window for console debugging (lazy initialization to avoid circular dependency)
 if (process.client) {
-  (window as any).authStore = useAuthStore;
+  (window as any).authStore = () => useAuthStore();
 }

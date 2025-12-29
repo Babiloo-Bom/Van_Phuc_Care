@@ -374,7 +374,7 @@ const userEmail = computed(() => authStore.userEmail || 'user@example.com');
 const userAvatar = computed(() => authStore.user?.avatar || '/images/avatar-fallback.png');
 
 // CRM Base URL
-const crmBaseUrl = computed(() => config.public.baseUrlCrm || 'http://localhost:3101');
+const crmBaseUrl = computed(() => config.public.baseUrlCrm || 'https://my.vanphuccare.vn');
 
 // SSO URLs for CRM - use functions to avoid require in computed
 // Note: These return base URLs, SSO cookie will be set when link is clicked
@@ -482,7 +482,7 @@ const handleCrmLinkClick = async (event: MouseEvent, url: string | undefined) =>
     }
     
     const { buildSSOUrl } = await import('~/utils/sso');
-    const baseUrl = String(crmBaseUrl.value || 'http://localhost:3101');
+    const baseUrl = String(crmBaseUrl.value || 'https://my.vanphuccare.vn');
     const ssoUrl = await buildSSOUrl(baseUrl, path);
     
     await new Promise(resolve => setTimeout(resolve, 200));
