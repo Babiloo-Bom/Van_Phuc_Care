@@ -342,8 +342,9 @@ export const useAuthApi = () => {
      */
     async verifyOtp(email: string, otp: string) {
       try {
+        // Call Nuxt server API instead of directly calling backend
         return await withRetry(() =>
-          fetchWithTimeout(`${apiBase}/sessions/verify_otp`, {
+          fetchWithTimeout("/api/auth/verify-otp", {
             method: "POST",
             body: {
               email,
@@ -364,8 +365,9 @@ export const useAuthApi = () => {
      */
     async resetPassword(email: string, token: string, newPassword: string) {
       try {
+        // Call Nuxt server API instead of directly calling backend
         return await withRetry(() =>
-          fetchWithTimeout(`${apiBase}/sessions/reset_password`, {
+          fetchWithTimeout("/api/auth/reset-password", {
             method: "POST",
             body: {
               email,
