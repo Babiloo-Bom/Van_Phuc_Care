@@ -1111,13 +1111,24 @@ const handleRemoveInstructorAvatar = () => {
 const uploadFileToMinIO = async (file: File, folder: string = 'courses'): Promise<string> => {
   const config = useRuntimeConfig()
   const authStore = useAuthStore()
-  const apiHost = config.public.apiHost || 'http://localhost:3000'
+  // Nếu apiHost rỗng, dùng relative path (Nuxt sẽ proxy)
+  // Nếu không, dùng apiHost được cấu hình hoặc fallback localhost cho development
+  let apiHost = config.public.apiHost
+  if (!apiHost || apiHost.trim() === '') {
+    // Trong development, có thể cần localhost
+    // Trong production, dùng relative path để Nuxt proxy xử lý
+    if (process.client && config.public.isDevelopment) {
+      apiHost = 'http://localhost:3000'
+    } else {
+      apiHost = '' // Relative path
+    }
+  }
   const uploadFormData = new FormData()
   uploadFormData.append('files', file)
   
   try {
     // URL đúng: /api/uploads/minio (không có /a)
-    const url = `${apiHost}/api/uploads/minio?folder=${folder}`
+    const url = apiHost ? `${apiHost}/api/uploads/minio?folder=${folder}` : `/api/uploads/minio?folder=${folder}`
     console.log('📤 Uploading to:', url) // Debug
     
     const response: any = await $fetch(url, {
@@ -1148,13 +1159,24 @@ const uploadFileToMinIO = async (file: File, folder: string = 'courses'): Promis
 const uploadVideoToR2 = async (file: File, folder: string = 'courses/intro-videos'): Promise<string> => {
   const config = useRuntimeConfig()
   const authStore = useAuthStore()
-  const apiHost = config.public.apiHost || 'http://localhost:3000'
+  // Nếu apiHost rỗng, dùng relative path (Nuxt sẽ proxy)
+  // Nếu không, dùng apiHost được cấu hình hoặc fallback localhost cho development
+  let apiHost = config.public.apiHost
+  if (!apiHost || apiHost.trim() === '') {
+    // Trong development, có thể cần localhost
+    // Trong production, dùng relative path để Nuxt proxy xử lý
+    if (process.client && config.public.isDevelopment) {
+      apiHost = 'http://localhost:3000'
+    } else {
+      apiHost = '' // Relative path
+    }
+  }
   const uploadFormData = new FormData()
   uploadFormData.append('file', file) // Note: 'file' not 'files'
   
   try {
     // URL đúng: /api/uploads/video (không có /a)
-    const url = `${apiHost}/api/uploads/video?folder=${folder}`
+    const url = apiHost ? `${apiHost}/api/uploads/video?folder=${folder}` : `/api/uploads/video?folder=${folder}`
     console.log('📤 Uploading video to:', url) // Debug
     
     const response: any = await $fetch(url, {

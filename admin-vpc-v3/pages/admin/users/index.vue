@@ -1172,7 +1172,11 @@ const getAvatarUrl = (avatar: string | undefined | null): string | undefined => 
   // If starts with /, it's a relative path - need to add API base URL
   if (avatar.startsWith('/')) {
     const config = useRuntimeConfig()
-    const apiHost = config.public.apiHost || 'http://localhost:3000'
+    let apiHost = config.public.apiHost
+    if (!apiHost || apiHost.trim() === '') {
+      // Nếu apiHost rỗng, dùng relative path
+      return avatar
+    }
     // Remove trailing slash from apiHost if exists
     const baseUrl = apiHost.replace(/\/$/, '')
     return `${baseUrl}${avatar}`
@@ -1180,7 +1184,11 @@ const getAvatarUrl = (avatar: string | undefined | null): string | undefined => 
   
   // Otherwise, assume it's a relative path and prepend API base URL
   const config = useRuntimeConfig()
-  const apiHost = config.public.apiHost || 'http://localhost:3000'
+  let apiHost = config.public.apiHost
+  if (!apiHost || apiHost.trim() === '') {
+    // Nếu apiHost rỗng, dùng relative path
+    return `/${avatar}`
+  }
   const baseUrl = apiHost.replace(/\/$/, '')
   return `${baseUrl}/${avatar}`
 }
