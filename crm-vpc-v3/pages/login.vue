@@ -10,8 +10,8 @@
             alt="Van Phuc Care"
             class="lg:hidden logo"
             format="webp"
-            width="150"
-            height="70"
+            width="80"
+            height="62"
             loading="eager"
             fetchpriority="high"
           />
@@ -1097,15 +1097,15 @@ const handleGoogleLogin = async () => {
   }
 
   .login-form-section {
-    width: calc(100% - 32px);
-    left: 16px;
+    width: calc(100% - 20px);
+    left: 10px;
   }
 
   .google-login-section,
   .divider,
   .login-form {
-    width: calc(100% - 32px);
-    left: 16px;
+    width: calc(100% - 20px);
+    left: 10px;
   }
 
   .form-group {

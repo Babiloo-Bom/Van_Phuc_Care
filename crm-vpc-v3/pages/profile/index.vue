@@ -16,9 +16,9 @@
           <img
             :src="avatarPreview || userInfo?.avatar || '/images/avatar-fallback.png'"
             alt="Avatar"
-            class="w-28 h-28 rounded-full mb-4 object-cover"
-            width="112"
-            height="112"
+            class="w-20 h-20 rounded-full mb-4 object-cover"
+            width="80"
+            height="80"
             loading="eager"
             @error="(e: Event) => (e.target as HTMLImageElement).src = '/images/avatar-fallback.png'"
           />
