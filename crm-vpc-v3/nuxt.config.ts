@@ -53,25 +53,8 @@ export default defineNuxtConfig({
           drop_debugger: true
         }
       },
-      rollupOptions: {
-        output: {
-          // Use more conservative chunking to avoid circular dependency issues
-          manualChunks: (id) => {
-            if (id.includes('node_modules')) {
-              // Keep Ant Design together to avoid circular deps
-              if (id.includes('ant-design-vue') || id.includes('@ant-design/icons-vue')) {
-                return 'vendor-antd';
-              }
-              // Separate date utilities
-              if (id.includes('dayjs')) {
-                return 'vendor-dayjs';
-              }
-              // All other vendors in one chunk to avoid initialization issues
-              return 'vendor';
-            }
-          }
-        }
-      },
+      // Let Vite handle chunking automatically to avoid circular dependencies
+      // Vite's automatic chunking is smart enough and avoids initialization issues
       chunkSizeWarningLimit: 1000
     }
   },
