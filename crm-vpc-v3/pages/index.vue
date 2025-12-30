@@ -203,6 +203,7 @@
                   height="96"
                   fetchpriority="high"
                   loading="eager"
+                  decoding="async"
                   @error="(e) => { const t = e.target as HTMLImageElement; if (t) t.src = '/images/baby-default.png' }"
                 />
                 <nuxt-img
@@ -262,6 +263,7 @@
                   height="128"
                   fetchpriority="high"
                   loading="eager"
+                  decoding="async"
                   @error="(e) => { const t = e.target as HTMLImageElement; if (t) t.src = '/images/baby-default.png' }"
                 />
                 <CameraOutlined
@@ -385,12 +387,26 @@
 
             <!-- Vaccination Schedule Tab -->
             <a-tab-pane key="vaccination" tab="Lịch tiêm">
-              <VaccinationSchedule :customer-id="customerId" :health-book-id="healthBook?._id" />
+              <Suspense>
+                <VaccinationSchedule :customer-id="customerId" :health-book-id="healthBook?._id" />
+                <template #fallback>
+                  <div class="flex items-center justify-center py-20">
+                    <a-spin size="large" tip="Đang tải lịch tiêm..." />
+                  </div>
+                </template>
+              </Suspense>
             </a-tab-pane>
 
             <!-- Support Request Tab -->
             <a-tab-pane key="support" tab="Yêu cầu hỗ trợ">
-              <SupportRequestList :customer-id="customerId" />
+              <Suspense>
+                <SupportRequestList :customer-id="customerId" />
+                <template #fallback>
+                  <div class="flex items-center justify-center py-20">
+                    <a-spin size="large" tip="Đang tải yêu cầu hỗ trợ..." />
+                  </div>
+                </template>
+              </Suspense>
             </a-tab-pane>
           </a-tabs>
         </div>
@@ -486,7 +502,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, watch, onMounted, onUnmounted } from "vue";
+import { ref, computed, watch, onMounted, onUnmounted, defineAsyncComponent } from "vue";
 import { UserOutlined, CalendarOutlined, CameraOutlined, EditOutlined, PlusOutlined } from "@ant-design/icons-vue";
 import dayjs, { Dayjs } from "dayjs";
 import { message } from "ant-design-vue";
@@ -494,6 +510,8 @@ import type { HealthBook } from "~/types/api";
 import { useHealthRecordsApi } from "~/composables/api/useHealthRecordsApi";
 import { useHealthBooksApi } from "~/composables/api/useHealthBooksApi";
 import { useAuthStore } from "~/stores/auth";
+
+// Eager load critical components (shown immediately)
 import CreateHealthBookModal from "~/components/health-book/CreateHealthBookModal.vue";
 import CreateHealthRecordModal from "~/components/health-book/CreateHealthRecordModal.vue";
 import HealthMetricsCard from "~/components/health-book/HealthMetricsCard.vue";
@@ -502,13 +520,30 @@ import DigestiveHealthCard from "~/components/health-book/DigestiveHealthCard.vu
 import TemperatureChartCard from "~/components/health-book/TemperatureChartCard.vue";
 import HealthStatusCard from "~/components/health-book/HealthStatusCard.vue";
 import ExerciseMethodCard from "~/components/health-book/ExerciseMethodCard.vue";
-import VaccinationSchedule from "~/components/health-book/VaccinationSchedule.vue";
-import SupportRequestList from "~/components/health-book/SupportRequestList.vue";
+
+// Lazy load heavy tab components (loaded only when tab is activated)
+const VaccinationSchedule = defineAsyncComponent(() => 
+  import("~/components/health-book/VaccinationSchedule.vue")
+);
+const SupportRequestList = defineAsyncComponent(() => 
+  import("~/components/health-book/SupportRequestList.vue")
+);
 
 // Define page meta - No middleware, handle auth in component (for Google OAuth callback)
 definePageMeta({
   layout: "default",
   middleware: [], // Handle auth manually to support Google OAuth callback
+});
+
+// Preload critical images for LCP
+useHead({
+  link: [
+    {
+      rel: 'preconnect',
+      href: 'https://files.vanphuccare.vn',
+      crossorigin: 'anonymous'
+    }
+  ]
 });
 
 const authStore = useAuthStore();

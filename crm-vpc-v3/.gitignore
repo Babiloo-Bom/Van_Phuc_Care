@@ -33,3 +33,7 @@ lerna-debug.log*
 # Vite
 vite.config.js.timestamp-*
 vite.config.ts.timestamp-*
+
+# Lighthouse reports
+lighthouse-reports/
+*.lighthouse.html

@@ -46,24 +46,38 @@ export default defineNuxtConfig({
     },
     build: {
       cssCodeSplit: true,
+      minify: 'terser',
+      terserOptions: {
+        compress: {
+          drop_console: true, // Remove console.log in production
+          drop_debugger: true
+        }
+      },
       rollupOptions: {
         output: {
-          // Temporarily disable manual chunks to fix initialization order issues
-          // manualChunks: (id) => {
-          //   // Split vendor chunks more aggressively
-          //   if (id.includes('node_modules')) {
-          //     if (id.includes('ant-design-vue')) {
-          //       return 'vendor-antd';
-          //     }
-          //     if (id.includes('dayjs')) {
-          //       return 'vendor-dayjs';
-          //     }
-          //     if (id.includes('@ant-design/icons-vue')) {
-          //       return 'vendor-icons';
-          //     }
-          //     return 'vendor-other';
-          //   }
-          // }
+          manualChunks: (id) => {
+            // Split vendor chunks more aggressively for better caching
+            if (id.includes('node_modules')) {
+              // Ant Design - Large library, separate chunk
+              if (id.includes('ant-design-vue')) {
+                return 'vendor-antd';
+              }
+              // Icons - Often used across pages
+              if (id.includes('@ant-design/icons-vue')) {
+                return 'vendor-icons';
+              }
+              // Date library
+              if (id.includes('dayjs')) {
+                return 'vendor-dayjs';
+              }
+              // Chart library if used
+              if (id.includes('chart.js') || id.includes('echarts')) {
+                return 'vendor-charts';
+              }
+              // Other vendors
+              return 'vendor';
+            }
+          }
         }
       },
       chunkSizeWarningLimit: 1000
@@ -156,7 +170,13 @@ export default defineNuxtConfig({
   // Nitro config for caching
   nitro: {
     compressPublicAssets: true,
+    minify: true,
     routeRules: {
+      '/_nuxt/**': { 
+        headers: { 
+          'Cache-Control': 'public, max-age=31536000, immutable' 
+        } 
+      },
       '/images/**': { 
         headers: { 
           'Cache-Control': 'public, max-age=31536000, immutable' 
@@ -166,6 +186,12 @@ export default defineNuxtConfig({
         headers: { 
           'Cache-Control': 'public, max-age=31536000, immutable' 
         } 
+      },
+      // Add cache for API responses where appropriate
+      '/api/**': {
+        headers: {
+          'Cache-Control': 'no-cache, no-store, must-revalidate'
+        }
       }
     }
   }
