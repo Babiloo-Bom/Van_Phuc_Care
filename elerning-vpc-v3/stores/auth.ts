@@ -363,6 +363,28 @@ export const useAuthStore = defineStore("auth", {
     },
 
     /**
+     * Verify OTP for password reset
+     */
+    async verifyOtp(email: string, otp: string) {
+      this.isLoading = true;
+
+      try {
+        const authApi = useAuthApi();
+
+        const result = await authApi.verifyOtp(email, otp);
+
+        return { success: true, data: result };
+      } catch (error: any) {
+        return { 
+          success: false, 
+          error: error.data?.message || error.message || 'Mã OTP không hợp lệ hoặc đã hết hạn'
+        }
+      } finally {
+        this.isLoading = false;
+      }
+    },
+
+    /**
      * Reset password with token
      * Migrated from admin-vpc/components/auth/forms/NewPassword.vue
      */

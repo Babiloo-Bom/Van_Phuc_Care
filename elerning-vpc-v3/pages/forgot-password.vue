@@ -145,6 +145,8 @@ const handleSubmit = async () => {
 
 const handleSuccessConfirm = () => {
   showSuccessModal.value = false;
+  // User needs to check email and click the reset link there
+  // Link in email will have both email and OTP parameters
   navigateTo("/login");
 };
 

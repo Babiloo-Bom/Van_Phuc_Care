@@ -157,11 +157,9 @@ const handleSubmit = async () => {
 
 const handleSuccessConfirm = () => {
   showSuccessModal.value = false;
-  // Redirect to reset-password page with email as query param
-  navigateTo({
-    path: "/reset-password",
-    query: { email: form.emailOrPhone },
-  });
+  // User needs to check email and click the reset link there
+  // Link in email will have both email and OTP parameters
+  navigateTo("/login");
 };
 
 const handleSuccessClose = () => {

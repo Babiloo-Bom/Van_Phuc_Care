@@ -336,18 +336,42 @@ export const useAuthApi = () => {
     },
 
     /**
+     * Verify OTP for password reset
+     * @param email User email
+     * @param otp OTP code
+     */
+    async verifyOtp(email: string, otp: string) {
+      try {
+        return await withRetry(() =>
+          fetchWithTimeout(`${apiBase}/sessions/verify_otp`, {
+            method: "POST",
+            body: {
+              email,
+              otp,
+            },
+          })
+        );
+      } catch (error: any) {
+        throw transformError(error);
+      }
+    },
+
+    /**
      * Reset password with token
+     * @param email User email
      * @param token Token from OTP verification
      * @param newPassword New password
      */
-    async resetPassword(token: string, newPassword: string) {
+    async resetPassword(email: string, token: string, newPassword: string) {
       try {
         return await withRetry(() =>
-          fetchWithTimeout(`${apiBase}/passwords/reset`, {
+          fetchWithTimeout(`${apiBase}/sessions/reset_password`, {
             method: "POST",
             body: {
+              email,
               token,
-              password: newPassword,
+              newPassword,
+              confirmPassword: newPassword,
             },
           })
         );
