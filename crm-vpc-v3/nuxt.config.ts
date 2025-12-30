@@ -132,12 +132,10 @@ export default defineNuxtConfig({
       ],
       link: [
         { rel: 'icon', type: 'image/x-icon', href: '/favicon.ico' },
-        // Preload critical fonts for faster render
-        { rel: 'preload', href: '/fonts/SVN-Gilroy Regular.otf', as: 'font', type: 'font/otf', crossorigin: 'anonymous' },
-        { rel: 'preload', href: '/fonts/SVN-Gilroy Medium.otf', as: 'font', type: 'font/otf', crossorigin: 'anonymous' },
-        { rel: 'preload', href: '/fonts/SVN-Gilroy Bold.otf', as: 'font', type: 'font/otf', crossorigin: 'anonymous' },
-        // Preload LCP image
-        { rel: 'preload', href: '/images/baby-default.png', as: 'image', fetchpriority: 'high' }
+        // Only preload the most critical font (Regular - used most frequently above the fold)
+        { rel: 'preload', href: '/fonts/SVN-Gilroy Regular.otf', as: 'font', type: 'font/otf', crossorigin: 'anonymous' }
+        // Note: Medium & Bold fonts will load on-demand (font-display: swap handles this)
+        // Note: baby-default.png removed - only shown as fallback, not always needed
       ]
     }
   },
