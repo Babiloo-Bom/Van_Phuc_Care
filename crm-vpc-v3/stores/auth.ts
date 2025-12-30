@@ -409,13 +409,13 @@ export const useAuthStore = defineStore('auth', {
      * Forgot password - Send OTP
      * Migrated from admin-vpc/components/auth/forms/GetOtp.vue
      */
-    async forgotPassword(email: string) {
+    async forgotPassword(email: string, source?: string) {
       this.isLoading = true;
 
       try {
         const authApi = useAuthApi();
 
-        await authApi.forgotPassword(email);
+        await authApi.forgotPassword(email, source || 'crm');
 
         return { success: true };
       } catch (error: any) {

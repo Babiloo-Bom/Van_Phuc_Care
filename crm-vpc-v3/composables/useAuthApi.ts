@@ -316,13 +316,18 @@ export const useAuthApi = () => {
     /**
      * Forgot password - Send OTP to email
      * @param email Email
+     * @param source Source application (crm, admin, elearning)
      */
-    async forgotPassword(email: string) {
+    async forgotPassword(email: string, source?: string) {
       try {
+        // Call Nuxt server API instead of directly calling backend
         return await withRetry(() =>
-          fetchWithTimeout(`${apiBase}/passwords/forgot_password`, {
+          fetchWithTimeout(`/api/auth/forgot-password`, {
             method: "POST",
-            body: { email },
+            body: { 
+              email,
+              source: source || 'crm'
+            },
           })
         );
       } catch (error: any) {
