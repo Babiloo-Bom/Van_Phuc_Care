@@ -157,8 +157,8 @@
               class=""
             />
           </div>
-          <div v-else class="">
-            <a-empty descriptions="Chưa có khóa học nào" />
+          <div v-else>
+            <a-empty descriptions="Chưa có khóa học nào" class="flex flex-col items-center"/>
           </div>
         </div>
         <div
@@ -394,7 +394,7 @@ const handleAddToCart = async (course: any) => {
   }
 
   try {
-    await cartStore.addToCart({ courseId: course._id, quantity: 1, userId: String(authStore.user?.id) || "" }, '/register')
+    await cartStore.addToCart({ courseId: course._id, quantity: 1, userId: String(authStore.user?.id) || "" })
   } catch (error: any) {
     const msg = error?.data?.message || error?.message || ""
     if (msg.toLowerCase().includes("already in cart") || msg.includes("trong giỏ")) {
@@ -407,7 +407,7 @@ const handleAddToCart = async (course: any) => {
 
 const handleBuyNow = async (course: any) => {
   try {
-    await cartStore.addToCart({ courseId: course._id, quantity: 1, userId: String(authStore.user?.id) || "" }, '/register')
+    await cartStore.addToCart({ courseId: course._id, quantity: 1, userId: String(authStore.user?.id) || "" })
     navigateTo('/cart')
   } catch (error: any) {
     const msg = error?.data?.message || error?.message || ""

@@ -108,7 +108,7 @@
             />
           </div>
           <div v-else class="pt-20 sm:pt-0">
-            <a-empty description="Bạn chưa có khóa học nào" />
+            <a-empty class="flex flex-col items-center" description="Bạn chưa có khóa học nào" />
           </div>
         </div>
         <div

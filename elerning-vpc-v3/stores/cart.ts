@@ -162,7 +162,7 @@ export const useCartStore = defineStore("cart", {
 
         if (!authStore.isLoggedIn || !authStore.user?.id) {
           await navigateTo(redirectUrl || "/login");
-          return;
+          throw new Error("User not logged in");
         }
 
         // Validate courseId

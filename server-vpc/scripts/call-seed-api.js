@@ -17,8 +17,10 @@ async function seedCourses() {
 
     if (response.ok) {
       const result = await response.json();
+      console.log('✅ Seed successful:', result);
     } else {
       const error = await response.text();
+    }
   } catch (error) {
     console.log('❌ Network error:', error.message);
   }
