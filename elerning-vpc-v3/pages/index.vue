@@ -547,7 +547,7 @@ const getProgress = (courseId: string) => {
 // Cart handlers
 const handleAddToCart = async (course: any) => {
   try {
-    await cartStore.addToCart({ courseId: course._id, quantity: 1, userId: String(authStore.user?.id) || "" })
+    await cartStore.addToCart({ courseId: course._id, quantity: 1, userId: String(authStore.user?.id) || "" }, '/register')
     message.success("Đã thêm vào giỏ hàng");
   } catch (error: any) {
     const msg = error?.data?.message || error?.message || "";
@@ -562,14 +562,13 @@ const handleAddToCart = async (course: any) => {
 const handleBuyNow = async (course: any) => {
   try {
     // Add to cart first
-    await cartStore.addToCart({ courseId: course._id, quantity: 1, userId: String(authStore.user?.id) || "" });
+    await cartStore.addToCart({ courseId: course._id, quantity: 1, userId: String(authStore.user?.id) || "" }, '/register');
     // Navigate to checkout
     navigateTo("/cart");
   } catch (error: any) {
     const msg = error?.data?.message || error?.message || "";
     if (msg.toLowerCase().includes("already in cart") || msg.includes("trong giỏ")) {
       message.warning("Khóa học đã tồn tại trong giỏ hàng");
-      navigateTo("/cart");
     } else {
       message.error("Không thể mua ngay lúc này");
     }

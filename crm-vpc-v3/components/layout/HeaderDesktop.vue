@@ -61,7 +61,7 @@
             :src="userAvatar"
             :alt="userName"
             class="w-10 h-10 rounded-full object-cover border-2 border-gray-200"
-            @error="(e) => (e.target as HTMLImageElement).src = '/images/avatar-fallback.png'"
+            @error="handleAvatarError"
           />
           <div class="flex flex-col gap-0.5">
             <div class="text-sm font-semibold text-gray-900 whitespace-nowrap">{{ userName }}</div>
@@ -137,6 +137,7 @@ const authStore = useAuthStore();
 const searchQuery = ref("");
 const showUserMenu = ref(false);
 const unreadNotifications = ref(3);
+const avatarLoadError = ref(false);
 
 // User data
 const userName = computed(() => authStore.user?.fullname || authStore.user?.name || "User");
@@ -189,6 +190,17 @@ onUnmounted(() => {
 });
 
 // Methods
+const handleAvatarError = (e: Event) => {
+  const img = e.target as HTMLImageElement;
+  if (!avatarLoadError.value) {
+    avatarLoadError.value = true;
+    img.src = '/images/avatar-fallback.png';
+  } else {
+    // Use a base64 placeholder if fallback also fails
+    img.src = 'data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 48 48"%3E%3Crect width="48" height="48" fill="%23e5e7eb"/%3E%3Cpath d="M24 24c3.3 0 6-2.7 6-6s-2.7-6-6-6-6 2.7-6 6 2.7 6 6 6zm0 3c-4 0-12 2-12 6v3h24v-3c0-4-8-6-12-6z" fill="%239ca3af"/%3E%3C/svg%3E';
+  }
+};
+
 const handleSearch = () => {
   // TODO: Implement search logic
   console.log("Search:", searchQuery.value);
