@@ -409,13 +409,13 @@ export const useAuthStore = defineStore('auth', {
      * Forgot password - Send OTP
      * Migrated from admin-vpc/components/auth/forms/GetOtp.vue
      */
-    async forgotPassword(email: string) {
+    async forgotPassword(email: string, source?: string) {
       this.isLoading = true;
 
       try {
         const authApi = useAuthApi();
 
-        await authApi.forgotPassword(email);
+        await authApi.forgotPassword(email, source || 'crm');
 
         return { success: true };
       } catch (error: any) {
@@ -430,16 +430,38 @@ export const useAuthStore = defineStore('auth', {
     },
 
     /**
-     * Reset password with token
-     * Migrated from admin-vpc/components/auth/forms/NewPassword.vue
+     * Verify OTP for password reset
      */
-    async resetPassword(token: string, newPassword: string) {
+    async verifyOtp(email: string, otp: string) {
       this.isLoading = true;
 
       try {
         const authApi = useAuthApi();
 
-        await authApi.resetPassword(token, newPassword);
+        const result = await authApi.verifyOtp(email, otp);
+
+        return { success: true, data: result };
+      } catch (error: any) {
+        return { 
+          success: false, 
+          error: error.data?.message || error.message || 'Mã OTP không hợp lệ hoặc đã hết hạn'
+        }
+      } finally {
+        this.isLoading = false;
+      }
+    },
+
+    /**
+     * Reset password with token
+     * Migrated from admin-vpc/components/auth/forms/NewPassword.vue
+     */
+    async resetPassword(email: string, token: string, newPassword: string) {
+      this.isLoading = true;
+
+      try {
+        const authApi = useAuthApi();
+
+        await authApi.resetPassword(email, token, newPassword);
 
         return { success: true };
       } catch (error: any) {

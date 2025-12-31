@@ -196,14 +196,14 @@
                     
                     <div v-if="appliedCoupon" class="flex justify-between items-center">
                       <span class="text-sm sm:text-base text-gray-600">Mã ưu đãi</span>
-                      <span class="text-sm sm:text-base font-semibold text-gray-900">
+                      <span class="text-sm sm:text-base font-semibold text-[#F48284]">
                         {{ discountAmount > 0 ? '-' + discountAmount.toLocaleString('vi-VN') : '0' }} Đ
                       </span>
                     </div>
                     
                     <div class="flex justify-between items-center">
                       <span class="text-sm sm:text-base text-gray-600">VAT</span>
-                      <span class="text-sm sm:text-base font-semibold text-gray-900">{{ vatPrice.toLocaleString('vi-VN') }} Đ</span>
+                      <span class="text-sm sm:text-base font-semibold text-[#27C840]">{{'+' + vatPrice.toLocaleString('vi-VN') }} Đ</span>
                     </div>
 
                     <div class="flex justify-between items-center pt-3 border-t border-gray-200">
@@ -238,7 +238,7 @@
                     <img src="../public/images/svg/vnpay.svg" alt="Zalo pay" class="w-10 h-10" />
                   </a-button>
                   
-                  <a-button 
+                  <!-- <a-button 
                     type="primary"
                     size="large"
                     class="w-full !bg-[#00CF6A] hover:!bg-green-600 !h-12 sm:!h-14 !text-white !border-green-500 !text-base sm:!text-base !font-semibold !rounded-lg !flex !items-center !justify-center !gap-2"
@@ -259,7 +259,7 @@
                   >
                     <span v-if="!isProcessingOrder">By Pass</span>
                     <span v-else>Đang xử lý...</span>
-                  </a-button>
+                  </a-button> -->
                 </div>
               </div>
             </div>

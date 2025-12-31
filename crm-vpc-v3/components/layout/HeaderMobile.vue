@@ -35,7 +35,7 @@
             :src="userAvatar" 
             :alt="userName" 
             class="w-12 h-12 rounded-full object-cover border-2 border-white"
-            @error="(e) => (e.target as HTMLImageElement).src = '/images/avatar-fallback.png'"
+            @error="handleAvatarError"
           />
           <div class="flex-1 min-w-0">
             <div class="text-[15px] font-semibold text-white whitespace-nowrap overflow-hidden text-ellipsis">{{ userName }}</div>
@@ -109,6 +109,7 @@ const config = useRuntimeConfig();
 // State
 const isMenuOpen = ref(false);
 const menuItems = MENU_ITEMS;
+const avatarLoadError = ref(false);
 
 // Elearning Base URL
 const elearningBaseUrl = computed(() => config.public.baseUrlElearning || 'https://edu.vanphuccare.vn');
@@ -164,6 +165,17 @@ onUnmounted(() => {
 });
 
 // Methods
+const handleAvatarError = (e: Event) => {
+  const img = e.target as HTMLImageElement;
+  if (!avatarLoadError.value) {
+    avatarLoadError.value = true;
+    img.src = '/images/avatar-fallback.png';
+  } else {
+    // Use a base64 placeholder if fallback also fails
+    img.src = 'data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 48 48"%3E%3Crect width="48" height="48" fill="%23e5e7eb"/%3E%3Cpath d="M24 24c3.3 0 6-2.7 6-6s-2.7-6-6-6-6 2.7-6 6 2.7 6 6 6zm0 3c-4 0-12 2-12 6v3h24v-3c0-4-8-6-12-6z" fill="%239ca3af"/%3E%3C/svg%3E';
+  }
+};
+
 const toggleMenu = () => {
   isMenuOpen.value = !isMenuOpen.value;
   if (isMenuOpen.value) {
