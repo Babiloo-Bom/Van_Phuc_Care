@@ -33,25 +33,6 @@
 
       <!-- Right Section -->
       <div class="flex items-center gap-4 relative">
-        <!-- Notification Icon -->
-        <button
-          class="relative w-11 h-11 rounded-xl bg-white flex items-center justify-center text-gray-500 hover:bg-gray-50 hover:border-blue-500 hover:text-blue-500 transition-all"
-          @click="toggleNotifications"
-        >
-          <svg xmlns="http://www.w3.org/2000/svg" width="24" height="26" viewBox="0 0 24 26" fill="none">
-            <path
-              d="M22.5 13.5C23.3284 13.5 24 14.1716 24 15V16.5C24 17.3284 23.3284 18 22.5 18H1.5C0.671573 18 2.41598e-08 17.3284 0 16.5V15C0 14.1716 0.671573 13.5 1.5 13.5H4.5L5.55566 4.00293C5.80895 1.72419 7.73459 0.000174713 10.0273 0H13.9727C16.2654 0.000174713 18.1911 1.72419 18.4443 4.00293L19.5 13.5H22.5Z"
-              fill="#4880FF"
-            />
-            <rect opacity="0.3" x="9" y="19.5" width="6" height="6" rx="2.25" fill="#FF0000" />
-          </svg>
-          <span
-            v-if="unreadNotifications > 0"
-            class="absolute top-0.5 right-0.5 w-[18px] h-[18px] bg-red-500 text-white rounded-full text-[10px] font-semibold flex items-center justify-center border-2 border-white"
-            >{{ unreadNotifications }}</span
-          >
-        </button>
-
         <!-- User Profile -->
         <div
           class="user-profile flex items-center gap-3 px-3 py-2 rounded-xl cursor-pointer hover:bg-gray-50 transition-all"
@@ -136,7 +117,6 @@ const authStore = useAuthStore();
 // State
 const searchQuery = ref("");
 const showUserMenu = ref(false);
-const unreadNotifications = ref(3);
 
 // User data
 const userName = computed(() => authStore.user?.fullname || authStore.user?.name || "User");
@@ -192,11 +172,6 @@ onUnmounted(() => {
 const handleSearch = () => {
   // TODO: Implement search logic
   console.log("Search:", searchQuery.value);
-};
-
-const toggleNotifications = () => {
-  // TODO: Implement notifications
-  console.log("Toggle notifications");
 };
 
 const toggleUserMenu = () => {
