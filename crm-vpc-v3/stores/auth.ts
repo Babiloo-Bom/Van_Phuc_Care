@@ -153,6 +153,7 @@ export const useAuthStore = defineStore('auth', {
         console.log('[Login] Set justLoggedIn flag, timestamp:', this.loginTimestamp);
         
         // Clear any leftover logout sync cookie when logging in
+        // Set SSO cookie to sync login with other sites
         if (process.client) {
           try {
             const { clearLogoutSyncCookie } = await import('~/utils/authSync');
@@ -160,6 +161,14 @@ export const useAuthStore = defineStore('auth', {
             console.log('[Login] Cleared logout sync cookie');
           } catch (e) {
             console.warn('[Login] Failed to clear logout sync cookie:', e);
+          }
+          
+          try {
+            const { setSSOCookie } = await import('~/utils/sso');
+            setSSOCookie(token);
+            console.log('[Login] Set SSO cookie for cross-site login sync');
+          } catch (e) {
+            console.warn('[Login] Failed to set SSO cookie:', e);
           }
         }
         
@@ -376,6 +385,15 @@ export const useAuthStore = defineStore('auth', {
             const { clearLogoutSyncCookie } = await import('~/utils/authSync');
             clearLogoutSyncCookie();
             console.log('[VerifyEmail] Cleared logout sync cookie');
+            
+            // Set SSO cookie to sync login with other sites
+            try {
+              const { setSSOCookie } = await import('~/utils/sso');
+              setSSOCookie(responseData.accessToken);
+              console.log('[VerifyEmail] Set SSO cookie for cross-site login sync');
+            } catch (e) {
+              console.warn('[VerifyEmail] Failed to set SSO cookie:', e);
+            }
           }
           
           // Fetch full user profile
@@ -856,6 +874,7 @@ export const useAuthStore = defineStore('auth', {
         console.log('[Google Login] Set justLoggedIn flag, timestamp:', this.loginTimestamp);
         
         // Clear any leftover logout sync cookie when logging in
+        // Set SSO cookie to sync login with other sites
         if (process.client) {
           try {
             const { clearLogoutSyncCookie } = await import('~/utils/authSync');
@@ -863,6 +882,14 @@ export const useAuthStore = defineStore('auth', {
             console.log('[Google Login] Cleared logout sync cookie');
           } catch (e) {
             console.warn('[Google Login] Failed to clear logout sync cookie:', e);
+          }
+          
+          try {
+            const { setSSOCookie } = await import('~/utils/sso');
+            setSSOCookie(accessToken);
+            console.log('[Google Login] Set SSO cookie for cross-site login sync');
+          } catch (e) {
+            console.warn('[Google Login] Failed to set SSO cookie:', e);
           }
         }
         

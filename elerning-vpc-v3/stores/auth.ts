@@ -129,6 +129,15 @@ export const useAuthStore = defineStore("auth", {
           const { clearLogoutSyncCookie } = await import('~/utils/authSync');
           clearLogoutSyncCookie();
           console.log('[Login] Cleared logout sync cookie');
+          
+          // Set SSO cookie to sync login with other sites
+          try {
+            const { setSSOCookie } = await import('~/utils/sso');
+            await setSSOCookie(token);
+            console.log('[Login] Set SSO cookie for cross-site login sync');
+          } catch (e) {
+            console.warn('[Login] Failed to set SSO cookie:', e);
+          }
         }
 
         return { success: true, user: this.user, token };
@@ -180,6 +189,15 @@ export const useAuthStore = defineStore("auth", {
           localStorage.setItem("auth_token", token);
           localStorage.setItem("token_expire_at", this.tokenExpireAt || "");
           localStorage.setItem("user", JSON.stringify(this.user));
+          
+          // Set SSO cookie to sync login with other sites
+          try {
+            const { setSSOCookie } = await import('~/utils/sso');
+            await setSSOCookie(token);
+            console.log('[LoginAfterVerify] Set SSO cookie for cross-site login sync');
+          } catch (e) {
+            console.warn('[LoginAfterVerify] Failed to set SSO cookie:', e);
+          }
         }
 
         return { success: true, user: this.user, token };
@@ -815,6 +833,15 @@ export const useAuthStore = defineStore("auth", {
             const { clearLogoutSyncCookie } = await import('~/utils/authSync');
             clearLogoutSyncCookie();
             console.log('[Google Login] Cleared logout sync cookie');
+            
+            // Set SSO cookie to sync login with other sites
+            try {
+              const { setSSOCookie } = await import('~/utils/sso');
+              await setSSOCookie(accessToken);
+              console.log('[Google Login] Set SSO cookie for cross-site login sync');
+            } catch (e) {
+              console.warn('[Google Login] Failed to set SSO cookie:', e);
+            }
           }
 
         return { success: true };
