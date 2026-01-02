@@ -102,7 +102,8 @@ export default defineNuxtConfig({
         { name: 'description', content: 'Nền tảng học trực tuyến hàng đầu Việt Nam với các khóa học chất lượng cao' }
       ],
       link: [
-        { rel: 'icon', type: 'image/x-icon', href: '/favicon.ico' }
+        { rel: 'icon', type: 'image/png', href: '/images/logo_van_phuc.png' },
+        { rel: 'apple-touch-icon', href: '/images/logo_van_phuc.png' }
       ]
     }
   }

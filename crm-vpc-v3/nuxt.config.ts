@@ -131,7 +131,8 @@ export default defineNuxtConfig({
         { name: 'description', content: 'Van Phuc Care CRM Portal' }
       ],
       link: [
-        { rel: 'icon', type: 'image/x-icon', href: '/favicon.ico' },
+        { rel: 'icon', type: 'image/png', href: '/images/logo_van_phuc.png' },
+        { rel: 'apple-touch-icon', href: '/images/logo_van_phuc.png' },
         // Only preload the most critical font (Regular - used most frequently above the fold)
         { rel: 'preload', href: '/fonts/SVN-Gilroy Regular.otf', as: 'font', type: 'font/otf', crossorigin: 'anonymous' }
         // Note: Medium & Bold fonts will load on-demand (font-display: swap handles this)
