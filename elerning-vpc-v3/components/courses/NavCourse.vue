@@ -157,10 +157,14 @@ interface Chapter {
 
 interface Props {
   chapters?: Chapter[]
+  forceReviewMode?: boolean // Khi true, luôn thêm review=true khi navigate (dùng cho trang chứng nhận)
+  courseSlug?: string // Slug của khóa học, dùng khi NavCourse không nằm trong route có slug
 }
 
-withDefaults(defineProps<Props>(), {
+const props = withDefaults(defineProps<Props>(), {
   chapters: () => [],
+  forceReviewMode: false,
+  courseSlug: '',
 })
 
 const route = useRoute()
@@ -269,16 +273,18 @@ const handleLessonClick = (chapterIndex: number, lessonIndex: number) => {
     }
   }
   
-  const slug = route.params.slug
+  // Ưu tiên lấy slug từ prop, nếu không có thì lấy từ route
+  const slug = props.courseSlug || route.params.slug
   
   // Nếu URL hiện tại đang ở chế độ review (đi vào từ nút Review / Xem lại)
+  // hoặc forceReviewMode=true (dùng trong trang chứng nhận)
   // thì giữ lại review=true. Còn lại (đang học bình thường) thì KHÔNG set review,
   // để hệ thống vẫn tính tiến độ như bình thường khi nhảy cóc.
   const queryParams: any = {
     chapter: chapterIndex.toString(),
     lesson: lessonIndex.toString()
   }
-  if (route.query.review === 'true') {
+  if (route.query.review === 'true' || props.forceReviewMode) {
     queryParams.review = 'true'
   }
   
@@ -308,15 +314,16 @@ const handleQuizClick = (chapterIndex: number, lessonIndex: number, lesson: any)
     }
   }
   
-  const slug = route.params.slug
+  // Ưu tiên lấy slug từ prop, nếu không có thì lấy từ route
+  const slug = props.courseSlug || route.params.slug
   
-  // Tương tự lesson: chỉ giữ review=true nếu đang ở chế độ review sẵn
+  // Tương tự lesson: giữ review=true nếu đang ở chế độ review sẵn hoặc forceReviewMode
   const queryParams: any = {
     chapter: chapterIndex.toString(),
     lesson: lessonIndex.toString(),
     quiz: 'true'
   }
-  if (route.query.review === 'true') {
+  if (route.query.review === 'true' || props.forceReviewMode) {
     queryParams.review = 'true'
   }
   

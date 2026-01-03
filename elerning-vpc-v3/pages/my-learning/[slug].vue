@@ -370,7 +370,11 @@
         <div
           :class="['hidden lg:block lg:w-[35%] lg:sticky lg:top-6 lg:self-start', isQuiz && !currentLesson?.isCompleted ? '!hidden' : '']"
         >
-          <NavCourse :chapters="((course?.chapters || []) as any)" />
+          <NavCourse 
+            :chapters="((course?.chapters || []) as any)" 
+            :force-review-mode="showCertificate"
+            :course-slug="course?.slug || ''"
+          />
         </div>
       </div>
     </div>
