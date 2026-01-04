@@ -74,14 +74,14 @@
                 </div>
 
                 <!-- Video Element với chặn tải xuống và context menu -->
-                <!-- Stream trực tiếp từ proxy - token ẩn URL gốc -->
+                <!-- Stream qua HLS (hls.js) để stream theo chunks - chống download tốt hơn -->
+                <!-- CHỈ render khi video ready và component đã mounted để tránh hydration mismatch -->
                 <video
-                  v-if="currentVideoUrl && !videoTokenLoading"
+                  v-if="isMounted && currentVideoUrl && !videoTokenLoading && videoReady"
                   ref="videoRef"
-                  :src="currentVideoUrl"
                   :poster="currentThumbnail || undefined"
                   class="w-full h-full object-cover video-element"
-                  preload="metadata"
+                  preload="none"
                   playsinline
                   controlslist="nodownload noplaybackrate"
                   disablePictureInPicture
@@ -96,7 +96,7 @@
                 
                 <!-- Watermark Overlay -->
                 <div
-                  v-if="currentVideoUrl && !videoTokenLoading"
+                  v-if="isMounted && currentVideoUrl && !videoTokenLoading && videoReady"
                   class="absolute top-4 right-4 pointer-events-none select-none"
                   style="user-select: none; -webkit-user-select: none;"
                 >
@@ -105,16 +105,20 @@
                   </div>
                 </div>
 
-                <!-- Thumbnail với nút Play (nếu chưa có currentVideoUrl và không đang loading) -->
+                <!-- Thumbnail với nút Play (nếu có video nhưng chưa click play) -->
                 <div
-                  v-else-if="currentThumbnail && !videoTokenLoading"
+                  v-else-if="hasVideo && !videoTokenLoading"
                   class="relative w-full h-full"
                 >
+                  <!-- Hiển thị thumbnail nếu có -->
                   <img
+                    v-if="currentThumbnail"
                     :src="currentThumbnail"
-                    :alt="currentLesson.title"
+                    :alt="currentLesson?.title || 'Video'"
                     class="w-full h-full object-cover"
                   />
+                  <!-- Background đen nếu không có thumbnail -->
+                  <div v-else class="w-full h-full bg-gray-900"></div>
                   <!-- Play Button Overlay -->
                   <div
                     class="absolute inset-0 flex items-center justify-center bg-black bg-opacity-30 cursor-pointer hover:bg-opacity-40 transition-all"
@@ -136,9 +140,9 @@
                   </div>
                 </div>
 
-                <!-- Placeholder nếu không có video và thumbnail -->
+                <!-- Placeholder nếu không có video -->
                 <div
-                  v-else
+                  v-else-if="!hasVideo"
                   class="w-full h-full bg-gray-800 flex items-center justify-center"
                 >
                   <div class="text-center text-white">
@@ -168,7 +172,7 @@
 
                 <!-- Custom Controls -->
                 <div
-                  v-if="currentVideoUrl"
+                  v-if="isMounted && currentVideoUrl && videoReady"
                   class="absolute inset-x-0 bottom-0 bg-black bg-opacity-60 px-4 py-3 flex items-center gap-3"
                 >
                   <!-- Play / Pause -->
@@ -406,6 +410,8 @@ import ProgressBar from "~/components/common/ProgressBar.vue";
 import type { Course, Chapter, Lesson } from "~/stores/courses";
 import { useProgressTracking } from "~/composables/useProgressTracking";
 import { useApiBase } from "~/composables/useApiBase";
+// @ts-ignore - hls.js types
+import Hls from 'hls.js';
 
 definePageMeta({
   middleware: "auth",
@@ -420,6 +426,17 @@ const { apiUser } = useApiBase();
 // State for video proxy
 const videoToken = ref<string | null>(null);
 const videoTokenLoading = ref(false);
+let tokenRefreshInterval: ReturnType<typeof setInterval> | null = null;
+const TOKEN_EXPIRY_SECONDS = 300; // Token hết hạn sau 5 phút (revert về 5 phút vì dùng DevTools detection)
+const TOKEN_REFRESH_INTERVAL = 240000; // Refresh token mỗi 4 phút (trước khi hết hạn 1 phút)
+
+// Chỉ lấy token khi user click play - ẩn video URL khỏi Cốc Cốc
+const userClickedPlay = ref(false);
+const videoReady = ref(false); // Chỉ set video src khi ready (delay để tránh Cốc Cốc)
+let hlsInstance: Hls | null = null; // HLS instance để stream video theo chunks
+
+// Client-side mounted flag để tránh hydration mismatch
+const isMounted = ref(false);
 
 // State
 const loading = ref(false);
@@ -516,11 +533,16 @@ const hasVideo = computed(() => {
 });
 
 // Get video URL - Stream trực tiếp từ proxy (token ẩn URL gốc)
-// Cốc Cốc chỉ thấy /api/u/video/stream/:token, không thấy URL R2/Pexels gốc
+// CHỈ tạo URL khi user click play VÀ video ready - ẩn URL khỏi Cốc Cốc
 const currentVideoUrl = computed(() => {
+  // CHỈ tạo video URL khi user đã click play VÀ video ready - ẩn URL khỏi Cốc Cốc
+  if (!userClickedPlay.value || !videoReady.value) {
+    return null; // Không có URL cho đến khi user click play và video ready
+  }
+
   if (!currentLesson.value || !hasVideo.value) return null;
 
-  // Stream trực tiếp từ proxy - token đã ẩn URL gốc
+  // Tất cả video (HLS và MP4) đều stream qua proxy để tránh CORS và ẩn URL gốc
   if (videoToken.value) {
     return `${apiUser}/video/stream/${videoToken.value}`;
   }
@@ -582,11 +604,103 @@ const downloadDocument = (docType: string) => {
   // TODO: Implement document download
 };
 
-const playVideo = () => {
-  if (videoRef.value) {
-    videoRef.value.play();
+// Load video - HLS hoặc MP4
+const loadVideoWithHls = async () => {
+  if (!videoRef.value || !currentVideoUrl.value) return;
+
+  // Cleanup previous HLS instance
+  if (hlsInstance) {
+    hlsInstance.destroy();
+    hlsInstance = null;
+  }
+
+  // Check if video is HLS format
+  const firstVideo = currentLesson.value?.videos?.[0];
+  const isHls = firstVideo?.isHls || currentVideoUrl.value.endsWith('.m3u8') || false;
+
+  if (isHls) {
+    // HLS: Use hls.js to load HLS manifest (.m3u8)
+    if (Hls.isSupported()) {
+      hlsInstance = new Hls({
+        enableWorker: true,
+        lowLatencyMode: false,
+        backBufferLength: 90,
+        xhrSetup: (xhr: XMLHttpRequest, url: string) => {
+          xhr.withCredentials = false;
+        },
+        fragLoadingTimeOut: 20000,
+        manifestLoadingTimeOut: 10000,
+      });
+
+      // Load HLS manifest
+      hlsInstance.loadSource(currentVideoUrl.value);
+      hlsInstance.attachMedia(videoRef.value);
+
+      hlsInstance.on(Hls.Events.MANIFEST_PARSED, () => {
+        // Video ready to play
+        if (videoRef.value) {
+          videoRef.value.play().catch(console.error);
+          playerState.value.playing = true;
+        }
+      });
+
+      hlsInstance.on(Hls.Events.ERROR, (event: string, data: any) => {
+        console.error('HLS error:', data);
+        if (data.fatal) {
+          switch (data.type) {
+            case Hls.ErrorTypes.NETWORK_ERROR:
+              hlsInstance?.startLoad();
+              break;
+            case Hls.ErrorTypes.MEDIA_ERROR:
+              hlsInstance?.recoverMediaError();
+              break;
+            default:
+              hlsInstance?.destroy();
+              hlsInstance = null;
+              break;
+          }
+        }
+      });
+    } else if (videoRef.value.canPlayType('application/vnd.apple.mpegurl')) {
+      // Safari native HLS support
+      videoRef.value.src = currentVideoUrl.value;
+      videoRef.value.play().catch(console.error);
+      playerState.value.playing = true;
+    } else {
+      console.error('HLS is not supported in this browser');
+    }
+  } else {
+    // MP4: Use native video element (streamed via proxy)
+    videoRef.value.src = currentVideoUrl.value;
+    videoRef.value.play().catch(console.error);
     playerState.value.playing = true;
   }
+};
+
+const playVideo = async () => {
+  // Set flag để cho phép lấy token
+  userClickedPlay.value = true;
+  videoReady.value = false; // Reset video ready state
+  
+  // Lấy token ngay khi user click play
+  await getVideoToken();
+  startTokenRefresh();
+  
+  // Đợi token được set
+  await nextTick();
+  
+  // Delay một chút trước khi set video src để tránh Cốc Cốc bắt được
+  // Cốc Cốc thường scan Network tab ngay khi page load, delay này giúp tránh bị bắt
+  await new Promise(resolve => setTimeout(resolve, 500)); // 500ms delay
+  
+  // Sau delay, set video ready để video URL được tạo và video element được render
+  videoReady.value = true;
+  
+  // Đợi video element được render
+  await nextTick();
+  
+  // Load video qua HLS (stream theo chunks - chống download tốt hơn)
+  await loadVideoWithHls();
 };
 
 const handleTabChange = (key: string) => {
@@ -764,8 +878,15 @@ const formatTime = (seconds: number) => {
   return `${mm}:${ss}`;
 };
 
-// Get video token for proxy streaming - LUÔN lấy cho TẤT CẢ video
+
+// Get video token for proxy streaming - CHỈ lấy khi user click play
 const getVideoToken = async () => {
+  // CHỈ lấy token khi user đã click play - ẩn URL khỏi Cốc Cốc
+  if (!userClickedPlay.value) {
+    videoToken.value = null;
+    return;
+  }
+
   if (!currentLesson.value || !course.value || !hasVideo.value) {
     videoToken.value = null;
     return;
@@ -799,17 +920,66 @@ const getVideoToken = async () => {
   }
 };
 
-// Watch lesson changes to get video token - LUÔN lấy token cho TẤT CẢ video
-watch(
-  [() => currentLesson.value?._id, () => course.value?._id, hasVideo],
-  async () => {
+// Start/Stop token refresh interval
+const startTokenRefresh = () => {
+  stopTokenRefresh(); // Clear existing interval
+  
+  if (!hasVideo.value || !currentLesson.value || !course.value) {
+    return;
+  }
+
+  // Refresh token mỗi 2 giây (trước khi hết hạn 1 giây)
+  tokenRefreshInterval = setInterval(async () => {
     if (hasVideo.value && currentLesson.value && course.value) {
       await getVideoToken();
-    } else {
-      videoToken.value = null;
+    }
+  }, TOKEN_REFRESH_INTERVAL);
+};
+
+const stopTokenRefresh = () => {
+  if (tokenRefreshInterval) {
+    clearInterval(tokenRefreshInterval);
+    tokenRefreshInterval = null;
+  }
+};
+
+// Watch lesson changes - Reset play state và clear token
+// KHÔNG tự động lấy token - chỉ lấy khi user click play
+watch(
+  [() => currentLesson.value?._id, () => course.value?._id],
+  () => {
+    // Reset play state khi lesson thay đổi
+    userClickedPlay.value = false;
+    videoReady.value = false; // Reset video ready state
+    videoToken.value = null;
+    stopTokenRefresh();
+    
+    // Cleanup HLS instance
+    if (hlsInstance) {
+      hlsInstance.destroy();
+      hlsInstance = null;
+    }
+    
+    // Clear video src để ẩn URL khỏi Cốc Cốc
+    if (videoRef.value) {
+      videoRef.value.src = '';
+      videoRef.value.load();
+      playerState.value.playing = false;
+      playerState.value.currentTime = 0;
     }
   },
-  { immediate: true }
+  { immediate: false }
+);
+
+// Watch videoReady để tự động load HLS khi ready
+watch(
+  [videoReady, currentVideoUrl],
+  async ([ready, url]) => {
+    if (ready && url && videoRef.value && userClickedPlay.value) {
+      await loadVideoWithHls();
+    }
+  },
+  { immediate: false }
 );
 
 watch(
@@ -964,31 +1134,14 @@ const setupVideoSecurity = () => {
     }
   };
 
-  let devtools = { open: false };
-  const detectDevTools = () => {
-    const threshold = 160;
-    if (
-      window.outerHeight - window.innerHeight > threshold ||
-      window.outerWidth - window.innerWidth > threshold
-    ) {
-      if (!devtools.open) {
-        devtools.open = true;
-      }
-    } else {
-      devtools.open = false;
-    }
-  };
-
   document.addEventListener('keydown', blockShortcuts);
   document.addEventListener('contextmenu', blockContextMenu);
   document.addEventListener('selectstart', blockSelection);
-  const intervalId = setInterval(detectDevTools, 500);
 
   return () => {
     document.removeEventListener('keydown', blockShortcuts);
     document.removeEventListener('contextmenu', blockContextMenu);
     document.removeEventListener('selectstart', blockSelection);
-    clearInterval(intervalId);
   };
 };
 
@@ -996,11 +1149,20 @@ let securityCleanup: (() => void) | null | undefined = null;
 
 // Lifecycle
 onMounted(async () => {
+  isMounted.value = true; // Set mounted flag để tránh hydration mismatch
   await fetchCourseDetail();
   securityCleanup = setupVideoSecurity() || null;
 });
 
 onUnmounted(() => {
+  stopTokenRefresh(); // Cleanup token refresh interval
+  
+  // Cleanup HLS instance
+  if (hlsInstance) {
+    hlsInstance.destroy();
+    hlsInstance = null;
+  }
+  
   securityCleanup?.();
   coursesStore.setIsRepeatLearn(false);
 });

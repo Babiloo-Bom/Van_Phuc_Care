@@ -81,6 +81,7 @@ export interface Lesson {
     title: string
     videoUrl?: string | null
     needsProxy?: boolean  // Flag indicating video needs proxy
+    isHls?: boolean  // Flag indicating HLS format (.m3u8)
     thumbnail?: string
     duration?: number
     fileSize?: number

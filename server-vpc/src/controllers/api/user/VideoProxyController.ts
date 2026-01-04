@@ -14,7 +14,7 @@ import crypto from 'crypto';
 
 // Secret key để sign token (nên lưu trong env)
 const VIDEO_TOKEN_SECRET = process.env.VIDEO_TOKEN_SECRET || 'vanphuccare-video-secret-2025';
-const TOKEN_EXPIRY_SECONDS = 300; // 5 phút
+const TOKEN_EXPIRY_SECONDS = 300; // 5 phút - token hết hạn sau 5 phút
 
 interface VideoToken {
   lessonId: string;
@@ -155,17 +155,298 @@ export default class VideoProxyController {
       const lessonData: any = lesson.toObject();
       let videoPath: string | null = null;
 
-      // Get video path from lesson
-      if (lessonData.videoUrl) {
-        videoPath = lessonData.videoUrl;
-      } else if (lessonData.videos && lessonData.videos.length > 0) {
-        videoPath = lessonData.videos[0].videoUrl;
+      // Check if this is a segment request (from HLS manifest)
+      const segmentPath = req.query.segment as string | undefined;
+      if (segmentPath) {
+        // This is a segment request - need to find the actual segment in R2
+        const decodedSegmentPath = decodeURIComponent(segmentPath);
+        console.log('📦 Segment request:', decodedSegmentPath);
+        
+        // Get video URL from lesson to understand the storage structure
+        let lessonVideoUrl: string | null = null;
+        if (lessonData.videoUrl) {
+          lessonVideoUrl = lessonData.videoUrl;
+        } else if (lessonData.videos && lessonData.videos.length > 0) {
+          lessonVideoUrl = lessonData.videos[0].videoUrl;
+        }
+        console.log('📦 Lesson video URL from DB:', lessonVideoUrl);
+        
+        // Extract segment filename from URL or path
+        let segmentFileName: string;
+        if (decodedSegmentPath.startsWith('http://') || decodedSegmentPath.startsWith('https://')) {
+          const urlModule = await import('url');
+          const parsedUrl = new urlModule.URL(decodedSegmentPath);
+          segmentFileName = parsedUrl.pathname.split('/').pop() || '';
+        } else {
+          segmentFileName = decodedSegmentPath.split('/').pop() || '';
+        }
+        
+        console.log('📦 Segment filename:', segmentFileName);
+        
+        // Try to extract timestamp from segment URL to find the correct folder
+        // URL format: https://...r2.dev/courses/lessons/{timestamp}/hls/segment_000.ts
+        // Object format might be: lessons/{lessonId}/videos/hls/{timestamp}-segment_000.ts
+        // OR: lessons/{timestamp}/videos/hls/{timestamp}-segment_000.ts
+        const lessonId = payload.lessonId;
+        
+        // Extract path information from lesson video URL and segment URL
+        let timestamp: string | null = null;
+        let extractedBasePath: string | null = null;
+        
+        // First, try to extract from lesson video URL (more reliable)
+        // Objects are stored with prefix: courses/lessons/{timestamp}/hls/
+        if (lessonVideoUrl && (lessonVideoUrl.startsWith('http://') || lessonVideoUrl.startsWith('https://'))) {
+          const urlModule = await import('url');
+          const parsedVideoUrl = new urlModule.URL(lessonVideoUrl);
+          let videoPathname = parsedVideoUrl.pathname;
+          if (videoPathname.startsWith('/')) videoPathname = videoPathname.substring(1);
+          // KEEP 'courses' prefix - objects are stored with this prefix
+          // Get folder (everything except filename)
+          const lastSlash = videoPathname.lastIndexOf('/');
+          if (lastSlash > 0) {
+            extractedBasePath = videoPathname.substring(0, lastSlash);
+            // Don't add /videos - objects are stored as courses/lessons/{timestamp}/hls/ (no videos/)
+            console.log('📦 Extracted base path from lesson video URL (keeping courses/ prefix):', extractedBasePath);
+          }
+        }
+        
+        // Also extract timestamp from segment URL as fallback
+        if (decodedSegmentPath.startsWith('http://') || decodedSegmentPath.startsWith('https://')) {
+          const urlModule = await import('url');
+          const parsedUrl = new urlModule.URL(decodedSegmentPath);
+          const pathParts = parsedUrl.pathname.split('/').filter(p => p);
+          const lessonsIndex = pathParts.indexOf('lessons');
+          if (lessonsIndex >= 0 && lessonsIndex + 1 < pathParts.length) {
+            const potentialTimestamp = pathParts[lessonsIndex + 1];
+            if (/^\d{10,}$/.test(potentialTimestamp)) {
+              timestamp = potentialTimestamp;
+              console.log('📦 Extracted timestamp from segment URL:', timestamp);
+            }
+          }
+        }
+        
+        // Try multiple folder patterns, prioritizing extracted path
+        // Objects are stored as: courses/lessons/{timestamp}/hls/
+        const folderPatterns: string[] = [];
+        if (extractedBasePath) {
+          folderPatterns.push(extractedBasePath); // This should be courses/lessons/{timestamp}/hls
+        }
+        if (timestamp) {
+          // Add courses/ prefix patterns with timestamp
+          folderPatterns.push(`courses/lessons/${timestamp}/hls`);
+          folderPatterns.push(`courses/lessons/${timestamp}/`);
+          // Also try without courses/ prefix (fallback)
+          folderPatterns.push(`lessons/${timestamp}/hls`);
+          folderPatterns.push(`lessons/${timestamp}/`);
+        }
+        // Fallback with lesson ID
+        folderPatterns.push(`courses/lessons/${lessonId}/hls`);
+        folderPatterns.push(`courses/lessons/${lessonId}/`);
+        folderPatterns.push(`lessons/${lessonId}/videos/hls`);
+        folderPatterns.push(`lessons/${lessonId}/hls`);
+        
+        console.log('📦 Using lesson ID from token:', lessonId);
+        console.log('📦 Will try folder patterns:', folderPatterns);
+        
+        let baseFolder = folderPatterns[0]; // Start with first pattern
+        console.log('📦 Base folder (initial):', baseFolder);
+        console.log('📦 Looking for segment ending with:', segmentFileName);
+        
+        // List objects in folder to find segment with matching filename
+        // Segment format: {timestamp}-segment_000.ts
+        // We need to find segment that ends with segmentFileName
+        try {
+          // Dynamic import to avoid TypeScript errors
+          // @ts-ignore - @aws-sdk/client-s3 is installed but TypeScript may not recognize it
+          const { ListObjectsV2Command, S3Client } = await import('@aws-sdk/client-s3');
+          
+          // Use CloudflareService to list objects
+          const bucketName = process.env.CLOUDFLARE_R2_BUCKET_NAME!;
+          console.log('📦 Listing objects with prefix:', baseFolder + '/');
+          console.log('📦 Bucket name:', bucketName);
+          
+          const listCommand = new ListObjectsV2Command({
+            Bucket: bucketName,
+            Prefix: baseFolder + '/',
+          });
+          
+          // Get S3Client from CloudflareService (need to access private client)
+          // Alternative: Add public method to CloudflareService for listing
+          // For now, create a new client instance
+          const tempClient = new S3Client({
+            region: "auto",
+            endpoint: `https://${process.env.CLOUDFLARE_R2_ACCOUNT_ID}.r2.cloudflarestorage.com`,
+            credentials: {
+              accessKeyId: process.env.CLOUDFLARE_R2_ACCESS_KEY_ID!,
+              secretAccessKey: process.env.CLOUDFLARE_R2_SECRET_ACCESS_KEY!,
+            },
+            forcePathStyle: true,
+          });
+          
+          let listResponse = await tempClient.send(listCommand);
+          let objects = listResponse.Contents || [];
+          
+          console.log('📦 Found', objects.length, 'objects in folder');
+          if (objects.length > 0) {
+            console.log('📦 All object keys:', objects.map((obj: any) => obj.Key));
+          } else {
+            // Try listing with broader prefix to see what's actually there
+            console.log('⚠️ No objects found, trying broader prefix...');
+            
+            // Try different prefixes to find where objects actually are
+            // Include the extracted base folder first, then try other patterns
+            const prefixesToTry: string[] = [];
+            
+            // First, try the extracted base folder (most likely to work)
+            if (baseFolder) {
+              prefixesToTry.push(baseFolder + '/');
+              // Also try without courses/ prefix
+              if (baseFolder.startsWith('courses/')) {
+                prefixesToTry.push(baseFolder.substring('courses/'.length) + '/');
+              }
+            }
+            
+            // Try with courses/ prefix and timestamp
+            if (baseFolder && baseFolder.includes('/lessons/')) {
+              const parts = baseFolder.split('/lessons/');
+              if (parts.length > 1) {
+                const afterLessons = parts[1];
+                const timestampMatch = afterLessons.match(/^(\d{10,})/);
+                if (timestampMatch) {
+                  const timestamp = timestampMatch[1];
+                  prefixesToTry.push(`courses/lessons/${timestamp}/hls/`);
+                  prefixesToTry.push(`courses/lessons/${timestamp}/`);
+                }
+              }
+            }
+            
+            // Fallback patterns
+            prefixesToTry.push(
+              `lessons/${lessonId}/videos/hls/`,
+              `lessons/${lessonId}/videos/`,
+              `lessons/${lessonId}/`,
+              `courses/lessons/${lessonId}/videos/hls/`,
+              `courses/lessons/${lessonId}/videos/`,
+              `courses/lessons/${lessonId}/`,
+              `lessons/`,
+              `courses/lessons/`,
+            );
+            
+            for (const prefix of prefixesToTry) {
+              console.log('📦 Trying prefix:', prefix);
+              const tryCommand = new ListObjectsV2Command({
+                Bucket: bucketName,
+                Prefix: prefix,
+                MaxKeys: 100, // Increase to find more objects
+              });
+              const tryResponse = await tempClient.send(tryCommand);
+              const tryObjects = tryResponse.Contents || [];
+              console.log('📦 Found', tryObjects.length, 'objects with prefix:', prefix);
+              
+              // Filter objects to only include:
+              // 1. Objects with the correct lesson ID
+              // 2. Objects that are .ts files (video segments)
+              // 3. Objects in videos/hls folder (not documents)
+              const videoSegments = tryObjects.filter((obj: any) => {
+                const objKey = obj.Key || '';
+                return (
+                  objKey.includes(`lessons/${lessonId}/`) && // Must have correct lesson ID
+                  objKey.endsWith('.ts') && // Must be a .ts file
+                  objKey.includes('/videos/hls/') // Must be in videos/hls folder
+                );
+              });
+              
+              console.log('📦 Filtered video segments:', videoSegments.length);
+              if (videoSegments.length > 0) {
+                console.log('📦 Sample video segment keys:', videoSegments.map((obj: any) => obj.Key).slice(0, 5));
+                // Use the first video segment to determine the correct folder structure
+                const firstSegment = videoSegments[0];
+                if (firstSegment && firstSegment.Key) {
+                  const objectKey = firstSegment.Key;
+                  // Extract folder from object key
+                  const lastSlash = objectKey.lastIndexOf('/');
+                  const objectFolder = lastSlash > 0 ? objectKey.substring(0, lastSlash) : '';
+                  console.log('📦 Detected video segment folder structure:', objectFolder);
+                  // Update baseFolder to match actual structure
+                  baseFolder = objectFolder;
+                  // Re-list with correct folder
+                  const correctCommand = new ListObjectsV2Command({
+                    Bucket: bucketName,
+                    Prefix: baseFolder + '/',
+                  });
+                  const correctResponse = await tempClient.send(correctCommand);
+                  objects = correctResponse.Contents || [];
+                  console.log('📦 Re-listed with correct folder, found', objects.length, 'objects');
+                  if (objects.length > 0) {
+                    console.log('📦 All object keys in correct folder:', objects.map((obj: any) => obj.Key));
+                  }
+                  break;
+                }
+              } else if (tryObjects.length > 0) {
+                // Log what we found but didn't match
+                console.log('⚠️ Found objects but none match lesson ID and .ts format');
+                console.log('📦 Sample object keys (filtered out):', tryObjects.map((obj: any) => obj.Key).slice(0, 5));
+              }
+            }
+          }
+          
+          // Find segment that ends with the requested filename
+          const segmentObject = objects.find((obj: any) => {
+            const objKey = obj.Key || '';
+            // Check if object key ends with segment filename (e.g., segment_000.ts)
+            // Object format: lessons/{lessonId}/videos/hls/{timestamp}-segment_000.ts
+            return objKey.endsWith(segmentFileName) && objKey.endsWith('.ts');
+          });
+          
+          if (!segmentObject || !segmentObject.Key) {
+            // If segment not found in R2, try to stream directly from the URL in the request
+            // This handles cases where segments are stored externally or in a different format
+            console.warn('⚠️ Segment not found in R2, trying to stream from URL directly');
+            console.warn('⚠️ Segment filename:', segmentFileName, 'in folder:', baseFolder);
+            
+            // Use the segment URL from the request directly
+            if (decodedSegmentPath.startsWith('http://') || decodedSegmentPath.startsWith('https://')) {
+              // This is a full URL - stream directly from it
+              videoPath = decodedSegmentPath;
+              console.log('📦 Streaming segment directly from URL:', videoPath);
+            } else {
+              // Relative path - construct full URL from manifest base URL
+              // We need to get the manifest URL to construct segment URL
+              if (lessonVideoUrl) {
+                const urlModule = await import('url');
+                const parsedManifestUrl = new urlModule.URL(lessonVideoUrl);
+                const manifestBaseUrl = lessonVideoUrl.substring(0, lessonVideoUrl.lastIndexOf('/'));
+                videoPath = manifestBaseUrl + '/' + decodedSegmentPath;
+                console.log('📦 Constructed segment URL from manifest:', videoPath);
+              } else {
+                console.error('❌ Cannot construct segment URL - no manifest URL available');
+                return sendError(res, 404, `Segment ${segmentFileName} not found`);
+              }
+            }
+          } else {
+            videoPath = segmentObject.Key;
+            console.log('✅ Found segment object in R2:', videoPath);
+          }
+        } catch (error: any) {
+          console.error('❌ Error listing objects:', error);
+          return sendError(res, 500, 'Failed to find segment');
+        }
+      } else {
+        // This is a manifest or MP4 request - get video path from lesson
+        if (lessonData.videoUrl) {
+          videoPath = lessonData.videoUrl;
+        } else if (lessonData.videos && lessonData.videos.length > 0) {
+          videoPath = lessonData.videos[0].videoUrl;
+        }
       }
 
       if (!videoPath) {
         return sendError(res, 404, 'Video not found');
       }
 
+      // Check if it's HLS manifest
+      const isHls = videoPath.endsWith('.m3u8');
+      
       // Get video URL (external URL hoặc presigned R2 URL)
       let videoUrl: string;
       if (videoPath.startsWith('http://') || videoPath.startsWith('https://')) {
@@ -173,28 +454,58 @@ export default class VideoProxyController {
         videoUrl = videoPath;
       } else {
         // R2 path - get presigned URL
-        const objectName = videoPath.replace(/^\/vanphuccare-video-edu\//, '');
+        // Remove leading slash and /vanphuccare-video-edu/ prefix if present
+        const objectName = videoPath.replace(/^\/vanphuccare-video-edu\//, '').replace(/^\//, '');
+        console.log('📦 Getting presigned URL for object:', objectName);
         videoUrl = await CloudflareService.getFileUrl(objectName, 300); // 5 minutes
+        console.log('📦 Presigned URL created:', videoUrl.substring(0, 100) + '...');
       }
 
       // Stream video qua backend để ẩn URL gốc
       const https = await import('https');
       const http = await import('http');
       const urlModule = await import('url');
+      
+      // Helper function to extract base path from URL
+      const extractBasePath = (url: string): string => {
+        if (url.startsWith('http://') || url.startsWith('https://')) {
+          const parsedUrl = new urlModule.URL(url);
+          let pathname = parsedUrl.pathname;
+          if (pathname.startsWith('/')) pathname = pathname.substring(1);
+          const lastSlash = pathname.lastIndexOf('/');
+          return lastSlash > 0 ? pathname.substring(0, lastSlash) : '';
+        }
+        return '';
+      };
 
       const parsedUrl = new urlModule.URL(videoUrl);
       const protocol = parsedUrl.protocol === 'https:' ? https : http;
 
-      // Set security headers
-      res.setHeader('Content-Disposition', 'inline'); // Không cho download
+      // Set security headers to prevent download
+      // Content-Disposition: inline prevents browser from suggesting download
+      res.setHeader('Content-Disposition', isHls ? 'inline' : 'inline; filename="video.mp4"');
       res.setHeader('X-Content-Type-Options', 'nosniff');
       res.setHeader('X-Frame-Options', 'SAMEORIGIN');
-      res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate, proxy-revalidate');
+      res.setHeader('Content-Security-Policy', "default-src 'self'; media-src 'self' blob: data:");
+      res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate, proxy-revalidate, max-age=0, private');
       res.setHeader('Pragma', 'no-cache');
       res.setHeader('Expires', '0');
+      res.setHeader('Surrogate-Control', 'no-store');
+      res.setHeader('X-Accel-Buffering', 'no'); // Disable buffering for streaming
       res.setHeader('Access-Control-Allow-Origin', '*');
       res.setHeader('Access-Control-Allow-Methods', 'GET, OPTIONS');
       res.setHeader('Access-Control-Allow-Headers', 'Range');
+      
+      // Block known download tools by User-Agent
+      const userAgent = req.headers['user-agent'] || '';
+      const downloadTools = ['coccoc', 'idm', 'internet download manager', 'wget', 'curl', 'aria2'];
+      const isDownloadTool = downloadTools.some(tool => userAgent.toLowerCase().includes(tool));
+      
+      if (isDownloadTool && !req.headers.range) {
+        // If it's a download tool and not a Range request (video seeking), block it
+        console.warn('⚠️ Blocked download tool:', userAgent);
+        return sendError(res, 403, 'Direct download not allowed');
+      }
 
       // Handle Range requests for video seeking
       const range = req.headers.range;
@@ -205,8 +516,13 @@ export default class VideoProxyController {
         // Forward status and headers
         res.status(proxyResponse.statusCode || 200);
         
+        // Set content headers first
         if (proxyResponse.headers['content-type']) {
           res.setHeader('Content-Type', proxyResponse.headers['content-type']);
+        } else if (isHls) {
+          res.setHeader('Content-Type', 'application/x-mpegURL'); // For HLS manifest
+        } else {
+          res.setHeader('Content-Type', 'video/mp4'); // Default for MP4
         }
         if (proxyResponse.headers['content-length']) {
           res.setHeader('Content-Length', proxyResponse.headers['content-length']);
@@ -218,8 +534,74 @@ export default class VideoProxyController {
           res.setHeader('Accept-Ranges', proxyResponse.headers['accept-ranges']);
         }
 
-        // Stream video data
-        proxyResponse.pipe(res);
+        // RE-SET security headers AFTER content headers để không bị overwrite
+        res.setHeader('Content-Disposition', isHls ? 'inline' : 'inline; filename="video.mp4"'); // Chống download
+        res.setHeader('X-Content-Type-Options', 'nosniff');
+        res.setHeader('X-Frame-Options', 'SAMEORIGIN');
+        res.setHeader('Content-Security-Policy', "default-src 'self'; media-src 'self' blob: data:");
+        res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate, proxy-revalidate, max-age=0, private');
+        res.setHeader('Pragma', 'no-cache');
+        res.setHeader('Expires', '0');
+        res.setHeader('Surrogate-Control', 'no-store');
+        res.setHeader('X-Accel-Buffering', 'no'); // Disable buffering for streaming
+        res.setHeader('Access-Control-Allow-Origin', '*');
+        res.setHeader('Access-Control-Allow-Methods', 'GET, OPTIONS');
+        res.setHeader('Access-Control-Allow-Headers', 'Range');
+        // KHÔNG set Access-Control-Allow-Credentials vì không dùng credentials
+
+        // For HLS manifest, parse and rewrite segment URLs to use proxy
+        if (isHls) {
+          let manifestData = '';
+          proxyResponse.on('data', (chunk) => {
+            manifestData += chunk.toString();
+          });
+          proxyResponse.on('end', () => {
+            // Parse manifest and replace segment URLs with proxy URLs
+            const manifestLines = manifestData.split('\n');
+            
+            // Extract base URL from videoUrl (actual URL, not videoPath)
+            // videoUrl is the presigned/public URL from R2
+            // We'll use this to construct segment URLs
+            const manifestBaseUrl = videoUrl.substring(0, videoUrl.lastIndexOf('/'));
+            
+            console.log('📦 Manifest base URL:', manifestBaseUrl);
+            
+            const protocol = req.protocol;
+            const host = req.get('host');
+            const baseProxyUrl = `${protocol}://${host}/api/u/video/stream/${token}`;
+            
+            const modifiedManifest = manifestLines.map((line: string) => {
+              // Skip comments and empty lines
+              if (line.startsWith('#') || line.trim() === '') {
+                return line;
+              }
+              // Replace segment URLs with proxy URLs
+              const segmentLine = line.trim();
+              if (segmentLine && segmentLine.endsWith('.ts')) {
+                // Extract segment path
+                let segmentPath: string;
+                if (segmentLine.startsWith('http://') || segmentLine.startsWith('https://')) {
+                  // Full URL - use as is (will be extracted in segment request handler)
+                  segmentPath = segmentLine;
+                } else {
+                  // Relative path - combine with base URL from manifest
+                  segmentPath = manifestBaseUrl + '/' + segmentLine;
+                }
+                // Encode segment path as query param
+                const segmentParam = encodeURIComponent(segmentPath);
+                // Return proxy URL with segment query param
+                return `${baseProxyUrl}?segment=${segmentParam}`;
+              }
+              return line;
+            }).join('\n');
+            
+            res.setHeader('Content-Length', Buffer.byteLength(modifiedManifest, 'utf8'));
+            res.end(modifiedManifest);
+          });
+        } else {
+          // Stream video data directly for MP4
+          proxyResponse.pipe(res);
+        }
       });
 
       proxyRequest.on('error', (error) => {
@@ -372,6 +754,195 @@ export default class VideoProxyController {
     } catch (error) {
       console.error('❌ Error verifying user access:', error);
       return false;
+    }
+  }
+
+  /**
+   * Debug endpoint: Check HLS data in R2 for a lesson
+   * GET /api/u/video/debug/hls/:lessonId?token=...
+   * Can be accessed with token in query parameter for easy testing
+   */
+  public static async debugHlsData(req: Request, res: Response) {
+    try {
+      const { lessonId } = req.params;
+      const token = req.query.token as string;
+      
+      // Verify token if provided
+      if (token) {
+        const payload = VideoProxyController.verifyToken(token);
+        if (!payload) {
+          return sendError(res, 401, 'Invalid or expired token');
+        }
+        // Verify lesson ID matches
+        if (payload.lessonId !== lessonId) {
+          return sendError(res, 403, 'Token lesson ID does not match');
+        }
+      } else {
+        // Try JWT authentication as fallback
+        const currentUser = (req as any).currentUser;
+        if (!currentUser) {
+          return sendError(res, 401, 'Unauthorized - provide token in query parameter or JWT in header');
+        }
+      }
+
+      // Get lesson to find video URL
+      const LessonsModel = (await import('@mongodb/lessons')).default;
+      const lesson = await LessonsModel.model.findById(lessonId);
+
+      if (!lesson) {
+        return sendError(res, 404, 'Lesson not found');
+      }
+
+      const lessonData: any = lesson.toObject();
+      
+      // Get video URL from lesson
+      let videoUrl: string | null = null;
+      if (lessonData.videoUrl) {
+        videoUrl = lessonData.videoUrl;
+      } else if (lessonData.videos && lessonData.videos.length > 0) {
+        videoUrl = lessonData.videos[0].videoUrl;
+      }
+
+      // List objects in R2 with different prefixes
+      // @ts-ignore
+      const { ListObjectsV2Command, S3Client } = await import('@aws-sdk/client-s3');
+      
+      const bucketName = process.env.CLOUDFLARE_R2_BUCKET_NAME!;
+      const tempClient = new S3Client({
+        region: "auto",
+        endpoint: `https://${process.env.CLOUDFLARE_R2_ACCOUNT_ID}.r2.cloudflarestorage.com`,
+        credentials: {
+          accessKeyId: process.env.CLOUDFLARE_R2_ACCESS_KEY_ID!,
+          secretAccessKey: process.env.CLOUDFLARE_R2_SECRET_ACCESS_KEY!,
+        },
+        forcePathStyle: true,
+      });
+
+      const prefixesToCheck = [
+        `lessons/${lessonId}/videos/hls/`,
+        `lessons/${lessonId}/videos/`,
+        `lessons/${lessonId}/`,
+        `lessons/`,
+        // Also check with courses/ prefix (as seen in video URL)
+        `courses/lessons/${lessonId}/videos/hls/`,
+        `courses/lessons/${lessonId}/videos/`,
+        `courses/lessons/${lessonId}/`,
+        `courses/lessons/`,
+        `courses/`,
+      ];
+
+      // Get public base URL to understand URL structure
+      const publicBaseUrl = process.env.CLOUDFLARE_R2_PUBLIC_URL || '';
+      
+      const results: any = {
+        lessonId,
+        videoUrl,
+        publicBaseUrl,
+        bucketName,
+        checks: [] as any[],
+      };
+      
+      // Extract object name from video URL if it's a public URL
+      let extractedObjectName: string | null = null;
+      if (videoUrl && videoUrl.startsWith(publicBaseUrl)) {
+        extractedObjectName = videoUrl.substring(publicBaseUrl.length);
+        // Remove leading slash
+        if (extractedObjectName.startsWith('/')) extractedObjectName = extractedObjectName.substring(1);
+        results.extractedObjectName = extractedObjectName;
+        
+        // Extract folder from object name
+        const lastSlash = extractedObjectName.lastIndexOf('/');
+        if (lastSlash > 0) {
+          const extractedFolder = extractedObjectName.substring(0, lastSlash);
+          results.extractedFolder = extractedFolder;
+          // Also check this exact folder
+          prefixesToCheck.unshift(extractedFolder + '/');
+        }
+      }
+
+      for (const prefix of prefixesToCheck) {
+        const listCommand = new ListObjectsV2Command({
+          Bucket: bucketName,
+          Prefix: prefix,
+          MaxKeys: 100,
+        });
+        
+        const listResponse = await tempClient.send(listCommand);
+        const objects = listResponse.Contents || [];
+        
+        // Filter for HLS files
+        const hlsFiles = objects.filter((obj: any) => {
+          const key = obj.Key || '';
+          return key.endsWith('.m3u8') || key.endsWith('.ts');
+        });
+
+        const checkResult = {
+          prefix,
+          totalObjects: objects.length,
+          hlsFiles: hlsFiles.length,
+          hlsFileKeys: hlsFiles.map((obj: any) => obj.Key),
+          allObjectKeys: objects.map((obj: any) => obj.Key).slice(0, 10), // First 10 for preview
+        };
+
+        results.checks.push(checkResult);
+      }
+
+      // Also check if video URL contains timestamp pattern
+      if (videoUrl) {
+        const urlModule = await import('url');
+        try {
+          const parsedUrl = new urlModule.URL(videoUrl);
+          const pathParts = parsedUrl.pathname.split('/').filter(p => p);
+          const lessonsIndex = pathParts.indexOf('lessons');
+          if (lessonsIndex >= 0 && lessonsIndex + 1 < pathParts.length) {
+            const potentialTimestamp = pathParts[lessonsIndex + 1];
+            if (/^\d{10,}$/.test(potentialTimestamp)) {
+              results.extractedTimestamp = potentialTimestamp;
+              // Check with timestamp prefix (both with and without courses/)
+              const timestampPrefixes = [
+                `lessons/${potentialTimestamp}/`,
+                `lessons/${potentialTimestamp}/videos/hls/`,
+                `lessons/${potentialTimestamp}/hls/`,
+                `courses/lessons/${potentialTimestamp}/`,
+                `courses/lessons/${potentialTimestamp}/videos/hls/`,
+                `courses/lessons/${potentialTimestamp}/hls/`,
+              ];
+              
+              for (const timestampPrefix of timestampPrefixes) {
+                const timestampCommand = new ListObjectsV2Command({
+                  Bucket: bucketName,
+                  Prefix: timestampPrefix,
+                  MaxKeys: 100,
+                });
+                const timestampResponse = await tempClient.send(timestampCommand);
+                const timestampObjects = timestampResponse.Contents || [];
+                const timestampHlsFiles = timestampObjects.filter((obj: any) => {
+                  const key = obj.Key || '';
+                  return key.endsWith('.m3u8') || key.endsWith('.ts');
+                });
+                
+                results.checks.push({
+                  prefix: timestampPrefix,
+                  totalObjects: timestampObjects.length,
+                  hlsFiles: timestampHlsFiles.length,
+                  hlsFileKeys: timestampHlsFiles.map((obj: any) => obj.Key),
+                  allObjectKeys: timestampObjects.map((obj: any) => obj.Key).slice(0, 10),
+                });
+              }
+            }
+          }
+        } catch (e) {
+          // Ignore URL parsing errors
+        }
+      }
+
+      return res.status(200).json({
+        success: true,
+        data: results,
+      });
+    } catch (error: any) {
+      console.error('❌ Debug HLS data error:', error);
+      return sendError(res, 500, error.message);
     }
   }
 }

@@ -498,22 +498,41 @@ class CourseController {
                   false
                 );
 
-              // Convert videos array - TẤT CẢ video stream qua proxy
+              // Convert videos array - Detect HLS và stream qua proxy
               const convertedVideos = await Promise.all(
                 (lessonData.videos || []).map(async (video: any) => {
                   const rawUrl = video.videoUrl;
                   const hasVideo = !!rawUrl;
                   
-                  // Không trả về videoUrl trực tiếp - phải stream qua proxy
-                  return {
-                    ...video,
-                    videoUrl: null, // Hidden - use proxy
-                    needsProxy: hasVideo, // Tất cả video đều cần proxy
-                    thumbnail: await CourseController.convertMinioPathToUrl(
-                      video.thumbnail,
-                      false
-                    ),
-                  };
+                  // Check if video is HLS format (.m3u8)
+                  const isHls = rawUrl && (rawUrl.endsWith('.m3u8') || rawUrl.includes('.m3u8'));
+                  
+                  if (isHls) {
+                    // HLS: Return HLS URL (will be streamed via proxy)
+                    const hlsUrl = await CourseController.convertMinioPathToUrl(rawUrl, true);
+                    return {
+                      ...video,
+                      videoUrl: hlsUrl, // HLS URL - frontend will use hls.js
+                      needsProxy: true, // Still use proxy for security
+                      isHls: true, // Flag to indicate HLS format
+                      thumbnail: await CourseController.convertMinioPathToUrl(
+                        video.thumbnail,
+                        false
+                      ),
+                    };
+                  } else {
+                    // MP4: Hide URL, use proxy
+                    return {
+                      ...video,
+                      videoUrl: null, // Hidden - use proxy
+                      needsProxy: hasVideo, // Tất cả video đều cần proxy
+                      isHls: false,
+                      thumbnail: await CourseController.convertMinioPathToUrl(
+                        video.thumbnail,
+                        false
+                      ),
+                    };
+                  }
                 })
               );
 
@@ -666,7 +685,14 @@ class CourseController {
       if (path.startsWith("http://") || path.startsWith("https://")) {
         return path;
       }
-      const objectName = path.replace(/^\/vanphuccare-video-edu\//, "");
+      
+      // Normalize path: remove leading /vanphuccare-video-edu/ and fix double slashes
+      let objectName = path.replace(/^\/vanphuccare-video-edu\//, "");
+      // Fix double slashes (e.g., //images/ -> /images/)
+      objectName = objectName.replace(/\/+/g, '/');
+      // Remove leading slash if present
+      objectName = objectName.replace(/^\//, '');
+      
       try {
         // Video: 15 phút, Các file khác: 24 giờ
         const expirySeconds = isVideo ? 15 * 60 : 24 * 60 * 60;
@@ -1135,22 +1161,41 @@ class CourseController {
                   false
                 );
 
-              // Convert videos array - TẤT CẢ video stream qua proxy
+              // Convert videos array - Detect HLS và stream qua proxy
               const convertedVideos = await Promise.all(
                 (lessonData.videos || []).map(async (video: any) => {
                   const rawUrl = video.videoUrl;
                   const hasVideo = !!rawUrl;
                   
-                  // Không trả về videoUrl trực tiếp - phải stream qua proxy
-                  return {
-                    ...video,
-                    videoUrl: null, // Hidden - use proxy
-                    needsProxy: hasVideo, // Tất cả video đều cần proxy
-                    thumbnail: await CourseController.convertMinioPathToUrl(
-                      video.thumbnail,
-                      false
-                    ),
-                  };
+                  // Check if video is HLS format (.m3u8)
+                  const isHls = rawUrl && (rawUrl.endsWith('.m3u8') || rawUrl.includes('.m3u8'));
+                  
+                  if (isHls) {
+                    // HLS: Return HLS URL (will be streamed via proxy)
+                    const hlsUrl = await CourseController.convertMinioPathToUrl(rawUrl, true);
+                    return {
+                      ...video,
+                      videoUrl: hlsUrl, // HLS URL - frontend will use hls.js
+                      needsProxy: true, // Still use proxy for security
+                      isHls: true, // Flag to indicate HLS format
+                      thumbnail: await CourseController.convertMinioPathToUrl(
+                        video.thumbnail,
+                        false
+                      ),
+                    };
+                  } else {
+                    // MP4: Hide URL, use proxy
+                    return {
+                      ...video,
+                      videoUrl: null, // Hidden - use proxy
+                      needsProxy: hasVideo, // Tất cả video đều cần proxy
+                      isHls: false,
+                      thumbnail: await CourseController.convertMinioPathToUrl(
+                        video.thumbnail,
+                        false
+                      ),
+                    };
+                  }
                 })
               );
 

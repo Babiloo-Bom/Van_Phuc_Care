@@ -42,10 +42,11 @@ RUN npm run build-ts
 # ============================================
 FROM node:20-alpine AS runner
 
-# Install runtime dependencies
+# Install runtime dependencies (including FFmpeg for HLS conversion)
 RUN apk add --no-cache \
     tini \
-    curl
+    curl \
+    ffmpeg
 
 WORKDIR /app
 

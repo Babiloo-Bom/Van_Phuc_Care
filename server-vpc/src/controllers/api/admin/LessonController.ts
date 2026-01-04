@@ -5,6 +5,10 @@ import ChaptersModel from '@mongodb/chapters';
 import QuizzesModel from '@mongodb/quizzes';
 import MinioService from '@services/minio';
 import CloudflareService from '@services/cloudflare';
+import HlsConverter from '@services/HlsConverter';
+import * as fs from 'fs';
+import * as path from 'path';
+import * as os from 'os';
 
 class LessonController {
 
@@ -84,14 +88,14 @@ class LessonController {
         for (const file of files) {
           const folderType = file.fieldname.includes('document') ? 'documents' : 'videos';
           
-          const fileUrl = await CloudflareService.uploadFile(
-            file.buffer,
-            file.originalname,
-            file.mimetype,
-            `lessons/${lesson._id}/${folderType}`
-          );
-
           if (folderType === 'documents') {
+            const fileUrl = await CloudflareService.uploadFile(
+              file.buffer,
+              file.originalname,
+              file.mimetype,
+              `lessons/${lesson._id}/${folderType}`
+            );
+
             const docMeta = parsedDocuments.find((d: any, idx: number) => 
               parseInt(file.fieldname.replace('document-', '')) === idx
             );
@@ -105,13 +109,86 @@ class LessonController {
               index: uploadedDocuments.length,
             });
           } else {
+            // Video: Convert MP4 to HLS for better security
             const videoMeta = parsedVideos.find((v: any, idx: number) => 
               parseInt(file.fieldname.replace('video-', '')) === idx
             );
 
+            let videoUrl: string;
+            const tempHlsDir = path.join(os.tmpdir(), 'hls-lessons', `${lesson._id}_${Date.now()}`);
+
+            try {
+              // Check if FFmpeg is available and file is video
+              const hasFFmpeg = await HlsConverter.checkFFmpeg();
+              if (hasFFmpeg && file.mimetype.startsWith('video/')) {
+                // Convert MP4 to HLS
+                console.log(`🔄 Converting video to HLS for lesson ${lesson._id}...`);
+                const { playlistPath, segmentPaths } = await HlsConverter.convertBufferToHls(
+                  file.buffer,
+                  tempHlsDir
+                );
+
+                // Upload HLS playlist
+                const playlistBuffer = fs.readFileSync(playlistPath);
+                const playlistName = file.originalname.replace(/\.(mp4|mov|avi|mkv)$/i, '.m3u8');
+                const hlsFolder = `lessons/${lesson._id}/videos/hls`;
+                const playlistObjectName = await CloudflareService.uploadFile(
+                  playlistBuffer,
+                  playlistName,
+                  'application/vnd.apple.mpegurl',
+                  hlsFolder
+                );
+                videoUrl = CloudflareService.getPublicUrl(playlistObjectName);
+
+                // Upload HLS segments
+                for (const segmentPath of segmentPaths) {
+                  const segmentBuffer = fs.readFileSync(segmentPath);
+                  const segmentFileName = path.basename(segmentPath);
+                  await CloudflareService.uploadFile(
+                    segmentBuffer,
+                    segmentFileName,
+                    'video/mp2t',
+                    hlsFolder
+                  );
+                }
+
+                // Cleanup temp files
+                if (fs.existsSync(tempHlsDir)) {
+                  fs.rmSync(tempHlsDir, { recursive: true, force: true });
+                }
+
+                console.log(`✅ HLS conversion complete for lesson ${lesson._id}`);
+              } else {
+                // Fallback: upload MP4 directly
+                videoUrl = CloudflareService.getPublicUrl(
+                  await CloudflareService.uploadFile(
+                    file.buffer,
+                    file.originalname,
+                    file.mimetype,
+                    `lessons/${lesson._id}/${folderType}`
+                  )
+                );
+              }
+            } catch (error: any) {
+              // Cleanup temp files on error
+              if (fs.existsSync(tempHlsDir)) {
+                fs.rmSync(tempHlsDir, { recursive: true, force: true });
+              }
+              console.error('❌ HLS conversion error, falling back to MP4:', error);
+              // Fallback: upload MP4 directly
+              videoUrl = CloudflareService.getPublicUrl(
+                await CloudflareService.uploadFile(
+                  file.buffer,
+                  file.originalname,
+                  file.mimetype,
+                  `lessons/${lesson._id}/${folderType}`
+                )
+              );
+            }
+
             uploadedVideos.push({
               title: videoMeta?.title || file.originalname,
-              videoUrl: fileUrl,
+              videoUrl: videoUrl,
               thumbnail: videoMeta?.thumbnail || '',
               duration: videoMeta?.duration || 0,
               fileSize: file.size,
