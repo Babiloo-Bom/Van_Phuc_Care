@@ -19,9 +19,11 @@ import ScheduleVaccinsRouter from "./ScheduleVaccins";
 import VaccinationRecordsRouter from "./VaccinationRecords";
 import CouponsRouter from './Coupons';
 import QuizzesRouter from './Quizzes';
+import VideoProxyRouter from './VideoProxy';
 
 const router = Router();
 
+router.use("/video", VideoProxyRouter);
 router.use("/cart", CartRouter);
 router.use("/categories", CategoryRouter);
 router.use("/faqs", FaqRouter);

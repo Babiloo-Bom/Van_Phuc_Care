@@ -56,15 +56,27 @@
             <ProgressBar :percentage="courseProgress" />
           </div>
           <!-- Video Player - Chỉ hiển thị nếu lesson có video -->
-          <div v-if="(currentVideoUrl || currentThumbnail) && currentLesson" class="mb-4 md:mb-6">
+          <div v-if="(currentVideoUrl || currentThumbnail || hasVideo) && currentLesson" class="mb-4 md:mb-6">
             <div class="video-wrapper">
               <div
                 class="relative w-full rounded-lg overflow-hidden shadow-lg bg-gray-900"
                 :style="{ aspectRatio: '16/9' }"
               >
+                <!-- Loading indicator khi đang lấy video token -->
+                <div
+                  v-if="hasVideo && videoTokenLoading"
+                  class="absolute inset-0 flex items-center justify-center bg-gray-900 z-10"
+                >
+                  <div class="flex flex-col items-center gap-3">
+                    <div class="w-10 h-10 border-4 border-blue-500 border-t-transparent rounded-full animate-spin"></div>
+                    <span class="text-white text-sm">Đang xác thực video...</span>
+                  </div>
+                </div>
+
                 <!-- Video Element với chặn tải xuống và context menu -->
+                <!-- Stream trực tiếp từ proxy - token ẩn URL gốc -->
                 <video
-                  v-if="currentVideoUrl"
+                  v-if="currentVideoUrl && !videoTokenLoading"
                   ref="videoRef"
                   :src="currentVideoUrl"
                   :poster="currentThumbnail || undefined"
@@ -84,7 +96,7 @@
                 
                 <!-- Watermark Overlay -->
                 <div
-                  v-if="currentVideoUrl"
+                  v-if="currentVideoUrl && !videoTokenLoading"
                   class="absolute top-4 right-4 pointer-events-none select-none"
                   style="user-select: none; -webkit-user-select: none;"
                 >
@@ -93,9 +105,9 @@
                   </div>
                 </div>
 
-                <!-- Thumbnail với nút Play (nếu chưa có currentVideoUrl) -->
+                <!-- Thumbnail với nút Play (nếu chưa có currentVideoUrl và không đang loading) -->
                 <div
-                  v-else-if="currentThumbnail"
+                  v-else-if="currentThumbnail && !videoTokenLoading"
                   class="relative w-full h-full"
                 >
                   <img
@@ -382,7 +394,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, onMounted, watch, nextTick } from "vue";
+import { ref, computed, onMounted, onUnmounted, watch, nextTick } from "vue";
 import { useRoute } from "vue-router";
 import { useCoursesStore } from "~/stores/courses";
 import { useAuthStore } from "~/stores/auth";
@@ -393,6 +405,7 @@ import CourseCertificateComponent from "~/components/lessons/CourseCertificateCo
 import ProgressBar from "~/components/common/ProgressBar.vue";
 import type { Course, Chapter, Lesson } from "~/stores/courses";
 import { useProgressTracking } from "~/composables/useProgressTracking";
+import { useApiBase } from "~/composables/useApiBase";
 
 definePageMeta({
   middleware: "auth",
@@ -402,6 +415,11 @@ const route = useRoute();
 const coursesStore = useCoursesStore();
 const progressTracking = useProgressTracking();
 const authStore = useAuthStore();
+const { apiUser } = useApiBase();
+
+// State for video proxy
+const videoToken = ref<string | null>(null);
+const videoTokenLoading = ref(false);
 
 // State
 const loading = ref(false);
@@ -473,26 +491,41 @@ const currentLesson = computed<Lesson | null>(() => {
 });
 
 
-// Get video URL from lesson (could be from videoUrl or videos array)
-const currentVideoUrl = computed(() => {
-  if (!currentLesson.value) return null;
-
-  // If lesson has videoUrl directly
-  if (currentLesson.value.videoUrl) {
-    return currentLesson.value.videoUrl;
-  }
-
-  // If lesson has videos array, get first video
+// Check if lesson has video (any video - R2 or external)
+// Backend trả về videoUrl: null và needsProxy: true để ẩn URL gốc
+const hasVideo = computed(() => {
+  if (!currentLesson.value) return false;
+  
+  // Check needsProxy flag (backend set khi có video)
+  if (currentLesson.value.needsProxy) return true;
+  
+  // Check videos array - nếu có video object trong array thì có video
   if (
     currentLesson.value.videos &&
     Array.isArray(currentLesson.value.videos) &&
     currentLesson.value.videos.length > 0
   ) {
-    const firstVideo = currentLesson.value.videos[0];
-    return firstVideo?.videoUrl || null;
+    // Có video object trong array = có video (videoUrl có thể null nhưng vẫn có video)
+    return true;
+  }
+  
+  // Legacy: check videoUrl (có thể là external URL chưa được migrate)
+  if (currentLesson.value.videoUrl) return true;
+  
+  return false;
+});
+
+// Get video URL - Stream trực tiếp từ proxy (token ẩn URL gốc)
+// Cốc Cốc chỉ thấy /api/u/video/stream/:token, không thấy URL R2/Pexels gốc
+const currentVideoUrl = computed(() => {
+  if (!currentLesson.value || !hasVideo.value) return null;
+
+  // Stream trực tiếp từ proxy - token đã ẩn URL gốc
+  if (videoToken.value) {
+    return `${apiUser}/video/stream/${videoToken.value}`;
   }
 
-  return null;
+  return null; // Chưa có token, sẽ hiển thị loading
 });
 
 // Get thumbnail from lesson
@@ -730,6 +763,54 @@ const formatTime = (seconds: number) => {
   const ss = s < 10 ? `0${s}` : `${s}`;
   return `${mm}:${ss}`;
 };
+
+// Get video token for proxy streaming - LUÔN lấy cho TẤT CẢ video
+const getVideoToken = async () => {
+  if (!currentLesson.value || !course.value || !hasVideo.value) {
+    videoToken.value = null;
+    return;
+  }
+
+  try {
+    videoTokenLoading.value = true;
+    const response = await fetch(`${apiUser}/video/token`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${authStore.token}`,
+      },
+      body: JSON.stringify({
+        lessonId: currentLesson.value._id,
+        courseId: course.value._id,
+      }),
+    });
+
+    if (!response.ok) {
+      throw new Error(`Failed to get video token: ${response.status}`);
+    }
+
+    const data = await response.json();
+    videoToken.value = data.data?.token || null;
+  } catch (error) {
+    console.error('❌ Error getting video token:', error);
+    videoToken.value = null;
+  } finally {
+    videoTokenLoading.value = false;
+  }
+};
+
+// Watch lesson changes to get video token - LUÔN lấy token cho TẤT CẢ video
+watch(
+  [() => currentLesson.value?._id, () => course.value?._id, hasVideo],
+  async () => {
+    if (hasVideo.value && currentLesson.value && course.value) {
+      await getVideoToken();
+    } else {
+      videoToken.value = null;
+    }
+  },
+  { immediate: true }
+);
 
 watch(
   currentLesson,

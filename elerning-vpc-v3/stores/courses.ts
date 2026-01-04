@@ -10,7 +10,8 @@ export interface Course {
   shortDescription: string
   thumbnail: string
   // Video giới thiệu khóa học (intro), độc lập với lessons
-  introVideo?: string
+  introVideo?: string | null  // Hidden for security
+  hasIntroVideo?: boolean  // Flag indicating course has intro video
   price: number
   originalPrice?: number
   discount?: number
@@ -66,7 +67,8 @@ export interface Lesson {
   title: string
   type: 'video' | 'document' | 'exam' | 'quiz' | 'project'
   order: number
-  videoUrl?: string
+  videoUrl?: string | null
+  needsProxy?: boolean  // Flag indicating video needs proxy (external URLs like Pexels)
   documentUrl?: string
   duration?: number
   isCompleted?: boolean
@@ -75,8 +77,10 @@ export interface Lesson {
   content?: string
   thumbnail?: string
   videos?: Array<{
+    _id?: string
     title: string
-    videoUrl: string
+    videoUrl?: string | null
+    needsProxy?: boolean  // Flag indicating video needs proxy
     thumbnail?: string
     duration?: number
     fileSize?: number

@@ -202,9 +202,9 @@ class CourseController {
             status: "active",
           });
 
-          // Convert introVideo from MinIO path to URL if exists
+          // Convert introVideo (15 phút expiry)
           const convertedIntroVideo = courseData.introVideo
-            ? await CourseController.convertMinioPathToUrl(courseData.introVideo)
+            ? await CourseController.convertMinioPathToUrl(courseData.introVideo, true)
             : null;
 
           return {
@@ -379,7 +379,7 @@ class CourseController {
         // Preview lessons are always unlocked (for marketing)
         if (lessonData.isPreview) return false;
 
-        // If user hasn't purchased the course, lock all non-preview lessons
+        // [getCourseBySlug] If user hasn't purchased the course, lock all non-preview lessons
         if (!userHasPurchased) {
           return true;
         }
@@ -431,6 +431,7 @@ class CourseController {
         return false;
       };
 
+      // [getCourseBySlug PUBLIC API] Transform chapters - HIDE VIDEO URLs
       const transformedChapters = await Promise.all(
         chapters.map(async (chapter: any, chapterIndex: number) => {
           const lessons = await LessonsModel.model
@@ -472,35 +473,48 @@ class CourseController {
                 lessonData
               );
 
-              // Convert video URLs
-              const convertedVideoUrl =
-                await CourseController.convertMinioPathToUrl(
-                  firstVideo?.videoUrl || null
-                );
+              // SECURITY: TẤT CẢ video (R2 và external) đều stream qua proxy để:
+              // 1. Ẩn URL gốc khỏi download tools (Cốc Cốc, IDM)
+              // 2. Giải quyết CORS issues
+              // 3. Bảo mật tốt hơn
+              const rawVideoUrl = firstVideo?.videoUrl || null;
+              const hasVideo = !!rawVideoUrl;
+              
+              // Không trả về videoUrl trực tiếp - phải stream qua proxy
+              const convertedVideoUrl: string | null = null;
+              const needsProxy = hasVideo;
 
               // Convert thumbnail
               const convertedThumbnail =
                 await CourseController.convertMinioPathToUrl(
-                  firstVideo?.thumbnail || courseData.thumbnail || null
+                  firstVideo?.thumbnail || courseData.thumbnail || null,
+                  false
                 );
 
               // Convert document URL
               const convertedDocumentUrl =
                 await CourseController.convertMinioPathToUrl(
-                  firstDocument?.fileUrl || null
+                  firstDocument?.fileUrl || null,
+                  false
                 );
 
-              // Convert videos array
+              // Convert videos array - TẤT CẢ video stream qua proxy
               const convertedVideos = await Promise.all(
-                (lessonData.videos || []).map(async (video: any) => ({
-                  ...video,
-                  videoUrl: await CourseController.convertMinioPathToUrl(
-                    video.videoUrl
-                  ),
-                  thumbnail: await CourseController.convertMinioPathToUrl(
-                    video.thumbnail
-                  ),
-                }))
+                (lessonData.videos || []).map(async (video: any) => {
+                  const rawUrl = video.videoUrl;
+                  const hasVideo = !!rawUrl;
+                  
+                  // Không trả về videoUrl trực tiếp - phải stream qua proxy
+                  return {
+                    ...video,
+                    videoUrl: null, // Hidden - use proxy
+                    needsProxy: hasVideo, // Tất cả video đều cần proxy
+                    thumbnail: await CourseController.convertMinioPathToUrl(
+                      video.thumbnail,
+                      false
+                    ),
+                  };
+                })
               );
 
               // Convert documents array
@@ -508,7 +522,8 @@ class CourseController {
                 (lessonData.documents || []).map(async (doc: any) => ({
                   ...doc,
                   fileUrl: await CourseController.convertMinioPathToUrl(
-                    doc.fileUrl
+                    doc.fileUrl,
+                    false
                   ),
                 }))
               );
@@ -521,6 +536,7 @@ class CourseController {
                 type: lessonData.type || "video",
                 order: lessonData.index || 0,
                 videoUrl: convertedVideoUrl,
+                needsProxy, // Flag để frontend biết cần request qua proxy
                 documentUrl: convertedDocumentUrl,
                 thumbnail: convertedThumbnail,
                 duration: lessonData.duration || firstVideo?.duration || 0,
@@ -623,10 +639,11 @@ class CourseController {
       courseData.examCount = totalQuizCount; // Alias for consistency
       courseData.isPurchased = userHasPurchased; // Add purchase status
       
-      // Convert introVideo from MinIO path to URL if exists
+      // Convert introVideo (15 phút expiry)
       if (courseData.introVideo) {
         courseData.introVideo = await CourseController.convertMinioPathToUrl(
-          courseData.introVideo
+          courseData.introVideo,
+          true // isVideo = true -> 15 min expiry
         );
       }
       
@@ -638,9 +655,11 @@ class CourseController {
 
     /**
    * Convert MinIO path to full URL (presigned or public)
+   * Video URLs có thời gian hết hạn ngắn (15 phút) để bảo mật
    */
     private static async convertMinioPathToUrl(
-      path: string | null | undefined
+      path: string | null | undefined,
+      isVideo: boolean = false
     ): Promise<string | null> {
       if (!path) return null;
   
@@ -649,10 +668,12 @@ class CourseController {
       }
       const objectName = path.replace(/^\/vanphuccare-video-edu\//, "");
       try {
+        // Video: 15 phút, Các file khác: 24 giờ
+        const expirySeconds = isVideo ? 15 * 60 : 24 * 60 * 60;
         const fileUrl = await CloudflareService.getFileUrlWithFallback(
           objectName,
           false,
-          7 * 24 * 60 * 60
+          expirySeconds
         );
         return fileUrl; 
       } catch (error) {
@@ -847,9 +868,9 @@ class CourseController {
               ? Math.round((completedLessons / totalLessons) * 100)
               : 0;
 
-          // Convert introVideo from MinIO path to URL if exists
+          // Convert introVideo (15 phút expiry)
           const convertedIntroVideo = courseData.introVideo
-            ? await CourseController.convertMinioPathToUrl(courseData.introVideo)
+            ? await CourseController.convertMinioPathToUrl(courseData.introVideo, true)
             : null;
 
           return {
@@ -1003,7 +1024,7 @@ class CourseController {
         // Preview lessons are always unlocked
         if (lessonData.isPreview) return false;
 
-        // In getMyCourseBySlug, user has already purchased, so only check sequential completion
+        // [getMyCourseBySlug] User has already purchased, so only check sequential completion
         // First 2 lessons of first chapter are always unlocked
         if (chapterIndex === 0 && lessonIndex <= 1) return false;
 
@@ -1089,35 +1110,48 @@ class CourseController {
                 lessonData
               );
 
-              // Convert video URLs
-              const convertedVideoUrl =
-                await CourseController.convertMinioPathToUrl(
-                  firstVideo?.videoUrl || null
-                );
+              // SECURITY: TẤT CẢ video (R2 và external) đều stream qua proxy để:
+              // 1. Ẩn URL gốc khỏi download tools (Cốc Cốc, IDM)
+              // 2. Giải quyết CORS issues
+              // 3. Bảo mật tốt hơn
+              const rawVideoUrl = firstVideo?.videoUrl || null;
+              const hasVideo = !!rawVideoUrl;
+              
+              // Không trả về videoUrl trực tiếp - phải stream qua proxy
+              const convertedVideoUrl: string | null = null;
+              const needsProxy = hasVideo;
 
               // Convert thumbnail
               const convertedThumbnail =
                 await CourseController.convertMinioPathToUrl(
-                  firstVideo?.thumbnail || courseData.thumbnail || null
+                  firstVideo?.thumbnail || courseData.thumbnail || null,
+                  false
                 );
 
               // Convert document URL
               const convertedDocumentUrl =
                 await CourseController.convertMinioPathToUrl(
-                  firstDocument?.fileUrl || null
+                  firstDocument?.fileUrl || null,
+                  false
                 );
 
-              // Convert videos array
+              // Convert videos array - TẤT CẢ video stream qua proxy
               const convertedVideos = await Promise.all(
-                (lessonData.videos || []).map(async (video: any) => ({
-                  ...video,
-                  videoUrl: await CourseController.convertMinioPathToUrl(
-                    video.videoUrl
-                  ),
-                  thumbnail: await CourseController.convertMinioPathToUrl(
-                    video.thumbnail
-                  ),
-                }))
+                (lessonData.videos || []).map(async (video: any) => {
+                  const rawUrl = video.videoUrl;
+                  const hasVideo = !!rawUrl;
+                  
+                  // Không trả về videoUrl trực tiếp - phải stream qua proxy
+                  return {
+                    ...video,
+                    videoUrl: null, // Hidden - use proxy
+                    needsProxy: hasVideo, // Tất cả video đều cần proxy
+                    thumbnail: await CourseController.convertMinioPathToUrl(
+                      video.thumbnail,
+                      false
+                    ),
+                  };
+                })
               );
 
               // Convert documents array
@@ -1125,7 +1159,8 @@ class CourseController {
                 (lessonData.documents || []).map(async (doc: any) => ({
                   ...doc,
                   fileUrl: await CourseController.convertMinioPathToUrl(
-                    doc.fileUrl
+                    doc.fileUrl,
+                    false
                   ),
                 }))
               );
@@ -1138,6 +1173,7 @@ class CourseController {
                 type: lessonData.type || "video",
                 order: lessonData.index || 0,
                 videoUrl: convertedVideoUrl,
+                needsProxy, // Flag để frontend biết cần request qua proxy
                 documentUrl: convertedDocumentUrl,
                 thumbnail: convertedThumbnail,
                 duration: lessonData.duration || firstVideo?.duration || 0,
@@ -1236,10 +1272,11 @@ class CourseController {
       courseData.documentCount = totalDocumentCount;
       courseData.quizCount = totalQuizCount;
 
-      // Convert introVideo from MinIO path to URL if exists
+      // Convert introVideo (15 phút expiry)
       if (courseData.introVideo) {
         courseData.introVideo = await CourseController.convertMinioPathToUrl(
-          courseData.introVideo
+          courseData.introVideo,
+          true // isVideo = true -> 15 min expiry
         );
       }
 
