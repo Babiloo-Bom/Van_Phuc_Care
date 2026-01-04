@@ -20,6 +20,12 @@ WORKDIR /app
 # Copy package files
 COPY package.json package-lock.json* ./
 
+# Configure npm for better network stability
+RUN npm config set registry https://registry.npmmirror.com && \
+    npm config set fetch-retries 5 && \
+    npm config set fetch-retry-mintimeout 20000 && \
+    npm config set fetch-retry-maxtimeout 120000
+
 # Install all dependencies (including devDependencies for build)
 RUN npm ci --legacy-peer-deps && \
     npm cache clean --force

@@ -132,15 +132,30 @@ export default class ProgressController {
       // Save course progress
       if (courseProgress && Array.isArray(courseProgress)) {
         for (const progress of courseProgress) {
+          // Check if course progress already exists to preserve completedAt
+          const existingCourseProgress = await CourseProgress.findOne({
+            userId: userId.toString(),
+            courseId: progress.courseId
+          });
+
+          // Build update data - exclude completedAt if it already exists
+          const updateData: any = {
+            ...progress,
+            userId: userId.toString()
+          };
+
+          // IMPORTANT: Never overwrite completedAt if it already exists
+          // completedAt should only be set once when course is first completed
+          if (existingCourseProgress?.completedAt) {
+            delete updateData.completedAt;
+          }
+
           await CourseProgress.findOneAndUpdate(
             {
               userId: userId.toString(),
               courseId: progress.courseId
             },
-            {
-              ...progress,
-              userId: userId.toString()
-            },
+            updateData,
             { upsert: true, new: true }
           );
         }
@@ -286,21 +301,39 @@ export default class ProgressController {
 
       const progressPercentage = totalLessons > 0 ? Math.round((completedLessons / totalLessons) * 100) : 0;
 
+      // Check if course progress already exists to preserve completedAt
+      const existingProgress = await CourseProgress.findOne({
+        userId,
+        courseId
+      });
+
+      // Only set completedAt if course is newly completed (100%) and doesn't have completedAt yet
+      const shouldSetCompletedAt = progressPercentage === 100 && !existingProgress?.completedAt;
+      
+      // Debug log
+      console.log(`[updateCourseProgress] userId=${userId}, courseId=${courseId}, progress=${progressPercentage}%, existingCompletedAt=${existingProgress?.completedAt}, shouldSetCompletedAt=${shouldSetCompletedAt}`);
+
       // Update course progress
+      const updateData: any = {
+        userId,
+        courseId,
+        totalLessons,
+        completedLessons,
+        progressPercentage,
+        lastAccessedAt: new Date()
+      };
+
+      // Only set completedAt once - when first reaching 100%
+      if (shouldSetCompletedAt) {
+        updateData.completedAt = new Date();
+      }
+
       const courseProgress = await CourseProgress.findOneAndUpdate(
         {
           userId,
           courseId
         },
-        {
-          userId,
-          courseId,
-          totalLessons,
-          completedLessons,
-          progressPercentage,
-          lastAccessedAt: new Date(),
-          completedAt: progressPercentage === 100 ? new Date() : undefined
-        },
+        updateData,
         { upsert: true, new: true }
       );
 

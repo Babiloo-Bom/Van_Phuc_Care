@@ -567,12 +567,24 @@ class CourseController {
           ? Math.round((completedLessons / totalLessons) * 100)
           : 0;
 
+      // Get completedAt from CourseProgress collection (set once when first completed)
+      let courseCompletedAt = null;
+      if (userId) {
+        const CourseProgress = mongoose.model("CourseProgress");
+        const courseProgressRecord = await CourseProgress.findOne({
+          userId: userId.toString(),
+          courseId: course._id.toString(),
+        });
+        courseCompletedAt = courseProgressRecord?.completedAt || null;
+      }
+
       // Add progress data to course
       courseData.progress = {
         totalLessons,
         completedLessons,
         progressPercentage,
         isCompleted: progressPercentage === 100,
+        completedAt: courseCompletedAt,
       };
 
       let totalVideoCount = 0;
@@ -1172,12 +1184,20 @@ class CourseController {
           ? Math.round((completedLessons / totalLessons) * 100)
           : 0;
 
+      // Get completedAt from CourseProgress collection (set once when first completed)
+      const CourseProgress = mongoose.model("CourseProgress");
+      const courseProgressRecord = await CourseProgress.findOne({
+        userId: userId.toString(),
+        courseId: course._id.toString(),
+      });
+
       // Add progress data to course
       courseData.progress = {
         totalLessons,
         completedLessons,
         progressPercentage,
         isCompleted: progressPercentage === 100,
+        completedAt: courseProgressRecord?.completedAt || null,
       };
 
       // Calculate videoCount, documentCount, quizCount

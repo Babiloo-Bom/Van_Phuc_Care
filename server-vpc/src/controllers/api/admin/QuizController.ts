@@ -174,20 +174,35 @@ export default class QuizController {
 
             const progressPercentage = totalLessons > 0 ? Math.round((completedLessons / totalLessons) * 100) : 0;
 
+            // Check if course progress already exists to preserve completedAt
+            const existingProgress = await CourseProgress.findOne({
+              userId: userId.toString(),
+              courseId
+            });
+
+            // Only set completedAt if course is newly completed (100%) and doesn't have completedAt yet
+            const shouldSetCompletedAt = progressPercentage === 100 && !existingProgress?.completedAt;
+
+            const updateData: any = {
+              userId: userId.toString(),
+              courseId,
+              totalLessons,
+              completedLessons,
+              progressPercentage,
+              lastAccessedAt: new Date()
+            };
+
+            // Only set completedAt once - when first reaching 100%
+            if (shouldSetCompletedAt) {
+              updateData.completedAt = new Date();
+            }
+
             await CourseProgress.findOneAndUpdate(
               {
                 userId: userId.toString(),
                 courseId
               },
-              {
-                userId: userId.toString(),
-                courseId,
-                totalLessons,
-                completedLessons,
-                progressPercentage,
-                lastAccessedAt: new Date(),
-                completedAt: progressPercentage === 100 ? new Date() : undefined
-              },
+              updateData,
               { upsert: true, new: true }
             );
             if (progressPercentage === 100 && isUserSubmit) {
