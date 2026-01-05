@@ -5,7 +5,6 @@
  * Chạy: node scripts/fix-coupon-validTo.js
  */
 
-require('module-alias/register');
 const mongoose = require('mongoose');
 const dotenv = require('dotenv');
 
