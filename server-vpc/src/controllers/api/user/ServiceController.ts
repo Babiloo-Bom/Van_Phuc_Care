@@ -223,7 +223,7 @@ class ServiceController {
         return sendError(res, 400, 'Bạn đã đăng ký dịch vụ này rồi');
       }
 
-      // Create registration
+      // Create registration with leadStatus = 'new'
       const registration = await MongoDbServiceRegistrations.model.create({
         userId: userId.toString(),
         serviceId,
@@ -233,7 +233,27 @@ class ServiceController {
         address,
         notes,
         status: 'registered',
+        leadStatus: 'new', // New lead by default
       });
+
+      // Notify all admins about new lead
+      try {
+        const admins = await (await import('@mongodb/admins')).default.model.find({
+          role: { $in: ['admin', 'manager'] },
+          status: 'active'
+        }).select('email fullname').lean();
+        
+        // Log notification (can be extended with email/SMS/WebSocket later)
+        const serviceTitle = (service as any).title || 'Unknown Service';
+        console.log(`📢 New lead created: ${registration._id} - Service: ${serviceTitle} - Customer: ${customerName || customerEmail}`);
+        console.log(`📢 Notifying ${admins.length} admin(s) about new lead`);
+        
+        // TODO: Implement real-time notification via WebSocket or polling
+        // For now, admins will see new leads when they refresh the page
+      } catch (notifyError) {
+        console.error('❌ Failed to notify admins:', notifyError);
+        // Don't fail the registration if notification fails
+      }
 
       return sendSuccess(res, {
         message: 'Đăng ký dịch vụ thành công',

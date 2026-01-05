@@ -18,6 +18,218 @@
 
     <!-- Tabs -->
     <a-tabs v-model:activeKey="activeTab" @change="handleTabChange" class="management-tabs">
+      <!-- Leads Tab -->
+      <a-tab-pane key="leads" tab="Quản lý khách hàng đăng ký dịch vụ">
+        <!-- Leads Statistics -->
+        <a-card class="stats-card" :bordered="false" style="margin-bottom: 16px">
+          <a-row :gutter="16">
+            <a-col :xs="24" :sm="12" :md="6">
+              <div class="stat-item">
+                <div class="stat-value">{{ leadStats.total || 0 }}</div>
+                <div class="stat-label">Tổng số Lead</div>
+              </div>
+            </a-col>
+            <a-col :xs="24" :sm="12" :md="6">
+              <div class="stat-item stat-new">
+                <div class="stat-value">{{ leadStats.new || 0 }}</div>
+                <div class="stat-label">Mới</div>
+              </div>
+            </a-col>
+            <a-col :xs="24" :sm="12" :md="6">
+              <div class="stat-item stat-contacted">
+                <div class="stat-value">{{ leadStats.contacted || 0 }}</div>
+                <div class="stat-label">Đã liên hệ</div>
+              </div>
+            </a-col>
+            <a-col :xs="24" :sm="12" :md="6">
+              <div class="stat-item stat-crm">
+                <div class="stat-value">{{ leadStats.inCrm || 0 }}</div>
+                <div class="stat-label">Đã vào CRM</div>
+              </div>
+            </a-col>
+          </a-row>
+        </a-card>
+
+        <!-- Leads Filters -->
+        <a-card class="filters-card" :bordered="false">
+          <div class="filters-container">
+            <a-input-search
+              v-model:value="leadSearchQuery"
+              placeholder="Tìm kiếm theo tên, email, số điện thoại..."
+              style="width: 300px"
+              allow-clear
+              @search="handleLeadSearch"
+              @pressEnter="handleLeadSearch"
+            />
+            <a-select
+              v-model:value="leadStatusFilter"
+              placeholder="Trạng thái Lead"
+              style="width: 200px"
+              allow-clear
+              @change="handleLeadFilter"
+            >
+              <a-select-option value="new">Mới</a-select-option>
+              <a-select-option value="contacted">Đã liên hệ</a-select-option>
+              <a-select-option value="in_crm">Đã vào CRM</a-select-option>
+            </a-select>
+            <a-select
+              v-model:value="leadServiceFilter"
+              placeholder="Dịch vụ"
+              style="width: 200px"
+              allow-clear
+              show-search
+              :filter-option="(input: string, option: any) => {
+                const label = option?.label || option?.children || ''
+                return String(label).toLowerCase().includes(input.toLowerCase())
+              }"
+              @change="handleLeadFilter"
+            >
+              <a-select-option 
+                v-for="service in services" 
+                :key="service._id" 
+                :value="service._id"
+                :label="service.title"
+              >
+                {{ service.title }}
+              </a-select-option>
+            </a-select>
+          </div>
+        </a-card>
+
+        <!-- Leads Table -->
+        <a-card class="table-card" :bordered="false">
+          <a-table
+            :columns="leadColumns"
+            :data-source="leads"
+            :loading="loading"
+            :pagination="leadPagination"
+            :scroll="{ x: 1400 }"
+            @change="handleLeadTableChange"
+            class="desktop-table"
+          >
+            <template #bodyCell="{ column, record }">
+              <template v-if="column.key === 'customer'">
+                <div>
+                  <div class="font-medium">{{ getLeadCustomerName(record) || 'N/A' }}</div>
+                  <div class="text-xs text-gray-500">{{ getLeadCustomerEmail(record) || '' }}</div>
+                  <div class="text-xs text-gray-500">{{ getLeadCustomerPhone(record) || '' }}</div>
+                </div>
+              </template>
+              <template v-else-if="column.key === 'service'">
+                <div v-if="record.service">
+                  <div class="font-medium">{{ record.service.title }}</div>
+                </div>
+                <span v-else class="text-gray-400">N/A</span>
+              </template>
+              <template v-else-if="column.key === 'leadStatus'">
+                <a-tag :color="getLeadStatusColor(record.leadStatus)">
+                  {{ getLeadStatusText(record.leadStatus) }}
+                </a-tag>
+              </template>
+              <template v-else-if="column.key === 'status'">
+                <a-tag :color="record.status === 'registered' ? 'green' : record.status === 'cancelled' ? 'red' : 'default'">
+                  {{ record.status === 'registered' ? 'Đã đăng ký' : record.status === 'cancelled' ? 'Đã hủy' : 'Hoàn thành' }}
+                </a-tag>
+              </template>
+              <template v-else-if="column.key === 'address'">
+                <span>{{ getLeadAddress(record) || 'N/A' }}</span>
+              </template>
+              <template v-else-if="column.key === 'actions'">
+                <a-space>
+                  <a-button type="link" size="small" @click="handleViewLead(record)">
+                    <EyeOutlined /> Xem
+                  </a-button>
+                  <a-dropdown>
+                    <template #overlay>
+                      <a-menu @click="(e: any) => handleLeadStatusChange(record, e.key)">
+                        <a-menu-item key="new">Đánh dấu: Mới</a-menu-item>
+                        <a-menu-item key="contacted">Đánh dấu: Đã liên hệ</a-menu-item>
+                        <a-menu-item key="in_crm">Đánh dấu: Đã vào CRM</a-menu-item>
+                        <a-menu-divider />
+                        <a-menu-item key="delete" danger>Xóa</a-menu-item>
+                      </a-menu>
+                    </template>
+                    <a-button type="link" size="small">
+                      Thao tác <DownOutlined />
+                    </a-button>
+                  </a-dropdown>
+                </a-space>
+              </template>
+            </template>
+          </a-table>
+
+          <!-- Mobile Cards for Leads -->
+          <div class="mobile-cards">
+            <a-card
+              v-for="item in leads"
+              :key="item._id"
+              class="mobile-card"
+              :bordered="false"
+            >
+              <div class="card-header">
+                <div class="card-title-row">
+                  <h3 class="card-title">{{ item.customerName || 'N/A' }}</h3>
+                  <a-tag :color="getLeadStatusColor(item.leadStatus)">
+                    {{ getLeadStatusText(item.leadStatus) }}
+                  </a-tag>
+                </div>
+              </div>
+              
+              <div class="card-content">
+                <div class="card-row">
+                  <span class="card-label">Họ tên:</span>
+                  <span>{{ getLeadCustomerName(item) || 'N/A' }}</span>
+                </div>
+                <div class="card-row">
+                  <span class="card-label">Email:</span>
+                  <span>{{ getLeadCustomerEmail(item) || 'N/A' }}</span>
+                </div>
+                <div class="card-row">
+                  <span class="card-label">Số điện thoại:</span>
+                  <span>{{ getLeadCustomerPhone(item) || 'N/A' }}</span>
+                </div>
+                <div class="card-row" v-if="item.service">
+                  <span class="card-label">Dịch vụ:</span>
+                  <span>{{ item.service.title }}</span>
+                </div>
+                <div class="card-row" v-if="getLeadAddress(item)">
+                  <span class="card-label">Địa chỉ:</span>
+                  <span>{{ getLeadAddress(item) }}</span>
+                </div>
+                <div class="card-row" v-if="item.notes">
+                  <span class="card-label">Ghi chú:</span>
+                  <span>{{ item.notes }}</span>
+                </div>
+                <div class="card-row" v-if="item.createdAt">
+                  <span class="card-label">Ngày đăng ký:</span>
+                  <span>{{ formatDate(item.createdAt) }}</span>
+                </div>
+              </div>
+
+              <div class="card-actions">
+                <a-button type="link" size="small" @click="handleViewLead(item)">
+                  <EyeOutlined /> Xem
+                </a-button>
+                <a-dropdown>
+                  <template #overlay>
+                    <a-menu @click="(e: any) => handleLeadStatusChange(item, e.key)">
+                      <a-menu-item key="new">Đánh dấu: Mới</a-menu-item>
+                      <a-menu-item key="contacted">Đánh dấu: Đã liên hệ</a-menu-item>
+                      <a-menu-item key="in_crm">Đánh dấu: Đã vào CRM</a-menu-item>
+                      <a-menu-divider />
+                      <a-menu-item key="delete" danger>Xóa</a-menu-item>
+                    </a-menu>
+                  </template>
+                  <a-button type="link" size="small">
+                    Thao tác <DownOutlined />
+                  </a-button>
+                </a-dropdown>
+              </div>
+            </a-card>
+          </div>
+        </a-card>
+      </a-tab-pane>
+
       <!-- Services Tab -->
       <a-tab-pane key="services" tab="Dịch vụ">
         <!-- Services Filters -->
@@ -450,6 +662,65 @@
         </a-form-item>
       </a-form>
     </a-modal>
+
+    <!-- Lead View Modal -->
+    <a-modal
+      v-model:open="leadModalVisible"
+      title="Chi tiết khách hàng đăng ký"
+      :width="700"
+      @cancel="leadModalVisible = false"
+      :footer="null"
+    >
+      <div v-if="leadFormData" class="lead-detail">
+        <a-descriptions :column="1" bordered>
+          <a-descriptions-item label="Họ tên">
+            {{ getLeadCustomerName(leadFormData) || 'N/A' }}
+          </a-descriptions-item>
+          <a-descriptions-item label="Email">
+            {{ getLeadCustomerEmail(leadFormData) || 'N/A' }}
+          </a-descriptions-item>
+          <a-descriptions-item label="Số điện thoại">
+            {{ getLeadCustomerPhone(leadFormData) || 'N/A' }}
+          </a-descriptions-item>
+          <a-descriptions-item label="Dịch vụ">
+            {{ leadFormData.service?.title || 'N/A' }}
+          </a-descriptions-item>
+          <a-descriptions-item label="Địa chỉ">
+            {{ getLeadAddress(leadFormData) || 'N/A' }}
+          </a-descriptions-item>
+          <a-descriptions-item label="Trạng thái Lead">
+            <a-tag :color="getLeadStatusColor(leadFormData.leadStatus)">
+              {{ getLeadStatusText(leadFormData.leadStatus) }}
+            </a-tag>
+          </a-descriptions-item>
+          <a-descriptions-item label="Trạng thái đăng ký">
+            <a-tag :color="leadFormData.status === 'registered' ? 'green' : leadFormData.status === 'cancelled' ? 'red' : 'default'">
+              {{ leadFormData.status === 'registered' ? 'Đã đăng ký' : leadFormData.status === 'cancelled' ? 'Đã hủy' : 'Hoàn thành' }}
+            </a-tag>
+          </a-descriptions-item>
+          <a-descriptions-item label="Ghi chú">
+            {{ leadFormData.notes || 'N/A' }}
+          </a-descriptions-item>
+          <a-descriptions-item label="Ngày đăng ký">
+            {{ formatDate(leadFormData.createdAt) }}
+          </a-descriptions-item>
+        </a-descriptions>
+        
+        <div style="margin-top: 24px; text-align: right">
+          <a-space>
+            <a-button @click="handleLeadStatusChange(leadFormData, 'new')">
+              Đánh dấu: Mới
+            </a-button>
+            <a-button @click="handleLeadStatusChange(leadFormData, 'contacted')">
+              Đánh dấu: Đã liên hệ
+            </a-button>
+            <a-button type="primary" @click="handleLeadStatusChange(leadFormData, 'in_crm')">
+              Đánh dấu: Đã vào CRM
+            </a-button>
+          </a-space>
+        </div>
+      </div>
+    </a-modal>
   </div>
 </template>
 
@@ -459,13 +730,16 @@ import {
   ReloadOutlined,
   EditOutlined,
   DeleteOutlined,
-  EyeOutlined
+  EyeOutlined,
+  DownOutlined
 } from '@ant-design/icons-vue'
 import { message } from 'ant-design-vue'
 import type { Service } from '~/composables/api/useServicesApi'
 import type { Order } from '~/composables/api/useOrdersApi'
+import type { Lead } from '~/composables/api/useLeadsApi'
 import { useServicesApi } from '~/composables/api/useServicesApi'
 import { useOrdersApi } from '~/composables/api/useOrdersApi'
+import { useLeadsApi } from '~/composables/api/useLeadsApi'
 import { useUploadsApi } from '~/composables/api/useUploadsApi'
 import type { UploadFile } from 'ant-design-vue'
 import dayjs from 'dayjs'
@@ -478,10 +752,11 @@ definePageMeta({
 
 const servicesApi = useServicesApi()
 const ordersApi = useOrdersApi()
+const leadsApi = useLeadsApi()
 const uploadsApi = useUploadsApi()
 
 // Tab management
-const activeTab = ref<string>('services')
+const activeTab = ref<string>('leads')
 
 // Services state
 const services = ref<Service[]>([])
@@ -523,6 +798,22 @@ const orderPagination = reactive({
   total: 0,
   showSizeChanger: true,
   showTotal: (total: number) => `Tổng ${total} đơn hàng`
+})
+
+// Leads state
+const leads = ref<Lead[]>([])
+const leadSearchQuery = ref('')
+const leadStatusFilter = ref<string | undefined>()
+const leadServiceFilter = ref<string | undefined>()
+const leadStats = ref({ total: 0, new: 0, contacted: 0, inCrm: 0 })
+const leadModalVisible = ref(false)
+const leadFormData = ref<Lead | null>(null)
+const leadPagination = reactive({
+  current: 1,
+  pageSize: 10,
+  total: 0,
+  showSizeChanger: true,
+  showTotal: (total: number) => `Tổng ${total} khách hàng đăng ký`
 })
 
 // Service columns
@@ -568,6 +859,57 @@ const serviceColumns = [
     dataIndex: 'createdAt',
     key: 'createdAt',
     width: 150
+  }
+]
+
+// Lead columns
+const leadColumns = [
+  {
+    title: 'Khách hàng',
+    key: 'customer',
+    width: 200,
+    fixed: 'left'
+  },
+  {
+    title: 'Dịch vụ',
+    key: 'service',
+    width: 200
+  },
+  {
+    title: 'Trạng thái Lead',
+    key: 'leadStatus',
+    width: 150
+  },
+  {
+    title: 'Trạng thái đăng ký',
+    key: 'status',
+    width: 150
+  },
+  {
+    title: 'Địa chỉ',
+    dataIndex: 'address',
+    key: 'address',
+    width: 200,
+    ellipsis: true
+  },
+  {
+    title: 'Ghi chú',
+    dataIndex: 'notes',
+    key: 'notes',
+    width: 200,
+    ellipsis: true
+  },
+  {
+    title: 'Ngày đăng ký',
+    dataIndex: 'createdAt',
+    key: 'createdAt',
+    width: 150
+  },
+  {
+    title: 'Thao tác',
+    key: 'actions',
+    width: 150,
+    fixed: 'right'
   }
 ]
 
@@ -915,6 +1257,212 @@ const handleOrderModalCancel = () => {
   orderFormData.value = null
 }
 
+// Fetch leads
+const fetchLeads = async () => {
+  loading.value = true
+  try {
+    const params: any = {
+      page: leadPagination.current,
+      limit: leadPagination.pageSize
+    }
+    if (leadSearchQuery.value) {
+      params.search = leadSearchQuery.value
+    }
+    if (leadStatusFilter.value) {
+      params.leadStatus = leadStatusFilter.value
+    }
+    if (leadServiceFilter.value) {
+      params.serviceId = leadServiceFilter.value
+    }
+
+    const response = await leadsApi.getLeads(params)
+    
+    if (response.status && response.data) {
+      const responseData = (response as any).data?.data || (response as any).data || response
+      leads.value = responseData.leads || []
+      leadPagination.total = responseData.pagination?.total || 0
+    }
+  } catch (error) {
+    console.error('❌ Failed to fetch leads:', error)
+    message.error('Không thể tải danh sách khách hàng đăng ký')
+  } finally {
+    loading.value = false
+  }
+}
+
+// Fetch lead stats
+const fetchLeadStats = async () => {
+  try {
+    const response = await leadsApi.getLeadStats()
+    if (response.status && response.data) {
+      const responseData = (response as any).data?.data || (response as any).data || response
+      leadStats.value = responseData.stats || { total: 0, new: 0, contacted: 0, inCrm: 0 }
+    }
+  } catch (error) {
+    console.error('❌ Failed to fetch lead stats:', error)
+  }
+}
+
+// Lead handlers
+const handleLeadSearch = () => {
+  leadPagination.current = 1
+  fetchLeads()
+}
+
+const handleLeadFilter = () => {
+  leadPagination.current = 1
+  fetchLeads()
+}
+
+const handleLeadTableChange = (pag: any) => {
+  leadPagination.current = pag.current
+  leadPagination.pageSize = pag.pageSize
+  fetchLeads()
+}
+
+const handleViewLead = (record: Lead) => {
+  leadFormData.value = { ...record }
+  leadModalVisible.value = true
+}
+
+const handleLeadStatusChange = async (record: Lead, action: string) => {
+  if (action === 'delete') {
+    try {
+      await leadsApi.deleteLead(record._id)
+      message.success('Xóa khách hàng đăng ký thành công')
+      fetchLeads()
+      fetchLeadStats()
+    } catch (error) {
+      console.error('❌ Failed to delete lead:', error)
+      message.error('Không thể xóa khách hàng đăng ký')
+    }
+  } else if (['new', 'contacted', 'in_crm'].includes(action)) {
+    try {
+      await leadsApi.updateLeadStatus(record._id, { leadStatus: action as any })
+      message.success('Cập nhật trạng thái thành công')
+      fetchLeads()
+      fetchLeadStats()
+    } catch (error) {
+      console.error('❌ Failed to update lead status:', error)
+      message.error('Không thể cập nhật trạng thái')
+    }
+  }
+}
+
+const getLeadStatusColor = (status?: string) => {
+  const colors: Record<string, string> = {
+    new: 'red',
+    contacted: 'orange',
+    in_crm: 'green'
+  }
+  return colors[status || ''] || 'default'
+}
+
+const getLeadStatusText = (status?: string) => {
+  const texts: Record<string, string> = {
+    new: 'Mới',
+    contacted: 'Đã liên hệ',
+    in_crm: 'Đã vào CRM'
+  }
+  return texts[status || ''] || status || 'N/A'
+}
+
+// Extract customer name from lead record (from customerName field or parse from notes)
+const getLeadCustomerName = (record: Lead) => {
+  if (record.customerName) {
+    return record.customerName
+  }
+  
+  if (record.notes) {
+    // Look for "Họ tên: ..." or "Tên: ..." pattern
+    const nameMatch = record.notes.match(/(?:Họ tên|Tên)[:\s]+(.+?)(?:\n|$)/i)
+    if (nameMatch && nameMatch[1]) {
+      return nameMatch[1].trim()
+    }
+  }
+  
+  return null
+}
+
+// Extract customer email from lead record (from customerEmail field or parse from notes)
+const getLeadCustomerEmail = (record: Lead) => {
+  if (record.customerEmail) {
+    return record.customerEmail
+  }
+  
+  if (record.notes) {
+    // Look for "Email: ..." pattern
+    const emailMatch = record.notes.match(/Email[:\s]+(.+?)(?:\n|$)/i)
+    if (emailMatch && emailMatch[1]) {
+      return emailMatch[1].trim()
+    }
+    
+    // Also try to find email pattern directly
+    const emailPattern = /([a-zA-Z0-9._-]+@[a-zA-Z0-9._-]+\.[a-zA-Z0-9_-]+)/g
+    const emailFound = record.notes.match(emailPattern)
+    if (emailFound && emailFound[0]) {
+      return emailFound[0]
+    }
+  }
+  
+  return null
+}
+
+// Extract customer phone from lead record (from customerPhone field or parse from notes)
+const getLeadCustomerPhone = (record: Lead) => {
+  if (record.customerPhone) {
+    return record.customerPhone
+  }
+  
+  if (record.notes) {
+    // Look for "SĐT: ..." or "Phone: ..." or "Số điện thoại: ..." pattern
+    const phoneMatch = record.notes.match(/(?:SĐT|Phone|Số điện thoại)[:\s]+(.+?)(?:\n|$)/i)
+    if (phoneMatch && phoneMatch[1]) {
+      return phoneMatch[1].trim()
+    }
+    
+    // Also try to find phone pattern directly (Vietnamese phone numbers)
+    const phonePattern = /(0[3|5|7|8|9][0-9]{8}|[0-9]{10,11})/g
+    const phoneFound = record.notes.match(phonePattern)
+    if (phoneFound && phoneFound[0]) {
+      return phoneFound[0]
+    }
+  }
+  
+  return null
+}
+
+// Extract address from lead record (from address field or parse from notes)
+const getLeadAddress = (record: Lead) => {
+  // First try to get from address field
+  if (record.address) {
+    return record.address
+  }
+  
+  // If not, try to parse from notes
+  if (record.notes) {
+    // Look for "Địa chỉ: ..." pattern
+    const addressMatch = record.notes.match(/Địa chỉ[:\s]+(.+?)(?:\n|$)/i)
+    if (addressMatch && addressMatch[1]) {
+      return addressMatch[1].trim()
+    }
+    
+    // If no pattern match, check if notes itself looks like an address
+    // (contains common address keywords)
+    const addressKeywords = ['đường', 'phố', 'quận', 'huyện', 'tỉnh', 'thành phố', 'xã', 'phường']
+    const hasAddressKeywords = addressKeywords.some(keyword => 
+      record.notes?.toLowerCase().includes(keyword) || false
+    )
+    
+    if (hasAddressKeywords && record.notes.length < 200) {
+      // Might be just an address
+      return record.notes
+    }
+  }
+  
+  return null
+}
+
 // Tab change handler
 const handleTabChange = (key: string) => {
   activeTab.value = key
@@ -922,6 +1470,9 @@ const handleTabChange = (key: string) => {
     fetchServices()
   } else if (key === 'orders') {
     fetchCourseOrders()
+  } else if (key === 'leads') {
+    fetchLeads()
+    fetchLeadStats()
   }
 }
 
@@ -931,6 +1482,9 @@ const refreshData = () => {
     fetchServices()
   } else if (activeTab.value === 'orders') {
     fetchCourseOrders()
+  } else if (activeTab.value === 'leads') {
+    fetchLeads()
+    fetchLeadStats()
   }
 }
 
@@ -1012,6 +1566,9 @@ onMounted(() => {
     fetchServices()
   } else if (activeTab.value === 'orders') {
     fetchCourseOrders()
+  } else if (activeTab.value === 'leads') {
+    fetchLeads()
+    fetchLeadStats()
   }
 })
 </script>
@@ -1150,6 +1707,49 @@ onMounted(() => {
   .header-actions button {
     flex: 1;
   }
+}
+
+.stats-card {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: white;
+}
+
+.stat-item {
+  text-align: center;
+  padding: 16px;
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: 8px;
+  backdrop-filter: blur(10px);
+}
+
+.stat-item.stat-new {
+  background: rgba(255, 77, 79, 0.2);
+}
+
+.stat-item.stat-contacted {
+  background: rgba(255, 193, 7, 0.2);
+}
+
+.stat-item.stat-crm {
+  background: rgba(82, 196, 26, 0.2);
+}
+
+.stat-value {
+  font-size: 32px;
+  font-weight: 700;
+  margin-bottom: 8px;
+  color: white;
+}
+
+.stat-label {
+  font-size: 14px;
+  color: rgba(255, 255, 255, 0.9);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.lead-detail {
+  padding: 8px 0;
 }
 </style>
 

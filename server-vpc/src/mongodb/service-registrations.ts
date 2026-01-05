@@ -39,6 +39,11 @@ class ServiceRegistrationModels {
         default: 'registered',
         enum: ['registered', 'cancelled', 'completed'],
       },
+      leadStatus: {
+        type: String,
+        default: 'new',
+        enum: ['new', 'contacted', 'in_crm'],
+      },
     }, {
       timestamps: true,
     });

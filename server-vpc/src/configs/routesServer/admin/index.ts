@@ -32,6 +32,7 @@ import TicketsRouter from './Tickets';
 import DashboardRouter from './Dashboard';
 import ServicesRouter from './Services';
 import TransactionListRouter from "./TransactionList";
+import LeadsRouter from './Leads';
 import OrderController from '@controllers/api/admin/OrderController';
 
 const router = Router();
@@ -49,6 +50,7 @@ router.use("/product-collections", adminPassport.authenticate("jwt", { session: 
 router.use("/product-reviews", adminPassport.authenticate("jwt", { session: false }), ProductReviewsRouter);
 router.use("/customers", adminPassport.authenticate("jwt", { session: false }), CustomersRouter);
 router.use("/services", adminPassport.authenticate("jwt", { session: false }), ServicesRouter);
+router.use("/leads", adminPassport.authenticate("jwt", { session: false }), LeadsRouter);
 router.use("/orders", adminPassport.authenticate("jwt", { session: false }), OrdersRouter);
 router.use("/cart", CartRouter); // Public cart routes
 router.use("/reviews", ReviewsRouter); // Public reviews routes

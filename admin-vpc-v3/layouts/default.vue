@@ -111,6 +111,11 @@
                 <span>Quản lý khóa học</span>
               </NuxtLink>
             </a-menu-item>
+            <a-menu-item key="coupons">
+              <NuxtLink to="/coupons" class="flex items-center">
+                <span>Quản lý mã giảm giá</span>
+              </NuxtLink>
+            </a-menu-item>
           </a-sub-menu>
 
           <!-- My Menu với Submenu - Admin, Manager, Worker -->
@@ -194,7 +199,8 @@ import {
   MedicineBoxOutlined,
   AppstoreAddOutlined,  // Icon cho Dịch vụ và Đơn hàng khoá học
   UsergroupAddOutlined,  // Icon cho Khách hàng
-  CustomerServiceOutlined  // Icon cho Support Tickets
+  CustomerServiceOutlined,  // Icon cho Support Tickets
+  TagOutlined  // Icon cho Mã giảm giá
 } from '@ant-design/icons-vue'
 import { message } from 'ant-design-vue'
 
@@ -215,6 +221,7 @@ const selectedKeys = computed(() => {
   if (path === '/') return ['dashboard']
   if (path.startsWith('/admin/users')) return ['users']
   if (path.startsWith('/customers')) return ['customers']
+  if (path.startsWith('/coupons')) return ['coupons']
   if (path.startsWith('/elearning/courses')) return ['courses']
   if (path.startsWith('/my/so-skdt')) return ['so-skdt']
   if (path.startsWith('/my/transactions')) return ['transactions']  // Thêm dòng này
@@ -228,7 +235,7 @@ const selectedKeys = computed(() => {
 // Get open submenu keys based on current route
 const openKeys = computed(() => {
   const path = route.path
-  if (path.startsWith('/elearning')) return ['elearning']
+  if (path.startsWith('/elearning') || path.startsWith('/coupons')) return ['elearning']
   if (path.startsWith('/my')) return ['my']
   return []
 })

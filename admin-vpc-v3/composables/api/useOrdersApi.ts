@@ -89,6 +89,15 @@ export const useOrdersApi = () => {
      */
     async getOrderStats() {
       return apiClient.get('/api/a/orders/stats/overview')
+    },
+
+    /**
+     * Manual activation - Kích hoạt thủ công
+     */
+    async manualActivation(data: { userEmail: string; courseIds: string[]; notes?: string }) {
+      return apiClient.post<{ order: Order }>('/api/a/orders/manual-activation', data, {
+        errorMessage: 'Không thể kích hoạt thủ công'
+      })
     }
   }
 }

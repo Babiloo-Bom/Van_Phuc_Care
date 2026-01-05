@@ -9,6 +9,9 @@ router.post('/', OrderController.createOrder);
 // Create bypass order (for testing)
 router.post('/bypass', OrderController.createBypassOrder);
 
+// Manual activation - Kích hoạt thủ công
+router.post('/manual-activation', OrderController.manualActivation);
+
 // Get order by ID
 router.get('/:id', OrderController.getOrderById);
 

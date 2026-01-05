@@ -7,12 +7,20 @@
         <p class="page-subtitle">Quản lý đơn hàng và giao dịch</p>
       </div>
       <div class="header-actions">
-        <a-button @click="refreshData" :loading="loading">
-          <template #icon>
-            <ReloadOutlined />
-          </template>
-          Làm mới
-        </a-button>
+        <a-space>
+          <a-button type="primary" @click="showManualActivationModal">
+            <template #icon>
+              <PlusOutlined />
+            </template>
+            Kích hoạt thủ công
+          </a-button>
+          <a-button @click="refreshData" :loading="loading">
+            <template #icon>
+              <ReloadOutlined />
+            </template>
+            Làm mới
+          </a-button>
+        </a-space>
       </div>
     </div>
 
@@ -302,6 +310,93 @@
         </a-form-item>
       </a-form>
     </a-modal>
+
+    <!-- Manual Activation Modal -->
+    <a-modal
+      v-model:open="manualActivationModalVisible"
+      title="Kích hoạt thủ công"
+      width="700px"
+      :confirm-loading="manualActivationLoading"
+      @ok="handleManualActivation"
+      @cancel="handleCancelManualActivation"
+    >
+      <a-form :model="manualActivationForm" layout="vertical" :rules="manualActivationRules" ref="manualActivationFormRef">
+        <a-form-item label="Email tài khoản người dùng" name="userEmail" required>
+          <a-select
+            v-model:value="manualActivationForm.userEmail"
+            show-search
+            placeholder="Tìm kiếm người dùng theo tên hoặc email"
+            :filter-option="false"
+            :not-found-content="userSearchLoading ? undefined : null"
+            :loading="userSearchLoading"
+            size="large"
+            @search="handleUserSearch"
+            @change="handleUserSelect"
+            allow-clear
+          >
+            <template v-if="userSearchResults.length > 0">
+              <a-select-option 
+                v-for="user in userSearchResults" 
+                :key="user._id || user.email" 
+                :value="user.email"
+              >
+                <div class="user-option">
+                  <div class="user-name">
+                    {{ user.fullname || user.name || user.email }}
+                  </div>
+                  <div class="user-email">{{ user.email }}</div>
+                </div>
+              </a-select-option>
+            </template>
+            <template v-else-if="!userSearchLoading">
+              <a-select-option disabled value="">
+                Không tìm thấy người dùng
+              </a-select-option>
+            </template>
+          </a-select>
+          <div class="form-help-text">
+            Nhập email hoặc tên để tìm kiếm người dùng
+          </div>
+        </a-form-item>
+
+        <a-form-item label="Khóa học" name="courseIds" required>
+          <a-select
+            v-model:value="manualActivationForm.courseIds"
+            mode="multiple"
+            placeholder="Chọn khóa học"
+            :loading="loadingCourses"
+            size="large"
+            show-search
+            :filter-option="(input: string, option: any) => {
+              const label = option?.label || option?.children || ''
+              return String(label).toLowerCase().includes(input.toLowerCase())
+            }"
+            :not-found-content="loadingCourses ? undefined : (courses.length === 0 ? 'Không có khóa học nào' : 'Không tìm thấy khóa học')"
+          >
+            <a-select-option 
+              v-for="course in courses" 
+              :key="course._id || course.id" 
+              :value="course._id || course.id"
+              :label="course.name || course.title || course.code || 'N/A'"
+            >
+              {{ course.name || course.title || course.code || 'N/A' }}
+            </a-select-option>
+          </a-select>
+          <div class="form-help-text">
+            Chọn một hoặc nhiều khóa học để kích hoạt ({{ courses.length }} khóa học có sẵn)
+          </div>
+        </a-form-item>
+
+        <a-form-item label="Ghi chú" name="notes">
+          <a-textarea 
+            v-model:value="manualActivationForm.notes" 
+            :rows="3" 
+            placeholder="VD: User chuyển khoản lỗi, đóng tiền mặt..."
+            :maxlength="500"
+          />
+        </a-form-item>
+      </a-form>
+    </a-modal>
   </div>
 </template>
 
@@ -313,11 +408,14 @@ import {
   ClockCircleOutlined,
   DollarOutlined,
   EyeOutlined,
-  EditOutlined
+  EditOutlined,
+  PlusOutlined
 } from '@ant-design/icons-vue'
 import { message } from 'ant-design-vue'
 import type { Order } from '~/composables/api/useOrdersApi'
 import { useOrdersApi } from '~/composables/api/useOrdersApi'
+import { useCustomersApi } from '~/composables/api/useCustomersApi'
+import { useCoursesApi } from '~/composables/api/useCoursesApi'
 
 definePageMeta({
   layout: 'default',
@@ -326,11 +424,38 @@ definePageMeta({
 })
 
 const ordersApi = useOrdersApi()
+const customersApi = useCustomersApi()
+const coursesApi = useCoursesApi()
 const loading = ref(false)
 const orders = ref<Order[]>([])
 const searchQuery = ref('')
 const filterStatus = ref<string | undefined>()
 const filterPaymentStatus = ref<string | undefined>()
+
+// Manual activation state
+const manualActivationModalVisible = ref(false)
+const manualActivationLoading = ref(false)
+const manualActivationFormRef = ref<any>(null)
+const userSearchLoading = ref(false)
+const userSearchResults = ref<any[]>([])
+const loadingCourses = ref(false)
+const courses = ref<any[]>([])
+
+const manualActivationForm = ref({
+  userEmail: '',
+  courseIds: [] as string[],
+  notes: ''
+})
+
+const manualActivationRules = {
+  userEmail: [
+    { required: true, message: 'Vui lòng chọn người dùng', trigger: 'change' }
+  ],
+  courseIds: [
+    { required: true, message: 'Vui lòng chọn ít nhất một khóa học', trigger: 'change' },
+    { type: 'array', min: 1, message: 'Vui lòng chọn ít nhất một khóa học', trigger: 'change' }
+  ]
+}
 
 const pagination = reactive({
   current: 1,
@@ -485,16 +610,19 @@ const fetchOrders = async () => {
     const response = await ordersApi.getOrders(params)
 
     if (response.status && response.data) {
-      const responseData = response.data.data || response.data
-      const ordersArray = Array.isArray(responseData?.data) 
-        ? responseData.data 
-        : Array.isArray(responseData) 
-          ? responseData 
-          : []
+      const responseData = response.data as any
+      const data = responseData.data || responseData
+      const ordersArray = Array.isArray(data?.data) 
+        ? data.data 
+        : Array.isArray(data) 
+          ? data 
+          : Array.isArray(responseData?.data)
+            ? responseData.data
+            : []
       
-      orders.value = ordersArray
+      orders.value = ordersArray as Order[]
       
-      const paginationData = responseData?.pagination || response.data?.pagination || {}
+      const paginationData = (data?.pagination || responseData?.pagination || {}) as any
       pagination.total = paginationData.total || ordersArray.length
 
       // Calculate stats từ ordersArray
@@ -569,6 +697,187 @@ const handleUpdateStatus = async () => {
     console.error('Failed to update order status:', error)
     message.error('Không thể cập nhật trạng thái')
   }
+}
+
+// User search handler (debounced)
+const handleUserSearch = debounce(async (searchValue: string) => {
+  if (!searchValue || searchValue.length < 2) {
+    userSearchResults.value = []
+    return
+  }
+  
+  userSearchLoading.value = true
+  try {
+    const params = {
+      searchKey: searchValue,
+      limit: 20,
+      page: 1
+    }
+    
+    const response = await customersApi.getCustomers(params)
+    
+    if (response.status && response.data) {
+      const responseData = response.data as any
+      let users: any[] = []
+      
+      if (responseData.data) {
+        if (Array.isArray(responseData.data)) {
+          users = responseData.data
+        } else if (responseData.data.data && Array.isArray(responseData.data.data)) {
+          users = responseData.data.data
+        } else if (responseData.data.customers && Array.isArray(responseData.data.customers)) {
+          users = responseData.data.customers
+        }
+      } else if (responseData.items && Array.isArray(responseData.items)) {
+        users = responseData.items
+      } else if (Array.isArray(responseData)) {
+        users = responseData
+      } else if (responseData.customers && Array.isArray(responseData.customers)) {
+        users = responseData.customers
+      }
+      
+      userSearchResults.value = Array.isArray(users) ? users : []
+    } else {
+      userSearchResults.value = []
+    }
+  } catch (error) {
+    console.error('❌ Error searching users:', error)
+    userSearchResults.value = []
+  } finally {
+    userSearchLoading.value = false
+  }
+}, 300)
+
+const handleUserSelect = (email: string) => {
+  if (!email) {
+    return
+  }
+  const user = userSearchResults.value.find(u => u.email === email)
+  if (user) {
+    manualActivationForm.value.userEmail = email
+  }
+}
+
+const filterCourseOption = (input: string, option: any) => {
+  if (!input || input.trim() === '') return true
+  const course = courses.value.find(c => {
+    const id = c._id?.toString() || c.id?.toString()
+    return id === option.value?.toString()
+  })
+  if (!course) return false
+  const name = (course.name || course.title || course.code || '').toLowerCase()
+  const searchTerm = input.toLowerCase().trim()
+  return name.includes(searchTerm)
+}
+
+const loadCourses = async () => {
+  try {
+    loadingCourses.value = true
+    const response = await coursesApi.getCourses({ limit: 1000 })
+    
+    console.log('📚 Load courses response:', response)
+    
+    if (response.status && response.data) {
+      const responseData = response.data as any
+      console.log('📚 responseData:', responseData)
+      console.log('📚 responseData.data:', responseData.data)
+      console.log('📚 responseData.data?.data:', responseData.data?.data)
+      console.log('📚 responseData.data?.data?.courses:', responseData.data?.data?.courses)
+      
+      // Parse nested structure: data.data.data.courses
+      let coursesList: any[] = []
+      
+      if (responseData.data?.data?.courses && Array.isArray(responseData.data.data.courses)) {
+        coursesList = responseData.data.data.courses
+        console.log('✅ Found courses in responseData.data.data.courses')
+      } else if (responseData.data?.courses && Array.isArray(responseData.data.courses)) {
+        coursesList = responseData.data.courses
+        console.log('✅ Found courses in responseData.data.courses')
+      } else if (responseData.data?.data && Array.isArray(responseData.data.data)) {
+        coursesList = responseData.data.data
+        console.log('✅ Found courses in responseData.data.data (array)')
+      } else if (responseData.courses && Array.isArray(responseData.courses)) {
+        coursesList = responseData.courses
+        console.log('✅ Found courses in responseData.courses')
+      } else if (Array.isArray(responseData.data)) {
+        coursesList = responseData.data
+        console.log('✅ Found courses in responseData.data (array)')
+      } else if (Array.isArray(responseData)) {
+        coursesList = responseData
+        console.log('✅ Found courses in responseData (array)')
+      }
+      
+      courses.value = coursesList
+      console.log('✅ Loaded courses:', courses.value.length)
+      console.log('✅ Courses data:', courses.value)
+    } else {
+      console.warn('⚠️ No courses data in response')
+      courses.value = []
+    }
+  } catch (error: any) {
+    console.error('❌ Load courses failed:', error)
+    courses.value = []
+    message.error('Không thể tải danh sách khóa học')
+  } finally {
+    loadingCourses.value = false
+  }
+}
+
+const showManualActivationModal = () => {
+  manualActivationForm.value = {
+    userEmail: '',
+    courseIds: [],
+    notes: ''
+  }
+  userSearchResults.value = []
+  manualActivationModalVisible.value = true
+  loadCourses()
+}
+
+const handleCancelManualActivation = () => {
+  manualActivationFormRef.value?.resetFields()
+  userSearchResults.value = []
+}
+
+const handleManualActivation = async () => {
+  try {
+    await manualActivationFormRef.value?.validate()
+    
+    manualActivationLoading.value = true
+    
+    const response = await ordersApi.manualActivation({
+      userEmail: manualActivationForm.value.userEmail,
+      courseIds: manualActivationForm.value.courseIds,
+      notes: manualActivationForm.value.notes
+    })
+    
+    if (response.status && response.data) {
+      message.success('Kích hoạt thủ công thành công')
+      manualActivationModalVisible.value = false
+      manualActivationFormRef.value?.resetFields()
+      userSearchResults.value = []
+      await fetchOrders()
+    } else {
+      throw new Error(response.message || 'Failed to activate')
+    }
+  } catch (error: any) {
+    console.error('❌ Manual activation failed:', error)
+    if (error.errorFields) {
+      return
+    }
+    message.error(error.message || 'Không thể kích hoạt thủ công')
+  } finally {
+    manualActivationLoading.value = false
+  }
+}
+
+// Debounce helper
+function debounce<T extends (...args: any[]) => any>(func: T, wait: number): T {
+  let timeout: NodeJS.Timeout | null = null
+  return ((...args: any[]) => {
+    if (timeout) clearTimeout(timeout)
+    timeout = setTimeout(() => func(...args), wait)
+  }) as T
 }
 
 onMounted(() => {
@@ -778,9 +1087,54 @@ onMounted(() => {
   text-align: right;
 }
 
-.order-info-row .value.amount {
-  color: #1890ff;
-  font-size: 16px;
+  .order-info-row .value.amount {
+    color: #1890ff;
+    font-size: 16px;
+  }
+
+.user-option {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.user-name {
+  font-weight: 500;
+  color: #1a1a1a;
+}
+
+.user-email {
+  font-size: 12px;
+  color: #8c8c8c;
+}
+
+.form-help-text {
+  font-size: 12px;
+  color: #8c8c8c;
+  margin-top: 4px;
+}
+
+/* Fix dropdown options visibility */
+:deep(.ant-select-dropdown) {
+  z-index: 1050 !important;
+}
+
+:deep(.ant-select-item) {
+  color: #1a1a1a !important;
+  background-color: #ffffff !important;
+}
+
+:deep(.ant-select-item:hover) {
+  background-color: #f5f5f5 !important;
+}
+
+:deep(.ant-select-item-option-selected) {
+  background-color: #e6f7ff !important;
+  color: #1890ff !important;
+}
+
+:deep(.ant-select-item-option-active) {
+  background-color: #f5f5f5 !important;
 }
 
 .order-card-actions {

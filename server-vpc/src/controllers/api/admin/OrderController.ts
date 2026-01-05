@@ -637,6 +637,127 @@ class OrderController {
       sendError(res, 500, error.message, error as Error);
     }
   }
+
+  /**
+   * Manual activation - Kích hoạt thủ công
+   * Dùng khi User chuyển khoản lỗi hoặc đóng tiền mặt
+   */
+  public static async manualActivation(req: Request, res: Response) {
+    try {
+      const { userEmail, courseIds, notes } = req.body;
+
+      if (!userEmail) {
+        return sendError(res, 400, 'User email is required');
+      }
+
+      if (!courseIds || !Array.isArray(courseIds) || courseIds.length === 0) {
+        return sendError(res, 400, 'At least one course ID is required');
+      }
+
+      // Find user by email
+      const user: any = await MongoDbUsers.model.findOne({ email: userEmail });
+      if (!user) {
+        return sendError(res, 404, 'User not found');
+      }
+
+      const userId = user._id.toString();
+
+      // Get courses
+      const Course = mongoose.models.Course || mongoose.model('Course', new mongoose.Schema({}));
+      const courses = await Course.find({ _id: { $in: courseIds } });
+
+      if (courses.length !== courseIds.length) {
+        return sendError(res, 400, 'Some courses not found');
+      }
+
+      // Prepare order items
+      const items = courses.map((course: any) => ({
+        courseId: course._id,
+        course: {
+          _id: course._id,
+          title: course.title || course.name,
+          name: course.name || course.title,
+          price: course.price || 0,
+          thumbnail: course.thumbnail
+        },
+        price: course.price || 0
+      }));
+
+      const subtotal = items.reduce((sum: number, item: any) => sum + item.price, 0);
+      const discount: {
+        type: string;
+        value: number;
+        amount: number;
+        couponCode: string | null;
+      } = {
+        type: 'percentage',
+        value: 0,
+        amount: 0,
+        couponCode: null
+      };
+      const totalAmount = subtotal;
+
+      // Get customer info
+      const customerInfo = {
+        fullName: user.fullname || user.name || 'N/A',
+        phone: user.phoneNumber || user.phone || '',
+        email: user.email || '',
+        address: user.address || ''
+      };
+
+      // Generate unique order ID
+      const orderId = `VPC${Date.now()}${Math.random().toString(36).substr(2, 5).toUpperCase()}`;
+
+      // Create order with bypass payment
+      const order = await Order.create({
+        orderId,
+        userId,
+        customerInfo,
+        items,
+        subtotal,
+        discount,
+        totalAmount,
+        paymentMethod: 'bypass',
+        paymentStatus: 'completed',
+        transactionId: `MANUAL_${Date.now()}`,
+        status: 'completed',
+        notes: notes || 'Kích hoạt thủ công - User chuyển khoản lỗi hoặc đóng tiền mặt'
+      });
+
+      // Add courses to user's courseRegister
+      try {
+        // Initialize courseRegister if not exists
+        if (!user.courseRegister) {
+          user.courseRegister = [];
+        }
+
+        // Get course IDs from order
+        const courseIdsToAdd = items.map((item: any) => {
+          const id = item.courseId?.toString() || item.course?._id?.toString();
+          return id;
+        }).filter(Boolean);
+
+        // Add new courses (avoid duplicates)
+        const newCourses = courseIdsToAdd.filter((id: string) => !user.courseRegister.includes(id));
+        if (newCourses.length > 0) {
+          user.courseRegister = [...user.courseRegister, ...newCourses];
+          await user.save();
+          console.log(`✅ Added ${newCourses.length} courses to user ${userId} via manual activation`);
+        }
+      } catch (error: any) {
+        console.error('❌ Error updating user courseRegister:', error);
+        // Don't fail the order creation if this fails
+      }
+
+      sendSuccess(res, {
+        message: 'Kích hoạt thủ công thành công',
+        order
+      });
+    } catch (error: any) {
+      console.error('❌ Manual activation error:', error);
+      sendError(res, 500, error.message, error as Error);
+    }
+  }
 }
 
 export default OrderController;
