@@ -333,6 +333,95 @@ class TicketController {
   }
 
   /**
+   * GET /api/a/tickets/assignable-admins
+   * Get list of admins/managers who can be assigned to tickets
+   */
+  async getAssignableAdmins(req: Request, res: Response) {
+    try {
+      const MongoDbAdmins = require('@mongodb/admins').default;
+      
+      // Get all active admins, managers, and workers
+      const admins = await MongoDbAdmins.model
+        .find({
+          role: { $in: ['admin', 'manager', 'worker'] },
+          status: 'active'
+        })
+        .select('fullname email avatar role')
+        .sort({ role: 1, fullname: 1 }) // Sort by role first, then name
+        .lean();
+
+      console.log(`📋 Found ${admins.length} assignable admins/managers/workers`);
+
+      sendSuccess(res, { admins });
+    } catch (error: any) {
+      console.error('❌ Error getting assignable admins:', error);
+      sendError(res, 500, error.message, error as Error);
+    }
+  }
+
+  /**
+   * POST /api/a/tickets/:id/assign
+   * Assign ticket to an admin/manager
+   * Only admin and manager can assign tickets
+   */
+  async assignTicket(req: Request, res: Response) {
+    try {
+      const { id } = req.params;
+      const { assignedTo } = req.body;
+
+      // Check user role - only admin and manager can assign
+      const currentUser = req.user as any;
+      if (!currentUser) {
+        return sendError(res, 401, 'Unauthorized');
+      }
+
+      const userRole = currentUser.role;
+      if (userRole !== 'admin' && userRole !== 'manager') {
+        return sendError(res, 403, 'Only admin and manager can assign tickets');
+      }
+
+      // Check if ticket exists
+      const ticket = await MongoDbTickets.model.findById(id);
+      if (!ticket) {
+        return sendError(res, 404, 'Ticket not found');
+      }
+
+      // If assignedTo is provided, verify the admin exists
+      if (assignedTo) {
+        const MongoDbAdmins = require('@mongodb/admins').default;
+        const assignedAdmin = await MongoDbAdmins.model.findById(assignedTo);
+        if (!assignedAdmin) {
+          return sendError(res, 404, 'Assigned admin not found');
+        }
+      }
+
+      // Update ticket
+      const updatedTicket = await MongoDbTickets.model
+        .findByIdAndUpdate(
+          id,
+          { assignedTo: assignedTo || null },
+          { new: true }
+        )
+        .populate('userId', 'fullname email phoneNumber')
+        .populate('assignedTo', 'fullname email avatar')
+        .populate('resolvedBy', 'fullname email')
+        .lean();
+
+      // If assigned, update status to "in_progress" if it's still "open" or "pending"
+      if (assignedTo && (ticket.status === 'open' || ticket.status === 'pending')) {
+        await MongoDbTickets.model.findByIdAndUpdate(id, {
+          status: 'in_progress',
+        });
+        updatedTicket.status = 'in_progress';
+      }
+
+      sendSuccess(res, { ticket: updatedTicket }, 'Ticket assigned successfully');
+    } catch (error: any) {
+      sendError(res, 500, error.message, error as Error);
+    }
+  }
+
+  /**
    * POST /api/a/seed/tickets
    * Seed sample ticket data for testing
    */

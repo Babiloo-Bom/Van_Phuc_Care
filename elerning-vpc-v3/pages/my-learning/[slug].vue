@@ -512,10 +512,10 @@ const currentLesson = computed<Lesson | null>(() => {
 // Backend trả về videoUrl: null và needsProxy: true để ẩn URL gốc
 const hasVideo = computed(() => {
   if (!currentLesson.value) return false;
-  
+
   // Check needsProxy flag (backend set khi có video)
   if (currentLesson.value.needsProxy) return true;
-  
+
   // Check videos array - nếu có video object trong array thì có video
   if (
     currentLesson.value.videos &&
@@ -638,7 +638,7 @@ const loadVideoWithHls = async () => {
 
       hlsInstance.on(Hls.Events.MANIFEST_PARSED, () => {
         // Video ready to play
-        if (videoRef.value) {
+  if (videoRef.value) {
           videoRef.value.play().catch(console.error);
           playerState.value.playing = true;
         }
