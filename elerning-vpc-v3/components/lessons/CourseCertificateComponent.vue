@@ -205,8 +205,8 @@ const fetchCoupons = async () => {
   try {
     loading.value = true;
     const couponApi = useCouponApi();
-    // Tự động tạo coupon completion nếu chưa có
-    await couponApi.createCompletionCoupon(props?.course?._id as string);
+    // Chỉ lấy coupon đã có (coupon được tự động tạo khi hoàn thành khóa học)
+    // Không tạo mới nữa để đảm bảo mã coupon duy nhất và không thay đổi
     const response: any = await couponApi.getCouponValid(props?.course?._id as string);
     const rawCoupon = response?.data?.coupon || response?.coupon || null;
     // Fallback HSD +7 ngày nếu backend chưa trả

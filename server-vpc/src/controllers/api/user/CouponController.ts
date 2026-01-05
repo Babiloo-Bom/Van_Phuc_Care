@@ -130,31 +130,33 @@ const Cart = mongoose.models.Cart || mongoose.model('Cart', cartSchema);
 
 class UserCouponController {
   /**
-   * Tạo coupon quà tặng khi hoàn thành khóa học (10%, HSD 7 ngày, 1 lần dùng)
-   * POST /api/u/coupons/completion
-   * body: { courseId?: string }
+   * Helper: Tự động tạo coupon khi hoàn thành khóa học (chỉ tạo 1 lần duy nhất)
+   * Được gọi tự động từ ProgressController/QuizController khi set completedAt
+   * 
+   * @param userId - User ID
+   * @param courseId - Course ID
+   * @param completedAt - Ngày hoàn thành khóa học
+   * @returns Coupon object hoặc null nếu đã tồn tại hoặc lỗi
    */
-  public static async createCompletionCoupon(req: Request, res: Response) {
+  public static async createCompletionCouponIfNeeded(
+    userId: string,
+    courseId: string,
+    completedAt: Date
+  ): Promise<any> {
     try {
-      const user = req.user as any;
-      if (!user || !user._id) {
-        return sendError(res, 401, 'Unauthorized');
+      // Kiểm tra xem đã có coupon cho khóa học này chưa
+      const applicableCourses = [new mongoose.Types.ObjectId(courseId)];
+      const existingCoupon = await Coupon.findOne({
+        createdBy: String(userId),
+        description: { $regex: /completion/i },
+        applicableCourses: { $in: applicableCourses },
+      });
+
+      // Nếu đã có coupon, không tạo mới (đảm bảo chỉ tạo 1 lần)
+      if (existingCoupon) {
+        console.log(`[createCompletionCouponIfNeeded] Coupon already exists for userId=${userId}, courseId=${courseId}`);
+        return existingCoupon;
       }
-
-      const courseId = req.body?.courseId as string | undefined;
-      const now = new Date();
-      const validTo = new Date(now.getTime() + 7 * 24 * 60 * 60 * 1000);
-
-      // Vô hiệu hoá các coupon completion cũ còn hạn (để tránh trùng mã cũ như SAVE50K)
-      await Coupon.updateMany(
-        {
-          createdBy: String(user._id),
-          description: { $regex: /completion/i },
-          isActive: true,
-          validTo: { $gte: now },
-        },
-        { $set: { isActive: false } }
-      );
 
       // Sinh mã ngẫu nhiên và bảo đảm unique
       let randomCode = '';
@@ -170,8 +172,24 @@ class UserCouponController {
         }
       }
 
-      // applicableCourses: nếu truyền courseId, gắn vào để ưu tiên khóa liên quan; nếu không, để rỗng = áp dụng cho mọi khóa
-      const applicableCourses = courseId ? [new mongoose.Types.ObjectId(courseId)] : [];
+      // Tính validFrom và validTo dựa trên ngày hoàn thành khóa học (completedAt)
+      // validFrom = ngày hoàn thành khóa học (chỉ lấy ngày, bỏ giờ)
+      // validTo = ngày hoàn thành khóa học + 7 ngày (chỉ lấy ngày, bỏ giờ)
+      // Đảm bảo tính toán đúng: 24/12 + 7 ngày = 31/12
+      const completedAtDate = new Date(completedAt);
+      // Reset về 00:00:00 để tính toán chính xác theo ngày
+      completedAtDate.setHours(0, 0, 0, 0);
+      
+      const validFrom = new Date(completedAtDate);
+      const validTo = new Date(completedAtDate.getTime() + 7 * 24 * 60 * 60 * 1000);
+      
+      // Log để debug
+      console.log(`[createCompletionCouponIfNeeded] Date calculation:`);
+      console.log(`  completedAt (input): ${completedAt}`);
+      console.log(`  completedAtDate (normalized): ${completedAtDate.toISOString()}`);
+      console.log(`  validFrom: ${validFrom.toISOString()}`);
+      console.log(`  validTo: ${validTo.toISOString()}`);
+      console.log(`  validTo (formatted): ${validTo.toLocaleDateString('en-GB')}`);
 
       const coupon = await Coupon.create({
         code: randomCode,
@@ -183,14 +201,90 @@ class UserCouponController {
         maxDiscountAmount: null, // Không giới hạn số tiền giảm
         usageLimit: 1, // Dùng 1 lần
         usedCount: 0,
-        validFrom: now,
-        validTo,
+        validFrom, // Ngày hoàn thành khóa học
+        validTo, // Ngày hoàn thành + 7 ngày
         isActive: true,
         applicableCourses,
-        createdBy: String(user._id)
+        createdBy: String(userId)
       });
 
-      return sendSuccess(res, { coupon });
+      console.log(`[createCompletionCouponIfNeeded] Created coupon ${randomCode} for userId=${userId}, courseId=${courseId}`);
+      return coupon;
+    } catch (error: any) {
+      console.error(`[createCompletionCouponIfNeeded] Error:`, error);
+      return null;
+    }
+  }
+
+  /**
+   * API endpoint: Lấy coupon quà tặng khi hoàn thành khóa học (không tạo mới nếu đã có)
+   * POST /api/u/coupons/completion
+   * body: { courseId?: string }
+   * 
+   * Lưu ý:
+   * - Coupon được tự động tạo khi hoàn thành khóa học (trong ProgressController/QuizController)
+   * - API này chỉ để lấy coupon đã có, không tạo mới
+   * - Ngày HSD = Ngày hoàn thành khóa học (completedAt) + 7 ngày
+   * - Coupon chỉ được sử dụng 1 lần
+   * - Coupon có thời hạn áp dụng là 7 ngày tính từ ngày hoàn thành khóa học
+   * - Coupon có giá trị giảm 10% trên giá trị đơn hàng
+   */
+  public static async createCompletionCoupon(req: Request, res: Response) {
+    try {
+      const user = req.user as any;
+      if (!user || !user._id) {
+        return sendError(res, 401, 'Unauthorized');
+      }
+
+      const courseId = req.body?.courseId as string | undefined;
+      
+      // Lấy ngày hoàn thành khóa học từ CourseProgress
+      let completedAt: Date | null = null;
+      if (courseId) {
+        const CourseProgress = mongoose.model("CourseProgress");
+        const courseProgressRecord = await CourseProgress.findOne({
+          userId: String(user._id),
+          courseId: courseId.toString(),
+        });
+        completedAt = courseProgressRecord?.completedAt || null;
+        
+        // Kiểm tra khóa học đã hoàn thành chưa
+        if (!completedAt) {
+          return sendError(res, 400, 'Khóa học chưa hoàn thành. Coupon chỉ được tạo khi hoàn thành khóa học.');
+        }
+      } else {
+        // Nếu không có courseId, không thể xác định ngày hoàn thành
+        return sendError(res, 400, 'courseId is required to determine completion date');
+      }
+
+      // Chỉ lấy coupon đã có, không tạo mới
+      // Coupon được tự động tạo khi hoàn thành khóa học (trong ProgressController/QuizController)
+      const applicableCourses = courseId ? [new mongoose.Types.ObjectId(courseId)] : [];
+      const existingCoupon = await Coupon.findOne({
+        createdBy: String(user._id),
+        description: { $regex: /completion/i },
+        applicableCourses: { $in: applicableCourses },
+      });
+
+      // Nếu đã có coupon, trả về coupon hiện có
+      if (existingCoupon) {
+        return sendSuccess(res, { coupon: existingCoupon });
+      }
+
+      // Nếu chưa có coupon, có thể khóa học chưa hoàn thành hoặc coupon chưa được tạo tự động
+      // Trong trường hợp này, thử tạo coupon (fallback - chỉ khi thực sự cần)
+      // Nhưng ưu tiên là coupon được tạo tự động khi hoàn thành
+      const coupon = await UserCouponController.createCompletionCouponIfNeeded(
+        String(user._id),
+        courseId!,
+        completedAt
+      );
+
+      if (coupon) {
+        return sendSuccess(res, { coupon });
+      }
+
+      return sendError(res, 404, 'Coupon chưa được tạo. Vui lòng đảm bảo khóa học đã hoàn thành.');
     } catch (error: any) {
       return sendError(res, 500, error.message, error as Error);
     }
@@ -284,7 +378,8 @@ class UserCouponController {
       const now = new Date();
 
       // Chỉ trả coupon completion do user này được tạo khi hoàn thành (tránh các mã global như SAVE50K)
-      const coupon = await Coupon.findOne({
+      // Tìm coupon completion cho khóa học này (ưu tiên coupon còn hiệu lực)
+      let coupon = await Coupon.findOne({
         createdBy: String(user._id),
         description: { $regex: /completion/i },
         isActive: true,
@@ -296,6 +391,15 @@ class UserCouponController {
           { applicableCourses: { $size: 0 } },
         ],
       }).sort({ createdAt: -1 });
+
+      // Nếu không tìm thấy coupon còn hiệu lực, tìm coupon đã hết hạn (để vẫn hiển thị)
+      if (!coupon && courseObjectId) {
+        coupon = await Coupon.findOne({
+          createdBy: String(user._id),
+          description: { $regex: /completion/i },
+          applicableCourses: { $in: [courseObjectId] },
+        }).sort({ createdAt: -1 });
+      }
 
       // Nếu coupon hết lượt sử dụng, coi như không còn hiệu lực
       if (coupon && coupon.usageLimit && coupon.usedCount >= coupon.usageLimit) {

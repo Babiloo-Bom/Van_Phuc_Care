@@ -324,8 +324,10 @@ export default class ProgressController {
       };
 
       // Only set completedAt once - when first reaching 100%
+      let completedAtDate: Date | null = null;
       if (shouldSetCompletedAt) {
-        updateData.completedAt = new Date();
+        completedAtDate = new Date();
+        updateData.completedAt = completedAtDate;
       }
 
       const courseProgress = await CourseProgress.findOneAndUpdate(
@@ -348,6 +350,21 @@ export default class ProgressController {
           user.courseCompleted = [...user.courseCompleted, courseId.toString()];
           user.updatedAt = new Date();
           await user.save();
+        }
+
+        // Tự động tạo coupon quà tặng khi hoàn thành khóa học (chỉ tạo 1 lần)
+        if (completedAtDate) {
+          try {
+            const UserCouponController = (await import('@controllers/api/user/CouponController')).default;
+            await UserCouponController.createCompletionCouponIfNeeded(
+              userId,
+              courseId.toString(),
+              completedAtDate
+            );
+          } catch (error: any) {
+            console.error(`[updateCourseProgress] Error creating completion coupon:`, error);
+            // Không throw error để không ảnh hưởng đến việc update progress
+          }
         }
       }
 

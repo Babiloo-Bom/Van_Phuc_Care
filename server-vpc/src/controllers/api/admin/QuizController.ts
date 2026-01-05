@@ -193,8 +193,10 @@ export default class QuizController {
             };
 
             // Only set completedAt once - when first reaching 100%
+            let completedAtDate: Date | null = null;
             if (shouldSetCompletedAt) {
-              updateData.completedAt = new Date();
+              completedAtDate = new Date();
+              updateData.completedAt = completedAtDate;
             }
 
             await CourseProgress.findOneAndUpdate(
@@ -205,6 +207,22 @@ export default class QuizController {
               updateData,
               { upsert: true, new: true }
             );
+
+            // Tự động tạo coupon quà tặng khi hoàn thành khóa học (chỉ tạo 1 lần)
+            if (progressPercentage === 100 && completedAtDate) {
+              try {
+                const UserCouponController = (await import('@controllers/api/user/CouponController')).default;
+                await UserCouponController.createCompletionCouponIfNeeded(
+                  userId.toString(),
+                  courseId.toString(),
+                  completedAtDate
+                );
+              } catch (error: any) {
+                console.error(`[submitQuizAttempt] Error creating completion coupon:`, error);
+                // Không throw error để không ảnh hưởng đến việc submit quiz
+              }
+            }
+
             if (progressPercentage === 100 && isUserSubmit) {
               const UserModel = (await import('@mongodb/users')).default;
               const user = (await UserModel.model.findById(userId)) as any;
