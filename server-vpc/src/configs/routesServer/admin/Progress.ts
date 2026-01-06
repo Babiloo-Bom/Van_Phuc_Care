@@ -11,4 +11,7 @@ router.post('/lesson-completed', adminPassport.authenticate('jwt', { session: fa
 router.get('/course/:courseId', adminPassport.authenticate('jwt', { session: false }), ProgressController.getCourseProgress);
 router.delete('/course/:courseId', adminPassport.authenticate('jwt', { session: false }), ProgressController.resetProgress);
 
+// Get course completion rate statistics
+router.get('/completion-rate', adminPassport.authenticate('jwt', { session: false }), ProgressController.getCompletionRate);
+
 export default router;

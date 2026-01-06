@@ -92,6 +92,15 @@ export const useOrdersApi = () => {
     },
 
     /**
+     * Get revenue by month (for chart)
+     */
+    async getRevenueByMonth(months?: number) {
+      return apiClient.get('/api/a/orders/revenue-by-month', {
+        params: { months: months || 12 }
+      })
+    },
+
+    /**
      * Manual activation - Kích hoạt thủ công
      */
     async manualActivation(data: { userEmail: string; courseIds: string[]; notes?: string }) {

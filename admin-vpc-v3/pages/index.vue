@@ -146,6 +146,31 @@
       </div>
     </div>
 
+    <!-- Báo cáo phân tích -->
+    <div class="content-grid">
+      <!-- Biểu đồ doanh thu theo tháng -->
+      <div class="content-card">
+        <div class="card-header">
+          <h3 class="card-title">Biểu đồ doanh thu theo tháng</h3>
+        </div>
+        <RevenueChart :data="revenueChartData" :loading="revenueChartLoading" />
+      </div>
+
+      <!-- Tỷ lệ hoàn thành khóa học -->
+      <div class="content-card">
+        <div class="card-header">
+          <h3 class="card-title">Tỷ lệ hoàn thành khóa học</h3>
+        </div>
+        <CompletionRateChart
+          :completion-rate="completionRate"
+          :completed-courses="completedCourses"
+          :total-purchased-courses="totalPurchasedCourses"
+          :top-courses="topCourses"
+          :loading="completionRateLoading"
+        />
+      </div>
+    </div>
+
     <!-- Additional Stats -->
     <div class="content-grid">
       <!-- Order Status Chart -->
@@ -213,6 +238,9 @@ import { useUsersApi } from '~/composables/api/useUsersApi'
 import { useCoursesApi } from '~/composables/api/useCoursesApi'
 import { useHealthBooksApi } from '~/composables/api/useHealthBooksApi'  // Thêm import này
 import { useOrdersApi } from '~/composables/api/useOrdersApi'  // Thêm import này
+import { useProgressApi } from '~/composables/api/useProgressApi'  // Thêm import này
+import RevenueChart from '~/components/charts/RevenueChart.vue'
+import CompletionRateChart from '~/components/charts/CompletionRateChart.vue'
 
 definePageMeta({
   layout: 'default',
@@ -229,6 +257,7 @@ const usersApi = useUsersApi()
 const coursesApi = useCoursesApi()
 const healthBooksApi = useHealthBooksApi()  // Thêm instance này
 const ordersApi = useOrdersApi()  // Thêm instance này
+const progressApi = useProgressApi()  // Thêm instance này
 
 // State
 const loading = ref(false)
@@ -248,6 +277,15 @@ const stats = reactive({
   totalCoursesSold: 0,  // Số khóa học đã bán được
 })
 const recentCourses = ref<any[]>([]) // Thêm state này
+
+// Chart data states
+const revenueChartData = ref<any[]>([])
+const revenueChartLoading = ref(false)
+const completionRate = ref(0)
+const completedCourses = ref(0)
+const totalPurchasedCourses = ref(0)
+const topCourses = ref<any[]>([])
+const completionRateLoading = ref(false)
 
 // Format number
 const formatNumber = (num: number) => {
@@ -442,6 +480,45 @@ const fetchDashboardData = async () => {
     } catch (error) {
       console.warn('Failed to fetch recent courses:', error)
       recentCourses.value = []
+    }
+
+    // Fetch revenue by month (for chart)
+    try {
+      revenueChartLoading.value = true
+      const revenueRes = await ordersApi.getRevenueByMonth(12)
+      if (revenueRes.status && revenueRes.data) {
+        // Backend trả về: { message: "", data: { data: [...], months: 12 } }
+        const responseData = revenueRes.data.data || revenueRes.data
+        const chartData = responseData?.data || responseData || []
+        console.log('📊 Revenue chart data:', chartData)
+        revenueChartData.value = Array.isArray(chartData) ? chartData : []
+      }
+    } catch (error) {
+      console.error('❌ Failed to fetch revenue by month:', error)
+      revenueChartData.value = []
+    } finally {
+      revenueChartLoading.value = false
+    }
+
+    // Fetch completion rate statistics
+    try {
+      completionRateLoading.value = true
+      const completionRes = await progressApi.getCompletionRate()
+      if (completionRes.status && completionRes.data) {
+        const responseData = completionRes.data.data || completionRes.data
+        completionRate.value = responseData?.completionRate || 0
+        completedCourses.value = responseData?.completedCourses || 0
+        totalPurchasedCourses.value = responseData?.totalPurchasedCourses || 0
+        topCourses.value = responseData?.topCourses || []
+      }
+    } catch (error) {
+      console.error('❌ Failed to fetch completion rate:', error)
+      completionRate.value = 0
+      completedCourses.value = 0
+      totalPurchasedCourses.value = 0
+      topCourses.value = []
+    } finally {
+      completionRateLoading.value = false
     }
   } catch (error: any) {
     console.error('Failed to fetch dashboard data:', error)

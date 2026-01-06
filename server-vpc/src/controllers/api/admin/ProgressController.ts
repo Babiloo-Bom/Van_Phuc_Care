@@ -440,4 +440,107 @@ export default class ProgressController {
       sendError(res, 500, error.message, error as Error);
     }
   }
+
+  /**
+   * Get course completion rate statistics
+   * Tính tỷ lệ hoàn thành khóa học: số khóa học đã hoàn thành / tổng số khóa học đã mua
+   */
+  public static async getCompletionRate(req: Request, res: Response) {
+    try {
+      // Lấy tất cả orders đã hoàn thành để đếm số khóa học đã mua
+      const orderSchema = new mongoose.Schema({
+        orderId: { type: String, required: true, unique: true },
+        userId: { type: String, required: true },
+        items: [{
+          courseId: { type: mongoose.Schema.Types.ObjectId, ref: 'courses', required: true },
+          course: { type: Object, required: true },
+          price: { type: Number, required: true }
+        }],
+        status: { type: String, enum: ['pending', 'processing', 'completed', 'cancelled', 'refunded'], default: 'pending' },
+        paymentStatus: { type: String, enum: ['pending', 'completed', 'failed', 'cancelled'], default: 'pending' }
+      }, { timestamps: true });
+
+      const Order = mongoose.models.Order || mongoose.model('Order', orderSchema);
+
+      // Đếm số khóa học đã mua (từ orders completed)
+      const completedOrders = await Order.find({
+        status: 'completed',
+        paymentStatus: 'completed'
+      }).select('items');
+
+      let totalPurchasedCourses = 0;
+      const purchasedCourseIds = new Set<string>();
+      
+      if (completedOrders && Array.isArray(completedOrders)) {
+        completedOrders.forEach((order: any) => {
+          if (order.items && Array.isArray(order.items)) {
+            order.items.forEach((item: any) => {
+              const courseId = item.courseId?.toString() || item.course?._id?.toString();
+              if (courseId) {
+                purchasedCourseIds.add(courseId);
+                totalPurchasedCourses++;
+              }
+            });
+          }
+        });
+      }
+
+      // Đếm số khóa học đã hoàn thành (có completedAt trong CourseProgress)
+      const completedCourses = await CourseProgress.countDocuments({
+        progressPercentage: 100,
+        completedAt: { $exists: true, $ne: null }
+      });
+
+      // Tính tỷ lệ hoàn thành
+      const completionRateValue = totalPurchasedCourses > 0 
+        ? parseFloat(((completedCourses / totalPurchasedCourses) * 100).toFixed(2))
+        : 0;
+
+      // Lấy thống kê theo khóa học (top courses được hoàn thành nhiều nhất)
+      const courseCompletionStats = await CourseProgress.aggregate([
+        {
+          $match: {
+            progressPercentage: 100,
+            completedAt: { $exists: true, $ne: null }
+          }
+        },
+        {
+          $group: {
+            _id: '$courseId',
+            completedCount: { $sum: 1 }
+          }
+        },
+        {
+          $sort: { completedCount: -1 }
+        },
+        {
+          $limit: 10
+        }
+      ]);
+
+      // Populate course info
+      const Course = mongoose.model('Course');
+      const courseStatsWithInfo = await Promise.all(
+        courseCompletionStats.map(async (stat: any) => {
+          const course = await Course.findById(stat._id).select('title slug');
+          return {
+            courseId: stat._id,
+            courseTitle: course?.title || 'Unknown',
+            courseSlug: course?.slug || '',
+            completedCount: stat.completedCount
+          };
+        })
+      );
+
+      sendSuccess(res, {
+        totalPurchasedCourses,
+        completedCourses,
+        completionRate: completionRateValue,
+        topCourses: courseStatsWithInfo
+      });
+    } catch (error: any) {
+      console.error('❌ Get completion rate error:', error);
+      sendError(res, 500, error.message, error as Error);
+    }
+  }
 }

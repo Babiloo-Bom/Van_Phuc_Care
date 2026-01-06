@@ -461,6 +461,63 @@ class OrderController {
   }
 
   /**
+   * Get revenue by month (for chart)
+   */
+  public static async getRevenueByMonth(req: Request, res: Response) {
+    try {
+      // Lấy số tháng cần hiển thị (mặc định 12 tháng gần nhất)
+      const months = parseInt(req.query.months as string) || 12;
+      
+      // Tính ngày bắt đầu (months tháng trước)
+      const startDate = new Date();
+      startDate.setMonth(startDate.getMonth() - months);
+      startDate.setDate(1); // Ngày đầu tháng
+      startDate.setHours(0, 0, 0, 0);
+
+      // Aggregate doanh thu theo tháng từ orders đã hoàn thành
+      const revenueByMonth = await Order.aggregate([
+        {
+          $match: {
+            status: 'completed',
+            paymentStatus: 'completed',
+            createdAt: { $gte: startDate }
+          }
+        },
+        {
+          $group: {
+            _id: {
+              year: { $year: '$createdAt' },
+              month: { $month: '$createdAt' }
+            },
+            revenue: { $sum: '$totalAmount' },
+            orderCount: { $sum: 1 }
+          }
+        },
+        {
+          $sort: { '_id.year': 1, '_id.month': 1 }
+        }
+      ]);
+
+      // Format dữ liệu cho chart
+      const chartData = revenueByMonth.map((item: any) => ({
+        month: `${item._id.month}/${item._id.year}`,
+        monthNumber: item._id.month,
+        year: item._id.year,
+        revenue: item.revenue,
+        orderCount: item.orderCount
+      }));
+
+      sendSuccess(res, {
+        data: chartData,
+        months: months
+      });
+    } catch (error: any) {
+      console.error('❌ Get revenue by month error:', error);
+      sendError(res, 500, error.message, error as Error);
+    }
+  }
+
+  /**
    * Create order with bypass payment (for testing)
    * This will create an order from cart and automatically complete payment
    */
