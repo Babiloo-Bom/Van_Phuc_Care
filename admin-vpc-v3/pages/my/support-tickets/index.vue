@@ -156,16 +156,21 @@
             <span>{{ formatDate(record.createdAt) }}</span>
           </template>
           <template v-else-if="column.key === 'actions'">
-            <a-popconfirm
-              title="Bạn có chắc chắn muốn xóa ticket này?"
-              ok-text="Xóa"
-              cancel-text="Hủy"
-              @confirm="handleDelete(record)"
-            >
-              <a-button type="link" size="small" danger>
-                <DeleteOutlined /> Xóa
+            <a-space>
+              <a-button type="link" size="small" @click="viewTicket(record)">
+                <EyeOutlined /> Xem
               </a-button>
-            </a-popconfirm>
+              <a-popconfirm
+                title="Bạn có chắc chắn muốn xóa ticket này?"
+                ok-text="Xóa"
+                cancel-text="Hủy"
+                @confirm="handleDelete(record)"
+              >
+                <a-button type="link" size="small" danger>
+                  <DeleteOutlined /> Xóa
+                </a-button>
+              </a-popconfirm>
+            </a-space>
           </template>
         </template>
       </a-table>
@@ -219,20 +224,299 @@
           </div>
 
           <div class="card-actions">
-            <a-popconfirm
-              title="Bạn có chắc chắn muốn xóa ticket này?"
-              ok-text="Xóa"
-              cancel-text="Hủy"
-              @confirm="handleDelete(item)"
-            >
-              <a-button type="link" size="small" danger>
-                <DeleteOutlined /> Xóa
+            <a-space>
+              <a-button type="link" size="small" @click="viewTicket(item)">
+                <EyeOutlined /> Xem
               </a-button>
-            </a-popconfirm>
+              <a-popconfirm
+                title="Bạn có chắc chắn muốn xóa ticket này?"
+                ok-text="Xóa"
+                cancel-text="Hủy"
+                @confirm="handleDelete(item)"
+              >
+                <a-button type="link" size="small" danger>
+                  <DeleteOutlined /> Xóa
+                </a-button>
+              </a-popconfirm>
+            </a-space>
           </div>
         </a-card>
       </div>
     </a-card>
+
+    <!-- Ticket Detail Modal -->
+    <a-modal
+      v-model:open="showDetailModal"
+      :title="`Chi tiết Ticket: ${selectedTicket?.ticketNumber || ''}`"
+      width="900px"
+      :footer="null"
+      @cancel="closeDetailModal"
+    >
+      <div v-if="selectedTicket" class="ticket-detail">
+        <!-- Ticket Info -->
+        <a-descriptions :column="2" bordered class="mb-4">
+          <a-descriptions-item label="Số ticket">
+            <a-tag color="blue">{{ selectedTicket.ticketNumber }}</a-tag>
+          </a-descriptions-item>
+          <a-descriptions-item label="Trạng thái">
+            <a-tag :color="getStatusColor(selectedTicket.status)">
+              {{ getStatusText(selectedTicket.status) }}
+            </a-tag>
+          </a-descriptions-item>
+          <a-descriptions-item label="Độ ưu tiên">
+            <a-tag :color="getPriorityColor(selectedTicket.priority)">
+              {{ getPriorityText(selectedTicket.priority) }}
+            </a-tag>
+          </a-descriptions-item>
+          <a-descriptions-item label="Danh mục">
+            {{ getCategoryText(selectedTicket.category) }}
+          </a-descriptions-item>
+          <a-descriptions-item label="Khách hàng" :span="2">
+            <div>
+              <div><strong>{{ getCustomerName(selectedTicket) }}</strong></div>
+              <div class="text-gray-500">{{ getCustomerEmail(selectedTicket) }}</div>
+            </div>
+          </a-descriptions-item>
+          <a-descriptions-item label="Người phụ trách" :span="2">
+            <div v-if="getAssignedAdmin(selectedTicket)" class="flex items-center gap-2">
+              <span>{{ getAssignedAdmin(selectedTicket) }}</span>
+              <a-button 
+                v-if="canAssign" 
+                type="link" 
+                size="small" 
+                @click="openAssignModal"
+              >
+                Thay đổi
+              </a-button>
+            </div>
+            <div v-else>
+              <a-tag color="default">Chưa phân công</a-tag>
+              <a-button 
+                v-if="canAssign" 
+                type="link" 
+                size="small" 
+                @click="openAssignModal"
+                class="ml-2"
+              >
+                Phân công
+              </a-button>
+            </div>
+          </a-descriptions-item>
+          <a-descriptions-item label="Tiêu đề" :span="2">
+            {{ selectedTicket.title }}
+          </a-descriptions-item>
+          <a-descriptions-item label="Mô tả" :span="2">
+            <div class="whitespace-pre-wrap">{{ selectedTicket.description }}</div>
+          </a-descriptions-item>
+          <a-descriptions-item label="Ngày tạo">
+            {{ formatDate(selectedTicket.createdAt) }}
+          </a-descriptions-item>
+          <a-descriptions-item label="Cập nhật lần cuối">
+            {{ formatDate(selectedTicket.updatedAt) }}
+          </a-descriptions-item>
+        </a-descriptions>
+
+        <!-- Comments Section -->
+        <a-divider>Bình luận / Trả lời</a-divider>
+        
+        <div class="comments-section">
+          <div v-if="loadingComments" class="text-center py-4">
+            <a-spin />
+          </div>
+          <div v-else-if="comments.length === 0" class="text-center py-4 text-gray-500">
+            Chưa có bình luận nào
+          </div>
+          <div v-else class="comments-list">
+            <div 
+              v-for="comment in comments" 
+              :key="comment._id" 
+              class="comment-item"
+              :class="{ 'comment-admin': comment.isAdmin }"
+            >
+              <div class="comment-header">
+                <div class="flex items-center gap-2">
+                  <a-avatar 
+                    v-if="comment.adminId && typeof comment.adminId === 'object' && comment.adminId.avatar"
+                    :src="comment.adminId.avatar"
+                    size="small"
+                  >
+                    {{ getCommentAuthorName(comment).charAt(0).toUpperCase() }}
+                  </a-avatar>
+                  <a-avatar v-else size="small">
+                    {{ getCommentAuthorName(comment).charAt(0).toUpperCase() }}
+                  </a-avatar>
+                  <div>
+                    <div class="font-medium">
+                      {{ getCommentAuthorName(comment) }}
+                      <a-tag v-if="comment.isAdmin" color="blue" size="small">Admin</a-tag>
+                    </div>
+                    <div class="text-xs text-gray-500">
+                      {{ formatDate(comment.createdAt) }}
+                    </div>
+                  </div>
+                </div>
+              </div>
+              <div class="comment-content">
+                <div class="whitespace-pre-wrap">{{ comment.content }}</div>
+                
+                <!-- Comment Attachments -->
+                <div
+                  v-if="comment.attachments && comment.attachments.length > 0"
+                  class="comment-attachments"
+                >
+                  <div
+                    v-for="(attachment, attIndex) in comment.attachments"
+                    :key="attIndex"
+                    class="comment-attachment-item"
+                    @click="previewAttachment(attachment.url)"
+                  >
+                    <img
+                      v-if="isImage(attachment.url)"
+                      :src="attachment.url"
+                      :alt="attachment.filename"
+                      class="attachment-image"
+                      loading="lazy"
+                    />
+                    <div v-else class="attachment-file">
+                      <FileOutlined />
+                      <span class="attachment-filename">{{ attachment.filename }}</span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Reply Form -->
+        <a-divider>Trả lời</a-divider>
+        <a-form :model="replyForm" @finish="handleAddComment">
+          <a-form-item name="content" :rules="[{ required: true, message: 'Vui lòng nhập nội dung trả lời' }]">
+            <a-textarea
+              v-model:value="replyForm.content"
+              :rows="4"
+              placeholder="Nhập nội dung trả lời..."
+            />
+          </a-form-item>
+          
+          <!-- File Upload -->
+          <a-form-item label="Tệp đính kèm (Tùy chọn)" name="attachments">
+            <!-- Preview selected files -->
+            <div v-if="replyFileList && replyFileList.length > 0" class="selected-files">
+              <div v-for="file in replyFileList" :key="file.uid" class="file-preview-item">
+                <img
+                  v-if="getFilePreviewUrl(file)"
+                  :src="getFilePreviewUrl(file)"
+                  alt="preview"
+                  class="file-preview-image"
+                />
+                <div v-else class="file-preview-icon">
+                  <FileOutlined />
+                  <span class="file-name">{{ file.name }}</span>
+                </div>
+                <a-button
+                  type="text"
+                  size="small"
+                  danger
+                  class="remove-file-btn"
+                  @click="removeFile(file)"
+                >
+                  <CloseOutlined />
+                </a-button>
+              </div>
+            </div>
+            
+            <!-- Upload button -->
+            <a-upload
+              v-model:file-list="replyFileList"
+              :before-upload="beforeUpload"
+              :show-upload-list="false"
+              accept="image/*,video/*,.pdf,.doc,.docx,.xls,.xlsx"
+              :multiple="true"
+              :max-count="5"
+            >
+              <a-button>
+                <template #icon>
+                  <PaperClipOutlined />
+                </template>
+                Thêm ảnh, video hoặc file (Tối đa 5)
+              </a-button>
+            </a-upload>
+            <div class="text-sm text-gray-500 mt-2">
+              Hỗ trợ: Ảnh, Video, PDF, Word, Excel (Tối đa 10MB/file)
+            </div>
+          </a-form-item>
+          
+          <a-form-item>
+            <a-button type="primary" html-type="submit" :loading="submittingComment">
+              Gửi trả lời
+            </a-button>
+          </a-form-item>
+        </a-form>
+      </div>
+    </a-modal>
+
+    <!-- Assign Ticket Modal -->
+    <a-modal
+      v-model:open="showAssignModal"
+      title="Phân công người xử lý"
+      width="500px"
+      @ok="handleAssignTicket"
+      @cancel="handleCancelAssign"
+      :confirm-loading="assigning"
+    >
+      <a-form :model="assignForm">
+        <a-form-item label="Người xử lý" name="assignedTo">
+          <a-select
+            v-model:value="assignForm.assignedTo"
+            placeholder="Nhập tên để tìm kiếm (Admin, Manager, Worker)..."
+            show-search
+            :filter-option="filterAdminOption"
+            :loading="loadingAssignableAdmins"
+            allow-clear
+            style="width: 100%"
+            :not-found-content="loadingAssignableAdmins ? 'Đang tải...' : assignableAdmins.length === 0 ? 'Chưa có dữ liệu' : 'Không tìm thấy'"
+            @search="(value: string) => console.log('🔍 Search input:', value)"
+            @dropdown-visible-change="(open: boolean) => { if (open && assignableAdmins.length === 0) { loadAssignableAdmins() } }"
+          >
+            <a-select-option 
+              v-for="admin in assignableAdmins" 
+              :key="admin._id" 
+              :value="admin._id"
+            >
+              <div class="admin-option">
+                <a-avatar 
+                  v-if="admin.avatar" 
+                  :src="admin.avatar" 
+                  size="small"
+                  class="admin-avatar"
+                >
+                  {{ (admin.fullname || admin.email || 'A').charAt(0).toUpperCase() }}
+                </a-avatar>
+                <a-avatar 
+                  v-else 
+                  size="small"
+                  class="admin-avatar"
+                >
+                  {{ (admin.fullname || admin.email || 'A').charAt(0).toUpperCase() }}
+                </a-avatar>
+                <span class="admin-name">{{ admin.fullname || admin.email || 'N/A' }}</span>
+                <a-tag 
+                  :color="admin.role === 'admin' ? 'red' : admin.role === 'manager' ? 'orange' : 'blue'" 
+                  size="small"
+                  class="admin-role-tag"
+                >
+                  {{ admin.role === 'admin' ? 'Admin' : admin.role === 'manager' ? 'Manager' : 'Worker' }}
+                </a-tag>
+              </div>
+            </a-select-option>
+          </a-select>
+          <div class="text-sm text-gray-500 mt-2">
+            Để trống để bỏ phân công. Nhập tên hoặc email để tìm kiếm.
+          </div>
+        </a-form-item>
+      </a-form>
+    </a-modal>
 
   </div>
 </template>
@@ -244,9 +528,15 @@ import {
   EyeOutlined,
   EditOutlined,
   DeleteOutlined,
+  UserOutlined,
+  PaperClipOutlined,
+  CloseOutlined,
+  FileOutlined,
 } from '@ant-design/icons-vue'
+import type { UploadFile, UploadProps } from 'ant-design-vue'
 import { message } from 'ant-design-vue'
 import { useTicketsApi, type Ticket } from '~/composables/api/useTicketsApi'
+import { useAuthStore } from '~/stores/auth'
 import dayjs from 'dayjs'
 
 definePageMeta({
@@ -259,6 +549,7 @@ useHead({
 })
 
 const ticketsApi = useTicketsApi()
+const authStore = useAuthStore()
 
 // State
 const loading = ref(false)
@@ -268,6 +559,32 @@ const searchQuery = ref('')
 const statusFilter = ref<string | undefined>(undefined)
 const priorityFilter = ref<string | undefined>(undefined)
 const categoryFilter = ref<string | undefined>(undefined)
+
+// Detail Modal State
+const showDetailModal = ref(false)
+const selectedTicket = ref<Ticket | null>(null)
+const comments = ref<any[]>([])
+const loadingComments = ref(false)
+const submittingComment = ref(false)
+const replyForm = ref({
+  content: ''
+})
+const replyFileList = ref<UploadFile[]>([])
+
+// Assign Modal State
+const showAssignModal = ref(false)
+const assigning = ref(false)
+const loadingAssignableAdmins = ref(false)
+const assignableAdmins = ref<any[]>([])
+const assignForm = ref({
+  assignedTo: null as string | null
+})
+
+// Check if user can assign tickets
+const canAssign = computed(() => {
+  const userRole = authStore.user?.role
+  return userRole === 'admin' || userRole === 'manager'
+})
 
 // Pagination
 const pagination = reactive({
@@ -511,10 +828,400 @@ const getCategoryText = (category: string | undefined) => {
   return map[category || ''] || category || 'N/A'
 }
 
+// View Ticket Detail
+const viewTicket = async (ticket: Ticket) => {
+  selectedTicket.value = ticket
+  showDetailModal.value = true
+  replyForm.value.content = ''
+  await loadComments(ticket._id)
+  
+  // Load assignable admins if user can assign
+  if (canAssign.value) {
+    await loadAssignableAdmins()
+  }
+}
+
+const closeDetailModal = () => {
+  showDetailModal.value = false
+  selectedTicket.value = null
+  comments.value = []
+  replyForm.value.content = ''
+}
+
+const loadComments = async (ticketId: string) => {
+  try {
+    loadingComments.value = true
+    const response = await ticketsApi.getComments(ticketId)
+    console.log('📝 Load comments response:', response)
+    
+    // Handle different response structures
+    // Backend returns: { success: true, data: { comments: [...] } }
+    // useApiClient wraps it: { status: true, data: { success: true, data: { comments: [...] } } }
+    let commentsData = null
+    if (response.status && response.data) {
+      const responseData = response.data as any
+      
+      // Try nested structure first
+      if (responseData.data && responseData.data.comments) {
+        commentsData = responseData.data.comments
+      } else if (responseData.data && Array.isArray(responseData.data)) {
+        commentsData = responseData.data
+      } else if (responseData.comments) {
+        commentsData = responseData.comments
+      } else if (Array.isArray(responseData)) {
+        commentsData = responseData
+      }
+    }
+    
+    if (commentsData && Array.isArray(commentsData)) {
+      comments.value = commentsData
+      console.log('✅ Loaded comments:', comments.value.length)
+    } else {
+      comments.value = []
+      console.warn('⚠️ No comments data found in response', response)
+    }
+  } catch (error: any) {
+    console.error('❌ Error loading comments:', error)
+    message.error('Không thể tải bình luận')
+    comments.value = []
+  } finally {
+    loadingComments.value = false
+  }
+}
+
+// File upload handlers
+const beforeUpload: UploadProps['beforeUpload'] = (file) => {
+  const isLt10M = file.size / 1024 / 1024 < 10
+  if (!isLt10M) {
+    message.error('File phải nhỏ hơn 10MB!')
+    return false
+  }
+  return false // Prevent auto upload
+}
+
+const getFilePreviewUrl = (file: UploadFile): string | undefined => {
+  if (file.url) {
+    return file.url
+  }
+  if (file.thumbUrl) {
+    return file.thumbUrl
+  }
+  if (file.originFileObj) {
+    return URL.createObjectURL(file.originFileObj)
+  }
+  return undefined
+}
+
+const removeFile = (file: UploadFile) => {
+  const index = replyFileList.value.findIndex(f => f.uid === file.uid)
+  if (index > -1) {
+    replyFileList.value.splice(index, 1)
+  }
+}
+
+const isImage = (url: string) => {
+  return /\.(jpg|jpeg|png|gif|webp|bmp)$/i.test(url) || /^data:image\//.test(url)
+}
+
+const previewAttachment = (url: string) => {
+  if (isImage(url)) {
+    // Open image in new window or modal
+    window.open(url, '_blank')
+  } else {
+    // Download file
+    window.open(url, '_blank')
+  }
+}
+
+const handleAddComment = async () => {
+  if (!selectedTicket.value || !replyForm.value.content.trim()) {
+    return
+  }
+
+  try {
+    submittingComment.value = true
+    let response: any
+    
+    // If there are files, use FormData
+    if (replyFileList.value && replyFileList.value.length > 0) {
+      const formData = new FormData()
+      formData.append('content', replyForm.value.content.trim())
+      
+      replyFileList.value.forEach((file) => {
+        if (file.originFileObj) {
+          formData.append('files', file.originFileObj)
+        }
+      })
+      
+      response = await ticketsApi.addCommentWithFiles(
+        selectedTicket.value._id,
+        formData
+      )
+    } else {
+      // No files, use regular JSON request
+      response = await ticketsApi.addComment(selectedTicket.value._id, {
+        content: replyForm.value.content.trim()
+      })
+    }
+    
+    console.log('💬 Add comment response:', response)
+    
+    // Optionally add the new comment immediately to the list
+    // Backend returns: { success: true, data: { comment: {...} } }
+    // useApiClient wraps it: { status: true, data: { success: true, data: { comment: {...} } } }
+    if (response.status && response.data) {
+      const responseData = response.data as any
+      let newComment = null
+      
+      if (responseData.data && responseData.data.comment) {
+        newComment = responseData.data.comment
+      } else if (responseData.comment) {
+        newComment = responseData.comment
+      } else if (responseData.data && !responseData.data.comment) {
+        // Sometimes comment is directly in data
+        newComment = responseData.data
+      }
+      
+      if (newComment) {
+        // Add to comments list immediately
+        comments.value.push(newComment)
+        console.log('✅ Added new comment to list immediately')
+      }
+    }
+    
+    message.success('Đã gửi trả lời thành công')
+    replyForm.value.content = ''
+    replyFileList.value = [] // Clear file list
+    
+    // Reload comments to ensure we have the latest data (with a small delay to ensure DB is updated)
+    if (selectedTicket.value) {
+      setTimeout(async () => {
+        await loadComments(selectedTicket.value!._id)
+      }, 500)
+    }
+    
+    // Refresh ticket detail to update status and other fields
+    if (selectedTicket.value) {
+      const ticketResponse = await ticketsApi.getTicket(selectedTicket.value._id)
+      console.log('🔄 Refresh ticket after comment response:', ticketResponse)
+      
+      if (ticketResponse.status && ticketResponse.data) {
+        const ticketData = ticketResponse.data as any
+        let refreshedTicket = null
+        
+        if (ticketData.data && ticketData.data.ticket) {
+          refreshedTicket = ticketData.data.ticket
+        } else if (ticketData.ticket) {
+          refreshedTicket = ticketData.ticket
+        }
+        
+        if (refreshedTicket) {
+          selectedTicket.value = refreshedTicket
+          console.log('✅ Refreshed ticket detail after comment')
+        }
+      }
+    }
+    
+    // Refresh ticket list to update status
+    await fetchTickets()
+  } catch (error: any) {
+    console.error('❌ Error adding comment:', error)
+    message.error(error.message || 'Không thể gửi trả lời')
+  } finally {
+    submittingComment.value = false
+  }
+}
+
+const getCommentAuthorName = (comment: any) => {
+  if (comment.isAdmin && comment.adminId) {
+    if (typeof comment.adminId === 'object') {
+      return comment.adminId.fullname || comment.adminId.email || 'Admin'
+    }
+  }
+  if (comment.userId && typeof comment.userId === 'object') {
+    return comment.userId.fullname || comment.userId.email || 'User'
+  }
+  return 'Unknown'
+}
+
+// Assign Ticket
+const loadAssignableAdmins = async () => {
+  try {
+    loadingAssignableAdmins.value = true
+    console.log('🔄 Loading assignable admins...')
+    const response = await ticketsApi.getAssignableAdmins()
+    console.log('📋 Assignable admins response:', response)
+    
+    // Handle different response structures
+    // Backend returns: { success: true, data: { admins: [...] } }
+    // useApiClient wraps it: { status: true, data: { success: true, data: { admins: [...] } } }
+    let adminsData = null
+    if (response.status && response.data) {
+      const responseData = response.data as any
+      
+      // Try nested structure first
+      if (responseData.data && responseData.data.admins) {
+        adminsData = responseData.data.admins
+        console.log('✅ Found admins in responseData.data.admins')
+      } else if (responseData.admins) {
+        adminsData = responseData.admins
+        console.log('✅ Found admins in responseData.admins')
+      } else if (Array.isArray(responseData.data)) {
+        adminsData = responseData.data
+        console.log('✅ Found admins in responseData.data (array)')
+      } else if (Array.isArray(responseData)) {
+        adminsData = responseData
+        console.log('✅ Found admins in responseData (array)')
+      }
+    }
+    
+    if (adminsData && Array.isArray(adminsData)) {
+      assignableAdmins.value = adminsData
+      console.log(`✅ Loaded ${assignableAdmins.value.length} assignable admins:`, assignableAdmins.value)
+    } else {
+      assignableAdmins.value = []
+      console.warn('⚠️ No admins data found in response', response)
+    }
+  } catch (error: any) {
+    console.error('❌ Error loading assignable admins:', error)
+    message.error('Không thể tải danh sách người xử lý')
+    assignableAdmins.value = []
+  } finally {
+    loadingAssignableAdmins.value = false
+  }
+}
+
+const filterAdminOption = (input: string, option: any) => {
+  if (!input || !input.trim()) {
+    return true
+  }
+  
+  const admin = assignableAdmins.value.find(a => {
+    const adminId = a._id?.toString() || a.id?.toString()
+    const optionValue = option.value?.toString()
+    return adminId === optionValue
+  })
+  
+  if (!admin) {
+    console.log('⚠️ Admin not found for option:', option.value)
+    return false
+  }
+  
+  const searchText = input.toLowerCase().trim()
+  const name = (admin.fullname || '').toLowerCase()
+  const email = (admin.email || '').toLowerCase()
+  const role = (admin.role || '').toLowerCase()
+  
+  const matches = name.includes(searchText) || 
+                  email.includes(searchText) || 
+                  role.includes(searchText)
+  
+  if (matches) {
+    console.log('✅ Filter match:', { searchText, name, email, role })
+  }
+  
+  return matches
+}
+
+const openAssignModal = async () => {
+  console.log('🔓 Opening assign modal...')
+  
+  // Set current assigned value if exists
+  if (selectedTicket.value) {
+    const assignedTo = typeof selectedTicket.value.assignedTo === 'object' 
+      ? selectedTicket.value.assignedTo._id 
+      : selectedTicket.value.assignedTo
+    assignForm.value.assignedTo = assignedTo || null
+    console.log('📌 Current assigned to:', assignForm.value.assignedTo)
+  }
+  
+  // Always load admins when opening modal to ensure fresh data
+  console.log('📥 Loading assignable admins...')
+  await loadAssignableAdmins()
+  console.log('📊 Assignable admins count:', assignableAdmins.value.length)
+  
+  showAssignModal.value = true
+}
+
+const handleCancelAssign = () => {
+  showAssignModal.value = false
+  assignForm.value.assignedTo = null
+}
+
+const handleAssignTicket = async () => {
+  if (!selectedTicket.value) return
+
+  try {
+    assigning.value = true
+    const response = await ticketsApi.assignTicket(
+      selectedTicket.value._id,
+      assignForm.value.assignedTo
+    )
+    
+    console.log('✅ Assign ticket response:', response)
+    
+    message.success('Phân công ticket thành công')
+    showAssignModal.value = false
+    assignForm.value.assignedTo = null
+    
+    // Update ticket from response if available
+    if (response.status && response.data) {
+      const responseData = response.data as any
+      let updatedTicket = null
+      
+      if (responseData.data && responseData.data.ticket) {
+        updatedTicket = responseData.data.ticket
+      } else if (responseData.ticket) {
+        updatedTicket = responseData.ticket
+      }
+      
+      if (updatedTicket) {
+        selectedTicket.value = updatedTicket
+        console.log('✅ Updated ticket from assign response')
+      }
+    }
+    
+    // Always refresh ticket detail to ensure we have latest data
+    if (selectedTicket.value) {
+      const ticketResponse = await ticketsApi.getTicket(selectedTicket.value._id)
+      console.log('🔄 Refresh ticket detail response:', ticketResponse)
+      
+      if (ticketResponse.status && ticketResponse.data) {
+        const ticketData = ticketResponse.data as any
+        let refreshedTicket = null
+        
+        if (ticketData.data && ticketData.data.ticket) {
+          refreshedTicket = ticketData.data.ticket
+        } else if (ticketData.ticket) {
+          refreshedTicket = ticketData.ticket
+        }
+        
+        if (refreshedTicket) {
+          selectedTicket.value = refreshedTicket
+          console.log('✅ Refreshed ticket detail')
+        }
+      }
+    }
+    
+    // Refresh ticket list
+    await fetchTickets()
+  } catch (error: any) {
+    console.error('❌ Error assigning ticket:', error)
+    message.error(error.message || 'Không thể phân công ticket')
+  } finally {
+    assigning.value = false
+  }
+}
+
 // Lifecycle
 onMounted(() => {
   fetchTickets()
   fetchStatistics()
+  
+  // Load assignable admins if user can assign
+  if (canAssign.value) {
+    loadAssignableAdmins()
+  }
 })
 </script>
 
@@ -685,6 +1392,177 @@ onMounted(() => {
   .filters-container > * {
     width: 100% !important;
   }
+}
+
+.ticket-detail {
+  max-height: 70vh;
+  overflow-y: auto;
+}
+
+.comments-section {
+  max-height: 400px;
+  overflow-y: auto;
+  margin-bottom: 16px;
+}
+
+.comments-list {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.comment-item {
+  padding: 12px;
+  border: 1px solid #e5e7eb;
+  border-radius: 8px;
+  background: #f9fafb;
+}
+
+.comment-item.comment-admin {
+  background: #eff6ff;
+  border-color: #bfdbfe;
+}
+
+.comment-header {
+  margin-bottom: 8px;
+}
+
+.comment-content {
+  padding-left: 40px;
+  color: #374151;
+  line-height: 1.6;
+}
+
+.comment-attachments {
+  margin-top: 12px;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.comment-attachment-item {
+  cursor: pointer;
+  border: 1px solid #e5e7eb;
+  border-radius: 6px;
+  overflow: hidden;
+  transition: transform 0.2s, box-shadow 0.2s;
+}
+
+.comment-attachment-item:hover {
+  transform: scale(1.05);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+}
+
+.attachment-image {
+  max-width: 200px;
+  max-height: 200px;
+  display: block;
+}
+
+.attachment-file {
+  padding: 12px 16px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background: #f9fafb;
+}
+
+.attachment-filename {
+  font-size: 12px;
+  color: #374151;
+  max-width: 150px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.selected-files {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-bottom: 12px;
+}
+
+.file-preview-item {
+  position: relative;
+  border: 1px solid #e5e7eb;
+  border-radius: 6px;
+  overflow: hidden;
+}
+
+.file-preview-image {
+  width: 100px;
+  height: 100px;
+  object-fit: cover;
+  display: block;
+}
+
+.file-preview-icon {
+  width: 100px;
+  height: 100px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  background: #f9fafb;
+  padding: 8px;
+}
+
+.file-name {
+  font-size: 10px;
+  color: #6b7280;
+  text-align: center;
+  max-width: 80px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.remove-file-btn {
+  position: absolute;
+  top: 4px;
+  right: 4px;
+  background: rgba(0, 0, 0, 0.6);
+  color: white;
+  border: none;
+  border-radius: 50%;
+  width: 24px;
+  height: 24px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+}
+
+.remove-file-btn:hover {
+  background: rgba(0, 0, 0, 0.8);
+}
+
+.admin-option {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 4px 0;
+}
+
+.admin-avatar {
+  flex-shrink: 0;
+}
+
+.admin-name {
+  flex: 1;
+  font-weight: 500;
+}
+
+.admin-role-tag {
+  flex-shrink: 0;
+}
+
+/* Ensure select options are visible */
+:deep(.ant-select-item-option-content) {
+  display: flex;
+  align-items: center;
 }
 </style>
 

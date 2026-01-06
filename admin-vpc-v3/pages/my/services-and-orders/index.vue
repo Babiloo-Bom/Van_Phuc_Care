@@ -232,6 +232,17 @@
 
       <!-- Services Tab -->
       <a-tab-pane key="services" tab="Dịch vụ">
+        <!-- Services Header with Create Button -->
+        <div style="margin-bottom: 16px; display: flex; justify-content: space-between; align-items: center;">
+          <h2 style="margin: 0; font-size: 18px; font-weight: 600;">Danh sách dịch vụ</h2>
+          <a-button type="primary" @click="handleCreateService">
+            <template #icon>
+              <PlusOutlined />
+            </template>
+            Tạo dịch vụ mới
+          </a-button>
+        </div>
+
         <!-- Services Filters -->
         <a-card class="filters-card" :bordered="false">
           <div class="filters-container">
@@ -284,6 +295,26 @@
                   {{ record.status === 'active' ? 'Hoạt động' : 'Không hoạt động' }}
                 </a-tag>
               </template>
+              <template v-else-if="column.key === 'createdAt'">
+                <span>{{ formatDate(record.createdAt) }}</span>
+              </template>
+              <template v-else-if="column.key === 'actions'">
+                <a-space>
+                  <a-button type="link" size="small" @click="handleEditService(record)">
+                    <EditOutlined /> Sửa
+                  </a-button>
+                  <a-popconfirm
+                    title="Bạn có chắc chắn muốn xóa dịch vụ này?"
+                    ok-text="Xóa"
+                    cancel-text="Hủy"
+                    @confirm="handleDeleteService(record._id)"
+                  >
+                    <a-button type="link" size="small" danger>
+                      <DeleteOutlined /> Xóa
+                    </a-button>
+                  </a-popconfirm>
+                </a-space>
+              </template>
             </template>
           </a-table>
 
@@ -331,6 +362,22 @@
                   <span class="card-label">Ngày tạo:</span>
                   <span>{{ formatDate(item.createdAt) }}</span>
                 </div>
+              </div>
+
+              <div class="card-actions">
+                <a-button type="link" size="small" @click="handleEditService(item)">
+                  <EditOutlined /> Sửa
+                </a-button>
+                <a-popconfirm
+                  title="Bạn có chắc chắn muốn xóa dịch vụ này?"
+                  ok-text="Xóa"
+                  cancel-text="Hủy"
+                  @confirm="handleDeleteService(item._id)"
+                >
+                  <a-button type="link" size="small" danger>
+                    <DeleteOutlined /> Xóa
+                  </a-button>
+                </a-popconfirm>
               </div>
             </a-card>
           </div>
@@ -516,10 +563,17 @@
     >
       <a-form :model="serviceFormData" layout="vertical">
         <a-form-item label="Tên dịch vụ" required>
-          <a-input v-model:value="serviceFormData.title" placeholder="Nhập tên dịch vụ" />
+          <a-input 
+            v-model:value="serviceFormData.title" 
+            placeholder="Nhập tên dịch vụ"
+            @blur="generateServiceSlug"
+          />
         </a-form-item>
         <a-form-item label="Slug" required>
-          <a-input v-model:value="serviceFormData.slug" placeholder="Nhập slug (ví dụ: dich-vu-kham)" />
+          <a-input 
+            v-model:value="serviceFormData.slug" 
+            placeholder="Slug sẽ được tạo tự động từ tên dịch vụ"
+          />
         </a-form-item>
         <a-form-item label="Mô tả ngắn">
           <a-textarea
@@ -859,6 +913,12 @@ const serviceColumns = [
     dataIndex: 'createdAt',
     key: 'createdAt',
     width: 150
+  },
+  {
+    title: 'Thao tác',
+    key: 'actions',
+    width: 150,
+    fixed: 'right'
   }
 ]
 
@@ -1054,6 +1114,21 @@ const handleServiceTableChange = (pag: any) => {
   servicePagination.current = pag.current
   servicePagination.pageSize = pag.pageSize
   fetchServices()
+}
+
+// Generate slug from title
+const generateServiceSlug = () => {
+  if (serviceFormData.value.title && serviceModalMode.value === 'create') {
+    // Only auto-generate when creating, not editing
+    serviceFormData.value.slug = serviceFormData.value.title
+      .toLowerCase()
+      .normalize('NFD')
+      .replace(/[\u0300-\u036f]/g, '')
+      .replace(/đ/g, 'd')
+      .replace(/Đ/g, 'D')
+      .replace(/[^a-z0-9]+/g, '-')
+      .replace(/(^-|-$)/g, '')
+  }
 }
 
 const handleCreateService = () => {

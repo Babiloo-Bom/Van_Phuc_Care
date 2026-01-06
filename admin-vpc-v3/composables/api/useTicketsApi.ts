@@ -145,6 +145,63 @@ export const useTicketsApi = () => {
       return apiClient.get<{ statistics: TicketStatistics }>('/api/a/tickets/statistics', {
         showError: false
       })
+    },
+
+    /**
+     * Get comments for a ticket
+     */
+    async getComments(ticketId: string) {
+      return apiClient.get<{ comments: any[] }>(`/api/a/tickets/${ticketId}/comments`, {
+        showError: false
+      })
+    },
+
+    /**
+     * Add a comment/reply to a ticket
+     */
+    async addComment(ticketId: string, data: { content: string; attachments?: any[] }) {
+      return apiClient.post<{ comment: any }>(`/api/a/tickets/${ticketId}/comments`, data, {
+        errorMessage: 'Không thể thêm bình luận'
+      })
+    },
+
+    /**
+     * Add a comment/reply with file uploads using FormData
+     */
+    async addCommentWithFiles(ticketId: string, formData: FormData) {
+      return apiClient.post<{ comment: any }>(`/api/a/tickets/${ticketId}/comments`, formData, {
+        errorMessage: 'Không thể thêm bình luận',
+        headers: {
+          'Content-Type': 'multipart/form-data'
+        }
+      })
+    },
+
+    /**
+     * Delete a comment
+     */
+    async deleteComment(ticketId: string, commentId: string) {
+      return apiClient.delete(`/api/a/tickets/${ticketId}/comments/${commentId}`, {
+        errorMessage: 'Không thể xóa bình luận'
+      })
+    },
+
+    /**
+     * Assign ticket to an admin/manager
+     */
+    async assignTicket(ticketId: string, assignedTo: string | null) {
+      return apiClient.post<{ ticket: Ticket }>(`/api/a/tickets/${ticketId}/assign`, { assignedTo }, {
+        errorMessage: 'Không thể phân công ticket'
+      })
+    },
+
+    /**
+     * Get list of admins/managers who can be assigned to tickets
+     */
+    async getAssignableAdmins() {
+      return apiClient.get<{ admins: any[] }>('/api/a/tickets/assignable-admins', {
+        showError: false
+      })
     }
   }
 }
