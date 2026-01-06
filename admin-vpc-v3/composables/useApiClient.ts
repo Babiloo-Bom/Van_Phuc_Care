@@ -130,6 +130,20 @@ export const useApiClient = () => {
       }
     }
     
+    // Ẩn các message dạng mã lỗi kỹ thuật kiểu: [POST] "/api/...": 500, FetchError,...
+    const technicalPatterns = [
+      /\[[A-Z]+\]\s+"\/api[^"]*":\s*\d{3}/,
+      /FetchError/i,
+      /\/api\/[a-z0-9/_-]+/i,
+    ]
+
+    if (technicalPatterns.some((re) => re.test(errorMessage))) {
+      // Nếu đã có errorMessage thân thiện theo status code ở trên thì giữ,
+      // còn nếu vẫn là chuỗi kỹ thuật thì thay bằng message chung dễ hiểu.
+      errorMessage = options.errorMessage ||
+        'Hệ thống đang gặp sự cố khi xử lý yêu cầu. Vui lòng thử lại sau hoặc liên hệ quản trị viên.'
+    }
+
     // Handle FetchError with status code
     if (error.name === 'FetchError' || error.name === 'FetchError') {
       // Check for timeout

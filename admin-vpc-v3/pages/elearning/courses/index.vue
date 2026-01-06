@@ -1644,11 +1644,24 @@ const handleModalOk = async () => {
       }
     }
   } catch (error: any) {
-    console.error('Modal error:', error)
-    if (error.errorFields) {
+    // Lỗi validate form của Ant Design Vue
+    if (error && Array.isArray(error.errorFields) && error.errorFields.length > 0) {
+      const firstField = error.errorFields[0]
+      const firstMsg = firstField?.errors?.[0]
+
+      message.warning(firstMsg || 'Vui lòng kiểm tra lại các trường bắt buộc trong form')
       return
     }
-    message.error('Có lỗi xảy ra')
+
+    // Các lỗi khác (API / logic)
+    console.error('Lỗi khi lưu khóa học:', error)
+
+    const apiMessage =
+      error?.message ||
+      error?.response?.data?.message ||
+      error?.data?.message
+
+    message.error(apiMessage || 'Có lỗi xảy ra khi lưu khóa học. Vui lòng thử lại.')
   } finally {
     modalLoading.value = false
   }
