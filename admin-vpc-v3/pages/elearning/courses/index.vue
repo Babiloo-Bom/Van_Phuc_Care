@@ -1084,7 +1084,8 @@ const handleIntroVideoChange = async (info: any) => {
       message.success('Upload video giới thiệu thành công')
     } catch (error: any) {
       console.error('Upload intro video error:', error)
-      message.error('Upload video giới thiệu thất bại: ' + (error.message || 'Unknown error'))
+      // Error message đã được format rõ ràng trong uploadVideoToR2
+      message.error(error.message || 'Upload video giới thiệu thất bại')
       // Xóa file khỏi fileList nếu upload thất bại
       introVideoFileList.value = []
       formData.introVideo = ''
@@ -1199,7 +1200,31 @@ const uploadVideoToR2 = async (file: File, folder: string = 'courses/intro-video
     throw new Error('Video upload failed: No file URL in response')
   } catch (error: any) {
     console.error('❌ Video upload error:', error)
-    throw new Error(error.message || 'Video upload failed')
+    
+    // Handle specific error codes with user-friendly messages
+    let errorMessage = 'Upload video thất bại'
+    
+    // Check status code from various possible locations
+    const status = error.statusCode || error.status || error.response?.status || 
+                   (error.data?.statusCode) || (error.data?.status)
+    
+    // Check error message for specific patterns
+    const errorMsg = error.message || error.data?.message || error.data?.error || ''
+    
+    if (status === 413 || errorMsg.includes('413') || errorMsg.includes('Request Entity Too Large')) {
+      errorMessage = 'File quá lớn! Kích thước file không được vượt quá 2GB. Vui lòng chọn file nhỏ hơn hoặc nén video trước khi upload.'
+    } else if (status === 403 && (errorMsg.includes('413') || errorMsg.includes('Request Entity Too Large'))) {
+      errorMessage = 'File quá lớn! Kích thước file không được vượt quá 2GB. Vui lòng chọn file nhỏ hơn hoặc nén video trước khi upload.'
+    } else if (status === 503 || status === 504 || 
+               errorMsg.includes('504') || errorMsg.includes('503') || 
+               errorMsg.includes('timeout') || errorMsg.includes('Gateway Timeout') ||
+               errorMsg.includes('Service Unavailable')) {
+      errorMessage = 'Upload video mất quá nhiều thời gian. Video có thể quá lớn hoặc quá trình xử lý (convert HLS) mất nhiều thời gian. Vui lòng thử lại với video nhỏ hơn hoặc đợi và thử lại sau.'
+    } else if (errorMsg) {
+      errorMessage = errorMsg
+    }
+    
+    throw new Error(errorMessage)
   }
 }
 
@@ -1869,7 +1894,9 @@ const handleLessonVideoChange = async (chapterIndex: number, lessonIndex: number
       message.success('Upload video thành công')
     } catch (error: any) {
       console.error('Upload video error:', error)
-      message.error('Upload video thất bại: ' + (error.message || 'Unknown error'))
+      // Error message đã được format rõ ràng trong uploadVideoToR2
+      const errorMsg = error.message || 'Upload video thất bại'
+      message.error(errorMsg)
       // Xóa file khỏi fileList nếu upload thất bại
       lesson.videoFileList = []
     } finally {

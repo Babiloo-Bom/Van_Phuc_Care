@@ -90,10 +90,19 @@ export const useApiClient = () => {
           router.push('/login')
           break
         case 403:
-          errorMessage = 'Bạn không có quyền thực hiện thao tác này'
+          // Check if it's a file size error
+          if (error.message?.includes('413') || error.message?.includes('Request Entity Too Large') || 
+              error.data?.message?.includes('413') || error.data?.message?.includes('Request Entity Too Large')) {
+            errorMessage = 'File quá lớn! Kích thước file không được vượt quá 2GB. Vui lòng chọn file nhỏ hơn.'
+          } else {
+            errorMessage = 'Bạn không có quyền thực hiện thao tác này'
+          }
           break
         case 404:
           errorMessage = 'Không tìm thấy dữ liệu'
+          break
+        case 413:
+          errorMessage = 'File quá lớn! Kích thước file không được vượt quá 2GB. Vui lòng chọn file nhỏ hơn.'
           break
         case 422:
           errorMessage = 'Dữ liệu không hợp lệ'
@@ -108,6 +117,28 @@ export const useApiClient = () => {
         case 500:
           errorMessage = 'Lỗi máy chủ, vui lòng thử lại sau'
           break
+        case 503:
+        case 504:
+          // Check if it's a timeout error
+          if (error.message?.includes('timeout') || error.message?.includes('504') || 
+              error.message?.includes('Gateway Timeout') || error.message?.includes('503')) {
+            errorMessage = 'Upload video mất quá nhiều thời gian. Video có thể quá lớn hoặc quá trình xử lý (convert HLS) mất nhiều thời gian. Vui lòng thử lại với video nhỏ hơn hoặc đợi và thử lại sau.'
+          } else {
+            errorMessage = 'Dịch vụ tạm thời không khả dụng, vui lòng thử lại sau'
+          }
+          break
+      }
+    }
+    
+    // Handle FetchError with status code
+    if (error.name === 'FetchError' || error.name === 'FetchError') {
+      // Check for timeout
+      if (error.message?.includes('timeout') || error.message?.includes('504') || error.message?.includes('503')) {
+        errorMessage = 'Upload video mất quá nhiều thời gian. Video có thể quá lớn hoặc quá trình xử lý (convert HLS) mất nhiều thời gian. Vui lòng thử lại với video nhỏ hơn hoặc đợi và thử lại sau.'
+      }
+      // Check for 413
+      if (error.message?.includes('413') || error.message?.includes('Request Entity Too Large')) {
+        errorMessage = 'File quá lớn! Kích thước file không được vượt quá 2GB. Vui lòng chọn file nhỏ hơn.'
       }
     }
 
