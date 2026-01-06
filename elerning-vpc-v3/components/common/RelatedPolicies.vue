@@ -25,6 +25,7 @@ const props = defineProps<{
 const allPolicies: Policy[] = [
   { path: '/terms-of-service', label: 'Điều khoản sử dụng' },
   { path: '/privacy-policy', label: 'Chính sách bảo mật & quyền riêng tư' },
+  { path: '/user-rights', label: 'Quyền lợi & quy định của học viên' },
   { path: '/content-partner-policy', label: 'Chính sách dành cho đối tác nội dung' },
   { path: '/complaint-procedure', label: 'Quy trình tiếp nhận & giải quyết khiếu nại' }
 ]
@@ -42,6 +43,7 @@ const filteredPolicies = computed(() => {
   border-radius: 8px;
   padding: 1.75rem 2rem;
   margin-top: 2rem;
+  max-width: 535px;
 }
 
 .related-title {
@@ -49,7 +51,6 @@ const filteredPolicies = computed(() => {
   font-weight: 700;
   color: #1A75BB;
   margin-bottom: 1rem;
-  font-style: italic;
 }
 
 .divider {
@@ -60,24 +61,21 @@ const filteredPolicies = computed(() => {
 }
 
 .related-list {
-  list-style: none;
+  list-style: disc;
+  list-style-position: inside;
   padding: 0;
   margin: 0;
+  padding-left: 12px;
 }
 
 .related-list li {
   margin-bottom: 0.875rem;
-  padding-left: 1.5rem;
   position: relative;
+  color: #1A75BB;
 }
 
-.related-list li::before {
-  content: '•';
-  position: absolute;
-  left: 0;
+.related-list li::marker {
   color: #1A75BB;
-  font-weight: bold;
-  font-size: 1.2rem;
 }
 
 .related-list li:last-child {
@@ -90,12 +88,10 @@ const filteredPolicies = computed(() => {
   line-height: 1.6;
   text-decoration: none;
   transition: all 0.2s ease;
-  display: inline-block;
-  font-style: italic;
 }
 
 .related-link:hover {
-  color: #135a91;
+  opacity: 0.8;
   text-decoration: underline;
 }
 
@@ -120,7 +116,6 @@ const filteredPolicies = computed(() => {
 
   .related-list li {
     margin-bottom: 0.75rem;
-    padding-left: 1.25rem;
   }
 }
 
@@ -135,10 +130,6 @@ const filteredPolicies = computed(() => {
 
   .related-link {
     font-size: 0.9375rem;
-  }
-
-  .related-list li {
-    padding-left: 1rem;
   }
 
   .related-list li::before {
