@@ -163,7 +163,7 @@
                 </div>
             </div>
         </div>
-        <div class="bg-[#1A75BB] h-[40px] flex items-center">
+        <div class="bg-[#317BC4] h-[40px] flex items-center">
             <div class="container gap-1 flex items-center justify-start">
                 <p class="m-0">
                     <a href="https://vanphuccare.vn/chinh-sach-bien-tap-va-chinh-sua/" target="_blank" class="!text-white">Điều khoản</a>
