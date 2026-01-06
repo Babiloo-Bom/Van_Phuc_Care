@@ -1,11 +1,9 @@
 <template>
   <div class="complaint-procedure-page">
     <!-- Hero Section -->
-    <section class="hero-section">
-      <div class="container mx-auto px-4 md:px-6 lg:px-8 py-12 md:py-16 lg:py-20">
-        <h1 class="hero-title">Quy Trình Tiếp Nhận & Giải Quyết Khiếu Nại</h1>
-      </div>
-    </section>
+    <CommonPolicyHeader
+      title="Quy Trình Tiếp Nhận & Giải Quyết Khiếu Nại"
+    />
 
     <!-- Main Content -->
     <section class="main-content">
@@ -95,31 +93,7 @@
           </div>
 
           <!-- Related Policies Box -->
-          <div class="related-policies">
-            <h3 class="related-title">Điều khoản & Chính sách liên quan</h3>
-            <ul class="related-list">
-              <li>
-                <NuxtLink to="/terms-of-service" class="related-link">
-                  Điều khoản sử dụng
-                </NuxtLink>
-              </li>
-              <li>
-                <NuxtLink to="/privacy-policy" class="related-link">
-                  Chính sách bảo mật & quyền riêng tư
-                </NuxtLink>
-              </li>
-              <li>
-                <NuxtLink to="/user-rights" class="related-link">
-                  Quyền lợi & quy định của học viên
-                </NuxtLink>
-              </li>
-              <li>
-                <NuxtLink to="/partner-policy" class="related-link">
-                  Chính sách dành cho đối tác nội dung
-                </NuxtLink>
-              </li>
-            </ul>
-          </div>
+          <CommonRelatedPolicies exclude-path="/complaint-procedure" />
         </div>
       </div>
     </section>
@@ -154,37 +128,6 @@ useHead({
 </script>
 
 <style scoped>
-/* Hero Section */
-.hero-section {
-  background: linear-gradient(135deg, #2563eb 0%, #1e40af 100%);
-  color: white;
-  min-height: 240px;
-  display: flex;
-  align-items: center;
-  position: relative;
-  overflow: hidden;
-}
-
-.hero-section::before {
-  content: '';
-  position: absolute;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  background-image: url('/images/pattern.svg');
-  opacity: 0.05;
-  pointer-events: none;
-}
-
-.hero-title {
-  font-size: 2.5rem;
-  font-weight: 700;
-  line-height: 1.2;
-  position: relative;
-  z-index: 1;
-}
-
 /* Main Content */
 .main-content {
   background: #f9fafb;
@@ -311,69 +254,10 @@ useHead({
   text-decoration: underline;
 }
 
-/* Related Policies Box */
-.related-policies {
-  background: #eff6ff;
-  border: 2px solid #3b82f6;
-  border-radius: 8px;
-  padding: 2rem;
-  margin-top: 2rem;
-}
 
-.related-title {
-  font-size: 1.25rem;
-  font-weight: 700;
-  color: #1e40af;
-  margin-bottom: 1.25rem;
-}
-
-.related-list {
-  list-style: none;
-  padding: 0;
-  margin: 0;
-}
-
-.related-list li {
-  margin-bottom: 0.75rem;
-}
-
-.related-list li:last-child {
-  margin-bottom: 0;
-}
-
-.related-link {
-  color: #2563eb;
-  font-size: 1rem;
-  line-height: 1.6;
-  text-decoration: none;
-  transition: all 0.2s ease;
-  display: inline-block;
-  position: relative;
-  padding-left: 1.25rem;
-}
-
-.related-link::before {
-  content: '→';
-  position: absolute;
-  left: 0;
-  transition: transform 0.2s ease;
-}
-
-.related-link:hover {
-  color: #1e40af;
-  transform: translateX(4px);
-}
-
-.related-link:hover::before {
-  transform: translateX(4px);
-}
 
 /* Responsive Styles */
 @media (max-width: 1024px) {
-  .hero-title {
-    font-size: 2rem;
-  }
-
   .content-wrapper {
     padding: 2rem;
   }
@@ -384,14 +268,6 @@ useHead({
 }
 
 @media (max-width: 768px) {
-  .hero-section {
-    min-height: 220px;
-  }
-
-  .hero-title {
-    font-size: 1.75rem;
-  }
-
   .content-wrapper {
     padding: 1.5rem;
     border-radius: 8px;
@@ -420,30 +296,9 @@ useHead({
     font-size: 0.95rem;
     padding: 0.875rem 1rem;
   }
-
-  .related-policies {
-    padding: 1.5rem;
-  }
-
-  .related-title {
-    font-size: 1.125rem;
-    margin-bottom: 1rem;
-  }
-
-  .related-link {
-    font-size: 0.95rem;
-  }
 }
 
 @media (max-width: 640px) {
-  .hero-section {
-    min-height: 200px;
-  }
-
-  .hero-title {
-    font-size: 1.5rem;
-  }
-
   .content-wrapper {
     padding: 1.25rem;
   }
@@ -473,29 +328,12 @@ useHead({
     padding: 0.75rem 0.875rem;
   }
 
-  .related-policies {
-    padding: 1.25rem;
-  }
-
-  .related-title {
-    font-size: 1rem;
-  }
-
-  .related-link {
-    font-size: 0.875rem;
-    padding-left: 1rem;
-  }
-
   .complaint-section {
     margin-bottom: 2rem;
   }
 }
 
 @media (max-width: 480px) {
-  .hero-title {
-    font-size: 1.35rem;
-  }
-
   .content-wrapper {
     padding: 1rem;
   }
