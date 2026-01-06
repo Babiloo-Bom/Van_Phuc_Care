@@ -429,13 +429,29 @@ class OrderController {
 
       const revenue = totalRevenue.length > 0 ? totalRevenue[0].total : 0;
 
+      // Đếm số khóa học đã bán (từ các orders đã hoàn thành)
+      const completedOrdersWithItems = await Order.find({ 
+        status: 'completed',
+        paymentStatus: 'completed'
+      }).select('items');
+      
+      let totalCoursesSold = 0;
+      if (completedOrdersWithItems && Array.isArray(completedOrdersWithItems)) {
+        completedOrdersWithItems.forEach((order: any) => {
+          if (order.items && Array.isArray(order.items)) {
+            totalCoursesSold += order.items.length;
+          }
+        });
+      }
+
       sendSuccess(res, {
         stats: {
           totalOrders,
           completedOrders,
           pendingOrders,
           totalRevenue: revenue,
-          completionRate: totalOrders > 0 ? (completedOrders / totalOrders * 100).toFixed(2) : 0
+          completionRate: totalOrders > 0 ? (completedOrders / totalOrders * 100).toFixed(2) : 0,
+          totalCoursesSold
         }
       });
     } catch (error: any) {

@@ -24,10 +24,10 @@
           <BookOutlined />
         </div>
         <div class="stat-content">
-          <p class="stat-label">Tổng khóa học</p>
-          <p class="stat-value">{{ formatNumber(stats.totalCourses) }}</p>
+          <p class="stat-label">Tổng khóa học đã bán được</p>
+          <p class="stat-value">{{ formatNumber(stats.totalCoursesSold) }}</p>
           <p class="stat-change positive">
-            <ArrowUpOutlined /> {{ stats.activeCourses }} đang hoạt động
+            <ArrowUpOutlined /> Cập nhật theo thời gian thực
           </p>
         </div>
       </div>
@@ -245,6 +245,7 @@ const stats = reactive({
   pendingPercentage: 0,
   totalHealthBooks: 0,  // Thêm field này
   activeHealthBooks: 0,  // Thêm field này
+  totalCoursesSold: 0,  // Số khóa học đã bán được
 })
 const recentCourses = ref<any[]>([]) // Thêm state này
 
@@ -323,6 +324,7 @@ const fetchDashboardData = async () => {
         stats.pendingOrders = orderStats?.pendingOrders || 0  // Số lượng giao dịch chờ xử lý
         stats.totalRevenue = orderStats?.totalRevenue || 0
         stats.completionRate = parseFloat(orderStats?.completionRate || '0')
+        stats.totalCoursesSold = orderStats?.totalCoursesSold || 0  // Số khóa học đã bán được
         
         // Calculate percentages
         if (stats.totalOrders > 0) {
@@ -454,9 +456,25 @@ const refreshData = () => {
   fetchDashboardData()
 }
 
+// Auto-refresh interval (30 giây)
+let autoRefreshInterval: ReturnType<typeof setInterval> | null = null
+
 // Fetch on mount
 onMounted(() => {
   fetchDashboardData()
+  
+  // Bắt đầu auto-refresh mỗi 30 giây
+  autoRefreshInterval = setInterval(() => {
+    fetchDashboardData()
+  }, 30000) // 30 giây
+})
+
+// Cleanup interval khi component unmount
+onUnmounted(() => {
+  if (autoRefreshInterval) {
+    clearInterval(autoRefreshInterval)
+    autoRefreshInterval = null
+  }
 })
 </script>
 
