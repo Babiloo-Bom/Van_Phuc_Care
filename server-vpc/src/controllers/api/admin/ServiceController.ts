@@ -8,17 +8,22 @@ import moment from 'moment';
 class ServiceController {
   public async create (req: Request, res: Response) {
     try {
-      if (req.currentAdmin.role === 'manager') {
+      // Allow both admin and manager to create services
+      if (req.currentAdmin.role === 'admin' || req.currentAdmin.role === 'manager') {
         const admin = req.currentAdmin;
         const body = req.body;
+        
+        // Check if slug already exists
         const checkExistSlug = await MongoDbService.model.findOne({ slug: body.slug });
         if (checkExistSlug) {
-          return sendError(res, 401, 'Đường dẫn đã tồn tại');
+          return sendError(res, 400, 'Đường dẫn đã tồn tại');
         }
+        
+        // Create service with origin
         const service = await MongoDbService.model.create({ ...body, origin: admin.domain });
         sendSuccess(res, { service });
       } else {
-        sendError(res, 404, NoData);
+        sendError(res, 403, 'Bạn không có quyền tạo dịch vụ');
       }
     } catch (error: any) {
       sendError(res, 500, error.message, error as Error);
@@ -107,12 +112,19 @@ class ServiceController {
 
   public async delete (req: Request, res: Response) {
     try {
-      if (req.currentAdmin.role !== 'manager') {
-        sendError(res, 400, NoData);
+      // Allow both admin and manager to delete services
+      if (req.currentAdmin.role !== 'admin' && req.currentAdmin.role !== 'manager') {
+        return sendError(res, 403, 'Bạn không có quyền xóa dịch vụ');
       }
+      
+      // Validate request body
+      if (!req.body.ids || !Array.isArray(req.body.ids) || req.body.ids.length === 0) {
+        return sendError(res, 400, 'Danh sách ID dịch vụ không hợp lệ');
+      }
+      
       await MongoDbService.model.deleteMany({ _id: { $in: req.body.ids } });
       await MongoDbFeedbacks.model.deleteMany({ serviceId: { $in: req.body.ids } });
-      sendSuccess(res, { status: true });
+      sendSuccess(res, { status: true, message: 'Xóa dịch vụ thành công' });
     } catch (error: any) {
       sendError(res, 500, error.message, error as Error);
     }
