@@ -2,30 +2,29 @@
   <div class="">
     <!-- Banner Section -->
     <div
-      class="h-auto md:mb-[5rem] sm:h-[500px] py-10 sm:pt-20 sm:pb-20 md:pb-60 bg-cover bg-center bg-no-repeat bg-[url('https://cdn.synck.io.vn/vanphuccare/banner/main.webp')]
-              relative z-[1] after:absolute after:content-[''] after:top-0 after:left-0 after:w-full after:h-full after:opacity-60 after:bg-prim-100"
+      class="md:mb-[5rem] h-[480px] py-10 sm:pt-20 sm:pb-20 md:pb-60 bg-cover bg-center bg-no-repeat bg-[url('https://cdn.synck.io.vn/vanphuccare/banner/main.webp')] relative z-[1] after:absolute after:content-[''] after:top-0 after:left-0 after:w-full after:h-full after:opacity-60 after:bg-prim-100"
     >
       <div class="absolute inset-0 bg-[#1A75BBB2]"></div>
       <div class="container h-full">
         <div
           class="relative z-[1] flex flex-col items-center md:items-start h-full gap-6"
         >
-          <div class="text-white w-full">
-            <div class="flex flex-col gap-4 md:gap-6">
+          <div class="text-white w-full px-4 lg:px-0 xl:px-4 flex flex-col items-center lg:items-start">
+            <div class="flex flex-row flex-nowrap items-center justify-between md:justify-start gap-2 md:gap-6 w-full max-w-[400px] sm:max-w-[440px] md:max-w-full">
               <!-- Title -->
-              <h4 class="text-3xl sm:text-4xl font-bold text-white mb-0">
+              <h4 class="text-[28px] sm:text-3xl md:text-4xl font-bold text-white mb-0">
                 Tất cả khóa học
               </h4>
-              
+
               <!-- Course Count -->
               <div
-                class="flex items-center rounded-full py-1.5 px-5 border-[1px] border-solid border-white gap-2 w-fit"
+                class="flex items-center rounded-full md:mt-1 py-1.5 px-2 md:px-5 border-[1px] border-solid border-white gap-3 w-fit"
               >
                 <span>
                   <svg
                     xmlns="http://www.w3.org/2000/svg"
-                    width="20"
-                    height="20"
+                    width="16"
+                    height="16"
                     viewBox="0 0 24 24"
                     class="fill-none stroke-white"
                   >
@@ -43,40 +42,10 @@
                     />
                   </svg>
                 </span>
-                <span v-if="searchKey">
-                  {{ filteredCourses.length }} kết quả cho "{{ searchKey }}"
-                </span>
-                <span v-else> {{ filteredCourses.length }} khóa học </span>
-              </div>
-              
-              <!-- Search -->
-              <div class="w-full text-center md:text-left">
-                <a-input
-                  v-model="searchKey"
-                  placeholder="Tìm kiếm theo tên, mô tả, danh mục, tags..."
-                  class="!bg-transparent rounded-full h-10 w-full max-w-[400px] sm:max-w-[440px] md:max-w-[340px] custom_input"
-                  @change="handleSearch"
-                >
-                  <template #prefix>
-                    <svg
-                      xmlns="http://www.w3.org/2000/svg"
-                      width="20"
-                      height="20"
-                      viewBox="0 0 24 24"
-                      class="fill-none stroke-white"
-                    >
-                      <path
-                        d="M11.5 21a9.5 9.5 0 1 0 0-19 9.5 9.5 0 0 0 0 19ZM22 22l-2-2"
-                        stroke-width="1.5"
-                        stroke-linecap="round"
-                        stroke-linejoin="round"
-                      />
-                    </svg>
-                  </template>
-                </a-input>
+                <span class="text-xs leading-none"> {{ filteredCourses.length }} khóa học </span>
               </div>
             </div>
-            
+
             <!-- Description -->
             <div class="mt-4 hidden md:block">
               <p class="mb-0 md:max-w-[800px] text-white leading-relaxed">
@@ -88,13 +57,39 @@
                 vấn giàu kinh nghiệm trong lĩnh vực Mẹ và Bé.
               </p>
             </div>
+
+            <!-- Search -->
+            <div class="w-full text-center mt-4 md:text-left">
+              <a-input
+                v-model="searchKey"
+                placeholder="Tìm kiếm khóa học"
+                class="!bg-transparent rounded-full h-10 w-full max-w-[400px] sm:max-w-[440px] md:max-w-[340px] custom_input"
+                @change="handleSearch"
+              >
+                <template #prefix>
+                  <svg
+                    xmlns="http://www.w3.org/2000/svg"
+                    width="20"
+                    height="20"
+                    viewBox="0 0 24 24"
+                    class="fill-none stroke-white"
+                  >
+                    <path
+                      d="M11.5 21a9.5 9.5 0 1 0 0-19 9.5 9.5 0 0 0 0 19ZM22 22l-2-2"
+                      stroke-width="1.5"
+                      stroke-linecap="round"
+                      stroke-linejoin="round"
+                    />
+                  </svg>
+                </template>
+              </a-input>
+            </div>
           </div>
 
           <!-- Filter Options (3 nút trắng giống trang chủ) -->
-          <div
+          <!-- <div
             class="w-full flex flex-col sm:flex-row items-center gap-4 justify-center md:justify-start mt-4 relative z-[2]"
           >
-            <!-- Category Filter -->
             <a-select
               v-model:value="selectedCategory"
               placeholder="Chọn danh mục"
@@ -111,7 +106,6 @@
               </a-select-option>
             </a-select>
 
-            <!-- Level Filter -->
             <a-select
               v-model:value="selectedLevel"
               placeholder="Chọn cấp độ"
@@ -124,7 +118,6 @@
               <a-select-option value="advanced">Nâng cao</a-select-option>
             </a-select>
 
-            <!-- Sort Options -->
             <a-select
               v-model:value="sortBy"
               placeholder="Sắp xếp theo"
@@ -139,7 +132,7 @@
               <a-select-option value="newest">Mới nhất</a-select-option>
               <a-select-option value="rating">Đánh giá cao nhất</a-select-option>
             </a-select>
-          </div>
+          </div> -->
         </div>
       </div>
     </div>
@@ -150,7 +143,7 @@
         <div v-if="!loading">
           <div
             v-if="filteredCourses.length"
-            class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 xl:grid-cols-4 gap-6 mt-4 sm:-mt-32 md:-mt-40 lg:-mt-60"
+            class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 xl:grid-cols-4 gap-6 mt-[-348px] sm:mt-[-328px] md:-mt-60 lg:-mt-72"
           >
             <CourseCard
               v-for="(course, index) in filteredCourses"
@@ -165,12 +158,15 @@
             />
           </div>
           <div v-else>
-            <a-empty descriptions="Chưa có khóa học nào" class="flex flex-col items-center"/>
+            <a-empty
+              descriptions="Chưa có khóa học nào"
+              class="flex flex-col items-center"
+            />
           </div>
         </div>
         <div
           v-else
-          class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 xl:grid-cols-4 gap-6 mt-4 sm:-mt-32 md:-mt-40 lg:-mt-60"
+          class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 xl:grid-cols-4 gap-6 mt-[-348px] sm:mt-[-328px] md:-mt-60 lg:-mt-60"
         >
           <div v-for="index in [1, 2, 3, 4]" :key="index" class="">
             <Skeleton />
@@ -203,9 +199,9 @@ const loading = ref(false);
 const searchKey = ref("");
 const selectedCategory = ref("");
 const selectedLevel = ref("");
-const sortBy = ref<"priority" | "price-low" | "price-high" | "newest" | "rating">(
-  "priority"
-);
+const sortBy = ref<
+  "priority" | "price-low" | "price-high" | "newest" | "rating"
+>("priority");
 
 // Computed
 const courses = computed(() => courseStore.courses);
@@ -213,7 +209,9 @@ const courses = computed(() => courseStore.courses);
 const categories = computed(() => {
   const sourceCourses = courses.value || [];
   const cats = [
-    ...new Set(sourceCourses.map((course: any) => course.category).filter(Boolean)),
+    ...new Set(
+      sourceCourses.map((course: any) => course.category).filter(Boolean)
+    ),
   ];
   return cats;
 });
@@ -246,7 +244,8 @@ const isCompleted = (course: any) => {
   );
 
   const progressPct =
-    myCourse?.progress?.progressPercentage ?? course?.progress?.progressPercentage ??
+    myCourse?.progress?.progressPercentage ??
+    course?.progress?.progressPercentage ??
     0;
 
   const completedByUser =
@@ -288,8 +287,7 @@ const sortedCourses = computed(() => {
       break;
     case "rating":
       source.sort(
-        (a: any, b: any) =>
-          (b.rating?.average || 0) - (a.rating?.average || 0)
+        (a: any, b: any) => (b.rating?.average || 0) - (a.rating?.average || 0)
       );
       break;
     case "priority":
@@ -321,32 +319,32 @@ const filteredCourses = computed(() => {
 
   if (searchTerm) {
     source = source.filter((course: any) => {
-    // Tìm kiếm theo title
-    const titleMatch =
-      course.title?.toLowerCase().includes(searchTerm) || false;
+      // Tìm kiếm theo title
+      const titleMatch =
+        course.title?.toLowerCase().includes(searchTerm) || false;
 
-    // Tìm kiếm theo shortDescription
-    const shortDescMatch =
-      course.shortDescription?.toLowerCase().includes(searchTerm) || false;
+      // Tìm kiếm theo shortDescription
+      const shortDescMatch =
+        course.shortDescription?.toLowerCase().includes(searchTerm) || false;
 
-    // Tìm kiếm theo description
-    const descMatch =
-      course.description?.toLowerCase().includes(searchTerm) || false;
+      // Tìm kiếm theo description
+      const descMatch =
+        course.description?.toLowerCase().includes(searchTerm) || false;
 
-    // Tìm kiếm theo category
-    const categoryMatch =
-      course.category?.toLowerCase().includes(searchTerm) || false;
+      // Tìm kiếm theo category
+      const categoryMatch =
+        course.category?.toLowerCase().includes(searchTerm) || false;
 
-    // Tìm kiếm theo tags
-    const tagsMatch =
-      course.tags?.some((tag: string) =>
-        tag.toLowerCase().includes(searchTerm)
-      ) || false;
+      // Tìm kiếm theo tags
+      const tagsMatch =
+        course.tags?.some((tag: string) =>
+          tag.toLowerCase().includes(searchTerm)
+        ) || false;
 
-    return (
-      titleMatch || shortDescMatch || descMatch || categoryMatch || tagsMatch
-    );
-  });
+      return (
+        titleMatch || shortDescMatch || descMatch || categoryMatch || tagsMatch
+      );
+    });
   }
 
   // Lọc theo category
@@ -401,27 +399,41 @@ const handleAddToCart = async (course: any) => {
   }
 
   try {
-    await cartStore.addToCart({ courseId: course._id, quantity: 1, userId: String(authStore.user?.id) || "" })
+    await cartStore.addToCart({
+      courseId: course._id,
+      quantity: 1,
+      userId: String(authStore.user?.id) || "",
+    });
   } catch (error: any) {
-    const msg = error?.data?.message || error?.message || ""
-    if (msg.toLowerCase().includes("already in cart") || msg.includes("trong giỏ")) {
-      ;(window as any).$message?.warning?.("Khóa học đã tồn tại trong giỏ hàng")
+    const msg = error?.data?.message || error?.message || "";
+    if (
+      msg.toLowerCase().includes("already in cart") ||
+      msg.includes("trong giỏ")
+    ) {
+      (window as any).$message?.warning?.("Khóa học đã tồn tại trong giỏ hàng");
     } else {
-      ;(window as any).$message?.error?.("Không thể thêm vào giỏ hàng")
+      (window as any).$message?.error?.("Không thể thêm vào giỏ hàng");
     }
   }
 };
 
 const handleBuyNow = async (course: any) => {
   try {
-    await cartStore.addToCart({ courseId: course._id, quantity: 1, userId: String(authStore.user?.id) || "" })
-    navigateTo('/cart')
+    await cartStore.addToCart({
+      courseId: course._id,
+      quantity: 1,
+      userId: String(authStore.user?.id) || "",
+    });
+    navigateTo("/cart");
   } catch (error: any) {
-    const msg = error?.data?.message || error?.message || ""
-    if (msg.toLowerCase().includes("already in cart") || msg.includes("trong giỏ")) {
-      ;(window as any).$message?.warning?.("Khóa học đã tồn tại trong giỏ hàng")
+    const msg = error?.data?.message || error?.message || "";
+    if (
+      msg.toLowerCase().includes("already in cart") ||
+      msg.includes("trong giỏ")
+    ) {
+      (window as any).$message?.warning?.("Khóa học đã tồn tại trong giỏ hàng");
     } else {
-      ;(window as any).$message?.error?.("Không thể mua ngay lúc này")
+      (window as any).$message?.error?.("Không thể mua ngay lúc này");
     }
   }
 };
@@ -449,13 +461,13 @@ const handleViewDetail = (course: any) => {
 
 // Lifecycle
 onMounted(async () => {
-  authStore.initAuth()
-  await fetchCourses()
+  authStore.initAuth();
+  await fetchCourses();
   // Only fetch my courses if user is logged in
   if (authStore.isLoggedIn) {
-    courseStore.fetchMyCourses()
+    courseStore.fetchMyCourses();
   }
-})
+});
 
 // Page meta
 definePageMeta({
@@ -530,8 +542,7 @@ if (process.client) {
     canonical.setAttribute("rel", "canonical");
     document.head.appendChild(canonical);
   }
-  canonical.setAttribute('href', 'https://vanphuccare.com/courses')
-  
+  canonical.setAttribute("href", "https://vanphuccare.com/courses");
 }
 
 // Also use useHead as fallback
@@ -649,16 +660,18 @@ useHead({
 </script>
 
 <style scoped>
+.custom_input :deep(.ant-input-affix-wrapper) {
+  @apply bg-transparent rounded-full border-[1px] !border-solid !border-white;
+}
+
+.custom_input :deep(.ant-input-affix-wrapper:hover),
+.custom_input :deep(.ant-input-affix-wrapper:focus),
+.custom_input :deep(.ant-input-affix-wrapper-focused) {
+  @apply !border-[1px] !border-solid !border-white !shadow-none;
+}
+
 .custom_input :deep(.ant-input) {
-  @apply bg-transparent placeholder:text-white rounded-full hover:border-white focus:border-white outline-none text-white border-white;
-}
-
-.custom_input :deep(.ant-input:focus) {
-  @apply border-white shadow-none;
-}
-
-.custom_input :deep(.ant-input:hover) {
-  @apply border-white;
+  @apply bg-transparent placeholder:text-white text-white;
 }
 
 .card-img-loading {
@@ -668,12 +681,6 @@ useHead({
 /* Ensure proper spacing and alignment */
 .container {
   margin: 0 auto;
-  padding: 0 1rem;
 }
 
-@media (min-width: 768px) {
-  .container {
-    padding: 0 2rem;
-  }
-}
 </style>

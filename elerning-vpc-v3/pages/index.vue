@@ -390,16 +390,16 @@ useHead({
   ],
 });
 
+// Nếu user truy cập vào `/` thì chuyển về `/courses`
+if (process.client) {
+  navigateTo("/courses", { replace: true });
+}
+
 const router = useRouter();
 const coursesStore = useCoursesStore();
 const cartStore = useCartStore();
 const authStore = useAuthStore();
 const courseApi = useCourseApi();
-
-// Nếu user truy cập vào `/` thì chuyển về `/courses`
-if (process.client) {
-  navigateTo("/courses", { replace: true });
-}
 
 const loading = ref(false);
 const searchKey = ref("");

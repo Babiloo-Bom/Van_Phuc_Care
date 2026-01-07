@@ -93,7 +93,7 @@
 <script setup lang="ts">
 // Set page meta
 definePageMeta({
-  layout: "default",
+  layout: "auth",
   title: "Quy Trình Tiếp Nhận & Giải Quyết Khiếu Nại - Van Phuc Care",
 });
 

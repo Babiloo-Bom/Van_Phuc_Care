@@ -250,7 +250,7 @@ Bằng việc truy cập hoặc sử dụng Dịch vụ, Người dùng xác nh�
 <script setup lang="ts">
 // Set page meta
 definePageMeta({
-  layout: "default",
+  layout: "auth",
   title: "Chính Sách Bảo Mật & Quyền Riêng Tư - Van Phuc Care",
 });
 

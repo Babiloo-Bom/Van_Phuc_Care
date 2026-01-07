@@ -2,7 +2,7 @@
   <div class="my-learning-detail">
     <!-- Header Bar (màu xanh) -->
     <div class="my-learning-detail-head">
-      <div class="container mx-auto px-4">
+      <div class="container mx-auto">
         <div
           class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 sm:gap-4"
         >
@@ -44,7 +44,7 @@
     </div>
 
     <!-- Main Content Area -->
-    <div class="container mx-auto px-4 py-4 md:py-6">
+    <div class="container mx-auto py-4 md:py-6">
       <div class="flex flex-col lg:flex-row gap-4 lg:gap-6">
         <div v-if="!isQuiz && !showCertificate" class="flex-1 lg:w-[65%] bg-white rounded-lg shadow-lg p-4 md:p-8">
           <!-- Lesson Title -->

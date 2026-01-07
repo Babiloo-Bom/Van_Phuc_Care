@@ -103,7 +103,7 @@
 <script setup lang="ts">
 // Set page meta
 definePageMeta({
-  layout: "default",
+  layout: "auth",
   title: "Quyền Lợi & Quy Định Của Học Viên - Van Phuc Care",
 });
 

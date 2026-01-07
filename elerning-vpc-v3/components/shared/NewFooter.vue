@@ -9,7 +9,7 @@
       </svg>
     </div>
     
-    <div class="container mx-auto px-4 py-8 md:py-12 relative z-10">
+    <div class="container mx-auto px-4 lg:px-0 xl:px-4 py-8 md:py-12 relative z-10">
       <!-- Desktop Layout: 3 columns -->
       <div class="grid grid-cols-1 lg:grid-cols-3 gap-8 lg:gap-12 xl:gap-24">
         <!-- Column 1: Logo + Slogan + Facebook Embed -->
@@ -31,8 +31,8 @@
             <iframe
               title="facebook"
               rel="nofollow"
-              src="https://www.facebook.com/plugins/page.php?href=https%3A%2F%2Fwww.facebook.com%2Fchamsocmevabe.vanphuc%2F&amp;tabs=timeline&amp;width=360&amp;height=130&amp;small_header=false&amp;adapt_container_width=true&amp;hide_cover=false&amp;show_facepile=true&amp;appId"
-              width="360"
+              src="https://www.facebook.com/plugins/page.php?href=https%3A%2F%2Fwww.facebook.com%2Fchamsocmevabe.vanphuc%2F&amp;tabs=timeline&amp;width=340&amp;height=130&amp;small_header=false&amp;adapt_container_width=true&amp;hide_cover=false&amp;show_facepile=true&amp;appId"
+              width="340"
               height="130"
               style="border: none; overflow: hidden"
               scrolling="no"

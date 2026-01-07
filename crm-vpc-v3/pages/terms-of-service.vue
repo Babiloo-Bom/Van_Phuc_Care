@@ -209,7 +209,7 @@
 <script setup lang="ts">
 // Set page meta
 definePageMeta({
-  layout: "default",
+  layout: "auth",
   title: "Điều Khoản Sử Dụng - Van Phuc Care",
 });
 

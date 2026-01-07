@@ -8,7 +8,7 @@
       <div
         class="absolute top-0 left-0 w-full h-full bg-[#1A75BBB2] opacity-80"
       ></div>
-      <div class="container h-full mx-auto px-4 lg:px-6 flex items-center py-8 lg:py-0">
+      <div class="container h-full mx-auto flex items-center py-8 lg:py-0">
         <div class="grid grid-cols-12 gap-4 sm:gap-8 w-full">
           <div
             class="col-span-12 xl:col-span-8 relative z-[1] flex flex-col h-full gap-4 sm:gap-6"

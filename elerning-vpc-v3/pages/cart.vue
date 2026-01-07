@@ -322,28 +322,7 @@
                     </svg>
                   </a-button>
                   
-                  <!-- <a-button 
-                    type="primary"
-                    size="large"
-                    class="w-full !bg-[#00CF6A] hover:!bg-green-600 !h-12 sm:!h-14 !text-white !border-green-500 !text-base sm:!text-base !font-semibold !rounded-lg !flex !items-center !justify-center !gap-2"
-                    :disabled="cartItems.length === 0"
-                    @click="handlePayment('zalopay')"
-                  >
-                    
-                    Thanh toán bằng
-                    <img src="../public/images/svg/zalopay.svg" alt="Zalo pay" class="w-6 h-6" />
-                  </a-button>
-                  <a-button 
-                    type="primary"
-                    size="large"
-                    class="w-full !bg-[#00CF6A] hover:!bg-green-600 !h-12 sm:!h-14 !text-white !border-green-500 !text-base sm:!text-base !font-semibold !rounded-lg !flex !items-center !justify-center !gap-2"
-                    :disabled="cartItems.length === 0 || isProcessingOrder"
-                    :loading="isProcessingOrder"
-                    @click="handlePayment('bypass')"
-                  >
-                    <span v-if="!isProcessingOrder">By Pass</span>
-                    <span v-else>Đang xử lý...</span>
-                  </a-button> -->
+                  <!--  -->
                 </div>
               </div>
             </div>

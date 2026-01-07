@@ -1,7 +1,7 @@
 <template>
   <footer class="bg-white">
     <!-- Main Footer Content -->
-    <div class="container mx-auto px-4 py-12">
+    <div class="container mx-auto py-12">
       <div class="grid grid-cols-1 md:grid-cols-3 gap-8">
         <!-- Left Section - Logo and Slogan -->
         <div class="flex flex-col items-start">
@@ -133,7 +133,7 @@
 
     <!-- Bottom Bar -->
     <div class="bg-blue-600 py-4">
-      <div class="container mx-auto px-4">
+      <div class="container mx-auto">
         <div class="flex items-center justify-start">
           <a href="#" class="text-white text-sm hover:text-gray-200 transition-colors">
             Điều khoản

@@ -1,6 +1,6 @@
 <template>
   <header :class="['bg-[#317BC4] text-white shadow-lg', props.className]">
-    <div class="container mx-auto px-4">
+    <div class="container mx-auto px-4 lg:px-0 xl:px-4">
       <div class="flex items-center justify-between h-16">
         <!-- Logo -->
         <div class="flex items-center gap-3">

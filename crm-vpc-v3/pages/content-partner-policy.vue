@@ -8,25 +8,34 @@
 
     <!-- Main Content -->
     <section class="main-content">
-      <div class="container mx-auto px-3 md:px-4 lg:px-6 py-8 md:py-12 lg:py-16">
+      <div
+        class="container mx-auto px-3 md:px-4 lg:px-6 py-8 md:py-12 lg:py-16"
+      >
         <div class="content-wrapper">
           <!-- Section 1: Copyright -->
           <div class="policy-section">
-            <h2 class="section-title">1. Nguyên tắc về Bản quyền (Copyright)</h2>
+            <h2 class="section-title">
+              1. Nguyên tắc về Bản quyền (Copyright)
+            </h2>
             <p class="section-description">
-              Bạn cam kết chỉ đăng tải, xuất bản các nội dung thuộc một trong các nhóm sau:
+              Bạn cam kết chỉ đăng tải, xuất bản các nội dung thuộc một trong
+              các nhóm sau:
             </p>
             <ul class="policy-list">
               <li>
-                <strong>Nội dung nguyên gốc:</strong> Do chính bạn sáng tạo, nghiên cứu, viết, biên soạn hoặc sản xuất.
+                <strong>Nội dung nguyên gốc:</strong> Do chính bạn sáng tạo,
+                nghiên cứu, viết, biên soạn hoặc sản xuất.
               </li>
               <li>
-                <strong>Nội dung được ủy quyền:</strong> Bạn có quyền sở hữu hợp pháp hoặc được cấp phép bằng văn bản để
-                đăng tải, tái xuất bản (có hoặc không có chỉnh sửa).
+                <strong>Nội dung được ủy quyền:</strong> Bạn có quyền sở hữu hợp
+                pháp hoặc được cấp phép bằng văn bản để đăng tải, tái xuất bản
+                (có hoặc không có chỉnh sửa).
               </li>
               <li>
-                <strong>Nội dung miễn phí/Công cộng:</strong> Nội dung thuộc phạm vi công cộng (public domain) hoặc cho
-                phép chia sẻ (Creative Commons) với sự đồng ý của tác giả và tuân thủ quy tắc dẫn nguồn.
+                <strong>Nội dung miễn phí/Công cộng:</strong> Nội dung thuộc
+                phạm vi công cộng (public domain) hoặc cho phép chia sẻ
+                (Creative Commons) với sự đồng ý của tác giả và tuân thủ quy tắc
+                dẫn nguồn.
               </li>
             </ul>
           </div>
@@ -35,45 +44,61 @@
           <div class="policy-section">
             <h2 class="section-title">2. Quy tắc Trích dẫn và Dẫn nguồn</h2>
             <p class="section-description">
-              Khi sử dụng thông tin từ bên thứ ba để minh họa, phân tích hoặc bổ trợ cho quan điểm trong bài giảng/bài
-              viết:
+              Khi sử dụng thông tin từ bên thứ ba để minh họa, phân tích hoặc bổ
+              trợ cho quan điểm trong bài giảng/bài viết:
             </p>
             <ul class="policy-list">
               <li>
-                <strong>Luôn ghi rõ nguồn:</strong> Bạn phải dẫn nguồn gốc (tên tác giả, tên sách, tạp chí y khoa, link
-                bài viết gốc...) cho các hình ảnh, số liệu, đoạn trích dẫn.
+                <strong>Luôn ghi rõ nguồn:</strong> Bạn phải dẫn nguồn gốc (tên
+                tác giả, tên sách, tạp chí y khoa, link bài viết gốc...) cho các
+                hình ảnh, số liệu, đoạn trích dẫn.
               </li>
               <li>
-                <strong>Tôn trọng sự thật:</strong> Không cắt ghép, chỉnh sửa làm sai lệch ý nghĩa khoa học của nội dung
-                gốc.
+                <strong>Tôn trọng sự thật:</strong> Không cắt ghép, chỉnh sửa
+                làm sai lệch ý nghĩa khoa học của nội dung gốc.
               </li>
             </ul>
           </div>
 
           <!-- Section 3: Confidentiality -->
           <div class="policy-section">
-            <h2 class="section-title">3. Quy tắc về Dữ liệu và Bảo mật thông tin</h2>
+            <h2 class="section-title">
+              3. Quy tắc về Dữ liệu và Bảo mật thông tin
+            </h2>
             <p class="section-description">
-              Trong lĩnh vực Y tế và Chăm sóc sức khỏe, việc sử dụng các ví dụ lâm sàng hoặc tình huống thực tế là cần
-              thiết để giảng dạy. Tuy nhiên, bạn cần tuân thủ nguyên tắc bảo vệ quyền riêng tư của bệnh nhân hoặc đối
-              tượng trong ví dụ giảng dạy.
+              Trong lĩnh vực Y tế và Chăm sóc sức khỏe, việc sử dụng các ví dụ
+              lâm sàng hoặc tình huống thực tế là cần thiết để giảng dạy. Tuy
+              nhiên, bạn cần tuân thủ nguyên tắc bảo vệ quyền riêng tư của bệnh
+              nhân hoặc đối tượng trong ví dụ giảng dạy.
             </p>
           </div>
 
           <!-- Section 4: Prohibited Content -->
           <div class="policy-section">
             <h2 class="section-title">4. Nội dung Nghiêm cấm</h2>
-            <p class="section-description">Bạn không được phép đăng tải, phát tán các nội dung sau:</p>
+            <p class="section-description">
+              Bạn không được phép đăng tải, phát tán các nội dung sau:
+            </p>
             <ul class="policy-list">
               <li>
-                <strong>Nội dung sao chép, đạo văn mà không có sự cho phép của tác giả.</strong>
+                <strong
+                  >Nội dung sao chép, đạo văn mà không có sự cho phép của tác
+                  giả.</strong
+                >
               </li>
               <li>
-                Thông tin y khoa sai lệch, chưa được kiểm chứng, các phương pháp chữa bệnh phản khoa học, mê tín dị đoan
-                gây hại cho sức khỏe cộng đồng.
+                Thông tin y khoa sai lệch, chưa được kiểm chứng, các phương pháp
+                chữa bệnh phản khoa học, mê tín dị đoan gây hại cho sức khỏe
+                cộng đồng.
               </li>
-              <li>Nội dung xúc phạm, bôi nhọ danh dự, nhân phẩm của cá nhân/tổ chức y tế khác.</li>
-              <li>Nội dung đồi trụy, vi phạm thuần phong mỹ tục hoặc vi phạm pháp luật Việt Nam.</li>
+              <li>
+                Nội dung xúc phạm, bôi nhọ danh dự, nhân phẩm của cá nhân/tổ
+                chức y tế khác.
+              </li>
+              <li>
+                Nội dung đồi trụy, vi phạm thuần phong mỹ tục hoặc vi phạm pháp
+                luật Việt Nam.
+              </li>
             </ul>
           </div>
 
@@ -81,18 +106,24 @@
           <div class="policy-section">
             <h2 class="section-title">5. Chế tài xử lý</h2>
             <p class="section-description">
-              Nội dung được phân phối tại hệ thống khoá học của Vạn Phúc Care là nội dung đã qua kiểm duyệt. Trong
-              trường hợp chúng tôi phát hiện bất kỳ dấu hiệu vi phạm nào từ phía đối tác nội dung (bao gồm cả những nội
-              dung đã từng được duyệt). Vạn Phúc Care có quyền:
+              Nội dung được phân phối tại hệ thống khoá học của Vạn Phúc Care là
+              nội dung đã qua kiểm duyệt. Trong trường hợp chúng tôi phát hiện
+              bất kỳ dấu hiệu vi phạm nào từ phía đối tác nội dung (bao gồm cả
+              những nội dung đã từng được duyệt). Vạn Phúc Care có quyền:
             </p>
             <ul class="policy-list">
-              <li><strong>Gỡ bỏ ngay lập tức</strong> các nội dung bị phát hiện vi phạm mà không cần báo trước.</li>
               <li>
-                <strong>Tạm ngưng</strong> hoặc <strong>chấm dứt hợp tác vĩnh viễn</strong> đối với các Đối tác vi phạm
-                chính sách Bản quyền và Nội dung này.
+                <strong>Gỡ bỏ ngay lập tức</strong> các nội dung bị phát hiện vi
+                phạm mà không cần báo trước.
               </li>
               <li>
-                Yêu cầu Đối tác chịu trách nhiệm bồi thường nếu vi phạm gây ra thiệt hại pháp lý cho Vạn Phúc Care.
+                <strong>Tạm ngưng</strong> hoặc
+                <strong>chấm dứt hợp tác vĩnh viễn</strong> đối với các Đối tác
+                vi phạm chính sách Bản quyền và Nội dung này.
+              </li>
+              <li>
+                Yêu cầu Đối tác chịu trách nhiệm bồi thường nếu vi phạm gây ra
+                thiệt hại pháp lý cho Vạn Phúc Care.
               </li>
             </ul>
           </div>
@@ -106,6 +137,9 @@
 </template>
 
 <script setup lang="ts">
+definePageMeta({
+  layout: "auth",
+});
 // SEO Meta tags
 useHead({
   title: "Chính Sách Dành Cho Đối Tác Nội Dung - Vạn Phúc Care",
