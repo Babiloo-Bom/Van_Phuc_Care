@@ -1,6 +1,6 @@
 <template>
   <div class="register-container">
-    <div class="w-1/2 h-auto">
+    <div class="w-full lg:w-1/2 h-auto">
       <!-- Left Side - Registration Form -->
       <div class="register-form-section">
         <div class="content-wrapper">
@@ -11,8 +11,8 @@
               alt="Van Phuc Care"
               class="lg:hidden logo"
               format="webp"
-              width="150"
-              height="70"
+              width="80"
+              height="62"
               loading="eager"
               fetchpriority="high"
             />
@@ -39,30 +39,15 @@
             <div class="form-group">
               <label class="form-label">Họ và tên</label>
               <div class="input-container">
-                <input
-                  v-model="form.fullname"
-                  type="text"
-                  placeholder="Họ và tên"
-                  class="form-input"
-                  required
-                />
+                <input v-model="form.fullname" type="text" placeholder="Họ và tên" class="form-input" required />
               </div>
             </div>
 
             <!-- Email Field -->
             <div class="form-group">
               <label class="form-label">Email</label>
-              <div
-                class="input-container"
-                :class="{ 'input-error': errors.email }"
-              >
-                <input
-                  v-model="form.email"
-                  type="email"
-                  placeholder="Email"
-                  class="form-input"
-                  required
-                />
+              <div class="input-container" :class="{ 'input-error': errors.email }">
+                <input v-model="form.email" type="email" placeholder="Email" class="form-input" required />
               </div>
               <div
                 v-if="errors.email"
@@ -101,14 +86,7 @@
               </div>
               <div
                 v-if="errors.phone"
-                style="
-                  color: #e53935;
-                  font-size: 16px;
-                  margin-top: 4px;
-                  display: flex;
-                  align-items: center;
-                  gap: 4px;
-                "
+                style="color: #e53935; font-size: 16px; margin-top: 4px; display: flex; align-items: center; gap: 4px"
               >
                 <span style="font-size: 18px">&#10006;</span>
                 <span>{{ errors.phone }}</span>
@@ -118,10 +96,7 @@
             <!-- Password Field -->
             <div class="form-group">
               <label class="form-label">Mật khẩu</label>
-              <div
-                class="input-container"
-                :class="{ 'input-error': errors.password }"
-              >
+              <div class="input-container" :class="{ 'input-error': errors.password }">
                 <input
                   v-model="form.password"
                   :type="showPassword ? 'text' : 'password'"
@@ -129,24 +104,13 @@
                   class="form-input"
                   required
                 />
-                <button
-                  type="button"
-                  @click="togglePassword"
-                  class="password-toggle"
-                >
+                <button type="button" @click="togglePassword" class="password-toggle">
                   {{ showPassword ? "👁️" : "👁️‍🗨️" }}
                 </button>
               </div>
               <div
                 v-if="errors.password"
-                style="
-                  color: #e53935;
-                  font-size: 16px;
-                  margin-top: 4px;
-                  display: flex;
-                  align-items: center;
-                  gap: 4px;
-                "
+                style="color: #e53935; font-size: 16px; margin-top: 4px; display: flex; align-items: center; gap: 4px"
               >
                 <span style="font-size: 18px">&#10006;</span>
                 <span>{{ errors.password }}</span>
@@ -164,11 +128,7 @@
                   class="form-input"
                   required
                 />
-                <button
-                  type="button"
-                  @click="toggleConfirmPassword"
-                  class="password-toggle"
-                >
+                <button type="button" @click="toggleConfirmPassword" class="password-toggle">
                   {{ showConfirmPassword ? "👁️" : "👁️‍🗨️" }}
                 </button>
               </div>
@@ -177,27 +137,17 @@
             <!-- Agreement Checkbox -->
             <div class="form-group" style="margin-top: 4px">
               <label class="form-label register-agree-label">
-                <input
-                  type="checkbox"
-                  v-model="agree"
-                  class="register-checkbox"
-                />
+                <input type="checkbox" v-model="agree" class="register-checkbox" />
                 <span class="font-semibold text-sm">
                   Tôi đã đọc và đồng ý với
-                  <a href="/terms" target="_blank" class="register-link"
-                    >Điều khoản sử dụng</a
-                  >
+                  <a href="/terms-of-service" target="_blank" class="register-link">Điều khoản sử dụng</a>
                   của VPC
                 </span>
               </label>
             </div>
 
             <!-- Register Button -->
-            <button
-              type="submit"
-              :disabled="loading || !agree"
-              class="register-btn"
-            >
+            <button type="submit" :disabled="loading || !agree" class="register-btn">
               {{ loading ? "Đang tạo tài khoản..." : "Tạo tài khoản" }}
             </button>
 
@@ -235,8 +185,7 @@
       <div class="marketing-text">
         <h2 class="marketing-title">Hành trình cùng mẹ, trải đầy yêu thương</h2>
         <p class="marketing-description">
-          Vạn Phúc Care là người bạn đồng hành đáng tin cậy của cha mẹ trong
-          hành trình chăm sóc sức khoẻ Mẹ và Bé
+          Vạn Phúc Care là người bạn đồng hành đáng tin cậy của cha mẹ trong hành trình chăm sóc sức khoẻ Mẹ và Bé
         </p>
       </div>
     </div>
@@ -348,13 +297,7 @@ const handleSubmit = async () => {
       return;
     }
     loading.value = true;
-    const result = await authStore.register(
-      form.email,
-      form.password,
-      form.confirmPassword,
-      form.fullname,
-      form.phone
-    );
+    const result = await authStore.register(form.email, form.password, form.confirmPassword, form.fullname, form.phone);
     if (result && result.success) {
       showSuccessModal.value = true;
     } else {
@@ -366,10 +309,7 @@ const handleSubmit = async () => {
         serverMsg = result.error.message;
       } else if (result?.data?.error && typeof result.data.error === "string") {
         serverMsg = result.data.error;
-      } else if (
-        result?.data?.message &&
-        typeof result.data.message === "string"
-      ) {
+      } else if (result?.data?.message && typeof result.data.message === "string") {
         serverMsg = result.data.message;
       }
 
@@ -588,11 +528,7 @@ const handleSuccessClose = () => {
 .circle {
   position: absolute;
   border-radius: 50%;
-  background: linear-gradient(
-    180deg,
-    rgba(59, 140, 220, 0.9) 0%,
-    rgba(73, 145, 216, 0.351) 100%
-  );
+  background: linear-gradient(180deg, rgba(59, 140, 220, 0.9) 0%, rgba(73, 145, 216, 0.351) 100%);
 }
 
 .circle-1 {
@@ -703,7 +639,7 @@ const handleSuccessClose = () => {
   flex-direction: column;
   align-items: flex-start;
   gap: 36px;
-  padding-top: 93.64px;
+  padding-top: 20px;
   padding-bottom: 50px;
 }
 
@@ -909,11 +845,7 @@ const handleSuccessClose = () => {
 .circle {
   position: absolute;
   border-radius: 50%;
-  background: linear-gradient(
-    180deg,
-    rgba(59, 140, 220, 0.9) 0%,
-    rgba(73, 145, 216, 0.351) 100%
-  );
+  background: linear-gradient(180deg, rgba(59, 140, 220, 0.9) 0%, rgba(73, 145, 216, 0.351) 100%);
 }
 
 .circle-1 {
@@ -1212,21 +1144,25 @@ const handleSuccessClose = () => {
   .register-container {
     position: relative;
     width: 375px;
-    height: 812px;
+    min-height: 100vh;
+    height: auto;
     margin: 0 auto;
     background: #ffffff;
     display: flex;
     flex-direction: column;
+    overflow-y: auto;
   }
 
   .register-form-section {
-    position: absolute;
-    width: 343px;
-    height: 550px;
-    left: calc(50% - 343px / 2 - 0.99px);
-    top: 210px;
+    position: relative;
+    width: 100%;
+    max-width: 343px;
+    height: auto;
+    left: auto;
+    top: auto;
+    margin: 0 auto;
+    padding: 24px 16px 32px;
     background: transparent;
-    padding: 0;
     display: flex;
     flex-direction: column;
     align-items: center;
@@ -1237,16 +1173,17 @@ const handleSuccessClose = () => {
     display: flex;
     flex-direction: column;
     align-items: center;
-    gap: 0;
+    gap: 20px;
   }
 
   .logo-section {
-    position: absolute;
+    position: relative;
     width: 80.1px;
     height: 62.09px;
-    left: calc(50% - 80.1px / 2 - 7.44px);
-    top: -186.31px;
+    left: auto;
+    top: auto;
     text-align: center;
+    margin-top: 20px;
   }
 
   .logo {
@@ -1256,19 +1193,19 @@ const handleSuccessClose = () => {
   }
 
   .title-section {
-    position: absolute;
-    width: 265px;
-    height: 56px;
-    top: -76.2px;
+    position: relative;
+    width: 100%;
+    height: auto;
+    top: auto;
     display: flex;
     flex-direction: column;
     align-items: center;
-    gap: 0;
+    margin-bottom: 16px;
   }
 
   .main-title {
-    width: 265px;
-    height: 32px;
+    width: 100%;
+    height: auto;
     font-family: "SVN-Gilroy";
     font-style: normal;
     font-weight: 700;
@@ -1282,8 +1219,8 @@ const handleSuccessClose = () => {
   }
 
   .subtitle {
-    width: 265px;
-    height: 24px;
+    width: 100%;
+    height: auto;
     font-family: "SVN-Gilroy";
     font-style: normal;
     font-weight: 500;
@@ -1296,11 +1233,11 @@ const handleSuccessClose = () => {
   }
 
   .register-form {
-    position: absolute;
-    width: 343px;
-    height: 550px;
-    left: calc(50% - 343px / 2 - 0.99px);
-    top: 0px;
+    position: relative;
+    width: 100%;
+    height: auto;
+    left: auto;
+    top: auto;
     display: flex;
     flex-direction: column;
     align-items: center;
@@ -1308,7 +1245,7 @@ const handleSuccessClose = () => {
   }
 
   .form-group {
-    width: 343px;
+    width: 100%;
     display: flex;
     flex-direction: column;
     align-items: flex-start;
@@ -1316,7 +1253,7 @@ const handleSuccessClose = () => {
   }
 
   .form-label {
-    width: 343px;
+    width: 100%;
     height: 24px;
     font-family: "SVN-Gilroy";
     font-style: normal;
@@ -1328,7 +1265,7 @@ const handleSuccessClose = () => {
   }
 
   .input-container {
-    width: 343px;
+    width: 100%;
     height: 48px;
     display: flex;
     flex-direction: row;
@@ -1338,6 +1275,7 @@ const handleSuccessClose = () => {
     background: #fafbff;
     border: 1px solid #d9d9d9;
     border-radius: 12px;
+    box-sizing: border-box;
   }
 
   .form-input {
@@ -1361,7 +1299,7 @@ const handleSuccessClose = () => {
   }
 
   .register-btn {
-    width: 343px;
+    width: 100%;
     height: 52px;
     display: flex;
     flex-direction: row;
@@ -1381,6 +1319,7 @@ const handleSuccessClose = () => {
     letter-spacing: 0.3px;
     color: #ffffff;
     cursor: pointer;
+    box-sizing: border-box;
   }
 
   .login-link {
@@ -1388,7 +1327,10 @@ const handleSuccessClose = () => {
     display: flex;
     flex-direction: row;
     align-items: center;
+    justify-content: center;
     gap: 5px;
+    width: 100%;
+    margin-top: 8px;
   }
 
   .login-link span {
@@ -1423,17 +1365,21 @@ const handleSuccessClose = () => {
 @media (max-width: 480px) {
   .register-container {
     width: 100%;
-    max-width: 375px;
+    max-width: 100%;
   }
 
   .register-form-section {
     width: calc(100% - 32px);
-    left: 16px;
+    margin: 0 auto;
+    padding: 24px 0 32px;
+  }
+
+  .content-wrapper {
+    width: 100%;
   }
 
   .register-form {
-    width: calc(100% - 32px);
-    left: 16px;
+    width: 100%;
   }
 
   .form-group {
@@ -1442,6 +1388,7 @@ const handleSuccessClose = () => {
 
   .input-container {
     width: 100%;
+    box-sizing: border-box;
   }
 
   .register-btn {
@@ -1451,6 +1398,15 @@ const handleSuccessClose = () => {
   .login-link {
     width: 100%;
     justify-content: center;
+  }
+
+  .title-section {
+    width: 100%;
+  }
+
+  .main-title,
+  .subtitle {
+    width: 100%;
   }
 }
 </style>

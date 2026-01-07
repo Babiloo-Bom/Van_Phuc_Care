@@ -694,6 +694,7 @@ onMounted(async () => {
     await fetchData();
   }
 });
+//build
 </script>
 
 <style scoped>
