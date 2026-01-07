@@ -41,7 +41,11 @@
 
         <!-- Empty State -->
         <div v-else-if="isEmpty" class="empty-state">
-          <Icon name="shopping-cart" />
+          <img 
+            src="/images/tu_van_vien2.png" 
+            alt="Giỏ hàng trống" 
+            class="empty-cart-image"
+          />
           <p>Giỏ hàng trống</p>
           <NuxtLink to="/courses" @click="closeCart" class="browse-btn">
             Khám phá khóa học
@@ -274,6 +278,30 @@ watch(() => useRoute().path, () => {
   height: 200px;
   text-align: center;
   color: #6b7280;
+}
+
+.empty-cart-image {
+  width: 280px;
+  height: 227px;
+  object-fit: cover;
+  object-position: center;
+  transform: scale(1.25);
+  margin-bottom: 16px;
+  overflow: hidden;
+}
+
+@media (min-width: 640px) {
+  .empty-cart-image {
+    width: 320px;
+    height: 260px;
+  }
+}
+
+@media (min-width: 768px) {
+  .empty-cart-image {
+    width: 360px;
+    height: 292px;
+  }
 }
 
 .loading-state .animate-spin {
