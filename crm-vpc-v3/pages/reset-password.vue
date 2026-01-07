@@ -10,8 +10,8 @@
             alt="Van Phuc Care"
             class="lg:hidden logo"
             format="webp"
-            width="150"
-            height="70"
+            width="80"
+            height="62"
             loading="eager"
             fetchpriority="high"
           />
@@ -33,11 +33,7 @@
           <p class="subtitle">Cập nhật thay đổi mật khẩu</p>
         </div>
         <!-- Reset Password Form -->
-        <form
-          @submit.prevent="handlePasswordSubmit"
-          class="reset-password-form"
-          v-if="canReset"
-        >
+        <form @submit.prevent="handlePasswordSubmit" class="reset-password-form" v-if="canReset">
           <div class="form-group">
             <label class="form-label">Mật khẩu mới</label>
             <div class="input-container">
@@ -48,11 +44,7 @@
                 class="form-input"
                 required
               />
-              <button
-                type="button"
-                @click="showNewPassword = !showNewPassword"
-                class="password-toggle"
-              >
+              <button type="button" @click="showNewPassword = !showNewPassword" class="password-toggle">
                 <span v-if="showNewPassword">Ẩn</span>
                 <span v-else>Hiện</span>
               </button>
@@ -68,21 +60,13 @@
                 class="form-input"
                 required
               />
-              <button
-                type="button"
-                @click="showConfirmPassword = !showConfirmPassword"
-                class="password-toggle"
-              >
+              <button type="button" @click="showConfirmPassword = !showConfirmPassword" class="password-toggle">
                 <span v-if="showConfirmPassword">Ẩn</span>
                 <span v-else>Hiện</span>
               </button>
             </div>
           </div>
-          <button
-            type="submit"
-            :disabled="loading || !isFormValid"
-            class="submit-btn"
-          >
+          <button type="submit" :disabled="loading || !isFormValid" class="submit-btn">
             {{ loading ? "Đang xử lý..." : "Tạo mật khẩu mới" }}
           </button>
         </form>
@@ -113,8 +97,7 @@
       <div class="marketing-text">
         <h2 class="marketing-title">Hành trình cùng mẹ, trải đầy yêu thương</h2>
         <p class="marketing-description">
-          Vạn Phúc Care là người bạn đồng hành đáng tin cậy của cha mẹ trong
-          hành trình chăm sóc sức khoẻ Mẹ và Bé
+          Vạn Phúc Care là người bạn đồng hành đáng tin cậy của cha mẹ trong hành trình chăm sóc sức khoẻ Mẹ và Bé
         </p>
       </div>
     </div>
@@ -175,11 +158,7 @@ onMounted(async () => {
 });
 
 const isFormValid = computed(() => {
-  return (
-    form.newPassword.length >= 6 &&
-    form.confirmPassword.length >= 6 &&
-    form.newPassword === form.confirmPassword
-  );
+  return form.newPassword.length >= 6 && form.confirmPassword.length >= 6 && form.newPassword === form.confirmPassword;
 });
 
 const handlePasswordSubmit = async () => {
@@ -190,11 +169,7 @@ const handlePasswordSubmit = async () => {
   loading.value = true;
   try {
     // Call API reset password
-    const result = await authStore.resetPassword(
-      form.email,
-      form.otp,
-      form.newPassword
-    );
+    const result = await authStore.resetPassword(form.email, form.otp, form.newPassword);
     if (result.success) {
       message.success("Mật khẩu đã được cập nhật thành công");
       router.push("/login");
@@ -465,11 +440,7 @@ const handlePasswordSubmit = async () => {
 .circle {
   position: absolute;
   border-radius: 50%;
-  background: linear-gradient(
-    180deg,
-    rgba(59, 140, 220, 0.9) 0%,
-    rgba(73, 145, 216, 0.351) 100%
-  );
+  background: linear-gradient(180deg, rgba(59, 140, 220, 0.9) 0%, rgba(73, 145, 216, 0.351) 100%);
 }
 
 .circle-1 {

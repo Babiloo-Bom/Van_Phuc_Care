@@ -10,8 +10,8 @@
             alt="Van Phuc Care"
             class="lg:hidden logo"
             format="webp"
-            width="150"
-            height="70"
+            width="80"
+            height="62"
             loading="eager"
             fetchpriority="high"
           />
@@ -38,13 +38,7 @@
           <div class="form-group">
             <label class="form-label">Email</label>
             <div class="input-container">
-              <input
-                v-model="form.emailOrPhone"
-                type="text"
-                placeholder="Email"
-                class="form-input"
-                required
-              />
+              <input v-model="form.emailOrPhone" type="text" placeholder="Email" class="form-input" required />
             </div>
           </div>
 
@@ -86,8 +80,7 @@
       <div class="marketing-text">
         <h2 class="marketing-title">Hành trình cùng mẹ, trải đầy yêu thương</h2>
         <p class="marketing-description">
-          Vạn Phúc Care là người bạn đồng hành đáng tin cậy của cha mẹ trong
-          hành trình chăm sóc sức khoẻ Mẹ và Bé
+          Vạn Phúc Care là người bạn đồng hành đáng tin cậy của cha mẹ trong hành trình chăm sóc sức khoẻ Mẹ và Bé
         </p>
       </div>
     </div>
@@ -404,11 +397,7 @@ const handleSuccessClose = () => {
 .circle {
   position: absolute;
   border-radius: 50%;
-  background: linear-gradient(
-    180deg,
-    rgba(59, 140, 220, 0.9) 0%,
-    rgba(73, 145, 216, 0.351) 100%
-  );
+  background: linear-gradient(180deg, rgba(59, 140, 220, 0.9) 0%, rgba(73, 145, 216, 0.351) 100%);
 }
 
 .circle-1 {
