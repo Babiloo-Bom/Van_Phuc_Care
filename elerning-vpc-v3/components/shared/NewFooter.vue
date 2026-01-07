@@ -332,11 +332,11 @@
         <div
           class="flex flex-row items-center justify-center md:justify-start gap-2 sm:gap-4 md:gap-8 text-sm"
         >
-          <a href="/terms" class="hover:underline">Điều khoản sử dụng</a>
+          <a href="/terms-of-service" class="hover:underline">Điều khoản sử dụng</a>
           <span class="inline">|</span>
-          <a href="/privacy" class="hover:underline">Chính sách bảo mật</a>
+          <a href="/privacy-policy" class="hover:underline">Chính sách bảo mật</a>
           <span class="inline">|</span>
-          <a href="/complaints" class="hover:underline">Khiếu nại</a>
+          <a href="/complaint-procedure" class="hover:underline">Khiếu nại</a>
         </div>
       </div>
     </div>
@@ -357,7 +357,6 @@
   height: 324px;
   pointer-events: none;
   z-index: 0;
-  opacity: 0.3;
 }
 
 .footer-watermark svg {
