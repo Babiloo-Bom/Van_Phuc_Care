@@ -116,6 +116,18 @@
               {{ formatDate(record.updatedAt) }}
             </template>
             
+            <template v-else-if="column.key === 'actions'">
+              <a-button 
+                type="primary" 
+                size="small"
+                @click="openVaccinationModal(record)"
+              >
+                <template #icon>
+                  <MedicineBoxOutlined />
+                </template>
+                Lịch tiêm
+              </a-button>
+            </template>
           </template>
         </a-table>
       </div>
@@ -176,8 +188,7 @@
             :total="pagination.total"
             :page-size-options="['10', '20', '50']"
             show-size-changer
-            show-total
-            :show-total="(total) => `Tổng ${total} sổ SKĐT`"
+            :show-total="(total: number) => `Tổng ${total} sổ SKĐT`"
             @change="handleTableChange"
             @showSizeChange="handleTableChange"
             size="small"
@@ -574,6 +585,172 @@
         <a-descriptions-item label="Ghi chú" :span="2">{{ viewingHealthBook.note || 'N/A' }}</a-descriptions-item>
       </a-descriptions>
     </a-modal>
+
+    <!-- Vaccination Schedule Modal -->
+    <a-modal
+      v-model:open="vaccinationModalVisible"
+      title="Lịch tiêm chủng"
+      :width="900"
+      :footer="null"
+      @cancel="closeVaccinationModal"
+    >
+      <div v-if="currentHealthBook" class="vaccination-modal-content">
+        <div class="vaccination-header">
+          <h3>{{ currentHealthBook.name || 'Chưa có tên' }}</h3>
+          <p class="vaccination-subtitle">Quản lý lịch tiêm chủng</p>
+        </div>
+
+        <a-spin :spinning="vaccinationLoading">
+          <div v-if="vaccinationSchedule.length === 0" class="empty-vaccination">
+            <a-empty description="Chưa có lịch tiêm nào" />
+          </div>
+          
+          <div v-else class="vaccination-list">
+            <a-table
+              :columns="vaccinationColumns"
+              :data-source="vaccinationSchedule"
+              :pagination="false"
+              row-key="_id"
+              size="small"
+            >
+              <template #bodyCell="{ column, record }">
+                <template v-if="column.key === 'vaccineName'">
+                  <div class="vaccine-name-cell">
+                    <strong>{{ record.title || record.name || 'N/A' }}</strong>
+                    <div class="vaccine-age" v-if="record.age">
+                      {{ record.age }}
+                    </div>
+                  </div>
+                </template>
+                
+                <template v-else-if="column.key === 'status'">
+                  <a-tag 
+                    :color="getVaccinationStatusColor(record.injectionStatus || record.vaccinationRecord?.status || 'pending')"
+                  >
+                    {{ getVaccinationStatusLabel(record.injectionStatus || record.vaccinationRecord?.status || 'pending') }}
+                  </a-tag>
+                </template>
+                
+                <template v-else-if="column.key === 'scheduledDate'">
+                  {{ record.scheduledDate ? formatDate(record.scheduledDate) : 'Chưa có' }}
+                </template>
+                
+                <template v-else-if="column.key === 'injectionDate'">
+                  {{ record.injectionDate || record.vaccinationRecord?.injectionDate ? formatDate(record.injectionDate || record.vaccinationRecord?.injectionDate) : 'Chưa tiêm' }}
+                </template>
+                
+                <template v-else-if="column.key === 'actions'">
+                  <a-space>
+                    <a-button 
+                      type="link" 
+                      size="small"
+                      @click="viewVaccinationDetail(record)"
+                    >
+                      <EyeOutlined /> Xem
+                    </a-button>
+                    <a-button 
+                      type="link" 
+                      size="small"
+                      @click="editVaccination(record)"
+                    >
+                      <EditOutlined /> Sửa
+                    </a-button>
+                    <a-button 
+                      v-if="!record.vaccinationRecord || record.vaccinationRecord.status !== 'completed'"
+                      type="link" 
+                      size="small"
+                      @click="markAsCompleted(record)"
+                    >
+                      <CheckCircleOutlined /> Tick
+                    </a-button>
+                    <a-popconfirm
+                      v-if="record.vaccinationRecord"
+                      title="Bạn có chắc muốn xóa bản ghi tiêm này?"
+                      ok-text="Xóa"
+                      cancel-text="Hủy"
+                      ok-type="danger"
+                      @confirm="deleteVaccinationRecord(record)"
+                    >
+                      <a-button type="link" size="small" danger>
+                        <DeleteOutlined /> Xóa
+                      </a-button>
+                    </a-popconfirm>
+                  </a-space>
+                </template>
+              </template>
+            </a-table>
+          </div>
+        </a-spin>
+      </div>
+    </a-modal>
+
+    <!-- Vaccination Detail/Edit Modal -->
+    <a-modal
+      v-model:open="vaccinationFormVisible"
+      :title="editingVaccination ? 'Chỉnh sửa bản ghi tiêm chủng' : 'Chi tiết bản ghi tiêm chủng'"
+      width="700px"
+      :confirm-loading="vaccinationLoading"
+      @ok="handleVaccinationFormOk"
+      @cancel="handleVaccinationFormCancel"
+    >
+      <div v-if="editingVaccination" class="vaccination-form">
+        <a-form
+          :model="vaccinationFormData"
+          :label-col="{ span: 6 }"
+          :wrapper-col="{ span: 18 }"
+          layout="horizontal"
+        >
+          <a-form-item label="Tên vaccine">
+            <a-input 
+              :value="editingVaccination.title || editingVaccination.name || 'N/A'" 
+              disabled
+            />
+          </a-form-item>
+          
+          <a-form-item label="Ngày dự kiến">
+            <a-date-picker
+              v-model:value="vaccinationFormData.scheduledDate"
+              format="DD/MM/YYYY"
+              style="width: 100%"
+              placeholder="Chọn ngày dự kiến"
+            />
+          </a-form-item>
+          
+          <a-form-item label="Ngày tiêm">
+            <a-date-picker
+              v-model:value="vaccinationFormData.injectionDate"
+              format="DD/MM/YYYY"
+              style="width: 100%"
+              placeholder="Chọn ngày tiêm"
+            />
+          </a-form-item>
+          
+          <a-form-item label="Trạng thái">
+            <a-select v-model:value="vaccinationFormData.status" placeholder="Chọn trạng thái">
+              <a-select-option value="pending">Chờ tiêm</a-select-option>
+              <a-select-option value="completed">Đã tiêm</a-select-option>
+              <a-select-option value="cancelled">Đã hủy</a-select-option>
+              <a-select-option value="missed">Bỏ lỡ</a-select-option>
+            </a-select>
+          </a-form-item>
+          
+          <a-form-item label="Địa điểm">
+            <a-input 
+              v-model:value="vaccinationFormData.location" 
+              placeholder="Nhập địa điểm tiêm"
+            />
+          </a-form-item>
+          
+          <a-form-item label="Ghi chú">
+            <a-textarea 
+              v-model:value="vaccinationFormData.notes" 
+              :rows="3"
+              placeholder="Nhập ghi chú"
+            />
+          </a-form-item>
+        </a-form>
+      </div>
+    </a-modal>
   </div>
 </template>
 
@@ -586,11 +763,15 @@ import {
   EditOutlined,
   DeleteOutlined,
   UserOutlined,
+  MedicineBoxOutlined,
+  CheckCircleOutlined,
+  CloseCircleOutlined,
 } from '@ant-design/icons-vue'
 import { message } from 'ant-design-vue'
 import dayjs, { type Dayjs } from 'dayjs'
 import { useHealthBooksApi, type HealthBook } from '~/composables/api/useHealthBooksApi'
 import { useCustomersApi, type Customer } from '~/composables/api/useCustomersApi'
+import { useVaccinationRecordsApi, type VaccinationScheduleItem } from '~/composables/api/useVaccinationRecordsApi'
 import { debounce } from 'lodash-es'
 
 definePageMeta({
@@ -604,6 +785,7 @@ useHead({
 
 const healthBooksApi = useHealthBooksApi()
 const customersApi = useCustomersApi()
+const vaccinationRecordsApi = useVaccinationRecordsApi()
 
 // State
 const loading = ref(false)
@@ -633,6 +815,14 @@ const formRef = ref()
 // View modal
 const viewModalVisible = ref(false)
 const viewingHealthBook = ref<HealthBook | null>(null)
+
+// Vaccination modal
+const vaccinationModalVisible = ref(false)
+const currentHealthBook = ref<HealthBook | null>(null)
+const vaccinationSchedule = ref<VaccinationScheduleItem[]>([])
+const vaccinationLoading = ref(false)
+const editingVaccination = ref<VaccinationScheduleItem | null>(null)
+const vaccinationFormVisible = ref(false)
 
 // Form data - Cập nhật với tất cả các field từ CRM form
 const formData = reactive({
@@ -879,6 +1069,12 @@ const columns = [
     dataIndex: 'updatedAt',
     width: 150,
   },
+  {
+    title: 'Thao tác',
+    key: 'actions',
+    width: 150,
+    fixed: 'right',
+  },
 ]
 
 // Pagination config
@@ -887,7 +1083,7 @@ const paginationConfig = computed(() => ({
   pageSize: pagination.pageSize,
   total: pagination.total,
   showSizeChanger: true,
-  showTotal: (total: number) => `Tổng ${total} sổ SKĐT`,
+  showTotal: (total: number) => `Tổng ${total} sổ SKĐT` as any,
   pageSizeOptions: ['10', '20', '50', '100'],
 }))
 
@@ -1311,6 +1507,252 @@ const formatDate = (date: string | Date | undefined) => {
   }
 }
 
+// Vaccination columns
+const vaccinationColumns = [
+  {
+    title: 'Tên vaccine',
+    key: 'vaccineName',
+    dataIndex: 'title',
+    width: 200,
+  },
+  {
+    title: 'Trạng thái',
+    key: 'status',
+    width: 120,
+  },
+  {
+    title: 'Ngày dự kiến',
+    key: 'scheduledDate',
+    width: 150,
+  },
+  {
+    title: 'Ngày tiêm',
+    key: 'injectionDate',
+    width: 150,
+  },
+  {
+    title: 'Thao tác',
+    key: 'actions',
+    width: 250,
+    fixed: 'right',
+  },
+]
+
+// Vaccination form data
+const vaccinationFormData = reactive({
+  scheduledDate: null as Dayjs | null,
+  injectionDate: null as Dayjs | null,
+  status: 'pending' as 'pending' | 'completed' | 'cancelled' | 'missed',
+  location: '',
+  notes: '',
+})
+
+// Open vaccination modal
+const openVaccinationModal = async (healthBook: HealthBook) => {
+  currentHealthBook.value = healthBook
+  vaccinationModalVisible.value = true
+  await loadVaccinationSchedule(healthBook._id!)
+}
+
+// Close vaccination modal
+const closeVaccinationModal = () => {
+  vaccinationModalVisible.value = false
+  currentHealthBook.value = null
+  vaccinationSchedule.value = []
+}
+
+// Load vaccination schedule
+const loadVaccinationSchedule = async (healthBookId: string) => {
+  vaccinationLoading.value = true
+  try {
+    const response = await vaccinationRecordsApi.getVaccinationSchedule({ healthBookId })
+    if (response.status && response.data) {
+      const scheduleData = response.data as any
+      vaccinationSchedule.value = scheduleData.scheduleVaccin || scheduleData.data?.scheduleVaccin || scheduleData || []
+    } else {
+      vaccinationSchedule.value = []
+    }
+  } catch (error: any) {
+    console.error('Error loading vaccination schedule:', error)
+    message.error('Không thể tải lịch tiêm chủng')
+    vaccinationSchedule.value = []
+  } finally {
+    vaccinationLoading.value = false
+  }
+}
+
+// View vaccination detail
+const viewVaccinationDetail = (record: VaccinationScheduleItem) => {
+  editingVaccination.value = record
+  if (record.vaccinationRecord) {
+    vaccinationFormData.scheduledDate = record.vaccinationRecord.scheduledDate 
+      ? dayjs(record.vaccinationRecord.scheduledDate) 
+      : null
+    vaccinationFormData.injectionDate = record.vaccinationRecord.injectionDate 
+      ? dayjs(record.vaccinationRecord.injectionDate) 
+      : null
+    vaccinationFormData.status = (record.vaccinationRecord.status || 'pending') as any
+    vaccinationFormData.location = record.vaccinationRecord.location || ''
+    vaccinationFormData.notes = record.vaccinationRecord.notes || ''
+  } else {
+    vaccinationFormData.scheduledDate = record.scheduledDate ? dayjs(record.scheduledDate) : null
+    vaccinationFormData.injectionDate = null
+    vaccinationFormData.status = 'pending'
+    vaccinationFormData.location = record.location || ''
+    vaccinationFormData.notes = record.notes || ''
+  }
+  vaccinationFormVisible.value = true
+}
+
+// Edit vaccination
+const editVaccination = (record: VaccinationScheduleItem) => {
+  viewVaccinationDetail(record)
+}
+
+// Mark as completed (tick)
+const markAsCompleted = async (record: VaccinationScheduleItem) => {
+  if (!currentHealthBook.value) return
+  
+  vaccinationLoading.value = true
+  try {
+    const data = {
+      healthBookId: currentHealthBook.value._id,
+      vaccineId: record._id,
+      scheduledDate: record.scheduledDate || new Date().toISOString(),
+      injectionDate: new Date().toISOString(),
+      status: 'completed' as const,
+      injectionNumber: 1,
+    }
+    
+    const response = await vaccinationRecordsApi.createVaccinationRecord(data)
+    if (response.status) {
+      message.success('Đã đánh dấu đã tiêm thành công')
+      await loadVaccinationSchedule(currentHealthBook.value._id!)
+    }
+  } catch (error: any) {
+    console.error('Error marking as completed:', error)
+    message.error('Không thể đánh dấu đã tiêm')
+  } finally {
+    vaccinationLoading.value = false
+  }
+}
+
+// Delete vaccination record
+const deleteVaccinationRecord = async (record: VaccinationScheduleItem) => {
+  if (!record.vaccinationRecord?._id || !currentHealthBook.value) return
+  
+  vaccinationLoading.value = true
+  try {
+    const response = await vaccinationRecordsApi.deleteVaccinationRecord(record.vaccinationRecord._id)
+    if (response.status) {
+      message.success('Đã xóa bản ghi tiêm chủng thành công')
+      await loadVaccinationSchedule(currentHealthBook.value._id!)
+    }
+  } catch (error: any) {
+    console.error('Error deleting vaccination record:', error)
+    message.error('Không thể xóa bản ghi tiêm chủng')
+  } finally {
+    vaccinationLoading.value = false
+  }
+}
+
+// Handle vaccination form OK
+const handleVaccinationFormOk = async () => {
+  if (!editingVaccination.value || !currentHealthBook.value) return
+  
+  vaccinationLoading.value = true
+  try {
+    if (editingVaccination.value.vaccinationRecord?._id) {
+      // Update existing record
+      const data: any = {
+        status: vaccinationFormData.status,
+        location: vaccinationFormData.location,
+        notes: vaccinationFormData.notes,
+      }
+      if (vaccinationFormData.scheduledDate) {
+        data.scheduledDate = vaccinationFormData.scheduledDate.toISOString()
+      }
+      if (vaccinationFormData.injectionDate) {
+        data.injectionDate = vaccinationFormData.injectionDate.toISOString()
+      }
+      
+      const response = await vaccinationRecordsApi.updateVaccinationRecord(
+        editingVaccination.value.vaccinationRecord._id,
+        data
+      )
+      
+      if (response.status) {
+        message.success('Đã cập nhật bản ghi tiêm chủng thành công')
+        vaccinationFormVisible.value = false
+        await loadVaccinationSchedule(currentHealthBook.value._id!)
+      }
+    } else {
+      // Create new record
+      const data: any = {
+        healthBookId: currentHealthBook.value._id,
+        vaccineId: editingVaccination.value._id,
+        status: vaccinationFormData.status,
+        location: vaccinationFormData.location,
+        notes: vaccinationFormData.notes,
+        injectionNumber: 1,
+      }
+      if (vaccinationFormData.scheduledDate) {
+        data.scheduledDate = vaccinationFormData.scheduledDate.toISOString()
+      }
+      if (vaccinationFormData.injectionDate) {
+        data.injectionDate = vaccinationFormData.injectionDate.toISOString()
+      }
+      
+      const response = await vaccinationRecordsApi.createVaccinationRecord(data)
+      if (response.status) {
+        message.success('Đã tạo bản ghi tiêm chủng thành công')
+        vaccinationFormVisible.value = false
+        await loadVaccinationSchedule(currentHealthBook.value._id!)
+      }
+    }
+  } catch (error: any) {
+    console.error('Error saving vaccination record:', error)
+    message.error('Không thể lưu bản ghi tiêm chủng')
+  } finally {
+    vaccinationLoading.value = false
+  }
+}
+
+// Handle vaccination form cancel
+const handleVaccinationFormCancel = () => {
+  vaccinationFormVisible.value = false
+  editingVaccination.value = null
+  Object.assign(vaccinationFormData, {
+    scheduledDate: null,
+    injectionDate: null,
+    status: 'pending',
+    location: '',
+    notes: '',
+  })
+}
+
+// Get vaccination status color
+const getVaccinationStatusColor = (status: string) => {
+  const colors: Record<string, string> = {
+    completed: 'green',
+    pending: 'orange',
+    cancelled: 'red',
+    missed: 'default',
+  }
+  return colors[status] || 'default'
+}
+
+// Get vaccination status label
+const getVaccinationStatusLabel = (status: string) => {
+  const labels: Record<string, string> = {
+    completed: 'Đã tiêm',
+    pending: 'Chờ tiêm',
+    cancelled: 'Đã hủy',
+    missed: 'Bỏ lỡ',
+  }
+  return labels[status] || status
+}
+
 // Lifecycle
 onMounted(() => {
   fetchHealthBooks()
@@ -1662,5 +2104,58 @@ onMounted(() => {
     padding: 16px;
     border-radius: 10px;
   }
+}
+
+/* Vaccination Modal Styles */
+.vaccination-modal-content {
+  padding: 8px 0;
+}
+
+.vaccination-header {
+  margin-bottom: 24px;
+  padding-bottom: 16px;
+  border-bottom: 1px solid #e8e8e8;
+}
+
+.vaccination-header h3 {
+  font-size: 18px;
+  font-weight: 600;
+  color: #1a1a1a;
+  margin: 0 0 4px 0;
+}
+
+.vaccination-subtitle {
+  font-size: 14px;
+  color: #8c8c8c;
+  margin: 0;
+}
+
+.empty-vaccination {
+  padding: 40px 0;
+  text-align: center;
+}
+
+.vaccination-list {
+  margin-top: 16px;
+}
+
+.vaccine-name-cell {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.vaccine-name-cell strong {
+  font-size: 14px;
+  color: #1a1a1a;
+}
+
+.vaccine-age {
+  font-size: 12px;
+  color: #8c8c8c;
+}
+
+.vaccination-form {
+  padding: 8px 0;
 }
 </style>

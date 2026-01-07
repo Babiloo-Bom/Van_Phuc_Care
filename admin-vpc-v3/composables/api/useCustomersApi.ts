@@ -92,6 +92,15 @@ export const useCustomersApi = () => {
      */
     async getCustomerStats() {
       return apiClient.get('/api/a/customers/statistics')
+    },
+
+    /**
+     * Toggle customer status (Block/Unblock)
+     */
+    async toggleCustomerStatus(id: string) {
+      return apiClient.patch(`/api/a/customers/${id}/status`, {}, {
+        errorMessage: 'Không thể thay đổi trạng thái khách hàng'
+      })
     }
   }
 }

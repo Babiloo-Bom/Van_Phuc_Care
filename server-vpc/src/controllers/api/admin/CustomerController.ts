@@ -28,7 +28,7 @@ class CustomerController {
       const page = parseInt(req.query.page as string || '1');
       const limit = parseInt(req.query.limit as string || '12');
       const offset = (page - 1) * limit;
-      const { from, to, categoryId, searchKey, status, gender } = req.query;
+      const { from, to, categoryId, searchKey, status, gender, provider } = req.query;
       
       // Chỉ query từ users collection với role customer hoặc type normal
       let customers: any[] = [];
@@ -72,6 +72,11 @@ class CustomerController {
       // Add gender filter
       if (gender) {
         baseQuery.gender = String(gender);
+      }
+      
+      // Add provider filter (loại đăng nhập)
+      if (provider) {
+        baseQuery.provider = String(provider);
       }
       
       // Add search query
@@ -118,6 +123,7 @@ class CustomerController {
           address: u.fullAddress || (u.address ? JSON.stringify(u.address) : ''),
           city: u.address?.province?.name || '',
           gender: u.gender || '',
+          provider: u.provider || 'local', // Loại đăng nhập
           status: u.status || (u.isActive ? 'active' : 'inactive'),
           isActive: u.isActive !== undefined ? u.isActive : (u.status === 'active'),
           createdAt: u.createdAt,
@@ -146,13 +152,46 @@ class CustomerController {
 
   public async show (req: Request, res: Response) {
     try {
-      const queryString: any = {
-        _id: req.params.customerId,
+      const { customerId } = req.params;
+      
+      // Query từ users collection (customers được lưu trong users collection)
+      const user = await MongoDbUsers.model.findById(customerId).select('-password').lean();
+      
+      if (!user) {
+        return sendError(res, 404, 'Không tìm thấy khách hàng');
+      }
+      
+      // Normalize data giống như trong index()
+      const fullname = (user as any).fullname || '';
+      const nameParts = fullname.split(' ').filter((p: string) => p.length > 0);
+      const firstname = nameParts[0] || '';
+      const lastname = nameParts.slice(1).join(' ') || '';
+      
+      const customer = {
+        ...user,
+        _id: (user as any)._id,
+        _source: 'users',
+        firstname,
+        lastname,
+        fullname,
+        phone: (user as any).phoneNumber || '',
+        email: (user as any).email || '',
+        address: (user as any).fullAddress || ((user as any).address ? JSON.stringify((user as any).address) : ''),
+        city: (user as any).address?.province?.name || '',
+        gender: (user as any).gender || '',
+        provider: (user as any).provider || 'local',
+        status: (user as any).status || ((user as any).isActive ? 'active' : 'inactive'),
+        isActive: (user as any).isActive !== undefined ? (user as any).isActive : ((user as any).status === 'active'),
+        createdAt: (user as any).createdAt,
+        updatedAt: (user as any).updatedAt,
       };
-      const customer = await MonggoDbCustomer.model.findOne(queryString);
-      const orders = await MongoDbOrder.model.find({ 'customer._id': req.params.customerId });
+      
+      // Get orders if needed
+      const orders = await MongoDbOrder.model.find({ 'customer._id': customerId }).lean();
+      
       sendSuccess(res, { customer: { ...customer, orders } });
     } catch (error: any) {
+      console.error('❌ CustomerController.show error:', error);
       sendError(res, 500, error.message, error as Error);
     }
   }
@@ -161,27 +200,159 @@ class CustomerController {
     try {
       const params = req.body;
       const { customerId } = req.params;
-      let updatedCustomer = null;
-      updatedCustomer = await MonggoDbCustomer.model.findByIdAndUpdate(
-        customerId,
-        {
-          ...params,
-        },
-        { new: true },
-      );
-      sendSuccess(res, { customer: updatedCustomer });
+      
+      // Update trong users collection (customers được lưu trong users collection)
+      const updateData: any = {};
+      
+      // Map các field từ frontend sang field trong users collection
+      if (params.fullname !== undefined) {
+        updateData.fullname = params.fullname;
+      }
+      if (params.phone !== undefined || params.phoneNumber !== undefined) {
+        updateData.phoneNumber = params.phone || params.phoneNumber;
+      }
+      if (params.isActive !== undefined) {
+        updateData.isActive = params.isActive;
+        // Cũng update status để đồng bộ
+        updateData.status = params.isActive ? 'active' : 'inactive';
+      }
+      if (params.status !== undefined) {
+        updateData.status = params.status;
+        updateData.isActive = params.status === 'active';
+      }
+      
+      // Update user trong users collection
+      const updatedUser = await MongoDbUsers.model
+        .findByIdAndUpdate(
+          customerId,
+          {
+            ...updateData,
+            updatedAt: new Date()
+          },
+          { new: true }
+        )
+        .select('-password')
+        .lean();
+      
+      if (!updatedUser) {
+        return sendError(res, 404, 'Không tìm thấy khách hàng');
+      }
+      
+      // Normalize data giống như trong show() và index()
+      const fullname = (updatedUser as any).fullname || '';
+      const nameParts = fullname.split(' ').filter((p: string) => p.length > 0);
+      const firstname = nameParts[0] || '';
+      const lastname = nameParts.slice(1).join(' ') || '';
+      
+      const customer = {
+        ...updatedUser,
+        _id: (updatedUser as any)._id,
+        _source: 'users',
+        firstname,
+        lastname,
+        fullname,
+        phone: (updatedUser as any).phoneNumber || '',
+        email: (updatedUser as any).email || '',
+        address: (updatedUser as any).fullAddress || ((updatedUser as any).address ? JSON.stringify((updatedUser as any).address) : ''),
+        city: (updatedUser as any).address?.province?.name || '',
+        gender: (updatedUser as any).gender || '',
+        provider: (updatedUser as any).provider || 'local',
+        status: (updatedUser as any).status || ((updatedUser as any).isActive ? 'active' : 'inactive'),
+        isActive: (updatedUser as any).isActive !== undefined ? (updatedUser as any).isActive : ((updatedUser as any).status === 'active'),
+        createdAt: (updatedUser as any).createdAt,
+        updatedAt: (updatedUser as any).updatedAt,
+      };
+      
+      sendSuccess(res, { customer });
     } catch (error: any) {
+      console.error('❌ CustomerController.update error:', error);
       sendError(res, 500, error.message, error as Error);
     }
   }
 
   public async delete (req: Request, res: Response) {
     try {
-      const customer = await MonggoDbCustomer.model.findById(req.params.customerId);
-      if (!customer) {
+      const { customerId } = req.params;
+      
+      // Tìm customer trong users collection
+      const user = await MongoDbUsers.model.findById(customerId);
+      
+      if (!user) {
+        return sendError(res, 404, 'Không tìm thấy khách hàng');
+      }
+      
+      // Xóa user từ users collection
+      await MongoDbUsers.model.findByIdAndDelete(customerId);
+      
+      sendSuccess(res, { status: true, message: 'Đã xóa khách hàng thành công' });
+    } catch (error: any) {
+      console.error('❌ CustomerController.delete error:', error);
+      sendError(res, 500, error.message, error as Error);
+    }
+  }
+
+  /**
+   * Toggle customer status (Block/Unblock)
+   * PATCH /api/a/customers/:customerId/status
+   */
+  public async toggleStatus (req: Request, res: Response) {
+    try {
+      const { customerId } = req.params;
+      
+      // Find customer in users collection (customers are stored in users collection with role='customer' or type='normal')
+      const user = await MongoDbUsers.model.findById(customerId);
+      
+      if (!user) {
         return sendError(res, 404, NoData);
       }
-      sendSuccess(res, { status: true });
+
+      // Toggle status for users collection
+      const currentStatus = (user as any).status || 'active';
+      const newStatus = currentStatus === 'active' ? 'inactive' : 'active';
+      const newIsActive = newStatus === 'active';
+      
+      const updatedUser = await MongoDbUsers.model
+        .findByIdAndUpdate(
+          customerId,
+          { 
+            status: newStatus,
+            isActive: newIsActive,
+            updatedAt: new Date() 
+          },
+          { new: true }
+        )
+        .select("-password")
+        .lean();
+
+      if (!updatedUser) {
+        return sendError(res, 404, NoData);
+      }
+
+      // Format response similar to user response
+      const fullname = (updatedUser as any).fullname || '';
+      const nameParts = fullname.split(' ').filter((p: string) => p.length > 0);
+      const firstname = nameParts[0] || '';
+      const lastname = nameParts.slice(1).join(' ') || '';
+      
+      const customer = {
+        ...updatedUser,
+        _id: (updatedUser as any)._id,
+        _source: 'users',
+        firstname,
+        lastname,
+        fullname,
+        phone: (updatedUser as any).phoneNumber || '',
+        email: (updatedUser as any).email || '',
+        address: (updatedUser as any).fullAddress || ((updatedUser as any).address ? JSON.stringify((updatedUser as any).address) : ''),
+        city: (updatedUser as any).address?.province?.name || '',
+        gender: (updatedUser as any).gender || '',
+        status: newStatus,
+        isActive: newIsActive,
+        createdAt: (updatedUser as any).createdAt,
+        updatedAt: (updatedUser as any).updatedAt,
+      };
+
+      sendSuccess(res, { customer });
     } catch (error: any) {
       sendError(res, 500, error.message, error as Error);
     }
