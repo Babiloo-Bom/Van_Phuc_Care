@@ -15,9 +15,12 @@
               <span>Trắc nghiệm</span>
             </div>
             <h2
-              :class="['md:text-white text-[#4D4D4D] text-sm md:text-xl md:font-semibold truncate mb-0', {'text-left text-xl text-[#1A75BB]': !isQuiz }, {
+              :class="['truncate mb-0', {
+                'md:text-white text-sm md:text-xl md:font-semibold': isQuiz,
+                'text-left text-xl font-bold': !isQuiz,
                 'hidden md:block': course?.progress?.isCompleted === true 
               }]"
+              :style="!isQuiz ? { color: '#1A75BB' } : {}"
             >
               {{ currentChapter?.title || "Chưa có chủ đề" }}
             </h2>
@@ -46,7 +49,8 @@
         <div v-if="!isQuiz && !showCertificate" class="flex-1 lg:w-[65%] bg-white rounded-lg shadow-lg p-4 md:p-8">
           <!-- Lesson Title -->
           <h1
-            class="text-xl md:text-2xl lg:text-3xl font-bold text-gray-800 mb-4"
+            class="text-xl md:text-2xl lg:text-3xl font-bold mb-4"
+            style="color: #1A75BB;"
           >
             {{ currentLesson?.title || "Chưa có bài học" }}
           </h1>
@@ -241,7 +245,7 @@
                 class="bg-white rounded-lg border border-gray-200 p-4 md:p-6"
               >
                 <!-- Document 2: Text Content -->
-                <h3 class="text-lg md:text-xl font-semibold text-gray-800 mb-4">
+                <h3 class="text-lg md:text-xl font-bold mb-4" style="color: #1A75BB;">
                   {{ currentLesson?.title || "Chưa có bài học" }}
                 </h3>
                 <div 
@@ -301,7 +305,8 @@
                       class="bg-white rounded-lg border border-gray-200 p-4 md:p-6"
                     >
                       <h3
-                        class="text-base md:text-lg font-semibold text-gray-800 mb-4"
+                        class="text-base md:text-lg font-bold mb-4"
+                        style="color: #1A75BB;"
                       >
                         {{ currentLesson?.title || "Chưa có bài học" }}
                       </h3>

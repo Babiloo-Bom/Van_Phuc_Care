@@ -2,23 +2,24 @@
   <div class="">
     <!-- Hero Banner -->
     <div
-      class="h-auto md:mb-[5rem] sm:h-[400px] md:h-[500px] py-8 sm:py-10 sm:pt-16 sm:pb-20 md:pb-60 bg-cover bg-center bg-no-repeat bg-[url('https://cdn.synck.io.vn/vanphuccare/banner/main.webp')]
+      class="h-auto md:mb-[5rem] sm:h-[500px] py-10 sm:pt-20 sm:pb-20 md:pb-60 bg-cover bg-center bg-no-repeat bg-[url('https://cdn.synck.io.vn/vanphuccare/banner/main.webp')]
              relative z-[1] after:absolute after:content-[''] after:top-0 after:left-0 after:w-full after:h-full after:opacity-60 after:bg-prim-100"
     >
       <div class="absolute inset-0 bg-[#1A75BBB2]"></div>
-      <div class="container mx-auto !px-0 sm:!px-auto">
+      <div class="container h-full mx-auto px-4 lg:px-6">
         <div
-          class="relative z-[1] flex flex-col h-full gap-6 p-4 sm:pt-0 items-center md:items-start"
+          class="relative z-[1] flex flex-col items-center md:items-start h-full gap-6"
         >
-          <div class="text-white text-center md:text-left">
-            <div
-              class="flex items-center justify-center sm:justify-start sm:gap-4 flex-wrap sm:mb-4"
-            >
-              <h4 class="text-2xl sm:text-4xl font-bold text-white mb-0">
+          <div class="text-white w-full">
+            <div class="flex flex-col gap-4 md:gap-6">
+              <!-- Title -->
+              <h4 class="text-3xl sm:text-4xl font-bold text-white mb-0 text-center md:text-left">
                 Khóa học của tôi
               </h4>
+              
+              <!-- Course Count -->
               <div
-                class="flex items-center rounded-full py-1.5 px-5 border-[1px] border-solid border-white gap-2"
+                class="flex items-center rounded-full py-1.5 px-5 border-[1px] border-solid border-white gap-2 w-fit mx-auto md:mx-0"
               >
                 <span>
                   <svg
@@ -42,26 +43,17 @@
                     />
                   </svg>
                 </span>
-                <span>{{ coursesStore.myCourses?.length || 0 }} khóa học</span>
+                <span v-if="searchKey">
+                  {{ filteredCourses.length }} kết quả cho "{{ searchKey }}"
+                </span>
+                <span v-else>{{ coursesStore.myCourses?.length || 0 }} khóa học</span>
               </div>
-            </div>
-            <div class="hidden md:block max-w-4xl mx-auto">
-              <p class="mb-0 text-lg">
-                Tập hợp các khóa học chuyên sâu, được giảng dạy bởi các chuyên
-                gia, cố vấn giàu kinh nghiệm trong lĩnh vực chăm sóc Mẹ và Bé
-                giúp các bậc phụ huynh trở thành những người cha, người mẹ thông
-                thái, hiểu biết sâu rộng về mọi khía cạnh chăm sóc trẻ sơ sinh,
-                mang lại sự an tâm và hạnh phúc cho mỗi gia đình.
-              </p>
-            </div>
-          </div>
-          <div class="mt-auto w-full">
-            <div class="flex flex-col items-center gap-6">
-              <!-- Search Bar -->
+              
+              <!-- Search -->
               <div class="w-full text-center md:text-left">
                 <a-input
                   v-model:value="searchKey"
-                  placeholder="Tìm kiếm khóa học"
+                  placeholder="Tìm kiếm theo tên, mô tả, danh mục, tags..."
                   class="!bg-transparent rounded-full h-10 w-full max-w-[400px] sm:max-w-[440px] md:max-w-[340px] custom_input"
                   @change="handleSearch"
                 >
@@ -84,18 +76,29 @@
                 </a-input>
               </div>
             </div>
+            
+            <!-- Description -->
+            <div class="mt-4 hidden md:block">
+              <p class="mb-0 md:max-w-[800px] text-white leading-relaxed">
+                Tập hợp các khóa học chuyên sâu, được giảng dạy bởi các chuyên
+                gia, cố vấn giàu kinh nghiệm trong lĩnh vực chăm sóc Mẹ và Bé
+                giúp các bậc phụ huynh trở thành những người cha, người mẹ thông
+                thái, hiểu biết sâu rộng về mọi khía cạnh chăm sóc trẻ sơ sinh,
+                mang lại sự an tâm và hạnh phúc cho mỗi gia đình.
+              </p>
+            </div>
           </div>
         </div>
       </div>
     </div>
 
     <!-- Courses Section -->
-    <section class="pb-10 sm:pb-20 pt-8 sm:pt-10 lg:pt-20 bg-[#f4f7f9] relative z-10">
-      <div class="container mx-auto px-4 sm:px-4 md:px-0">
+    <section class="pb-20 p-4 lg:pt-20 sm:pt-10 bg-[#f4f7f9] relative z-10">
+      <div class="container mx-auto !px-0 md:!px-auto">
         <div v-if="!loading">
           <div
             v-if="filteredCourses.length"
-            class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 xl:grid-cols-4 gap-4 sm:gap-6 mt-4 sm:-mt-32 md:-mt-40 lg:-mt-60"
+            class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 xl:grid-cols-4 gap-6 sm:-mt-32 md:-mt-40 lg:-mt-60"
           >
             <PurchasedCourseCard
               v-for="(course, index) in filteredCourses"
@@ -107,13 +110,13 @@
               class="transform transition hover:-translate-y-1 duration-150"
             />
           </div>
-          <div v-else class="pt-20 sm:pt-0">
+          <div v-else class="flex items-center justify-center min-h-[400px] pt-20 sm:pt-0">
             <a-empty class="flex flex-col items-center" description="Bạn chưa có khóa học nào" />
           </div>
         </div>
         <div
           v-else
-          class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 xl:grid-cols-4 gap-4 sm:gap-6 mt-4 sm:-mt-32 md:-mt-40 lg:-mt-60"
+          class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 xl:grid-cols-4 gap-6 sm:-mt-32 md:-mt-40 lg:-mt-60"
         >
           <div
             v-for="index in [1, 2, 3, 4]"

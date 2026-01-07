@@ -10,13 +10,16 @@
         <div
           class="relative z-[1] flex flex-col items-center md:items-start h-full gap-6"
         >
-          <div class="text-white">
-            <div class="flex items-center gap-1 sm:gap-4 flex-wrap">
-              <h4 class="text-3xl sm:text-4xl font-bold text-white mb-1">
+          <div class="text-white w-full">
+            <div class="flex flex-col gap-4 md:gap-6">
+              <!-- Title -->
+              <h4 class="text-3xl sm:text-4xl font-bold text-white mb-0">
                 Tất cả khóa học
               </h4>
+              
+              <!-- Course Count -->
               <div
-                class="flex items-center rounded-full py-1.5 px-5 border-[1px] border-solid border-white gap-2"
+                class="flex items-center rounded-full py-1.5 px-5 border-[1px] border-solid border-white gap-2 w-fit"
               >
                 <span>
                   <svg
@@ -45,7 +48,36 @@
                 </span>
                 <span v-else> {{ filteredCourses.length }} khóa học </span>
               </div>
+              
+              <!-- Search -->
+              <div class="w-full text-center md:text-left">
+                <a-input
+                  v-model="searchKey"
+                  placeholder="Tìm kiếm theo tên, mô tả, danh mục, tags..."
+                  class="!bg-transparent rounded-full h-10 w-full max-w-[400px] sm:max-w-[440px] md:max-w-[340px] custom_input"
+                  @change="handleSearch"
+                >
+                  <template #prefix>
+                    <svg
+                      xmlns="http://www.w3.org/2000/svg"
+                      width="20"
+                      height="20"
+                      viewBox="0 0 24 24"
+                      class="fill-none stroke-white"
+                    >
+                      <path
+                        d="M11.5 21a9.5 9.5 0 1 0 0-19 9.5 9.5 0 0 0 0 19ZM22 22l-2-2"
+                        stroke-width="1.5"
+                        stroke-linecap="round"
+                        stroke-linejoin="round"
+                      />
+                    </svg>
+                  </template>
+                </a-input>
+              </div>
             </div>
+            
+            <!-- Description -->
             <div class="mt-4 hidden md:block">
               <p class="mb-0 md:max-w-[800px] text-white leading-relaxed">
                 Vạn Phúc Care cung cấp những khóa học chất lượng, chuyên sâu
@@ -56,31 +88,6 @@
                 vấn giàu kinh nghiệm trong lĩnh vực Mẹ và Bé.
               </p>
             </div>
-          </div>
-          <div class="w-full text-center md:text-left">
-            <a-input
-              v-model="searchKey"
-              placeholder="Tìm kiếm theo tên, mô tả, danh mục, tags..."
-              class="!bg-transparent rounded-full h-10 w-full max-w-[400px] sm:max-w-[440px] md:max-w-[340px] custom_input"
-              @change="handleSearch"
-            >
-              <template #prefix>
-                <svg
-                  xmlns="http://www.w3.org/2000/svg"
-                  width="20"
-                  height="20"
-                  viewBox="0 0 24 24"
-                  class="fill-none stroke-white"
-                >
-                  <path
-                    d="M11.5 21a9.5 9.5 0 1 0 0-19 9.5 9.5 0 0 0 0 19ZM22 22l-2-2"
-                    stroke-width="1.5"
-                    stroke-linecap="round"
-                    stroke-linejoin="round"
-                  />
-                </svg>
-              </template>
-            </a-input>
           </div>
 
           <!-- Filter Options (3 nút trắng giống trang chủ) -->

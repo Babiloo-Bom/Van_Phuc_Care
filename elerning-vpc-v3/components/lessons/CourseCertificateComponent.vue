@@ -1,5 +1,5 @@
 <template>
-  <div class="w-full bg-white rounded-lg py-10 border-[#ACD7F9]">
+  <div class="w-full bg-white rounded-lg pt-2 pb-10 border-[#ACD7F9]">
     <div class="md:w-[702px] px-3 w-full mx-auto">
       <div class="text-[#15CF74] font-bold text-sm text-center">Chúc mừng bạn đã hoàn thành khóa học</div>
       <h2 class="m-0 leading-8 text-2xl font-bold text-center text-[#1A75BB]">{{ props.course?.title || "Khóa học" }}</h2>

@@ -681,8 +681,9 @@
                     </li>
                     <li>
                       <a
-                        href="https://www.youtube.com"
+                        href="https://www.youtube.com/@vanphuccare.tresosinh/videos"
                         target="_blank"
+                        rel="noopener noreferrer"
                         class="block"
                       >
                         <img
@@ -713,12 +714,14 @@
                 </h4>
 
                 <!-- HOTLINE TƯ VẤN Button -->
-                <a-button
-                  class="!w-full !h-[40px] sm:!h-[45px] !rounded-full !mb-2 sm:!mb-3 !border !font-bold !text-xs sm:!text-base"
+                <a
+                  href="tel:0908093198"
+                  class="!w-full !h-[40px] sm:!h-[45px] !rounded-full !mb-2 sm:!mb-3 !border !font-bold !text-xs sm:!text-base flex items-center justify-center"
                   style="
                     background-color: white !important;
                     border-color: #1a75bb !important;
                     color: #1a75bb !important;
+                    text-decoration: none;
                   "
                 >
                   <div class="flex items-center justify-center gap-2">
@@ -729,12 +732,15 @@
                     />
                     <span class="text-xs sm:text-base">HOTLINE TƯ VẤN</span>
                   </div>
-                </a-button>
+                </a>
 
                 <!-- CHAT ZALO Button -->
-                <a-button
+                <a
+                  href="https://zalo.me/1165841515663780416"
+                  target="_blank"
+                  rel="noopener noreferrer"
                   class="!w-full !h-[45px] sm:!h-[50px] !rounded-full !border-none !font-bold !text-xs sm:!text-base !text-white !flex !flex-col !items-center !justify-center !gap-1"
-                  style="background-color: #2176ff !important"
+                  style="background-color: #2176ff !important; text-decoration: none;"
                 >
                   <div class="flex items-center justify-center gap-2">
                     <img
@@ -747,7 +753,7 @@
                     <span class="text-[10px] sm:text-xs font-normal">Hỗ trợ tư vấn ngay</span>
                     </div>
                   </div>
-                </a-button>
+                </a>
               </div>
             </div>
           </div>

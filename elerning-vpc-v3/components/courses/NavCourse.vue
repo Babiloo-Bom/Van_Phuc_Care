@@ -562,7 +562,7 @@ watch(
   font-size: 1rem;
   line-height: 1.5rem;
   margin-bottom: 0;
-  font-weight: 600;
+  font-weight: 700;
   cursor: pointer;
   transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
 }
@@ -575,11 +575,11 @@ watch(
 }
 
 .lesson-title-completed {
-  color: #15CF74;
+  color: #1A75BB;
 }
 
 .lesson-title-pending {
-  color: #1f2937;
+  color: #1A75BB;
 }
 
 .lesson-title-locked {
