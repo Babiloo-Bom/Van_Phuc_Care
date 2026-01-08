@@ -3,9 +3,11 @@
     <!-- Logo Section -->
     <div class="flex justify-center items-center px-6 py-8 border-b border-gray-200">
       <img 
+        width="90"
+        height="76"
         src="/images/logo-vanphuc-new.png" 
         alt="Vạn Phúc Care Logo" 
-        class="w-[120px] h-auto object-contain"
+        class="w-[90px] h-auto object-contain"
       />
     </div>
 
@@ -29,7 +31,7 @@
           v-else
           :to="item.path"
           class="flex items-center gap-3 px-5 py-3 mx-2 rounded-lg text-sm font-medium transition-all duration-200"
-          :class="isActive(item.path) ? 'bg-blue-500 text-white hover:bg-blue-600' : 'text-gray-700 hover:bg-gray-100'"
+          :class="isActive(item.path) ? 'bg-[#1A75BB] text-white hover:bg-[#1A75BBDB]' : 'text-gray-700 hover:bg-gray-100'"
         >
           <div v-html="item.icon" />
           <span>{{ item.label }}</span>

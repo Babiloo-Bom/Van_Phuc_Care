@@ -248,6 +248,59 @@ class HealthBookController {
   }
 
   /**
+   * Get record dates in a range (returns array of YYYY-MM-DD strings)
+   * GET /api/u/healthbooks/:id/records/dates?start=YYYY-MM-DD&end=YYYY-MM-DD
+   */
+  public async getRecordDates(req: Request, res: Response) {
+    try {
+      const userId = (req as any).user?.id || (req as any).user?._id;
+      const { id } = req.params;
+      const { start, end } = req.query;
+
+      if (!userId) {
+        return sendError(res, 401, "Unauthorized");
+      }
+
+      // Verify healthbook belongs to user
+      const healthBook = await MongoDbHealthBooks.model.findOne({
+        _id: id,
+        userId: userId.toString(),
+      });
+
+      if (!healthBook) {
+        return sendError(res, 404, "HealthBook not found");
+      }
+
+      // Build date range
+      const match: any = { healthBookId: id };
+      if (start || end) {
+        match.date = {};
+        if (start) match.date.$gte = new Date(String(start));
+        if (end) match.date.$lte = new Date(String(end));
+      }
+
+      // Aggregate distinct dates (format YYYY-MM-DD)
+      const agg = await MongoDbHealthRecords.model.aggregate([
+        { $match: match },
+        {
+          $group: {
+            _id: { $dateToString: { format: "%Y-%m-%d", date: "$date" } },
+          },
+        },
+        { $project: { date: "$_id", _id: 0 } },
+        { $sort: { date: 1 } },
+      ]).allowDiskUse(true);
+
+      const dates = (agg || []).map((d: any) => d.date);
+
+      return sendSuccess(res, { data: { dates } });
+    } catch (error: any) {
+      console.error("Error fetching record dates:", error);
+      return sendError(res, 500, error.message);
+    }
+  }
+
+  /**
    * Create or update health record (upsert by date)
    * POST /api/u/healthbooks/:id/records
    */

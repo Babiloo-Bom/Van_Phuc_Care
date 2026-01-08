@@ -54,5 +54,16 @@ export const useHealthRecordsApi = () => {
         errorMessage: "Không thể xóa bản ghi",
       });
     },
+
+    /**
+     * Get list of dates that have records within a range
+     * GET /api/healthbooks/:id/records/dates?start=YYYY-MM-DD&end=YYYY-MM-DD
+     */
+    async getRecordDates(healthBookId: string, start: string, end: string) {
+      return apiClient.get(`/api/healthbooks/${healthBookId}/records/dates`, {
+        params: { start, end },
+        showError: false,
+      });
+    },
   };
 };

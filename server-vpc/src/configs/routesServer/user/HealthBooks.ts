@@ -45,6 +45,9 @@ router.get('/:id/records', auth, (req, res) => {
   return HealthBookController.getRecords(req, res);
 });
 
+// Get list of record dates for a given range (YYYY-MM-DD strings)
+router.get('/:id/records/dates', auth, HealthBookController.getRecordDates);
+
 // Create or update record (upsert by date)
 router.post('/:id/records', auth, HealthBookController.upsertRecord);
 

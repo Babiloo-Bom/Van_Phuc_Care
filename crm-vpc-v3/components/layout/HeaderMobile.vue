@@ -14,7 +14,7 @@
       </div>
 
       <!-- Menu Toggle Button -->
-      <button class="w-12 h-12 bg-blue-500 rounded-xl flex items-center justify-center active:bg-blue-600 transition-all" @click="toggleMenu">
+      <button class="w-12 h-12 bg-[#317BC4] rounded-xl flex items-center justify-center active:bg-blue-600 transition-all" @click="toggleMenu">
         <svg xmlns="http://www.w3.org/2000/svg" width="27" height="27" viewBox="0 0 27 27" fill="none">
           <path fill-rule="evenodd" clip-rule="evenodd" d="M3.27271 6.54599C3.27271 5.9435 3.76113 5.45508 4.36361 5.45508H21.8182C22.4207 5.45508 22.9091 5.9435 22.9091 6.54599C22.9091 7.14847 22.4207 7.6369 21.8182 7.6369H4.36361C3.76113 7.6369 3.27271 7.14847 3.27271 6.54599ZM3.27271 13.0914C3.27271 12.4889 3.76113 12.0005 4.36361 12.0005H21.8182C22.4207 12.0005 22.9091 12.4889 22.9091 13.0914C22.9091 13.694 22.4207 14.1824 21.8182 14.1824H4.36361C3.76113 14.1824 3.27271 13.694 3.27271 13.0914ZM3.27271 19.6369C3.27271 19.0344 3.76113 18.546 4.36361 18.546H21.8182C22.4207 18.546 22.9091 19.0344 22.9091 19.6369C22.9091 20.2394 22.4207 20.7278 21.8182 20.7278H4.36361C3.76113 20.7278 3.27271 20.2394 3.27271 19.6369Z" fill="white"/>
         </svg>
@@ -28,9 +28,9 @@
 
     <!-- Mobile Menu Drawer -->
     <transition name="menu-drawer">
-      <div v-if="isMenuOpen" class="fixed top-0 right-0 bottom-0 w-[85%] max-w-[320px] bg-white z-[120] flex flex-col overflow-y-auto">
+      <div v-if="isMenuOpen" class="fixed top-0 left-0 bottom-0 w-[85%] max-w-[320px] bg-white z-[120] flex flex-col overflow-y-auto">
         <!-- User Profile Section -->
-        <div class="bg-gradient-to-br from-blue-500 to-blue-600 px-5 py-6 flex items-center gap-3 relative">
+        <div class="bg-[#1A75BB] px-5 py-6 flex items-center gap-3 relative">
           <img 
             :src="userAvatar" 
             :alt="userName" 
@@ -49,7 +49,7 @@
         </div>
 
         <!-- Menu Items -->
-        <nav class="flex-1 py-4 overflow-y-auto">
+        <nav class="flex-1 py-4 px-3 overflow-y-auto">
           <template v-for="item in menuItems" :key="item.path">
             <!-- External Link -->
             <a
@@ -57,8 +57,8 @@
               :href="item.path"
               target="_blank"
               rel="noopener noreferrer"
-              class="flex items-center gap-3 px-5 py-3.5 text-gray-700 text-[15px] font-medium transition-all active:bg-gray-50"
-              :class="isActive(item.path) ? 'bg-blue-50 text-blue-500 border-l-4 border-blue-500 pl-4' : ''"
+              class="flex items-center gap-3 px-3 py-3.5 text-gray-700 text-[15px] font-medium transition-all active:bg-[#1A75BB] rounded-lg"
+              :class="isActive(item.path) ? 'bg-[#1A75BB] text-white' : ''"
               @click.prevent="handleElearningLinkClick(item.path)"
             >
               <div v-html="item.icon" />
@@ -68,8 +68,8 @@
             <NuxtLink
               v-else
               :to="item.path"
-              class="flex items-center gap-3 px-5 py-3.5 text-gray-700 text-[15px] font-medium transition-all active:bg-gray-50"
-              :class="isActive(item.path) ? 'bg-blue-50 text-blue-500 border-l-4 border-blue-500 pl-4' : ''"
+              class="flex items-center gap-3 px-3 py-3.5 text-gray-700 text-[15px] font-medium transition-all active:bg-[#1A75BB] rounded-lg"
+              :class="isActive(item.path) ? 'bg-[#1A75BB] text-white' : ''"
               @click="closeMenu"
             >
               <div v-html="item.icon" />
@@ -261,6 +261,6 @@ const handleLogout = async () => {
 
 .menu-drawer-enter-from,
 .menu-drawer-leave-to {
-  transform: translateX(100%);
+  transform: translateX(-100%);
 }
 </style>
