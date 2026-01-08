@@ -54,7 +54,7 @@ class PasswordController {
 
       // Send reset link via email
       try {
-        await MailerService.sendForgotPasswordLink(email, resetLink);
+        await MailerService.sendForgotPasswordLink(email, resetLink, admin.get("fullname"));
         sendSuccess(res, { message: 'Reset link sent successfully' });
       } catch (emailError) {
         // Still return success for security (don't reveal if email exists)

@@ -5,16 +5,8 @@
       <div class="content-wrapper">
         <!-- Logo -->
         <div class="logo-section">
-          <img
-            src="/images/logo-vanphuc-new-mobile.png"
-            alt="Van Phuc Care"
-            class="lg:hidden logo"
-          />
-          <img
-            src="/images/logo-vanphuc-new.png"
-            alt="Van Phuc Care"
-            class="hidden lg:block logo"
-          />
+          <img src="/images/logo-vanphuc-new-mobile.png" alt="Van Phuc Care" class="lg:hidden logo" />
+          <img src="/images/logo-vanphuc-new.png" alt="Van Phuc Care" class="hidden lg:block logo" />
           <h2 class="main-title">Đăng nhập</h2>
           <p class="subtitle">Chào mừng bạn đến với Vạn Phúc Care</p>
         </div>
@@ -22,13 +14,7 @@
         <div class="google-login-section">
           <button @click="handleGoogleLogin" class="google-login-btn">
             <div class="google-icon">
-              <svg
-                xmlns="http://www.w3.org/2000/svg"
-                width="24"
-                height="24"
-                viewBox="0 0 24 24"
-                fill="none"
-              >
+              <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none">
                 <path
                   d="M5.625 12.0002C5.625 10.8111 5.95261 9.69721 6.52177 8.74344V4.69775H2.47608C0.870375 6.78313 0 9.32464 0 12.0002C0 14.6757 0.870375 17.2172 2.47608 19.3026H6.52177V15.2569C5.95261 14.3031 5.625 13.1893 5.625 12.0002Z"
                   fill="#FBBD00"
@@ -70,14 +56,7 @@
           <div class="form-group">
             <label for="email" class="form-label">Email/ Số điện thoại</label>
             <div class="input-container">
-              <input
-                id="email"
-                v-model="form.email"
-                type="text"
-                class="form-input"
-                placeholder="Email/SĐT"
-                required
-              />
+              <input id="email" v-model="form.email" type="text" class="form-input" placeholder="Email/SĐT" required />
             </div>
           </div>
 
@@ -99,17 +78,10 @@
           <!-- Remember Me & Forgot Password -->
           <div class="form-options">
             <div class="remember-me">
-              <input
-                type="checkbox"
-                id="remember"
-                class="remember-checkbox"
-                v-model="form.remember"
-              />
+              <input type="checkbox" id="remember" class="remember-checkbox" v-model="form.remember" />
               <label for="remember" class="remember-text">Nhớ tài khoản</label>
             </div>
-            <a href="/forgot-password" class="forgot-password"
-              >Quên mật khẩu?</a
-            >
+            <a href="/forgot-password" class="forgot-password">Quên mật khẩu?</a>
           </div>
 
           <!-- Submit Button -->
@@ -137,19 +109,14 @@
 
       <!-- Dragon Banner -->
       <div class="dragon-banner">
-        <img
-          src="/images/dragon_banner.png"
-          alt="Dragon Banner"
-          class="dragon-image"
-        />
+        <img src="/images/dragon_banner.png" alt="Dragon Banner" class="dragon-image" />
       </div>
 
       <!-- Marketing Text -->
       <div class="marketing-text">
         <h2 class="marketing-title">Hành trình cùng mẹ, trải đầy yêu thương</h2>
         <p class="marketing-description">
-          Vạn Phúc Care là người bạn đồng hành đáng tin cậy của cha mẹ trong
-          hành trình chăm sóc sức khoẻ Mẹ và Bé
+          Vạn Phúc Care là người bạn đồng hành đáng tin cậy của cha mẹ trong hành trình chăm sóc sức khoẻ Mẹ và Bé
         </p>
       </div>
     </div>
@@ -172,8 +139,7 @@ useHead({
   meta: [
     {
       name: "description",
-      content:
-        "Đăng nhập vào hệ thống Vạn Phúc Care để truy cập các dịch vụ chăm sóc sức khỏe",
+      content: "Đăng nhập vào hệ thống Vạn Phúc Care để truy cập các dịch vụ chăm sóc sức khỏe",
     },
   ],
 });
@@ -305,15 +271,9 @@ const handleGoogleLogin = async () => {
     const frontendUrl = baseFrontend;
 
     // Google OAuth luôn dùng /api/u (user endpoint)
-    const isAbsolutePath =
-      baseFrontend.startsWith("http://localhost") ||
-      baseFrontend.includes("localhost");
-    const googleApiBase = isAbsolutePath
-      ? "http://localhost:3000/api/u"
-      : "/api/u";
-    const backendBase = googleApiBase.startsWith("http")
-      ? googleApiBase
-      : `${baseFrontend}${googleApiBase}`;
+    const isAbsolutePath = baseFrontend.startsWith("http://localhost") || baseFrontend.includes("localhost");
+    const googleApiBase = isAbsolutePath ? "http://localhost:3000/api/u" : "/api/u";
+    const backendBase = googleApiBase.startsWith("http") ? googleApiBase : `${baseFrontend}${googleApiBase}`;
     const url = `${backendBase}/auth/google?redirect_uri=${encodeURIComponent(
       redirectUri
     )}&frontend_url=${encodeURIComponent(frontendUrl)}`;
@@ -642,6 +602,7 @@ const handleGoogleLogin = async () => {
     color: #ffffff;
     cursor: pointer;
     transition: all 0.3s ease;
+    margin-top: 12px;
   }
 
   .submit-btn:hover {
@@ -865,7 +826,7 @@ const handleGoogleLogin = async () => {
     position: absolute;
     width: 343px;
     height: 48px;
-    left: 16px;
+    left: 0;
     top: 261.04px;
   }
 
@@ -963,7 +924,7 @@ const handleGoogleLogin = async () => {
     display: flex;
     flex-direction: column;
     align-items: center;
-    gap: 36px;
+    gap: 16px;
   }
 
   .form-group {
@@ -1091,6 +1052,7 @@ const handleGoogleLogin = async () => {
     letter-spacing: 0.3px;
     color: #ffffff;
     cursor: pointer;
+    margin-top: 48px;
   }
 
   .register-link {

@@ -271,7 +271,7 @@ class SessionController {
       const resetLink = `${baseUrl}/reset-password?email=${encodeURIComponent(email)}&otp=${encodeURIComponent(otp)}`;
 
       try {
-        await MailerService.sendForgotPasswordLink(email, resetLink);
+        await MailerService.sendForgotPasswordLink(email, resetLink, user.get("fullname"));
       } catch (mailErr) {
         // log but don't fail
         console.warn('Failed to send reset link email:', mailErr);
