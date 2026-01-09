@@ -1,16 +1,8 @@
 <template>
   <div class="container mx-auto">
-    <div class="flex justify-between items-center mb-4 md:mb-6">
-      <h1
-        class="text-3xl font-bold text-[#1A75BB] w-full text-center md:text-left"
-      >
-        Chỉnh sửa thông tin
-      </h1>
-    </div>
+    <h1 class="text-3xl font-bold text-[#1A75BB] w-full text-center md:text-left mb-8 md:mb-4">Chỉnh sửa thông tin</h1>
     <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
-      <div
-        class="profile-card bg-white rounded-xl p-8 flex flex-col items-center justify-center md:col-span-1"
-      >
+      <div class="profile-card bg-white rounded-xl p-8 flex flex-col items-center justify-center md:col-span-1">
         <a-spin v-if="loading" />
         <template v-else>
           <img
@@ -28,7 +20,7 @@
             class="text-[#1A75BB] text-sm font-medium mb-4 hover:underline cursor-pointer"
             :disabled="isUploadingAvatar"
           >
-            {{ isUploadingAvatar ? 'Đang tải...' : 'Tải ảnh đại diện' }}
+            {{ isUploadingAvatar ? "Đang tải..." : "Tải ảnh đại diện" }}
           </button>
           <h2 class="text-xl font-bold mb-1">
             {{ userInfo?.name || userInfo?.fullname || "Chưa có tên" }}
@@ -40,29 +32,21 @@
         <a-spin :spinning="loading">
           <a-tabs v-model:activeKey="activeTab">
             <a-tab-pane key="info" tab="Thông tin tài khoản">
-              <a-form
-                :model="infoForm"
-                layout="vertical"
-                @finish="handleInfoSubmit"
-              >
+              <a-form :model="infoForm" layout="vertical" @finish="handleInfoSubmit">
                 <a-form-item label="Họ và tên" name="name">
-                  <a-input
-                    v-model:value="infoForm.name"
-                    placeholder="Nguyễn Văn A"
-                    size="large"
-                  />
+                  <a-input v-model:value="infoForm.name" placeholder="Nguyễn Văn A" size="large" />
                 </a-form-item>
                 <div class="flex flex-col gap-0 lg:flex-row lg:gap-4 w-full">
-                  <a-form-item 
-                    label="Số điện thoại" 
-                    name="phone" 
+                  <a-form-item
+                    label="Số điện thoại"
+                    name="phone"
                     class="flex-1"
                     :rules="[
-                      { 
+                      {
                         required: false,
                         validator: validatePhoneNumber,
-                        trigger: 'blur'
-                      }
+                        trigger: 'blur',
+                      },
                     ]"
                   >
                     <a-input
@@ -74,12 +58,7 @@
                     />
                   </a-form-item>
                   <a-form-item label="Email" name="email" class="flex-1">
-                    <a-input
-                      v-model:value="infoForm.email"
-                      placeholder="nguyenvana@gmail.com"
-                      size="large"
-                      disabled
-                    />
+                    <a-input v-model:value="infoForm.email" placeholder="nguyenvana@gmail.com" size="large" disabled />
                   </a-form-item>
                 </div>
                 <a-form-item label="Địa chỉ" name="address">
@@ -91,69 +70,30 @@
                   />
                 </a-form-item>
                 <a-form-item class="mb-0 md:mt-14">
-                  <a-button
-                    type="primary"
-                    html-type="submit"
-                    size="large"
-                    block
-                  >
-                    Lưu thông tin
-                  </a-button>
+                  <a-button type="primary" class="font-bold" html-type="submit" size="large" block> Lưu thông tin </a-button>
                 </a-form-item>
               </a-form>
             </a-tab-pane>
             <a-tab-pane key="password" tab="Đổi mật khẩu">
-              <a-form
-                :model="passwordForm"
-                layout="vertical"
-                @finish="handlePasswordSubmit"
-              >
+              <a-form :model="passwordForm" layout="vertical" @finish="handlePasswordSubmit">
                 <a-form-item label="Mật khẩu hiện tại" name="currentPassword">
-                  <a-input-password
-                    v-model:value="passwordForm.currentPassword"
-                    size="large"
-                  />
+                  <a-input-password v-model:value="passwordForm.currentPassword" size="large" />
                 </a-form-item>
                 <div class="flex gap-0 flex-col md:flex-row md:gap-4">
-                  <a-form-item
-                    label="Mật khẩu mới"
-                    name="newPassword"
-                    class="flex-1"
-                  >
-                    <a-input-password
-                      v-model:value="passwordForm.newPassword"
-                      size="large"
-                    />
+                  <a-form-item label="Mật khẩu mới" name="newPassword" class="flex-1">
+                    <a-input-password v-model:value="passwordForm.newPassword" size="large" />
                   </a-form-item>
-                  <a-form-item
-                    label="Xác nhận mật khẩu"
-                    name="confirmPassword"
-                    class="flex-1"
-                  >
-                    <a-input-password
-                      v-model:value="passwordForm.confirmPassword"
-                      size="large"
-                    />
+                  <a-form-item label="Xác nhận mật khẩu" name="confirmPassword" class="flex-1">
+                    <a-input-password v-model:value="passwordForm.confirmPassword" size="large" />
                   </a-form-item>
                 </div>
                 <a-form-item class="mb-0 md:mt-[150px]">
-                  <a-button
-                    type="primary"
-                    html-type="submit"
-                    size="large"
-                    block
-                  >
-                    Lưu thông tin
-                  </a-button>
+                  <a-button type="primary" class="font-bold" html-type="submit" size="large" block> Lưu thông tin </a-button>
                 </a-form-item>
               </a-form>
             </a-tab-pane>
             <a-tab-pane key="error" tab="Báo lỗi">
-              <a-form
-                :model="errorForm"
-                layout="vertical"
-                @finish="handleErrorSubmit"
-              >
+              <a-form :model="errorForm" layout="vertical" @finish="handleErrorSubmit">
                 <a-form-item label="Ghi chú lỗi" name="note">
                   <a-textarea
                     v-model:value="errorForm.note"
@@ -178,14 +118,7 @@
                   </div>
                 </a-form-item>
                 <a-form-item class="mb-0 md:mt-28">
-                  <a-button
-                    type="primary"
-                    html-type="submit"
-                    size="large"
-                    block
-                  >
-                    Gửi thông tin
-                  </a-button>
+                  <a-button type="primary" class="font-bold" html-type="submit" size="large" block> Gửi thông tin </a-button>
                 </a-form-item>
               </a-form>
             </a-tab-pane>
@@ -194,13 +127,7 @@
       </div>
     </div>
     <!-- Hidden file input for avatar upload -->
-    <input
-      ref="avatarFileInput"
-      type="file"
-      accept="image/*"
-      class="hidden"
-      @change="handleAvatarChange"
-    />
+    <input ref="avatarFileInput" type="file" accept="image/*" class="hidden" @change="handleAvatarChange" />
   </div>
 </template>
 
@@ -244,23 +171,23 @@ const { uploadImage } = useUploadsApi();
 
 const validatePhoneNumber = (_rule: any, value: string) => {
   return new Promise<void>((resolve, reject) => {
-    if (!value || value.trim() === '') {
+    if (!value || value.trim() === "") {
       resolve();
       return;
     }
-    
-    const digitsOnly = value.replace(/\D/g, '');
-    
+
+    const digitsOnly = value.replace(/\D/g, "");
+
     if (digitsOnly.length !== value.length) {
-      reject(new Error('Số điện thoại chỉ được chứa số, không được có chữ cái'));
+      reject(new Error("Số điện thoại chỉ được chứa số, không được có chữ cái"));
       return;
     }
-    
+
     if (digitsOnly.length !== 10) {
-      reject(new Error('Số điện thoại phải có đúng 10 chữ số'));
+      reject(new Error("Số điện thoại phải có đúng 10 chữ số"));
       return;
     }
-    
+
     resolve();
   });
 };
@@ -270,7 +197,7 @@ const handlePhoneInput = (event: Event) => {
   const input = event.target as HTMLInputElement;
   const value = input.value;
   // Remove all non-digit characters
-  const digitsOnly = value.replace(/\D/g, '');
+  const digitsOnly = value.replace(/\D/g, "");
   // Update form value
   infoForm.phone = digitsOnly;
 };
@@ -282,7 +209,6 @@ async function fetchUserInfo() {
     const res = await apiClient.get("/api/users/profile", {
       showError: false, // Disable automatic error toast
     });
-    console.log("✅ Fetched user info:", res);
     // Try different response structures
     // Backend might return: {status: true, data: {user: {...}}}
     // Or: {data: {user: {...}}}
@@ -347,24 +273,21 @@ const handleAvatarChange = async (event: Event) => {
 
     // Upload image and update profile immediately
     const uploadResult = await uploadImage(file);
-    console.log('Upload result:', uploadResult);
-    
-    // Response structure from /api/uploads: 
+
+    // Response structure from /api/uploads:
     // Backend: { status: true, data: { fileAttributes: [{ source: string }] } }
     // After apiClient.upload: { status: true, data: { status: true, data: { fileAttributes: [...] } } }
     const responseData = uploadResult.data as any;
-    const avatarUrl = 
-      responseData?.data?.fileAttributes?.[0]?.source || 
+    const avatarUrl =
+      responseData?.data?.fileAttributes?.[0]?.source ||
       responseData?.fileAttributes?.[0]?.source ||
-      responseData?.data?.url || 
-      responseData?.url || 
-      responseData?.data?.urls?.[0] || 
+      responseData?.data?.url ||
+      responseData?.url ||
+      responseData?.data?.urls?.[0] ||
       responseData?.urls?.[0];
 
-    console.log('Extracted avatar URL:', avatarUrl);
-
     if (!avatarUrl) {
-      console.error('No avatar URL found in response:', responseData);
+      console.error("No avatar URL found in response:", responseData);
       throw new Error("Không thể tải ảnh lên");
     }
 
@@ -416,21 +339,17 @@ async function handleInfoSubmit() {
       isUploadingAvatar.value = true;
       try {
         const uploadResult = await uploadImage(avatarFile.value);
-        console.log('Upload result in form submit:', uploadResult);
-    
         const responseData = uploadResult.data as any;
-        avatarUrl = 
-          responseData?.data?.fileAttributes?.[0]?.source || 
+        avatarUrl =
+          responseData?.data?.fileAttributes?.[0]?.source ||
           responseData?.fileAttributes?.[0]?.source ||
-          responseData?.data?.url || 
-          responseData?.url || 
-          responseData?.data?.urls?.[0] || 
+          responseData?.data?.url ||
+          responseData?.url ||
+          responseData?.data?.urls?.[0] ||
           responseData?.urls?.[0];
-        
-        console.log('Extracted avatar URL in form submit:', avatarUrl);
-        
+
         if (!avatarUrl) {
-          console.error('No avatar URL found in response:', responseData);
+          console.error("No avatar URL found in response:", responseData);
           throw new Error("Không thể tải ảnh lên");
         }
       } catch (uploadErr: any) {
@@ -540,9 +459,7 @@ async function handleErrorSubmit() {
     });
 
     if (response.status) {
-      message.success(
-        "Gửi phản hồi thành công! Cảm ơn bạn đã đóng góp ý kiến."
-      );
+      message.success("Gửi phản hồi thành công! Cảm ơn bạn đã đóng góp ý kiến.");
       // Clear form
       errorForm.note = "";
       errorForm.fileList = [];
@@ -570,11 +487,26 @@ async function handleErrorSubmit() {
 
 :deep(.profile-form .ant-form-item-control-input-content) {
   text-align: end !important;
+  font-weight: 600;
 }
 
 .profile-form .ant-btn-primary {
   background-color: #317bc4;
   width: 220px;
+}
+
+.profile-form :deep(.ant-tabs-tab .ant-tabs-tab-btn) {
+  color: #747474;
+  font-weight: 700;
+}
+
+.profile-form :deep(.ant-tabs-tab.ant-tabs-tab-active .ant-tabs-tab-btn) {
+  color: #1a75bb;
+}
+
+.profile-form :deep(.ant-tabs-nav-list .ant-tabs-ink-bar.ant-tabs-ink-bar-animated) {
+  height: 3px;
+  background-color: #1a75bb;
 }
 
 /* Upload Container Styles */
@@ -651,11 +583,13 @@ async function handleErrorSubmit() {
     background: #fff;
     border-radius: 0;
     transition: all 0.3s;
+    font-weight: 700;
   }
 
   .profile-form :deep(.ant-tabs-tab .ant-tabs-tab-btn) {
     color: #747474;
     font-size: 14px;
+    font-weight: 700;
   }
 
   .profile-form :deep(.ant-tabs-tab-active) {

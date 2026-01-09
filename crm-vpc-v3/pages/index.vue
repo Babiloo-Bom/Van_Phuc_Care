@@ -29,7 +29,7 @@
     <div v-else-if="!hasHealthBook" class="container mx-auto">
       <!-- Page Title -->
       <div class="mb-6">
-        <h1 class="text-xl lg:text-2xl font-bold text-[#1A75BB] text-center lg:text-left">Sổ sức khỏe điện tử</h1>
+        <h1 class="text-2xl font-bold text-[#1A75BB] text-center lg:text-left">Sổ sức khỏe điện tử</h1>
       </div>
 
       <div class="w-full bg-white rounded-xl p-5 pt-0 mt-20">
@@ -150,7 +150,7 @@
     <div v-else class="container mx-auto">
       <!-- Page Title -->
       <div class="mb-6">
-        <h1 class="text-xl lg:text-2xl font-bold text-[#1A75BB] text-center lg:text-left">Sổ sức khỏe điện tử</h1>
+        <h1 class="text-2xl font-bold text-[#1A75BB] text-center lg:text-left">Sổ sức khỏe điện tử</h1>
         <!-- Action Buttons (Mobile) - Only show on overview tab -->
         <div
           v-if="activeTab === 'overview'"
@@ -374,7 +374,7 @@
                     type="primary"
                     size="large"
                     @click="showCreateRecordModal = true"
-                    class="flex items-center justify-center"
+                    class="flex items-center justify-center font-bold"
                   >
                     <template #icon>
                       <EditOutlined />
@@ -503,7 +503,7 @@
 
 <script setup lang="ts">
 import { ref, computed, watch, onMounted, onUnmounted, defineAsyncComponent } from "vue";
-import { UserOutlined, CalendarOutlined, CameraOutlined, EditOutlined, PlusOutlined } from "@ant-design/icons-vue";
+import { UserOutlined, CalendarOutlined, CameraOutlined, EditOutlined } from "@ant-design/icons-vue";
 import dayjs, { Dayjs } from "dayjs";
 import { message } from "ant-design-vue";
 import type { HealthBook } from "~/types/api";
@@ -522,12 +522,8 @@ import HealthStatusCard from "~/components/health-book/HealthStatusCard.vue";
 import ExerciseMethodCard from "~/components/health-book/ExerciseMethodCard.vue";
 
 // Lazy load heavy tab components (loaded only when tab is activated)
-const VaccinationSchedule = defineAsyncComponent(() => 
-  import("~/components/health-book/VaccinationSchedule.vue")
-);
-const SupportRequestList = defineAsyncComponent(() => 
-  import("~/components/health-book/SupportRequestList.vue")
-);
+const VaccinationSchedule = defineAsyncComponent(() => import("~/components/health-book/VaccinationSchedule.vue"));
+const SupportRequestList = defineAsyncComponent(() => import("~/components/health-book/SupportRequestList.vue"));
 
 // Define page meta - No middleware, handle auth in component (for Google OAuth callback)
 definePageMeta({
@@ -539,11 +535,11 @@ definePageMeta({
 useHead({
   link: [
     {
-      rel: 'preconnect',
-      href: 'https://files.vanphuccare.vn',
-      crossorigin: 'anonymous'
-    }
-  ]
+      rel: "preconnect",
+      href: "https://files.vanphuccare.vn",
+      crossorigin: "anonymous",
+    },
+  ],
 });
 
 const authStore = useAuthStore();
@@ -1016,7 +1012,6 @@ onMounted(async () => {
 
   // Case 1a: Google OAuth callback with token directly (backend handled OAuth)
   if (googleSuccess === "true" && token) {
-    console.log("Google OAuth callback with token received");
     loading.value = true;
     error.value = "";
 
@@ -1187,7 +1182,7 @@ onMounted(async () => {
 :deep(.health-book-tabs .ant-tabs-tab) {
   padding: 12px;
   font-size: 16px;
-  font-weight: 500;
+  font-weight: 700;
   color: #b5b5b5;
 }
 
@@ -1295,7 +1290,7 @@ onMounted(async () => {
   border-radius: 24px !important;
   padding: 8px 24px !important;
   height: 48px !important;
-  font-weight: 500;
+  font-weight: 700;
   font-size: 16px;
   display: flex !important;
   align-items: center !important;
@@ -1335,7 +1330,7 @@ onMounted(async () => {
   border-radius: 24px !important;
   padding: 8px 24px !important;
   height: 48px !important;
-  font-weight: 500;
+  font-weight: 700;
   font-size: 16px;
   display: flex !important;
   align-items: center !important;
@@ -1344,6 +1339,12 @@ onMounted(async () => {
   box-shadow: none;
   border: 2px solid #317bc4 !important;
   color: #317bc4 !important;
+}
+
+.custom-create-button-mobile:hover {
+  color: #fff !important;
+  background-color: #317bc4 !important;
+  opacity: 1 !important;
 }
 
 :deep(.ant-btn.ant-btn-primary) {

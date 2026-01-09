@@ -2,14 +2,14 @@
   <div class="vaccination-schedule bg-white rounded-lg">
     <!-- Header with Age Filter -->
     <div class="flex items-center justify-between mb-6 flex-col md:flex-row">
-      <h2 class="text-xl font-bold text-[#1A75BB]">
+      <h2 class="text-xl font-bold text-[#1A75BB] text-center">
         LỊCH TIÊM CHO TRẺ TỪ 0-24 THÁNG TUỔI
       </h2>
 
       <a-select
         v-model:value="selectedAge"
         placeholder="Sơ sinh"
-        class="w-48"
+        class="w-full sm:w-48"
         @change="handleAgeChange"
       >
         <a-select-option value="newborn">Sơ sinh</a-select-option>
@@ -66,19 +66,12 @@ const vaccinations = ref<any[]>([]);
 const { loading, error, getVaccinationSchedule, createVaccinationRecord, deleteVaccinationRecordByVaccine } = useVaccinationsApi();
 
 const fetchVaccinations = async () => {
-  console.log('🔍 VaccinationSchedule.fetchVaccinations called', {
-    healthBookId: props.healthBookId,
-    customerId: props.customerId
-  })
-  
   // Pass healthBookId (preferred) or customerId to get merged schedule + records
   try {
     const data = await getVaccinationSchedule({
       healthBookId: props.healthBookId,
       customerId: props.customerId,
     });
-    console.log('✅ VaccinationSchedule data received:', data)
-    console.log('✅ VaccinationSchedule data length:', data?.length)
     vaccinations.value = data;
   } catch (error: any) {
     console.error('❌ VaccinationSchedule fetch error:', error)
@@ -86,19 +79,10 @@ const fetchVaccinations = async () => {
   }
 };
 
-onMounted(() => {
-  console.log('🔍 VaccinationSchedule onMounted', {
-    hasSchedule: !!props.schedule,
-    scheduleIsArray: Array.isArray(props.schedule),
-    healthBookId: props.healthBookId,
-    customerId: props.customerId
-  })
-  
+onMounted(() => {  
   if (props.schedule && Array.isArray(props.schedule)) {
-    console.log('✅ Using provided schedule prop')
     vaccinations.value = props.schedule;
   } else {
-    console.log('📡 Fetching vaccinations from API...')
     fetchVaccinations();
   }
 });

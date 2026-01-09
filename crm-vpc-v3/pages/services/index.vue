@@ -1,10 +1,7 @@
 <template>
   <div class="container mx-auto">
     <!-- Header: Title only (removed tabs) -->
-    <div class="header-wrapper">
-      <!-- Page Title -->
-      <h1 class="page-title">Tất cả dịch vụ</h1>
-    </div>
+    <h1 class="text-3xl font-bold text-[#1A75BB] w-full text-center md:text-left mb-8 md:mb-4">Tất cả dịch vụ</h1>
 
     <!-- Loading State -->
     <div v-if="isLoading" class="flex justify-center items-center py-12">
@@ -46,15 +43,10 @@
           <p class="card-description">
             {{ service.shortDescriptions || service.descriptions }}
           </p>
-          
+
           <!-- Action Button: Always show "Chi tiết" -->
           <div class="card-footer">
-            <button 
-              class="detail-button"
-              @click.stop="handleDetailClick(service)"
-            >
-              Chi tiết
-            </button>
+            <button class="detail-button" @click.stop="handleDetailClick(service)">Chi tiết</button>
           </div>
         </div>
       </div>
@@ -76,67 +68,72 @@
           <!-- Left Side: Form -->
           <div class="modal-form-section">
             <h2 class="modal-title">Đăng ký dịch vụ</h2>
-            
+
             <a-form :model="registerForm" layout="vertical" @finish="handleRegisterSubmit">
-          <!-- Họ và tên -->
-          <a-form-item label="Họ và tên" name="fullname" :rules="[{ required: true, message: 'Vui lòng nhập họ và tên' }]">
-            <a-input 
-              v-model:value="registerForm.fullname" 
-              placeholder="Nguyễn Văn A" 
-              size="large" 
-            />
-          </a-form-item>
+              <!-- Họ và tên -->
+              <a-form-item
+                label="Họ và tên"
+                name="fullname"
+                :rules="[{ required: true, message: 'Vui lòng nhập họ và tên' }]"
+              >
+                <a-input v-model:value="registerForm.fullname" placeholder="Nguyễn Văn A" size="large" />
+              </a-form-item>
 
-          <!-- Số điện thoại và Email -->
-          <div :class="isMobile ? 'space-y-4' : 'grid grid-cols-2 gap-4'">
-            <a-form-item label="Số điện thoại" name="phone" :rules="[{ required: true, message: 'Vui lòng nhập số điện thoại' }]">
-              <a-input 
-                v-model:value="registerForm.phone" 
-                placeholder="0923333389" 
-                size="large" 
-              />
-            </a-form-item>
-            
-            <a-form-item label="Email" name="email">
-              <a-input 
-                v-model:value="registerForm.email" 
-                placeholder="nguyenvana@gmail.com" 
-                size="large" 
-                type="email"
-              />
-            </a-form-item>
-          </div>
+              <!-- Số điện thoại và Email -->
+              <div :class="isMobile ? 'space-y-4' : 'grid grid-cols-2 gap-4'">
+                <a-form-item
+                  label="Số điện thoại"
+                  name="phone"
+                  :rules="[{ required: true, message: 'Vui lòng nhập số điện thoại' }]"
+                >
+                  <a-input v-model:value="registerForm.phone" placeholder="0923333389" size="large" />
+                </a-form-item>
 
-          <!-- Địa chỉ -->
-          <a-form-item label="Địa chỉ" name="address">
-            <a-textarea 
-              v-model:value="registerForm.address" 
-              placeholder="Số 59 ngõ 249 Yên Duyên, Phường Yên Sở, Quận Hoàng Mai, Hà Nội" 
-              :rows="3" 
-              size="large" 
-            />
-          </a-form-item>
+                <a-form-item label="Email" name="email">
+                  <a-input
+                    v-model:value="registerForm.email"
+                    placeholder="nguyenvana@gmail.com"
+                    size="large"
+                    type="email"
+                  />
+                </a-form-item>
+              </div>
 
-          <!-- Submit Button -->
-          <a-form-item>
-            <a-button 
-              type="primary" 
-              html-type="submit" 
-              size="large" 
-              block
-              :loading="isSubmitting"
-              class="register-submit-btn"
-            >
-              Đăng ký ngay
-            </a-button>
-          </a-form-item>
+              <!-- Địa chỉ -->
+              <a-form-item label="Địa chỉ" name="address">
+                <a-textarea
+                  v-model:value="registerForm.address"
+                  placeholder="Số 59 ngõ 249 Yên Duyên, Phường Yên Sở, Quận Hoàng Mai, Hà Nội"
+                  :rows="3"
+                  size="large"
+                />
+              </a-form-item>
+
+              <!-- Submit Button -->
+              <a-form-item>
+                <a-button
+                  type="primary"
+                  html-type="submit"
+                  size="large"
+                  block
+                  :loading="isSubmitting"
+                  class="register-submit-btn"
+                >
+                  Đăng ký ngay
+                </a-button>
+              </a-form-item>
             </a-form>
           </div>
-          
+
           <!-- Right Side: Image (Desktop only) -->
-          <div v-if="!isMobile" class="modal-image-section">
-          </div>
-          <nuxt-img src="/images/service/service-register.png" alt="Register" class="modal-image" format="webp" loading="lazy" />
+          <div v-if="!isMobile" class="modal-image-section"></div>
+          <nuxt-img
+            src="/images/service/service-register.png"
+            alt="Register"
+            class="modal-image"
+            format="webp"
+            loading="lazy"
+          />
         </div>
 
         <!-- Success Screen -->
@@ -144,8 +141,20 @@
           <div class="success-content">
             <!-- Mascot Image -->
             <div class="success-mascot">
-              <nuxt-img src="/images/service/service-register.png" alt="Register" class="modal-image-success" format="webp" loading="lazy" />
-              <nuxt-img src="/images/service/service-register-success.png" alt="Success" class="mascot-image" format="webp" loading="lazy" />
+              <nuxt-img
+                src="/images/service/service-register.png"
+                alt="Register"
+                class="modal-image-success"
+                format="webp"
+                loading="lazy"
+              />
+              <nuxt-img
+                src="/images/service/service-register-success.png"
+                alt="Success"
+                class="mascot-image"
+                format="webp"
+                loading="lazy"
+              />
             </div>
 
             <!-- Success Title -->
@@ -153,19 +162,12 @@
 
             <!-- Success Message -->
             <p class="success-message">
-              Cảm ơn bạn đã tin tưởng và đăng ký dịch vụ của Vạn Phúc Care. Bộ phận dịch vụ khách hàng sẽ liên hệ lại trong thời gian sớm nhất.
+              Cảm ơn bạn đã tin tưởng và đăng ký dịch vụ của Vạn Phúc Care. Bộ phận dịch vụ khách hàng sẽ liên hệ lại
+              trong thời gian sớm nhất.
             </p>
 
             <!-- Action Button -->
-            <a-button 
-              type="primary" 
-              size="large" 
-              block
-              @click="goToHome"
-              class="success-btn"
-            >
-              Về trang chủ
-            </a-button>
+            <a-button type="primary" size="large" block @click="goToHome" class="success-btn"> Về trang chủ </a-button>
           </div>
         </div>
       </div>
@@ -174,156 +176,156 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, onMounted } from 'vue'
-import { message } from 'ant-design-vue'
-import { useServicesApi } from '~/composables/api/useServicesApi'
-import { useRouter } from 'vue-router'
-import { useAuth } from '~/composables/useAuth'
-import { useAuthStore } from '~/stores/auth'
+import { ref, computed, onMounted } from "vue";
+import { message } from "ant-design-vue";
+import { useServicesApi } from "~/composables/api/useServicesApi";
+import { useRouter } from "vue-router";
+import { useAuth } from "~/composables/useAuth";
+import { useAuthStore } from "~/stores/auth";
 
-definePageMeta({ layout: 'default' })
-useHead({ title: 'Dịch vụ' })
+definePageMeta({ layout: "default" });
+useHead({ title: "Dịch vụ" });
 
-const { getServices, getMyServices, registerService } = useServicesApi()
-const router = useRouter()
-const { user } = useAuth()
-const authStore = useAuthStore()
+const { getServices, getMyServices, registerService } = useServicesApi();
+const router = useRouter();
+const { user } = useAuth();
+const authStore = useAuthStore();
 
-const services = ref<any[]>([])
-const registeredServiceIds = ref<Set<string>>(new Set())
-const isLoading = ref(false)
-const isRegisterModalOpen = ref(false)
-const isSubmitting = ref(false)
-const selectedService = ref<any>(null)
-const isMobile = ref(false)
-const isRegistrationSuccess = ref(false)
+const services = ref<any[]>([]);
+const registeredServiceIds = ref<Set<string>>(new Set());
+const isLoading = ref(false);
+const isRegisterModalOpen = ref(false);
+const isSubmitting = ref(false);
+const selectedService = ref<any>(null);
+const isMobile = ref(false);
+const isRegistrationSuccess = ref(false);
 
 // Default link when service has no link configured
-const DEFAULT_SERVICE_LINK = 'https://vanphuccare.vn/dich-vu'
+const DEFAULT_SERVICE_LINK = "https://vanphuccare.vn/dich-vu";
 
 const registerForm = ref({
-  fullname: '',
-  phone: '',
-  email: '',
-  address: '',
-})
+  fullname: "",
+  phone: "",
+  email: "",
+  address: "",
+});
 
 const fetchServices = async () => {
   try {
-    isLoading.value = true
+    isLoading.value = true;
     // Get all services
-    const res = await getServices({})
-    services.value = res.data?.data?.data || res.data?.data || []
-    
+    const res = await getServices({});
+    services.value = res.data?.data?.data || res.data?.data || [];
+
     // Get user's registered services to check duplicates
     if (user.value) {
       try {
-        const myServicesRes = await getMyServices({})
-        const myServices = myServicesRes.data?.data?.data || myServicesRes.data?.data || []
-        registeredServiceIds.value = new Set(myServices.map((s: any) => s.serviceId || s._id))
+        const myServicesRes = await getMyServices({});
+        const myServices = myServicesRes.data?.data?.data || myServicesRes.data?.data || [];
+        registeredServiceIds.value = new Set(myServices.map((s: any) => s.serviceId || s._id));
       } catch (e) {
-        console.error('Error fetching my services:', e)
+        console.error("Error fetching my services:", e);
       }
     }
   } catch (e) {
-    console.error('Error fetching services:', e)
-    services.value = []
+    console.error("Error fetching services:", e);
+    services.value = [];
   } finally {
-    isLoading.value = false
+    isLoading.value = false;
   }
-}
+};
 
 onMounted(() => {
-  fetchServices()
-  isMobile.value = window.innerWidth < 768
-  window.addEventListener('resize', () => {
-    isMobile.value = window.innerWidth < 768
-  })
-})
+  fetchServices();
+  isMobile.value = window.innerWidth < 768;
+  window.addEventListener("resize", () => {
+    isMobile.value = window.innerWidth < 768;
+  });
+});
 
 const filteredServices = computed<any[]>(() => {
-  return services.value
-})
+  return services.value;
+});
 
 // Click "Chi tiết" → open configured link (or default link)
 function handleDetailClick(service: any) {
-  const link = service.link?.trim() || DEFAULT_SERVICE_LINK
-  window.open(link, '_blank', 'noopener,noreferrer')
+  const link = service.link?.trim() || DEFAULT_SERVICE_LINK;
+  window.open(link, "_blank", "noopener,noreferrer");
 }
 
 async function openRegisterModal(service: any) {
   // Check if already registered - show error immediately without opening modal
   if (registeredServiceIds.value.has(service._id)) {
-    message.warning('Bạn đã đăng ký dịch vụ này rồi')
-    return
+    message.warning("Bạn đã đăng ký dịch vụ này rồi");
+    return;
   }
-  
-  selectedService.value = service
-  
+
+  selectedService.value = service;
+
   // Refresh user profile to get latest data including fullAddress
   if (user.value) {
     try {
-      await authStore.refreshUserData()
+      await authStore.refreshUserData();
     } catch (e) {
-      console.error('Failed to refresh profile:', e)
+      console.error("Failed to refresh profile:", e);
     }
   }
-  
+
   // Pre-fill form with user info if available
   if (user.value) {
-    registerForm.value.fullname = user.value.fullname || user.value.name || ''
-    registerForm.value.phone = user.value.phone || ''
-    registerForm.value.email = user.value.email || ''
-    registerForm.value.address = user.value.fullAddress || ''
+    registerForm.value.fullname = user.value.fullname || user.value.name || "";
+    registerForm.value.phone = user.value.phone || "";
+    registerForm.value.email = user.value.email || "";
+    registerForm.value.address = user.value.fullAddress || "";
   }
-  
-  isRegisterModalOpen.value = true
+
+  isRegisterModalOpen.value = true;
 }
 
 function closeRegisterModal() {
-  isRegisterModalOpen.value = false
-  isRegistrationSuccess.value = false
-  selectedService.value = null
+  isRegisterModalOpen.value = false;
+  isRegistrationSuccess.value = false;
+  selectedService.value = null;
   // Reset form
   registerForm.value = {
-    fullname: '',
-    phone: '',
-    email: '',
-    address: '',
-  }
+    fullname: "",
+    phone: "",
+    email: "",
+    address: "",
+  };
 }
 
 function goToHome() {
-  closeRegisterModal()
+  closeRegisterModal();
   // router.push('/')
 }
 
 async function handleRegisterSubmit() {
-  if (!selectedService.value) return
-  
+  if (!selectedService.value) return;
+
   try {
-    isSubmitting.value = true
-    
+    isSubmitting.value = true;
+
     const response = await registerService({
       serviceId: selectedService.value._id,
       notes: `Họ tên: ${registerForm.value.fullname}\nSĐT: ${registerForm.value.phone}\nEmail: ${registerForm.value.email}\nĐịa chỉ: ${registerForm.value.address}`,
-    })
-    
+    });
+
     if (response.status) {
       // Add to registered set immediately
-      registeredServiceIds.value.add(selectedService.value._id)
+      registeredServiceIds.value.add(selectedService.value._id);
       // Show success screen instead of closing modal
-      isRegistrationSuccess.value = true
+      isRegistrationSuccess.value = true;
       // Refresh services list
-      await fetchServices()
+      await fetchServices();
     } else {
-      message.error(response.message || 'Đăng ký thất bại!')
+      message.error(response.message || "Đăng ký thất bại!");
     }
   } catch (e: any) {
-    console.error('Failed to register service:', e)
+    console.error("Failed to register service:", e);
     // Error already shown by apiClient, no need to show again
   } finally {
-    isSubmitting.value = false
+    isSubmitting.value = false;
   }
 }
 </script>
@@ -332,17 +334,6 @@ async function handleRegisterSubmit() {
 .services-container {
   @apply px-4 py-6 max-w-7xl mx-auto;
   @apply md:px-6 md:py-8;
-}
-
-.header-wrapper {
-  @apply flex flex-col items-start mb-6;
-  @apply md:flex-row md:justify-start md:items-center md:mb-8;
-}
-
-.page-title {
-  @apply text-2xl font-bold text-[#317BC4] mb-4;
-  @apply md:text-3xl md:mb-4;
-  font-family: 'SVN-Gilroy', sans-serif;
 }
 
 .services-grid {
@@ -380,13 +371,13 @@ async function handleRegisterSubmit() {
 .card-title {
   @apply text-base font-bold text-[#317BC4] mb-2;
   @apply line-clamp-1;
-  font-family: 'SVN-Gilroy', sans-serif;
+  font-family: "SVN-Gilroy", sans-serif;
 }
 
 .card-description {
   @apply text-sm text-[#9CA3AF] mb-3;
   @apply line-clamp-2 min-h-[40px];
-  font-family: 'SVN-Gilroy', sans-serif;
+  font-family: "SVN-Gilroy", sans-serif;
 }
 
 .card-footer {
@@ -396,7 +387,7 @@ async function handleRegisterSubmit() {
 .detail-button {
   @apply text-sm font-semibold text-[#317BC4];
   @apply underline transition-all;
-  font-family: 'SVN-Gilroy', sans-serif;
+  font-family: "SVN-Gilroy", sans-serif;
 }
 
 .detail-button:hover {
@@ -418,7 +409,7 @@ async function handleRegisterSubmit() {
 
 .modal-image-section {
   @apply w-72 flex items-center justify-center;
-  background: linear-gradient(180deg, #E8F3FF 0%, #FFFFFF 100%);
+  background: linear-gradient(180deg, #e8f3ff 0%, #ffffff 100%);
 }
 
 .modal-image {
@@ -427,13 +418,13 @@ async function handleRegisterSubmit() {
 
 .modal-title {
   @apply text-2xl font-bold text-[#317BC4] mb-6;
-  font-family: 'SVN-Gilroy', sans-serif;
+  font-family: "SVN-Gilroy", sans-serif;
 }
 
 .register-submit-btn {
   @apply bg-[#317BC4] hover:bg-[#2563a8] border-none;
   @apply h-12 text-base font-semibold;
-  font-family: 'SVN-Gilroy', sans-serif;
+  font-family: "SVN-Gilroy", sans-serif;
 }
 
 /* Success Screen */
@@ -462,34 +453,26 @@ async function handleRegisterSubmit() {
 .success-title {
   @apply text-2xl font-bold text-[#317BC4] mb-2;
   @apply md:text-3xl md:mb-3;
-  font-family: 'SVN-Gilroy', sans-serif;
+  font-family: "SVN-Gilroy", sans-serif;
 }
 
 .success-message {
   @apply text-sm text-gray-600 leading-relaxed mb-2;
   @apply md:text-base md:mb-4;
-  font-family: 'SVN-Gilroy', sans-serif;
+  font-family: "SVN-Gilroy", sans-serif;
 }
 
 .success-btn {
   @apply bg-[#317BC4] hover:bg-[#2563a8] border-none;
   @apply h-12 text-base font-semibold rounded-lg;
   @apply md:h-14 md:text-lg;
-  font-family: 'SVN-Gilroy', sans-serif;
+  font-family: "SVN-Gilroy", sans-serif;
 }
 
 /* Mobile specific */
 @media (max-width: 767px) {
   .services-container {
     @apply px-4;
-  }
-
-  .header-wrapper {
-    @apply mb-4;
-  }
-
-  .page-title {
-    @apply text-center text-xl mb-3;
   }
 
   .services-grid {
@@ -559,6 +542,6 @@ async function handleRegisterSubmit() {
 </style>
 <style>
 .ant-modal-content:has(.register-modal) {
-@apply bg-[#ECF5FF] p-0 rounded-md;
+  @apply bg-[#ECF5FF] p-0 rounded-md;
 }
 </style>

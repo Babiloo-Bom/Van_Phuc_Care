@@ -1,5 +1,5 @@
 <template>
-  <div class="support-request-detail-page">
+  <div class="container mx-auto">
     <!-- Loading State -->
     <div v-if="loading" class="loading-state">
       <a-spin size="large" />
@@ -7,12 +7,7 @@
     </div>
 
     <!-- Error State -->
-    <a-result
-      v-else-if="error"
-      status="error"
-      title="Không thể tải thông tin yêu cầu hỗ trợ"
-      :sub-title="error"
-    >
+    <a-result v-else-if="error" status="error" title="Không thể tải thông tin yêu cầu hỗ trợ" :sub-title="error">
       <template #extra>
         <a-button type="primary" @click="fetchRequest"> Thử lại </a-button>
         <a-button @click="goBack"> Quay lại </a-button>
@@ -23,9 +18,7 @@
     <div v-else-if="request" class="detail-content">
       <!-- Header -->
       <div class="detail-header">
-        <h1 class="page-title">
-          Yêu cầu hỗ trợ #{{ formatTicketNumber(request.ticketNumber) }}
-        </h1>
+        <h1 class="page-title">Yêu cầu hỗ trợ #{{ formatTicketNumber(request.ticketNumber) }}</h1>
         <a-button type="link" class="back-btn" @click="goBack">
           <LeftOutlined />
           <span>Quay lại</span>
@@ -34,18 +27,13 @@
 
       <!-- Request Info Card -->
       <div class="request-info-card">
-        <div class="category-label">
-          [{{ getCategoryLabel(request.category) }}] {{ request.title }}
-        </div>
+        <div class="category-label">[{{ getCategoryLabel(request.category) }}] {{ request.title }}</div>
 
         <div class="request-content-wrapper">
           <p class="description">{{ request.description }}</p>
 
           <!-- Attachments -->
-          <div
-            v-if="request.attachments && request.attachments.length > 0"
-            class="attachments"
-          >
+          <div v-if="request.attachments && request.attachments.length > 0" class="attachments">
             <div class="attachment-list">
               <div
                 v-for="(attachment, index) in request.attachments"
@@ -69,20 +57,14 @@
           <div
             v-for="(response, index) in responses"
             :key="response._id || index"
-            :class="[
-              'response-item',
-              response.isAdmin ? 'admin-response' : 'user-response',
-            ]"
+            :class="['response-item', response.isAdmin ? 'admin-response' : 'user-response']"
           >
             <div class="response-content">
               <div class="response-bubble">
                 <p class="response-text">{{ response.content }}</p>
               </div>
               <!-- Response Attachments - Outside bubble -->
-              <div
-                v-if="response.attachments && response.attachments.length > 0"
-                class="response-attachments"
-              >
+              <div v-if="response.attachments && response.attachments.length > 0" class="response-attachments">
                 <div
                   v-for="(img, imgIndex) in response.attachments"
                   :key="imgIndex"
@@ -165,21 +147,12 @@
               :rows="4"
               placeholder="Nhập nội dung phản hồi..."
               class="reply-textarea"
-              :style="replyFileList?.length ? { borderRadius: '0 !important' } : {} "
+              :style="replyFileList?.length ? { borderRadius: '0 !important' } : {}"
             />
             <!-- Preview uploaded files -->
             <div v-if="replyFileList?.length" class="uploaded-preview">
-              <div
-                v-for="file in replyFileList"
-                :key="file.uid"
-                class="preview-item"
-              >
-                <img
-                  v-if="getFilePreviewUrl(file)"
-                  :src="getFilePreviewUrl(file)"
-                  alt="preview"
-                  loading="lazy"
-                />
+              <div v-for="file in replyFileList" :key="file.uid" class="preview-item">
+                <img v-if="getFilePreviewUrl(file)" :src="getFilePreviewUrl(file)" alt="preview" loading="lazy" />
                 <a-button type="text" size="small" @click="removeFile(file)">
                   <CloseOutlined />
                 </a-button>
@@ -215,12 +188,7 @@
     </div>
 
     <!-- Image Preview Modal -->
-    <a-modal
-      v-model:visible="previewVisible"
-      :footer="null"
-      :width="800"
-      class="image-preview-modal"
-    >
+    <a-modal v-model:visible="previewVisible" :footer="null" :width="800" class="image-preview-modal">
       <img :src="previewImageUrl" alt="Preview" class="preview-image" />
     </a-modal>
   </div>
@@ -244,10 +212,7 @@ import {
 import { message } from "ant-design-vue";
 import type { UploadProps } from "ant-design-vue";
 import { useSupportRequestsApi } from "~/composables/api/useSupportRequestsApi";
-import type {
-  SupportRequest,
-  SupportRequestCategory,
-} from "~/composables/api/useSupportRequestsApi";
+import type { SupportRequest, SupportRequestCategory } from "~/composables/api/useSupportRequestsApi";
 
 // Route
 const route = useRoute();
@@ -255,12 +220,7 @@ const router = useRouter();
 const requestId = computed(() => route.params.id as string);
 
 // API
-const {
-  getSupportRequestById,
-  updateSupportRequest,
-  getComments,
-  addCommentWithFiles,
-} = useSupportRequestsApi();
+const { getSupportRequestById, updateSupportRequest, getComments, addCommentWithFiles } = useSupportRequestsApi();
 
 // State
 const loading = ref(true);
@@ -414,11 +374,7 @@ const handleSendReply = async () => {
 
     // Call API to add comment with files
     // Server will handle uploading files to MinIO
-    const newComment = await addCommentWithFiles(
-      requestId.value,
-      replyContent.value,
-      files
-    );
+    const newComment = await addCommentWithFiles(requestId.value, replyContent.value, files);
 
     if (newComment) {
       // Add to local list
@@ -463,12 +419,6 @@ definePageMeta({
 </script>
 
 <style scoped>
-.support-request-detail-page {
-  max-width: 900px;
-  margin: 0 auto;
-  padding: 24px;
-}
-
 /* Loading State */
 .loading-state {
   display: flex;
@@ -710,7 +660,7 @@ definePageMeta({
 
 .reply-editor {
   margin-bottom: 16px;
-  border-bottom: 1px solid #1A75BB;
+  border-bottom: 1px solid #1a75bb;
   border-radius: 0 0 8px 8px;
 }
 
@@ -772,8 +722,8 @@ definePageMeta({
   gap: 12px;
   flex-wrap: wrap;
   padding: 16px 8px;
-  border-left: 1px solid #1A75BB;
-  border-right: 1px solid #1A75BB;
+  border-left: 1px solid #1a75bb;
+  border-right: 1px solid #1a75bb;
   border-radius: 0 0 8px 8px;
 }
 
@@ -864,10 +814,6 @@ definePageMeta({
 
 /* Mobile Responsive */
 @media (max-width: 768px) {
-  .support-request-detail-page {
-    padding: 16px;
-  }
-
   .detail-header {
     flex-direction: column;
     align-items: center;

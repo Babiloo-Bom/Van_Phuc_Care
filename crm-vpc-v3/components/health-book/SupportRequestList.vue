@@ -426,7 +426,7 @@ onMounted(() => {
 }
 
 .list-title {
-  font-size: 16px;
+  font-size: 20px;
   font-weight: 700;
   color: #317BC4;
   margin: 0;
@@ -437,7 +437,7 @@ onMounted(() => {
   border-radius: 20px;
   height: 40px;
   padding: 0 24px;
-  font-weight: 500;
+  font-weight: 700;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -445,6 +445,8 @@ onMounted(() => {
   border: 1px solid #317BC4;
   color: #317BC4;
   background: #fff;
+  font-size: 1rem;
+  line-height: 1;
 }
 
 .create-btn:hover {
@@ -636,7 +638,7 @@ onMounted(() => {
 }
 
 .mobile-title {
-  font-size: 16px;
+  font-size: 20px;
   font-weight: 700;
   color: #317BC4;
   text-align: center;

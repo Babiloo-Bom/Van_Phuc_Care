@@ -1,6 +1,6 @@
 <template>
   <div class="container mx-auto">
-    <div class="flex justify-between items-center mb-8">
+    <div class="flex justify-between items-center mb-8 md:mb-4">
       <h1 class="page-title">Lịch sử giao dịch</h1>
     </div>
     <div class="table-wrapper">
@@ -99,7 +99,7 @@ function statusClass(status: string) {
 <style scoped>
 .page-title {
   color: #1976d2;
-  font-size: 2rem;
+  font-size: 1.875rem;
   font-weight: bold;
   margin-bottom: 0;
   width: 100%;
@@ -188,7 +188,7 @@ function statusClass(status: string) {
   }
   .page-title {
     text-align: center;
-    font-size: 1.5rem;
+    font-size: 1.875rem;
     line-height: 1.5;
   }
   .ant-pagination-custom {
