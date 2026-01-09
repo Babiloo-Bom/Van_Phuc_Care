@@ -2,8 +2,8 @@
   <div class="bg-blue-50 rounded-lg p-4 border-b border-gray-200 lg:border-0">
     <div class="grid grid-cols-3 gap-2 md:gap-4">
       <!-- Weight -->
-      <div class="flex flex-col items-center justify-center">
-        <h4 class="text-blue-600 font-semibold mb-2 text-sm">Cân nặng</h4>
+      <div class="flex flex-col items-center justify-between">
+        <h4 class="text-[#1A75BB] font-semibold mb-2 text-sm">Cân nặng</h4>
         <div class="text-center">
           <span class="text-3xl lg:text-3xl font-bold text-gray-800">
             {{ healthBook.weight || "--" }}
@@ -14,9 +14,9 @@
 
       <!-- Divider -->
       <div
-        class="flex flex-col items-center justify-center relative before:absolute before:w-px before:h-3/4 before:left-0 before:bg-gray-300 after:absolute after:w-px after:h-3/4 after:right-0 after:bg-gray-300"
+        class="flex flex-col items-center justify-between relative before:absolute before:w-px before:h-3/4 before:left-0 before:bg-gray-300 after:absolute after:w-px after:h-3/4 after:right-0 after:bg-gray-300"
       >
-        <h4 class="text-blue-600 font-semibold mb-2 text-sm">Chiều cao</h4>
+        <h4 class="text-[#1A75BB] font-semibold mb-2 text-sm">Chiều cao</h4>
         <div class="text-center">
           <span class="text-3xl lg:text-3xl font-bold text-gray-800">
             {{ healthBook.height || "--" }}
@@ -26,8 +26,8 @@
       </div>
 
       <!-- Gender -->
-      <div class="flex flex-col items-center justify-center">
-        <h4 class="text-blue-600 font-semibold mb-2 text-sm">Giới tính</h4>
+      <div class="flex flex-col items-center justify-between">
+        <h4 class="text-[#1A75BB] font-semibold mb-2 text-sm">Giới tính</h4>
         <div class="flex items-center justify-center h-10">
           <!-- Male icon - circle with arrow -->
           <svg

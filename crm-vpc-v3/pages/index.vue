@@ -12,15 +12,23 @@
     </div>
 
     <!-- Loading State -->
-    <div v-else-if="loading" class="flex items-center justify-center min-h-screen">
+    <div
+      v-else-if="loading"
+      class="flex items-center justify-center min-h-screen"
+    >
       <a-spin size="large" tip="Đang tải dữ liệu sổ sức khỏe..." />
     </div>
 
     <!-- Error State -->
-    <div v-else-if="error" class="flex flex-col items-center justify-center min-h-screen px-4">
+    <div
+      v-else-if="error"
+      class="flex flex-col items-center justify-center min-h-screen px-4"
+    >
       <a-result status="error" title="Không thể tải dữ liệu" :sub-title="error">
         <template #extra>
-          <a-button type="primary" @click="navigateTo('/login')"> Quay lại đăng nhập </a-button>
+          <a-button type="primary" @click="navigateTo('/login')">
+            Quay lại đăng nhập
+          </a-button>
         </template>
       </a-result>
     </div>
@@ -29,7 +37,9 @@
     <div v-else-if="!hasHealthBook" class="container mx-auto">
       <!-- Page Title -->
       <div class="mb-6">
-        <h1 class="text-2xl font-bold text-[#1A75BB] text-center lg:text-left">Sổ sức khỏe điện tử</h1>
+        <h1 class="text-2xl font-bold text-[#1A75BB] text-center lg:text-left">
+          Sổ sức khỏe điện tử
+        </h1>
       </div>
 
       <div class="w-full bg-white rounded-xl p-5 pt-0 mt-20">
@@ -49,7 +59,9 @@
               </div>
 
               <!-- Name -->
-              <h2 class="text-2xl font-bold text-[#1A75BB] mb-1 text-center">N/A</h2>
+              <h2 class="text-2xl font-bold text-[#1A75BB] mb-1 text-center">
+                N/A
+              </h2>
 
               <!-- Date of Birth & Age -->
               <div class="text-gray-600 text-sm mb-3">
@@ -65,7 +77,9 @@
             <!-- Left: Profile Info -->
             <div class="flex items-center gap-4">
               <!-- Avatar - Van Phuc Mascot -->
-              <div class="absolute -top-20 left-5 border-5 lg:border-8 border-white rounded-full">
+              <div
+                class="absolute -top-20 left-5 border-5 lg:border-8 border-white rounded-full"
+              >
                 <div
                   class="w-32 h-32 rounded-full bg-blue-100 flex items-center justify-center border-4 border-blue-200"
                 >
@@ -91,7 +105,9 @@
           <a-tabs v-model:activeKey="activeTab" class="health-book-tabs">
             <a-tab-pane key="overview" :tab="overviewTabLabel">
               <!-- Empty State Content -->
-              <div class="flex flex-col items-center justify-center min-h-[60vh] px-4">
+              <div
+                class="flex flex-col items-center justify-center min-h-[60vh] px-4"
+              >
                 <div class="text-center max-w-2xl">
                   <!-- Van Phuc Care Mascot Illustration -->
                   <div class="mb-8">
@@ -126,18 +142,36 @@
 
             <!-- Vaccination Schedule Tab -->
             <a-tab-pane key="vaccination" tab="Lịch tiêm">
-              <div class="flex flex-col items-center justify-center min-h-[50vh] px-4">
-                <a-empty description="Chưa có thông tin lịch tiêm. Vui lòng tạo hồ sơ trước.">
-                  <a-button type="primary" @click="showCreateHealthBookModal = true"> Tạo hồ sơ của bé </a-button>
+              <div
+                class="flex flex-col items-center justify-center min-h-[50vh] px-4"
+              >
+                <a-empty
+                  description="Chưa có thông tin lịch tiêm. Vui lòng tạo hồ sơ trước."
+                >
+                  <a-button
+                    type="primary"
+                    @click="showCreateHealthBookModal = true"
+                  >
+                    Tạo hồ sơ của bé
+                  </a-button>
                 </a-empty>
               </div>
             </a-tab-pane>
 
             <!-- Support Request Tab -->
             <a-tab-pane key="support" tab="Yêu cầu hỗ trợ">
-              <div class="flex flex-col items-center justify-center min-h-[50vh] px-4">
-                <a-empty description="Chưa có yêu cầu hỗ trợ. Vui lòng tạo hồ sơ trước.">
-                  <a-button type="primary" @click="showCreateHealthBookModal = true"> Tạo hồ sơ của bé </a-button>
+              <div
+                class="flex flex-col items-center justify-center min-h-[50vh] px-4"
+              >
+                <a-empty
+                  description="Chưa có yêu cầu hỗ trợ. Vui lòng tạo hồ sơ trước."
+                >
+                  <a-button
+                    type="primary"
+                    @click="showCreateHealthBookModal = true"
+                  >
+                    Tạo hồ sơ của bé
+                  </a-button>
                 </a-empty>
               </div>
             </a-tab-pane>
@@ -150,11 +184,13 @@
     <div v-else class="container mx-auto">
       <!-- Page Title -->
       <div class="mb-6">
-        <h1 class="text-2xl font-bold text-[#1A75BB] text-center lg:text-left">Sổ sức khỏe điện tử</h1>
+        <h1 class="text-2xl font-bold text-[#1A75BB] text-center lg:text-left">
+          Sổ sức khỏe điện tử
+        </h1>
         <!-- Action Buttons (Mobile) - Only show on overview tab -->
         <div
           v-if="activeTab === 'overview'"
-          class="flex flex-col gap-3 w-full mt-4 justify-center items-center lg:hidden"
+          class="flex gap-2 w-full mt-4 justify-center items-center lg:hidden"
         >
           <!-- Date Picker Mobile -->
           <a-date-picker
@@ -193,7 +229,9 @@
             <!-- Profile Info (Mobile) -->
             <div class="flex flex-col items-center relative pt-16">
               <!-- Avatar -->
-              <div class="absolute -top-14 mb-3 border-5 lg:border-8 border-white rounded-full">
+              <div
+                class="absolute -top-14 mb-3 border-5 lg:border-8 border-white rounded-full"
+              >
                 <img
                   v-if="profileInfo.avatar || healthBook?.avatar"
                   :src="profileInfo.avatar || healthBook?.avatar"
@@ -224,7 +262,9 @@
               </div>
 
               <!-- Name -->
-              <h2 class="text-2xl font-bold text-[#1A75BB] mb-1 text-center capitalize">
+              <h2
+                class="text-2xl font-bold text-[#1A75BB] mb-1 text-center capitalize"
+              >
                 {{ profileInfo.name || healthBook?.name }}
               </h2>
 
@@ -233,9 +273,16 @@
                 class="text-gray-600 text-sm mb-3 flex flex-col items-center gap-2"
               >
                 <div class="flex items-center gap-2">
-                  <span>Ngày sinh: {{ formatDate(profileInfo.dob || healthBook?.dob || "") }}</span>
+                  <span
+                    >Ngày sinh:
+                    {{
+                      formatDate(profileInfo.dob || healthBook?.dob || "")
+                    }}</span
+                  >
                   <span>—</span>
-                  <span>{{ calculateAge(profileInfo.dob || healthBook?.dob || "") }}</span>
+                  <span>{{
+                    calculateAge(profileInfo.dob || healthBook?.dob || "")
+                  }}</span>
                 </div>
                 <!-- Dòng 2: Nút chỉnh sửa thông tin -->
                 <span
@@ -254,9 +301,15 @@
             <!-- Left: Profile Info -->
             <div class="flex items-center gap-4">
               <!-- Avatar -->
-              <div class="absolute -top-20 left-5 border-5 lg:border-8 border-white rounded-full">
+              <div
+                class="absolute -top-20 left-5 border-5 lg:border-8 border-white rounded-full"
+              >
                 <img
-                  :src="profileInfo.avatar || healthBook?.avatar || '/images/baby-default.png'"
+                  :src="
+                    profileInfo.avatar ||
+                    healthBook?.avatar ||
+                    '/images/baby-default.png'
+                  "
                   :alt="profileInfo.name || healthBook?.name"
                   class="w-32 h-32 rounded-full object-cover border-5 lg:border-8 border-blue-100"
                   width="128"
@@ -277,10 +330,20 @@
                 <h2 class="text-3xl font-bold text-[#1A75BB] mb-2 capitalize">
                   {{ profileInfo.name || healthBook?.name }}
                 </h2>
-                <div v-if="profileInfo.dob || healthBook?.dob" class="text-gray-600 flex items-center gap-2 font-bold">
-                  <span>Ngày sinh: {{ formatDate(profileInfo.dob || healthBook?.dob || "") }}</span>
+                <div
+                  v-if="profileInfo.dob || healthBook?.dob"
+                  class="text-gray-600 flex items-center gap-2 font-bold"
+                >
+                  <span
+                    >Ngày sinh:
+                    {{
+                      formatDate(profileInfo.dob || healthBook?.dob || "")
+                    }}</span
+                  >
                   <span>—</span>
-                  <span>{{ calculateAge(profileInfo.dob || healthBook?.dob || "") }}</span>
+                  <span>{{
+                    calculateAge(profileInfo.dob || healthBook?.dob || "")
+                  }}</span>
                   <span
                     class="ml-2 flex items-center gap-1 text-[#1A75BB] cursor-pointer hover:opacity-80"
                     @click="showEditInfoModal = true"
@@ -293,7 +356,10 @@
             </div>
 
             <!-- Right: Actions - Only show on overview tab -->
-            <div v-if="activeTab === 'overview'" class="flex items-center gap-3">
+            <div
+              v-if="activeTab === 'overview'"
+              class="flex items-center gap-3"
+            >
               <!-- Date Picker -->
               <a-date-picker
                 v-model:value="selectedDate"
@@ -309,7 +375,12 @@
               </a-date-picker>
 
               <!-- Create Button -->
-              <a-button type="primary" @click="showCreateRecordModal = true" size="large" class="custom-create-button">
+              <a-button
+                type="primary"
+                @click="showCreateRecordModal = true"
+                size="large"
+                class="custom-create-button"
+              >
                 <template #icon>
                   <EditOutlined />
                 </template>
@@ -324,7 +395,10 @@
           <a-tabs v-model:activeKey="activeTab" class="health-book-tabs">
             <a-tab-pane key="overview" :tab="overviewTabLabel">
               <!-- Overview Content -->
-              <div v-if="healthBook && hasHealthBookRecord" class="grid grid-cols-1 lg:grid-cols-12 gap-6">
+              <div
+                v-if="healthBook && hasHealthBookRecord"
+                class="grid grid-cols-1 lg:grid-cols-12 gap-6"
+              >
                 <!-- Left Column: Health Metrics -->
                 <div class="lg:col-span-4 space-y-6">
                   <!-- Health Metrics Card -->
@@ -340,7 +414,9 @@
                   <div class="hidden lg:block mb-6">
                     <DigestiveHealthCard :health-book="healthBook" />
                   </div>
-                  <div class="min-[1440px]:grid min-[1440px]:grid-cols-3 min-[1440px]:gap-6">
+                  <div
+                    class="min-[1440px]:grid min-[1440px]:grid-cols-3 min-[1440px]:gap-6"
+                  >
                     <div class="min-[1440px]:col-span-2">
                       <!-- Temperature Chart -->
                       <TemperatureChartCard
@@ -368,8 +444,14 @@
               </div>
 
               <!-- Empty State when no health book data in Overview tab -->
-              <div v-else class="flex flex-col items-center justify-center min-h-[50vh] px-4">
-                <a-empty description="Không có dữ liệu sổ sức khỏe cho ngày này" class="healthbook-empty">
+              <div
+                v-else
+                class="flex flex-col items-center justify-center min-h-[50vh] px-4"
+              >
+                <a-empty
+                  description="Không có dữ liệu sổ sức khỏe cho ngày này"
+                  class="healthbook-empty"
+                >
                   <a-button
                     type="primary"
                     size="large"
@@ -388,7 +470,10 @@
             <!-- Vaccination Schedule Tab -->
             <a-tab-pane key="vaccination" tab="Lịch tiêm">
               <Suspense>
-                <VaccinationSchedule :customer-id="customerId" :health-book-id="healthBook?._id" />
+                <VaccinationSchedule
+                  :customer-id="customerId"
+                  :health-book-id="healthBook?._id"
+                />
                 <template #fallback>
                   <div class="flex items-center justify-center py-20">
                     <a-spin size="large" tip="Đang tải lịch tiêm..." />
@@ -414,7 +499,10 @@
     </div>
 
     <!-- Create HealthBook Modal -->
-    <CreateHealthBookModal v-model:visible="showCreateHealthBookModal" @success="handleHealthBookCreated" />
+    <CreateHealthBookModal
+      v-model:visible="showCreateHealthBookModal"
+      @success="handleHealthBookCreated"
+    />
 
     <!-- Create Health Record Modal -->
     <CreateHealthRecordModal
@@ -425,10 +513,22 @@
     />
 
     <!-- Hidden file input for avatar upload -->
-    <input ref="avatarFileInput" type="file" accept="image/*" class="hidden" @change="handleAvatarChange" />
+    <input
+      ref="avatarFileInput"
+      type="file"
+      accept="image/*"
+      class="hidden"
+      @change="handleAvatarChange"
+    />
 
     <!-- Avatar Upload Loading Modal -->
-    <a-modal v-model:open="isUploadingAvatar" :closable="false" :footer="null" :maskClosable="false" centered>
+    <a-modal
+      v-model:open="isUploadingAvatar"
+      :closable="false"
+      :footer="null"
+      :maskClosable="false"
+      centered
+    >
       <div class="flex flex-col items-center justify-center py-8">
         <a-spin size="large" />
         <p class="mt-4 text-gray-600">Đang tải ảnh lên...</p>
@@ -446,7 +546,12 @@
       :centered="true"
       class="edit-info-modal"
     >
-      <a-form :model="editInfoForm" layout="vertical" @finish="handleEditInfoSubmit" class="edit-info-form">
+      <a-form
+        :model="editInfoForm"
+        layout="vertical"
+        @finish="handleEditInfoSubmit"
+        class="edit-info-form"
+      >
         <!-- Title -->
         <div class="edit-info-modal-title">CHỈNH SỬA THÔNG TIN</div>
 
@@ -457,7 +562,11 @@
           :rules="[{ required: true, message: 'Vui lòng nhập họ và tên bé' }]"
           class="edit-info-form-item mb-6"
         >
-          <a-input v-model:value="editInfoForm.name" placeholder="Nhập họ và tên bé" size="large" />
+          <a-input
+            v-model:value="editInfoForm.name"
+            placeholder="Nhập họ và tên bé"
+            size="large"
+          />
         </a-form-item>
 
         <!-- Ngày sinh và Giới tính - Same Row -->
@@ -483,7 +592,11 @@
             :rules="[{ required: true, message: 'Vui lòng chọn giới tính' }]"
             class="edit-info-form-item"
           >
-            <a-select v-model:value="editInfoForm.gender" placeholder="Chọn giới tính" size="large">
+            <a-select
+              v-model:value="editInfoForm.gender"
+              placeholder="Chọn giới tính"
+              size="large"
+            >
               <a-select-option value="male">Nam</a-select-option>
               <a-select-option value="female">Nữ</a-select-option>
             </a-select>
@@ -492,7 +605,13 @@
 
         <!-- Save Button -->
         <div class="flex justify-center mt-8">
-          <a-button type="primary" html-type="submit" :loading="isUpdatingInfo" size="large" class="edit-info-save-btn">
+          <a-button
+            type="primary"
+            html-type="submit"
+            :loading="isUpdatingInfo"
+            size="large"
+            class="edit-info-save-btn"
+          >
             Lưu thông tin
           </a-button>
         </div>
@@ -502,8 +621,20 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, watch, onMounted, onUnmounted, defineAsyncComponent } from "vue";
-import { UserOutlined, CalendarOutlined, CameraOutlined, EditOutlined } from "@ant-design/icons-vue";
+import {
+  ref,
+  computed,
+  watch,
+  onMounted,
+  onUnmounted,
+  defineAsyncComponent,
+} from "vue";
+import {
+  UserOutlined,
+  CalendarOutlined,
+  CameraOutlined,
+  EditOutlined,
+} from "@ant-design/icons-vue";
 import dayjs, { Dayjs } from "dayjs";
 import { message } from "ant-design-vue";
 import type { HealthBook } from "~/types/api";
@@ -522,8 +653,12 @@ import HealthStatusCard from "~/components/health-book/HealthStatusCard.vue";
 import ExerciseMethodCard from "~/components/health-book/ExerciseMethodCard.vue";
 
 // Lazy load heavy tab components (loaded only when tab is activated)
-const VaccinationSchedule = defineAsyncComponent(() => import("~/components/health-book/VaccinationSchedule.vue"));
-const SupportRequestList = defineAsyncComponent(() => import("~/components/health-book/SupportRequestList.vue"));
+const VaccinationSchedule = defineAsyncComponent(
+  () => import("~/components/health-book/VaccinationSchedule.vue")
+);
+const SupportRequestList = defineAsyncComponent(
+  () => import("~/components/health-book/SupportRequestList.vue")
+);
 
 // Define page meta - No middleware, handle auth in component (for Google OAuth callback)
 definePageMeta({
@@ -556,7 +691,12 @@ const customerId = computed(() => healthBook.value?.customerId || "");
 
 // API composables
 const { getHealthRecordByDate, getHealthRecords } = useHealthRecordsApi();
-const { getHealthBook, getHealthBooks, getCurrentHealthBook, updateUserHealthBook } = useHealthBooksApi();
+const {
+  getHealthBook,
+  getHealthBooks,
+  getCurrentHealthBook,
+  updateUserHealthBook,
+} = useHealthBooksApi();
 
 // Avatar upload state
 const avatarFileInput = ref<HTMLInputElement | null>(null);
@@ -595,7 +735,9 @@ const editInfoForm = ref<{
 const isMobile = ref(true);
 
 // Computed property for overview tab label
-const overviewTabLabel = computed(() => (isMobile.value ? "Tổng quan" : "Tổng quan sức khỏe"));
+const overviewTabLabel = computed(() =>
+  isMobile.value ? "Tổng quan" : "Tổng quan sức khỏe"
+);
 
 // Handle screen resize
 const handleResize = () => {
@@ -700,7 +842,9 @@ const calculateAge = (dob: string) => {
   const remainingMonths = months % 12;
 
   if (years > 0) {
-    return remainingMonths > 0 ? `${years} tuổi ${remainingMonths} tháng` : `${years} tuổi`;
+    return remainingMonths > 0
+      ? `${years} tuổi ${remainingMonths} tháng`
+      : `${years} tuổi`;
   }
   return `${months} tháng tuổi`;
 };
@@ -764,7 +908,9 @@ const fetchHealthRecordByDate = async (date?: string) => {
         digestiveProblems: record.digestiveIssues || "",
         healthCondition: record.healthStatus || "",
         vaccination: record.vaccination?.dose || "",
-        vaccinationDate: record.vaccination?.date ? dayjs(record.vaccination.date).format("DD/MM/YYYY") : "",
+        vaccinationDate: record.vaccination?.date
+          ? dayjs(record.vaccination.date).format("DD/MM/YYYY")
+          : "",
         vaccinationContent: record.vaccination?.dose || "",
         method: {
           status: record.method || "",
@@ -879,7 +1025,9 @@ const handleAvatarChange = async (event: Event) => {
     isUploadingAvatar.value = true;
 
     // Call API to update healthbook with avatar file
-    const result = await updateUserHealthBook(healthBook.value._id, { avatar: file });
+    const result = await updateUserHealthBook(healthBook.value._id, {
+      avatar: file,
+    });
 
     // Response structure: { message: "", data: { message: "...", data: { avatar: "..." } } }
     const avatarUrl = result?.data?.data?.avatar || result?.data?.avatar;
@@ -933,7 +1081,9 @@ const handleRecordCreated = async () => {
 // Handle edit info modal open
 watch(showEditInfoModal, (visible) => {
   if (visible && healthBook.value) {
-    const genderValue = (profileInfo.value.gender || healthBook.value.gender || "male") as "male" | "female";
+    const genderValue = (profileInfo.value.gender ||
+      healthBook.value.gender ||
+      "male") as "male" | "female";
     editInfoForm.value = {
       name: profileInfo.value.name || healthBook.value.name || "",
       dob: profileInfo.value.dob
@@ -953,7 +1103,11 @@ const handleEditInfoSubmit = async () => {
     return;
   }
 
-  if (!editInfoForm.value.name || !editInfoForm.value.dob || !editInfoForm.value.gender) {
+  if (
+    !editInfoForm.value.name ||
+    !editInfoForm.value.dob ||
+    !editInfoForm.value.gender
+  ) {
     message.error("Vui lòng điền đầy đủ thông tin");
     return;
   }
@@ -1047,7 +1201,8 @@ onMounted(async () => {
       // Clean URL first
       await router.replace("/");
 
-      error.value = err.message || "Đăng nhập Google thất bại. Vui lòng thử lại.";
+      error.value =
+        err.message || "Đăng nhập Google thất bại. Vui lòng thử lại.";
       loading.value = false;
       isCheckingAuth.value = false;
 
@@ -1070,7 +1225,9 @@ onMounted(async () => {
   // Case 1c: Google OAuth callback with code (frontend needs to exchange)
   else if (code) {
     // Check if this code was already used (stored in sessionStorage)
-    const usedCodes = JSON.parse(sessionStorage.getItem("usedGoogleCodes") || "[]");
+    const usedCodes = JSON.parse(
+      sessionStorage.getItem("usedGoogleCodes") || "[]"
+    );
     if (usedCodes.includes(code)) {
       // Code already used, just clean URL and continue
       await router.replace("/");
@@ -1102,21 +1259,32 @@ onMounted(async () => {
       if (typeof response.data.tokenExpireAt === "string") {
         tokenExpireAtNum = Date.now() + 7 * 24 * 60 * 60 * 1000; // 7 days
       } else {
-        tokenExpireAtNum = response.data.tokenExpireAt || Date.now() + 7 * 24 * 60 * 60 * 1000;
+        tokenExpireAtNum =
+          response.data.tokenExpireAt || Date.now() + 7 * 24 * 60 * 60 * 1000;
       }
 
       // Prepare user data
       const userData = {
         ...response.data.user,
-        id: (response.data.user as any)?._id || response.data.user?.id || `google-user-${Date.now()}`,
+        id:
+          (response.data.user as any)?._id ||
+          response.data.user?.id ||
+          `google-user-${Date.now()}`,
         email: response.data.user?.email || "user@google.com",
-        fullname: (response.data.user as any)?.fullname || response.data.user?.name || "Google User",
+        fullname:
+          (response.data.user as any)?.fullname ||
+          response.data.user?.name ||
+          "Google User",
         avatar: response.data.user?.avatar || "",
         role: (response.data.user as any)?.role || "user",
         verified: true,
       };
       // Save to auth store
-      await authStore.completeGoogleLogin(response.data.accessToken, tokenExpireAtNum, userData);
+      await authStore.completeGoogleLogin(
+        response.data.accessToken,
+        tokenExpireAtNum,
+        userData
+      );
 
       // Show success message
       message.success("Đăng nhập Google thành công!");
@@ -1134,7 +1302,8 @@ onMounted(async () => {
       // Clean URL first to prevent reload loop
       await router.replace("/");
 
-      error.value = err.message || "Đăng nhập Google thất bại. Vui lòng thử lại.";
+      error.value =
+        err.message || "Đăng nhập Google thất bại. Vui lòng thử lại.";
       loading.value = false;
       isCheckingAuth.value = false;
 
@@ -1272,7 +1441,8 @@ onMounted(async () => {
   border-radius: 24px !important;
   border: 2px solid #317bc4 !important;
   padding: 8px 20px !important;
-  width: 150px;
+  width: 154px;
+  height: 48px !important;
 }
 
 :deep(.custom-date-picker .ant-picker-input) {
@@ -1281,7 +1451,7 @@ onMounted(async () => {
 
 :deep(.custom-date-picker .ant-picker-input input) {
   color: #317bc4 !important;
-  font-weight: 500;
+  font-weight: 700;
   font-size: 16px;
 }
 
@@ -1326,7 +1496,7 @@ onMounted(async () => {
 
 :deep(.custom-date-picker-mobile .ant-picker-input input) {
   color: #317bc4 !important;
-  font-weight: 500;
+  font-weight: 700;
   font-size: 16px;
   text-align: center;
 }
@@ -1334,7 +1504,6 @@ onMounted(async () => {
 :deep(.custom-date-picker-mobile .ant-picker-suffix) {
   color: #317bc4;
   margin-left: 0;
-  margin-right: 8px;
 }
 
 /* Custom Create Button Mobile */
@@ -1351,6 +1520,7 @@ onMounted(async () => {
   box-shadow: none;
   border: 2px solid #317bc4 !important;
   color: #317bc4 !important;
+  line-height: 1;
 }
 
 .custom-create-button-mobile:hover {
@@ -1475,6 +1645,20 @@ onMounted(async () => {
   .edit-info-modal-title {
     font-size: 18px;
     margin-bottom: 24px;
+  }
+
+  .custom-create-button-mobile {
+    padding: 6px 16px !important;
+    height: 36px !important;
+  }
+
+  :deep(.custom-date-picker-mobile) {
+    padding: 6px 16px !important;
+    height: 36px !important;
+  }
+
+  :deep(.custom-date-picker .ant-picker-suffix) {
+    margin-right: 0;
   }
 }
 </style>

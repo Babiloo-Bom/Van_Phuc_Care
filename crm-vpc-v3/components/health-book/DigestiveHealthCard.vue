@@ -15,7 +15,7 @@
           />
         </div>
         <div class="w-[131px]">
-          <h5 class="font-semibold text-[#4A4A4A] text-sm mb-1 h-[30px] flex items-center">
+          <h5 class="font-bold text-[#4A4A4A] text-sm mb-1 flex items-center">
             Tần suất đại tiện:
           </h5>
           <div v-if="healthBook.frequencyOfDefecation" class="text-sm text-[#4A4A4A]">
@@ -35,7 +35,7 @@
           />
         </div>
         <div class="w-[131px]">
-          <h5 class="font-semibold text-[#4A4A4A] text-sm mb-1 h-[30px] flex items-center">
+          <h5 class="font-bold text-[#4A4A4A] text-sm mb-1 flex items-center">
             Tình trạng phân:
           </h5>
           <div v-if="healthBook.fecalCondition" class="text-sm text-[#4A4A4A]">
@@ -55,7 +55,7 @@
           />
         </div>
         <div class="w-[131px]">
-          <h5 class="font-semibold text-[#4A4A4A] text-sm mb-1 h-[30px] flex items-center">
+          <h5 class="font-bold text-[#4A4A4A] text-sm mb-1 flex items-center">
             Vấn đề tiêu hóa:
           </h5>
           <div v-if="healthBook.digestiveProblems" class="text-sm text-[#4A4A4A]">
