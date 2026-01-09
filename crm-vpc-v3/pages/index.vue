@@ -78,7 +78,7 @@
             <div class="flex items-center gap-4">
               <!-- Avatar - Van Phuc Mascot -->
               <div
-                class="absolute -top-20 left-5 border-5 lg:border-8 border-white rounded-full"
+                class="absolute -top-20 left-5 border-4 lg:border-8 border-white rounded-full"
               >
                 <div
                   class="w-32 h-32 rounded-full bg-blue-100 flex items-center justify-center border-4 border-blue-200"
@@ -198,11 +198,31 @@
             format="DD/MM/YYYY"
             placeholder="Chọn ngày"
             @change="handleDateChange"
+            @openChange="handleDatePickerOpenChange"
+            @panelChange="handleDatePickerPanelChange"
             class="custom-date-picker-mobile"
             size="large"
           >
             <template #suffixIcon>
               <CalendarOutlined class="text-blue-500" />
+            </template>
+            <template #dateRender="{ current }">
+              <div class="ant-picker-cell-inner" :style="{ position: 'relative' }">
+                {{ current.date() }}
+                <div
+                  v-if="markedDates.has(current.format('YYYY-MM-DD'))"
+                  :style="{
+                    position: 'absolute',
+                    bottom: '-2px',
+                    left: '50%',
+                    transform: 'translateX(-50%)',
+                    width: '4px',
+                    height: '4px',
+                    backgroundColor: '#155DFC',
+                    borderRadius: '50%',
+                  }"
+                />
+              </div>
             </template>
           </a-date-picker>
 
@@ -230,7 +250,7 @@
             <div class="flex flex-col items-center relative pt-16">
               <!-- Avatar -->
               <div
-                class="absolute -top-14 mb-3 border-5 lg:border-8 border-white rounded-full"
+                class="absolute -top-14 mb-3 border-4 lg:border-8 border-white rounded-full"
               >
                 <img
                   v-if="profileInfo.avatar || healthBook?.avatar"
@@ -290,7 +310,7 @@
                   @click="showEditInfoModal = true"
                 >
                   <EditOutlined class="text-sm" />
-                  <span class="text-sm font-normal">Chỉnh sửa thông tin</span>
+                  <span class="text-sm font-medium">Chỉnh sửa thông tin</span>
                 </span>
               </div>
             </div>
@@ -302,7 +322,7 @@
             <div class="flex items-center gap-4">
               <!-- Avatar -->
               <div
-                class="absolute -top-20 left-5 border-5 lg:border-8 border-white rounded-full"
+                class="absolute -top-20 left-5 border-4 lg:border-8 border-white rounded-full"
               >
                 <img
                   :src="
@@ -349,7 +369,7 @@
                     @click="showEditInfoModal = true"
                   >
                     <EditOutlined class="text-sm" />
-                    <span class="text-sm font-normal">Chỉnh sửa thông tin</span>
+                    <span class="text-sm font-medium">Chỉnh sửa thông tin</span>
                   </span>
                 </div>
               </div>
@@ -366,11 +386,31 @@
                 format="DD/MM/YYYY"
                 placeholder="Chọn ngày"
                 @change="handleDateChange"
+                @openChange="handleDatePickerOpenChange"
+                @panelChange="handleDatePickerPanelChange"
                 class="custom-date-picker"
                 size="large"
               >
                 <template #suffixIcon>
                   <CalendarOutlined class="text-blue-500" />
+                </template>
+                <template #dateRender="{ current }">
+                  <div class="ant-picker-cell-inner" :style="{ position: 'relative' }">
+                    {{ current.date() }}
+                    <div
+                      v-if="markedDates.has(current.format('YYYY-MM-DD'))"
+                      :style="{
+                        position: 'absolute',
+                        bottom: '-2px',
+                        left: '50%',
+                        transform: 'translateX(-50%)',
+                        width: '4px',
+                        height: '4px',
+                        backgroundColor: '#155DFC',
+                        borderRadius: '50%',
+                      }"
+                    />
+                  </div>
                 </template>
               </a-date-picker>
 
@@ -690,7 +730,7 @@ const isCheckingAuth = ref(true);
 const customerId = computed(() => healthBook.value?.customerId || "");
 
 // API composables
-const { getHealthRecordByDate, getHealthRecords } = useHealthRecordsApi();
+const { getHealthRecordByDate, getHealthRecords, getRecordDates } = useHealthRecordsApi();
 const {
   getHealthBook,
   getHealthBooks,
@@ -715,6 +755,10 @@ const showCreateHealthBookModal = ref(false);
 const showCreateRecordModal = ref(false);
 const showEditInfoModal = ref(false);
 const isUpdatingInfo = ref(false);
+
+// Calendar marked dates state
+const markedDates = ref<Set<string>>(new Set());
+const cachedMonths = ref<Set<string>>(new Set());
 const profileInfo = ref<{
   name?: string;
   dob?: string;
@@ -993,6 +1037,60 @@ const handleDateChange = (date: Dayjs | null) => {
   }
 };
 
+// ========== Calendar Marked Dates Functions ==========
+
+/**
+ * Fetch dates that have health records for a given month
+ * This is used to display dots under dates in the calendar picker
+ */
+const fetchMarkedDatesForMonth = async (monthDate: Dayjs) => {
+  if (!healthBook.value?._id) return;
+
+  const monthKey = monthDate.format("YYYY-MM");
+  // Skip if already cached
+  if (cachedMonths.value.has(monthKey)) return;
+
+  try {
+    const start = monthDate.startOf("month").format("YYYY-MM-DD");
+    const end = monthDate.endOf("month").format("YYYY-MM-DD");
+
+    const response = await getRecordDates(healthBook.value._id, start, end);
+    // Handle various response structures
+    const dates: string[] = 
+      response?.data?.data?.data?.dates ||
+      response?.data?.data?.dates || 
+      response?.data?.dates ||
+      (response as any)?.dates ||
+      [];
+    
+    // Add dates to markedDates set
+    dates.forEach((d: string) => markedDates.value.add(d));
+    // Mark month as cached
+    cachedMonths.value.add(monthKey);
+    
+  } catch (err) {
+    console.error("Error fetching record dates:", err);
+  }
+};
+
+/**
+ * Handle calendar panel open - fetch marked dates for current month
+ */
+const handleDatePickerOpenChange = (open: boolean) => {
+  if (open && healthBook.value?._id) {
+    fetchMarkedDatesForMonth(selectedDate.value);
+  }
+};
+
+/**
+ * Handle calendar panel change (month/year navigation)
+ */
+const handleDatePickerPanelChange = (date: Dayjs) => {
+  if (date && healthBook.value?._id) {
+    fetchMarkedDatesForMonth(date);
+  }
+};
+
 // Avatar upload functions
 const openAvatarPicker = () => {
   avatarFileInput.value?.click();
@@ -1075,6 +1173,10 @@ const handleRecordCreated = async () => {
     // Otherwise just reload the health record for the selected date
     const formattedDate = selectedDate.value.format("DD/MM/YYYY");
     await fetchHealthRecordByDate(formattedDate);
+
+    // Add the created date to markedDates (so dot appears immediately)
+    const dateKey = selectedDate.value.format("YYYY-MM-DD");
+    markedDates.value.add(dateKey);
   }
 };
 

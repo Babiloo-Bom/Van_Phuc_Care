@@ -271,8 +271,9 @@ class HealthBookController {
         return sendError(res, 404, "HealthBook not found");
       }
 
-      // Build date range
-      const match: any = { healthBookId: id };
+      // Build date range - healthBookId is ObjectId in schema
+      const mongoose = require('mongoose');
+      const match: any = { healthBookId: new mongoose.Types.ObjectId(id) };
       if (start || end) {
         match.date = {};
         if (start) match.date.$gte = new Date(String(start));
