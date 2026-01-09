@@ -12,10 +12,10 @@
           <span v-if="healthBook.schedule" class="font-bold text-[#1A75BB] text-sm">
             {{ getHealthRecordOptionLabel(healthBook.schedule, scheduleOptions) }}
           </span>
-          <span v-else-if="healthBook.method?.status" class="font-semibold text-[#4A4A4A] text-sm">
+          <span v-else-if="healthBook.method?.status" class="font-bold text-[#1A75BB] text-sm">
             {{ getHealthRecordOptionLabel(healthBook.method.status, methodOptions) }}
           </span>
-          <span v-else class="text-sm text-[#4A4A4A] opacity-60">Đang cập nhật</span>
+          <span v-else class="font-bold text-[#1A75BB] text-sm">Đang cập nhật</span>
         </div>
         <div class="text-sm text-[#4A4A4A]">
           {{ healthBook.scheduleNote || healthBook.method?.descriptions || 'Bé tự chuyển giấc tốt' }}
@@ -34,7 +34,7 @@
           <span v-if="healthBook.developmentMilestone" class="font-bold text-[#1A75BB] text-sm">
             {{ getHealthRecordOptionLabel(healthBook.developmentMilestone, developmentMilestoneOptions) }}
           </span>
-          <span v-else class="text-sm text-[#4A4A4A] opacity-60">0-3 tháng</span>
+          <span v-else class="font-bold text-[#1A75BB] text-sm">0-3 tháng</span>
         </div>
         
         <div class="mb-2">
