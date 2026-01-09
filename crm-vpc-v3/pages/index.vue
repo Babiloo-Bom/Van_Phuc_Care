@@ -1275,6 +1275,10 @@ onMounted(async () => {
   width: 150px;
 }
 
+:deep(.custom-date-picker .ant-picker-input) {
+  flex-direction: row-reverse;
+}
+
 :deep(.custom-date-picker .ant-picker-input input) {
   color: #317bc4 !important;
   font-weight: 500;
@@ -1283,6 +1287,8 @@ onMounted(async () => {
 
 :deep(.custom-date-picker .ant-picker-suffix) {
   color: #317bc4;
+  margin-left: 0;
+  margin-right: 8px;
 }
 
 /* Custom Create Button Desktop */
@@ -1314,6 +1320,10 @@ onMounted(async () => {
   height: 48px !important;
 }
 
+:deep(.custom-date-picker-mobile .ant-picker-input) {
+  flex-direction: row-reverse;
+}
+
 :deep(.custom-date-picker-mobile .ant-picker-input input) {
   color: #317bc4 !important;
   font-weight: 500;
@@ -1323,6 +1333,8 @@ onMounted(async () => {
 
 :deep(.custom-date-picker-mobile .ant-picker-suffix) {
   color: #317bc4;
+  margin-left: 0;
+  margin-right: 8px;
 }
 
 /* Custom Create Button Mobile */
