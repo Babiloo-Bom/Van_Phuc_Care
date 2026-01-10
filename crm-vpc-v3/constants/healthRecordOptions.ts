@@ -1,18 +1,20 @@
 // constants/healthRecordOptions.ts
 
 export const skinConditionOptions = [
-  { label: 'Da bé bình thường', value: 'normal' },
+  { label: 'Da bình thường', value: 'normal' },
   { label: 'Da khô', value: 'dry' },
   { label: 'Nổi mẩn đỏ', value: 'rash' },
   { label: 'Chàm sữa', value: 'eczema' },
-  { label: 'Khác', value: 'other' },
+  { label: 'Vàng da sinh lý', value: 'jaundice' },
+  { label: 'Rôm sảy', value: 'heat_rash' },
+  { label: 'Viêm da tiết bã', value: 'seborrheic_dermatitis' },
+  { label: 'Mụn sữa', value: 'milia' },
 ];
 
 export const skinConditionNoteOptions = [
-  { label: 'Da bé bình thường', value: 'normal' },
+  { label: 'Bình thường', value: 'normal' },
   { label: 'Cần theo dõi', value: 'monitor' },
   { label: 'Đang điều trị', value: 'treating' },
-  { label: 'Khác', value: 'other' },
 ];
 
 // Sức khỏe răng miệng options (0-20 răng)
@@ -42,27 +44,9 @@ export const oralHealthOptions = [
 
 // Ghi chú sức khỏe răng miệng options
 export const oralHealthNoteOptions = [
-  { label: '0 răng', value: '0_teeth' },
-  { label: '1 răng', value: '1_teeth' },
-  { label: '2 răng', value: '2_teeth' },
-  { label: '3 răng', value: '3_teeth' },
-  { label: '4 răng', value: '4_teeth' },
-  { label: '5 răng', value: '5_teeth' },
-  { label: '6 răng', value: '6_teeth' },
-  { label: '7 răng', value: '7_teeth' },
-  { label: '8 răng', value: '8_teeth' },
-  { label: '9 răng', value: '9_teeth' },
-  { label: '10 răng', value: '10_teeth' },
-  { label: '11 răng', value: '11_teeth' },
-  { label: '12 răng', value: '12_teeth' },
-  { label: '13 răng', value: '13_teeth' },
-  { label: '14 răng', value: '14_teeth' },
-  { label: '15 răng', value: '15_teeth' },
-  { label: '16 răng', value: '16_teeth' },
-  { label: '17 răng', value: '17_teeth' },
-  { label: '18 răng', value: '18_teeth' },
-  { label: '19 răng', value: '19_teeth' },
-  { label: '20 răng', value: '20_teeth' },
+  { label: 'Tưa lưỡi/Nấm miệng', value: 'oral_thrush' },
+  { label: 'Viêm nướu', value: 'gingivitis' },
+  { label: 'Hôi miệng', value: 'bad_breath' },
 ];
 
 // Dinh dưỡng options
@@ -114,23 +98,23 @@ export const stoolFrequencyOptions = [
 ];
 
 export const stoolConditionOptions = [
-  { label: 'Bình thường', value: 'normal' },
-  { label: 'Cứng, đặc', value: 'hard' },
+  { label: 'Cứng', value: 'hard' },
+  { label: 'Đặc', value: 'thick' },
   { label: 'Mềm', value: 'soft' },
   { label: 'Lỏng', value: 'loose' },
-  { label: 'Tiêu chảy', value: 'diarrhea' },
-  { label: 'Táo bón', value: 'constipation' },
+  { label: 'Bọt', value: 'foamy' },
+  { label: 'Nhầy', value: 'mucous' },
 ];
 
 // Vấn đề tiêu hóa options
 export const digestiveIssuesOptions = [
-  { label: 'Không có', value: 'none' },
-  { label: 'Bị táo bón nhẹ', value: 'mild_constipation' },
   { label: 'Táo bón', value: 'constipation' },
   { label: 'Tiêu chảy', value: 'diarrhea' },
   { label: 'Trào ngược', value: 'reflux' },
   { label: 'Đầy hơi', value: 'bloating' },
-  { label: 'Khác', value: 'other' },
+  { label: 'Nôn', value: 'vomiting' },
+  { label: 'Trớ', value: 'spitting_up' },
+  { label: 'Cặn sữa', value: 'milk_residue' },
 ];
 
 // Lịch sinh hoạt options

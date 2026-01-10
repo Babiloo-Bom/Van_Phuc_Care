@@ -33,6 +33,7 @@ import DashboardRouter from './Dashboard';
 import ServicesRouter from './Services';
 import TransactionListRouter from "./TransactionList";
 import LeadsRouter from './Leads';
+import BannersRouter from './Banners';
 import OrderController from '@controllers/api/admin/OrderController';
 
 const router = Router();
@@ -40,6 +41,7 @@ const router = Router();
 router.use("/dashboard", adminPassport.authenticate("jwt", { session: false }), DashboardRouter);
 router.use("/categories", adminPassport.authenticate("jwt", { session: false }), CategoryRouter);
 router.use("/faqs", adminPassport.authenticate("jwt", { session: false }), FaqRouter);
+router.use("/banners", adminPassport.authenticate("jwt", { session: false }), BannersRouter);
 router.use("/courses", CoursesRouter);
 router.use("/sessions", SessionRouter);
 router.use("/passwords", PasswordsRouter);

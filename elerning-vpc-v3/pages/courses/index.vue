@@ -1,141 +1,40 @@
 <template>
   <div class="">
     <!-- Banner Section -->
-    <div
-      class="md:mb-[5rem] h-[480px] py-10 sm:pt-20 sm:pb-20 md:pb-60 bg-cover bg-center bg-no-repeat bg-[url('https://cdn.synck.io.vn/vanphuccare/banner/main.webp')] relative z-[1] after:absolute after:content-[''] after:top-0 after:left-0 after:w-full after:h-full after:opacity-60 after:bg-prim-100"
+    <BannerSlider
+      page-type="all-courses"
+      default-title="Tất cả khóa học"
+      default-description="Vạn Phúc Care cung cấp những khóa học chất lượng, chuyên sâu nhất để hỗ trợ bậc phụ huynh trong hành trình nuôi dưỡng và chăm sóc con cái. Các khóa học không chỉ mang đến các chủ đề đa dạng, những kiến thức chuyên môn chuẩn Y khoa, mà còn chia sẻ những kinh nghiệm thực tế được giảng dạy bởi đội ngũ chuyên gia và cố vấn giàu kinh nghiệm trong lĩnh vực Mẹ và Bé."
+      :show-course-count="true"
+      :course-count="filteredCourses.length"
     >
-      <div class="absolute inset-0 bg-[#1A75BBB2]"></div>
-      <div class="container h-full">
-        <div
-          class="relative z-[1] flex flex-col items-center md:items-start h-full gap-6"
+      <!-- Search Box -->
+      <div class="w-full text-center md:text-left">
+        <a-input
+          v-model="searchKey"
+          placeholder="Tìm kiếm khóa học"
+          class="!bg-transparent rounded-full h-10 w-full max-w-[400px] sm:max-w-[440px] md:max-w-[340px] custom_input mx-auto md:mx-0"
+          @change="handleSearch"
         >
-          <div class="text-white w-full px-4 lg:px-0 xl:px-4 flex flex-col items-center lg:items-start">
-            <div class="flex flex-row flex-nowrap items-center justify-between md:justify-start gap-2 md:gap-6 w-full max-w-[400px] sm:max-w-[440px] md:max-w-full">
-              <!-- Title -->
-              <h4 class="text-[28px] sm:text-3xl md:text-4xl font-bold text-white mb-0">
-                Tất cả khóa học
-              </h4>
-
-              <!-- Course Count -->
-              <div
-                class="flex items-center rounded-full md:mt-1 py-1.5 px-2 md:px-5 border-[1px] border-solid border-white gap-3 w-fit"
-              >
-                <span>
-                  <svg
-                    xmlns="http://www.w3.org/2000/svg"
-                    width="16"
-                    height="16"
-                    viewBox="0 0 24 24"
-                    class="fill-none stroke-white"
-                  >
-                    <path
-                      d="M3.17 7.44 12 12.55l8.77-5.08M12 21.61v-9.07"
-                      stroke-width="1.5"
-                      stroke-linecap="round"
-                      stroke-linejoin="round"
-                    />
-                    <path
-                      d="M9.93 2.48 4.59 5.44c-1.21.67-2.2 2.35-2.2 3.73v5.65c0 1.38.99 3.06 2.2 3.73l5.34 2.97c1.14.63 3.01.63 4.15 0l5.34-2.97c1.21-.67 2.2-2.35 2.2-3.73V9.17c0-1.38-.99-3.06-2.2-3.73l-5.34-2.97c-1.15-.63-3.01-.63-4.15.01Z"
-                      stroke-width="1.5"
-                      stroke-linecap="round"
-                      stroke-linejoin="round"
-                    />
-                  </svg>
-                </span>
-                <span class="text-xs leading-none"> {{ filteredCourses.length }} khóa học </span>
-              </div>
-            </div>
-
-            <!-- Description -->
-            <div class="mt-4 hidden md:block">
-              <p class="mb-0 md:max-w-[800px] text-white leading-relaxed">
-                Vạn Phúc Care cung cấp những khóa học chất lượng, chuyên sâu
-                nhất để hỗ trợ bậc phụ huynh trong hành trình nuôi dưỡng và chăm
-                sóc con cái. Các khóa học không chỉ mang đến các chủ đề đa dạng,
-                những kiến thức chuyên môn chuẩn Y khoa, mà còn chia sẻ những
-                kinh nghiệm thực tế được giảng dạy bởi đội ngũ chuyên gia và cố
-                vấn giàu kinh nghiệm trong lĩnh vực Mẹ và Bé.
-              </p>
-            </div>
-
-            <!-- Search -->
-            <div class="w-full text-center mt-4 md:text-left">
-              <a-input
-                v-model="searchKey"
-                placeholder="Tìm kiếm khóa học"
-                class="!bg-transparent rounded-full h-10 w-full max-w-[400px] sm:max-w-[440px] md:max-w-[340px] custom_input"
-                @change="handleSearch"
-              >
-                <template #prefix>
-                  <svg
-                    xmlns="http://www.w3.org/2000/svg"
-                    width="20"
-                    height="20"
-                    viewBox="0 0 24 24"
-                    class="fill-none stroke-white"
-                  >
-                    <path
-                      d="M11.5 21a9.5 9.5 0 1 0 0-19 9.5 9.5 0 0 0 0 19ZM22 22l-2-2"
-                      stroke-width="1.5"
-                      stroke-linecap="round"
-                      stroke-linejoin="round"
-                    />
-                  </svg>
-                </template>
-              </a-input>
-            </div>
-          </div>
-
-          <!-- Filter Options (3 nút trắng giống trang chủ) -->
-          <!-- <div
-            class="w-full flex flex-col sm:flex-row items-center gap-4 justify-center md:justify-start mt-4 relative z-[2]"
-          >
-            <a-select
-              v-model:value="selectedCategory"
-              placeholder="Chọn danh mục"
-              class="!w-48 !bg-white/10 !border-white/30"
-              @change="handleCategoryChange"
+          <template #prefix>
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              width="20"
+              height="20"
+              viewBox="0 0 24 24"
+              class="fill-none stroke-white"
             >
-              <a-select-option value="">Tất cả danh mục</a-select-option>
-              <a-select-option
-                v-for="category in categories"
-                :key="category"
-                :value="category"
-              >
-                {{ category }}
-              </a-select-option>
-            </a-select>
-
-            <a-select
-              v-model:value="selectedLevel"
-              placeholder="Chọn cấp độ"
-              class="!w-48 !bg-white/10 !border-white/30"
-              @change="handleLevelChange"
-            >
-              <a-select-option value="">Tất cả cấp độ</a-select-option>
-              <a-select-option value="beginner">Cơ bản</a-select-option>
-              <a-select-option value="intermediate">Trung bình</a-select-option>
-              <a-select-option value="advanced">Nâng cao</a-select-option>
-            </a-select>
-
-            <a-select
-              v-model:value="sortBy"
-              placeholder="Sắp xếp theo"
-              class="!w-48 !bg-white/10 !border-white/30"
-              @change="handleSortChange"
-            >
-              <a-select-option value="priority"
-                >Ưu tiên (Đã mua → Chưa mua → Hoàn thành)</a-select-option
-              >
-              <a-select-option value="price-low">Giá thấp → cao</a-select-option>
-              <a-select-option value="price-high">Giá cao → thấp</a-select-option>
-              <a-select-option value="newest">Mới nhất</a-select-option>
-              <a-select-option value="rating">Đánh giá cao nhất</a-select-option>
-            </a-select>
-          </div> -->
-        </div>
+              <path
+                d="M11.5 21a9.5 9.5 0 1 0 0-19 9.5 9.5 0 0 0 0 19ZM22 22l-2-2"
+                stroke-width="1.5"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+              />
+            </svg>
+          </template>
+        </a-input>
       </div>
-    </div>
+    </BannerSlider>
 
     <!-- Courses Section -->
     <section class="pb-20 p-4 lg:pt-20 sm:pt-10 bg-[#f4f7f9] relative z-10">
@@ -188,6 +87,7 @@ import { useCartStore } from "~/stores/cart";
 import CourseCard from "~/components/courses/CourseCard.vue";
 import Skeleton from "~/components/shared/Skeleton.vue";
 import CartToast from "~/components/cart/Toast.vue";
+import BannerSlider from "~/components/banners/BannerSlider.vue";
 
 // Store
 const courseStore = useCoursesStore();

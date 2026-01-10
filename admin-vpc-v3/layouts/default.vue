@@ -164,6 +164,21 @@
 
           <a-menu-divider />
 
+          <!-- Cài đặt hệ thống Menu - Admin và Manager -->
+          <a-sub-menu v-if="isAdminOrManager" key="settings" :title="null">
+            <template #title>
+              <span class="flex items-center">
+                <SettingOutlined class="mr-3 text-lg" />
+                <span>Cài đặt hệ thống</span>
+              </span>
+            </template>
+            <a-menu-item key="banners">
+              <NuxtLink to="/settings/banners" class="flex items-center">
+                <span>Quản lý Banner</span>
+              </NuxtLink>
+            </a-menu-item>
+          </a-sub-menu>
+
           <a-menu-item key="faqs">
             <NuxtLink to="/faqs" class="flex items-center">
               <InfoCircleOutlined class="mr-3 text-lg" />
@@ -229,6 +244,7 @@ const selectedKeys = computed(() => {
   if (path.startsWith('/my/services-and-orders')) return ['services-and-orders']
   if (path.startsWith('/my/support-tickets')) return ['support-tickets']
   if (path.startsWith('/faqs')) return ['faqs']
+  if (path.startsWith('/settings/banners')) return ['banners']
   return []
 })
 
@@ -237,6 +253,7 @@ const openKeys = computed(() => {
   const path = route.path
   if (path.startsWith('/elearning') || path.startsWith('/coupons')) return ['elearning']
   if (path.startsWith('/my')) return ['my']
+  if (path.startsWith('/settings')) return ['settings']
   return []
 })
 
