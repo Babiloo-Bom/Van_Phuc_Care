@@ -17,10 +17,15 @@ services:
     networks:
       - vpc-network
     healthcheck:
-      test: echo 'db.runCommand("ping").ok' | mongosh localhost:27017/test --quiet
+      test:
+        [
+          "CMD-SHELL",
+          "mongosh \"mongodb://$MONGO_INITDB_ROOT_USERNAME:$MONGO_INITDB_ROOT_PASSWORD@localhost:27017/admin\" --eval \"db.runCommand({ ping: 1 })\" || exit 1"
+        ]
       interval: 10s
-      timeout: 5s
+      timeout: 10s
       retries: 5
+      start_period: 30s
 
   # ============================================
   # MinIO Object Storage
@@ -143,11 +148,11 @@ services:
       - vpc-network
     depends_on:
       mongodb:
-        condition: service_healthy
+        condition: service_started
       minio:
-        condition: service_healthy
+        condition: service_started
       redis:
-        condition: service_healthy
+        condition: service_started
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:3000/api/health"]
       interval: 30s
