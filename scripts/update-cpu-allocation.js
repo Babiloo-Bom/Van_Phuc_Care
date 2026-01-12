@@ -82,10 +82,10 @@ function calculateAllocation(totalCores) {
   
   // Tính tổng sau khi làm tròn xuống
   let total = elearningRounded + crmRounded + adminRounded + apiRounded;
-  let remaining = parseFloat((totalCores - total).toFixed(1));
+  let remaining = parseFloat((availableCores - total).toFixed(1)); // Dùng availableCores, không phải totalCores
   
   // Phân bổ phần còn lại cho các service ưu tiên (elearning và crm)
-  // Mỗi lần thêm 0.1 cores, đảm bảo không vượt quá totalCores
+  // Mỗi lần thêm 0.1 cores, đảm bảo không vượt quá availableCores
   if (remaining >= 0.2) {
     elearningRounded = parseFloat((elearningRounded + 0.1).toFixed(1));
     crmRounded = parseFloat((crmRounded + 0.1).toFixed(1));
@@ -95,12 +95,12 @@ function calculateAllocation(totalCores) {
     remaining = parseFloat((remaining - 0.1).toFixed(1));
   }
   
-  // Kiểm tra lại tổng cuối cùng - đảm bảo không vượt quá
+  // Kiểm tra lại tổng cuối cùng - đảm bảo không vượt quá availableCores
   total = parseFloat((elearningRounded + crmRounded + adminRounded + apiRounded).toFixed(1));
   
-  // Nếu vẫn vượt quá (do làm tròn), giảm từ service lớn nhất
-  if (total > totalCores) {
-    const excess = parseFloat((total - totalCores).toFixed(1));
+  // Nếu vẫn vượt quá availableCores (do làm tròn), giảm từ service lớn nhất
+  if (total > availableCores) {
+    const excess = parseFloat((total - availableCores).toFixed(1));
     // Giảm từ service có giá trị lớn nhất
     if (elearningRounded >= crmRounded && elearningRounded > 0.1) {
       elearningRounded = Math.max(0.1, parseFloat((elearningRounded - excess).toFixed(1)));
@@ -113,13 +113,14 @@ function calculateAllocation(totalCores) {
     }
   }
   
-  // Kiểm tra lại tổng cuối cùng - đảm bảo tổng < totalCores với buffer 0.1
+  // Kiểm tra lại tổng cuối cùng - đảm bảo tổng tất cả services < totalCores với buffer
   total = parseFloat((elearningRounded + crmRounded + adminRounded + apiRounded).toFixed(2));
+  const totalAllServices = total + otherServicesTotal;
   const maxAllowed = totalCores - 0.1; // Buffer 0.1 để tránh lỗi làm tròn
   
-  // Nếu tổng >= maxAllowed, giảm từ service lớn nhất
-  if (total >= maxAllowed) {
-    const excess = total - maxAllowed;
+  // Nếu tổng tất cả services >= maxAllowed, giảm từ service lớn nhất
+  if (totalAllServices >= maxAllowed) {
+    const excess = totalAllServices - maxAllowed;
     // Giảm từ service có giá trị lớn nhất
     const reduceAmount = Math.min(excess + 0.05, 0.2); // Đảm bảo tổng < maxAllowed
     
@@ -135,9 +136,10 @@ function calculateAllocation(totalCores) {
     
     // Kiểm tra lại sau khi giảm
     total = parseFloat((elearningRounded + crmRounded + adminRounded + apiRounded).toFixed(2));
+    const totalAllServicesAfter = total + otherServicesTotal;
     
     // Nếu vẫn >= maxAllowed, giảm thêm 0.1 từ service lớn nhất
-    if (total >= maxAllowed) {
+    if (totalAllServicesAfter >= maxAllowed) {
       if (elearningRounded >= crmRounded && elearningRounded > 0.1) {
         elearningRounded = Math.max(0.1, parseFloat((elearningRounded - 0.1).toFixed(1)));
       } else if (crmRounded > 0.1) {
