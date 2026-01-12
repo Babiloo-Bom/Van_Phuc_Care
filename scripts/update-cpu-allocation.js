@@ -11,27 +11,43 @@ const { execSync } = require('child_process');
 
 // Lấy số cores thực tế
 function getTotalCores() {
+  // Ưu tiên đọc từ /proc/cpuinfo (nhanh hơn và không cần exec)
   try {
-    // Thử dùng nproc (Linux)
-    const cores = execSync('nproc', { encoding: 'utf-8' }).trim();
-    return parseInt(cores, 10);
+    const cpuinfo = fs.readFileSync('/proc/cpuinfo', 'utf-8');
+    const matches = cpuinfo.match(/^processor\s+:\s+\d+/gm);
+    if (matches && matches.length > 0) {
+      return matches.length;
+    }
+  } catch (e) {
+    // Ignore error, try next method
+  }
+  
+  // Fallback: dùng nproc (Linux)
+  try {
+    const cores = execSync('nproc', { 
+      encoding: 'utf-8',
+      maxBuffer: 1024
+    }).trim();
+    const parsed = parseInt(cores, 10);
+    if (!isNaN(parsed) && parsed > 0) {
+      return parsed;
+    }
   } catch (error) {
-    try {
-      // Fallback: đọc từ /proc/cpuinfo (Linux)
-      const cpuinfo = fs.readFileSync('/proc/cpuinfo', 'utf-8');
-      const matches = cpuinfo.match(/^processor\s+:\s+\d+/gm);
-      return matches ? matches.length : 8; // Default 8 nếu không tìm thấy
-    } catch (e) {
-      // Nếu không phải Linux, dùng giá trị mặc định hoặc từ argument
-      const coresFromArg = process.argv[2];
-      if (coresFromArg) {
-        return parseInt(coresFromArg, 10);
-      }
-      console.warn('⚠️  Không thể tự động detect số cores, sử dụng giá trị mặc định: 8');
-      console.warn('   Bạn có thể truyền số cores thủ công: node scripts/update-cpu-allocation.js <số_cores>');
-      return 8;
+    // Ignore error, try next method
+  }
+  
+  // Nếu không phải Linux hoặc không detect được, dùng giá trị mặc định hoặc từ argument
+  const coresFromArg = process.argv[2];
+  if (coresFromArg) {
+    const parsed = parseInt(coresFromArg, 10);
+    if (!isNaN(parsed) && parsed > 0) {
+      return parsed;
     }
   }
+  
+  console.warn('⚠️  Không thể tự động detect số cores, sử dụng giá trị mặc định: 2');
+  console.warn('   Bạn có thể truyền số cores thủ công: node scripts/update-cpu-allocation.js <số_cores>');
+  return 2; // Default 2 cores (phù hợp với server hiện tại)
 }
 
 // Tính toán phân bổ CPU
@@ -87,40 +103,39 @@ function calculateAllocation(totalCores) {
     }
   }
   
-  // Kiểm tra lần cuối cùng - đảm bảo tổng không bao giờ vượt quá totalCores
+  // Kiểm tra lại tổng cuối cùng - đảm bảo tổng < totalCores
   total = parseFloat((elearningRounded + crmRounded + adminRounded + apiRounded).toFixed(2));
   
-  // Nếu vẫn vượt quá, giảm từng service một cho đến khi tổng < totalCores
-  while (total >= totalCores) {
-    const excess = total - totalCores + 0.01; // Thêm 0.01 để đảm bảo tổng < totalCores
-    // Giảm từ service có giá trị lớn nhất
-    if (elearningRounded >= crmRounded && elearningRounded >= adminRounded && elearningRounded >= apiRounded && elearningRounded > 0.1) {
-      elearningRounded = Math.max(0.1, parseFloat((elearningRounded - Math.min(excess, 0.1)).toFixed(1)));
-    } else if (crmRounded >= adminRounded && crmRounded >= apiRounded && crmRounded > 0.1) {
-      crmRounded = Math.max(0.1, parseFloat((crmRounded - Math.min(excess, 0.1)).toFixed(1)));
-    } else if (adminRounded >= apiRounded && adminRounded > 0.1) {
-      adminRounded = Math.max(0.1, parseFloat((adminRounded - Math.min(excess, 0.1)).toFixed(1)));
-    } else if (apiRounded > 0.1) {
-      apiRounded = Math.max(0.1, parseFloat((apiRounded - Math.min(excess, 0.1)).toFixed(1)));
-    } else {
-      // Nếu tất cả đều = 0.1, không thể giảm thêm
-      break;
-    }
-    total = parseFloat((elearningRounded + crmRounded + adminRounded + apiRounded).toFixed(2));
-  }
-  
-  // Đảm bảo cuối cùng tổng < totalCores (không phải <=)
-  total = parseFloat((elearningRounded + crmRounded + adminRounded + apiRounded).toFixed(2));
+  // Nếu tổng >= totalCores, giảm từ service lớn nhất
   if (total >= totalCores) {
-    // Giảm 0.1 từ service lớn nhất
-    if (elearningRounded >= crmRounded && elearningRounded > 0.1) {
-      elearningRounded = Math.max(0.1, parseFloat((elearningRounded - 0.1).toFixed(1)));
-    } else if (crmRounded > 0.1) {
-      crmRounded = Math.max(0.1, parseFloat((crmRounded - 0.1).toFixed(1)));
-    } else if (adminRounded > 0.1) {
-      adminRounded = Math.max(0.1, parseFloat((adminRounded - 0.1).toFixed(1)));
+    const excess = total - totalCores;
+    // Giảm từ service có giá trị lớn nhất, tối đa 0.1 mỗi lần
+    const reduceAmount = Math.min(excess + 0.01, 0.1); // Đảm bảo tổng < totalCores
+    
+    if (elearningRounded >= crmRounded && elearningRounded >= adminRounded && elearningRounded >= apiRounded && elearningRounded > 0.1) {
+      elearningRounded = Math.max(0.1, parseFloat((elearningRounded - reduceAmount).toFixed(1)));
+    } else if (crmRounded >= adminRounded && crmRounded >= apiRounded && crmRounded > 0.1) {
+      crmRounded = Math.max(0.1, parseFloat((crmRounded - reduceAmount).toFixed(1)));
+    } else if (adminRounded >= apiRounded && adminRounded > 0.1) {
+      adminRounded = Math.max(0.1, parseFloat((adminRounded - reduceAmount).toFixed(1)));
     } else if (apiRounded > 0.1) {
-      apiRounded = Math.max(0.1, parseFloat((apiRounded - 0.1).toFixed(1)));
+      apiRounded = Math.max(0.1, parseFloat((apiRounded - reduceAmount).toFixed(1)));
+    }
+    
+    // Kiểm tra lại sau khi giảm
+    total = parseFloat((elearningRounded + crmRounded + adminRounded + apiRounded).toFixed(2));
+    
+    // Nếu vẫn >= totalCores, giảm thêm 0.1 từ service lớn nhất
+    if (total >= totalCores) {
+      if (elearningRounded >= crmRounded && elearningRounded > 0.1) {
+        elearningRounded = Math.max(0.1, parseFloat((elearningRounded - 0.1).toFixed(1)));
+      } else if (crmRounded > 0.1) {
+        crmRounded = Math.max(0.1, parseFloat((crmRounded - 0.1).toFixed(1)));
+      } else if (adminRounded > 0.1) {
+        adminRounded = Math.max(0.1, parseFloat((adminRounded - 0.1).toFixed(1)));
+      } else if (apiRounded > 0.1) {
+        apiRounded = Math.max(0.1, parseFloat((apiRounded - 0.1).toFixed(1)));
+      }
     }
   }
   
