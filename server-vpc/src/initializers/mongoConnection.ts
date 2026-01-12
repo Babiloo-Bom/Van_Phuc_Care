@@ -19,8 +19,12 @@ class MongoDB {
       // Kết nối tới MongoDB
       await mongoose.connect(this.uri, { 
         dbName: 'vanphuccare',
-        serverSelectionTimeoutMS: 5000, // Timeout sau 5 giây
+        serverSelectionTimeoutMS: 30000, // Timeout sau 30 giây để đợi MongoDB sẵn sàng
         socketTimeoutMS: 45000,
+        connectTimeoutMS: 30000, // Timeout cho việc thiết lập kết nối
+        maxPoolSize: 10, // Số lượng kết nối tối đa trong pool
+        retryWrites: true,
+        retryReads: true,
       });
 
       console.log('\x1b[32mMongoDB database connection successfully\x1b[0m');

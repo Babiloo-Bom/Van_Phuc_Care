@@ -25,7 +25,7 @@ services:
       interval: 10s
       timeout: 10s
       retries: 5
-      start_period: 30s
+      start_period: 60s  # Tăng lên 60 giây để MongoDB có đủ thời gian khởi động
 
   # ============================================
   # MinIO Object Storage
@@ -148,11 +148,11 @@ services:
       - vpc-network
     depends_on:
       mongodb:
-        condition: service_started
+        condition: service_healthy
       minio:
-        condition: service_started
+        condition: service_healthy
       redis:
-        condition: service_started
+        condition: service_healthy
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:3000/api/health"]
       interval: 30s
