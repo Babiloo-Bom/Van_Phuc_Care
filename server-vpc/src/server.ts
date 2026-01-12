@@ -2,6 +2,9 @@
 require('module-alias/register');
 // import '@services/grpc';
 import '@initializers/mongoConnection';
+import '@initializers/r2LifecycleRule';
+import '@jobs/r2LifecycleRuleJob';
+import '@services/videoQueue'; // Initialize video queue worker
 import express from 'express';
 import session from 'express-session';
 import cors from 'cors';

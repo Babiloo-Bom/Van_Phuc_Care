@@ -66,6 +66,70 @@ export const useApiClient = () => {
   /**
    * Handle API errors
    */
+  /**
+   * Parse validation error from Mongoose/MongoDB format
+   * Example: "chapters validation failed: title: Path `title` is required."
+   * Returns: "Lỗi validation: Chương học thiếu tiêu đề (title là bắt buộc)"
+   */
+  const parseValidationError = (errorText: string): string => {
+    if (!errorText) return errorText
+
+    // Check if it's a validation error
+    if (errorText.includes('validation failed')) {
+      // Extract field and message
+      const match = errorText.match(/(\w+)\s+validation failed:\s*(\w+):\s*Path\s+`(\w+)`\s+is\s+(required|invalid)\.?/i)
+      if (match) {
+        const [, entity, field, path, type] = match
+        
+        // Map entity names to Vietnamese
+        const entityMap: Record<string, string> = {
+          'chapters': 'Chương học',
+          'lessons': 'Bài học',
+          'course': 'Khóa học',
+          'chapter': 'Chương học',
+          'lesson': 'Bài học',
+        }
+        
+        // Map field names to Vietnamese
+        const fieldMap: Record<string, string> = {
+          'title': 'tiêu đề',
+          'description': 'mô tả',
+          'content': 'nội dung',
+          'videoUrl': 'video',
+          'slug': 'slug',
+          'thumbnail': 'ảnh đại diện',
+        }
+        
+        const entityName = entityMap[entity.toLowerCase()] || entity
+        const fieldName = fieldMap[path.toLowerCase()] || path
+        const isRequired = type === 'required'
+        
+        if (isRequired) {
+          return `Lỗi validation: ${entityName} thiếu ${fieldName} (${path} là bắt buộc)`
+        } else {
+          return `Lỗi validation: ${entityName} có ${fieldName} không hợp lệ (${path} invalid)`
+        }
+      }
+      
+      // Fallback: try to extract any field name
+      const fieldMatch = errorText.match(/Path\s+`(\w+)`\s+is\s+(required|invalid)/i)
+      if (fieldMatch) {
+        const [, field, type] = fieldMatch
+        const fieldName = fieldMap[field.toLowerCase()] || field
+        if (type === 'required') {
+          return `Lỗi validation: Thiếu trường ${fieldName} (${field} là bắt buộc)`
+        } else {
+          return `Lỗi validation: Trường ${fieldName} không hợp lệ (${field} invalid)`
+        }
+      }
+      
+      // General validation error
+      return `Lỗi validation: ${errorText.replace('validation failed:', '')}`
+    }
+    
+    return errorText
+  }
+
   const handleError = (error: any, options: ApiRequestOptions = {}) => {
     console.error('[API Error]', error)
 
@@ -73,9 +137,11 @@ export const useApiClient = () => {
     
     // Extract error message from response
     if (error.data) {
-      errorMessage = error.data.message || error.data.error || errorMessage
+      const rawError = error.data.message || error.data.error || errorMessage
+      // Parse validation errors
+      errorMessage = parseValidationError(rawError)
     } else if (error.message) {
-      errorMessage = error.message
+      errorMessage = parseValidationError(error.message)
     }
 
     // Handle specific status codes
@@ -93,7 +159,7 @@ export const useApiClient = () => {
           // Check if it's a file size error
           if (error.message?.includes('413') || error.message?.includes('Request Entity Too Large') || 
               error.data?.message?.includes('413') || error.data?.message?.includes('Request Entity Too Large')) {
-            errorMessage = 'File quá lớn! Kích thước file không được vượt quá 2GB. Vui lòng chọn file nhỏ hơn.'
+            errorMessage = 'File quá lớn! Kích thước file không được vượt quá 5GB. Vui lòng chọn file nhỏ hơn.'
           } else {
             errorMessage = 'Bạn không có quyền thực hiện thao tác này'
           }
@@ -102,7 +168,7 @@ export const useApiClient = () => {
           errorMessage = 'Không tìm thấy dữ liệu'
           break
         case 413:
-          errorMessage = 'File quá lớn! Kích thước file không được vượt quá 2GB. Vui lòng chọn file nhỏ hơn.'
+          errorMessage = 'File quá lớn! Kích thước file không được vượt quá 5GB. Vui lòng chọn file nhỏ hơn.'
           break
         case 422:
           errorMessage = 'Dữ liệu không hợp lệ'
@@ -114,8 +180,18 @@ export const useApiClient = () => {
         case 429:
           errorMessage = 'Bạn đã thực hiện quá nhiều yêu cầu, vui lòng thử lại sau'
           break
+        case 400:
         case 500:
-          errorMessage = 'Lỗi máy chủ, vui lòng thử lại sau'
+          // Check if it's a validation error (Mongoose format)
+          const rawError = error.data?.error || error.data?.message || error.message || ''
+          if (rawError.includes('validation failed') || rawError.includes('Path `') || rawError.includes('is required')) {
+            errorMessage = parseValidationError(rawError)
+          } else if (status === 500) {
+            errorMessage = 'Lỗi máy chủ, vui lòng thử lại sau'
+          } else {
+            // For 400, try to parse the error
+            errorMessage = parseValidationError(rawError) || 'Dữ liệu không hợp lệ, vui lòng kiểm tra lại'
+          }
           break
         case 503:
         case 504:
@@ -152,7 +228,7 @@ export const useApiClient = () => {
       }
       // Check for 413
       if (error.message?.includes('413') || error.message?.includes('Request Entity Too Large')) {
-        errorMessage = 'File quá lớn! Kích thước file không được vượt quá 2GB. Vui lòng chọn file nhỏ hơn.'
+        errorMessage = 'File quá lớn! Kích thước file không được vượt quá 5GB. Vui lòng chọn file nhỏ hơn.'
       }
     }
 

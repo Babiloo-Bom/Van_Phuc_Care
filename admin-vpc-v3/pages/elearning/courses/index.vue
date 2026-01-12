@@ -306,10 +306,9 @@
               </a-col>
               <a-col :span="24">
                 <a-form-item label="Mô tả chi tiết" name="description">
-                  <a-textarea
-                    v-model:value="formData.description"
+                  <RichTextEditor
+                    v-model="formData.description"
                     placeholder="Nhập mô tả chi tiết về khóa học"
-                    :rows="5"
                   />
                 </a-form-item>
               </a-col>
@@ -400,9 +399,158 @@
                       <UploadOutlined /> Chọn video
                     </a-button>
                   </a-upload>
-                  <div v-if="formData.introVideo && introVideoFileList.length === 0" style="margin-top: 8px">
-                    <video :src="formData.introVideo" controls style="max-width: 100%; max-height: 300px;" />
+                  
+                  <!-- Video Status -->
+                  <div v-if="formData.introVideoStatus" style="margin-top: 8px;">
+                    <a-tag :color="getStatusColor(
+                      (uploadingIntroVideo && introVideoUploadProgress.stage && introVideoUploadProgress.stage !== 'ready')
+                        ? introVideoUploadProgress.stage === 'uploading-r2' 
+                          ? 'processing' 
+                          : introVideoUploadProgress.stage
+                        : formData.introVideoStatus
+                    )">
+                      <template v-if="uploadingIntroVideo && introVideoUploadProgress.stage && introVideoUploadProgress.stage !== 'ready'">
+                        <a-spin size="small" style="margin-right: 4px;" />
+                        {{ getStatusText(
+                          introVideoUploadProgress.stage === 'uploading-r2' 
+                            ? 'processing' 
+                            : introVideoUploadProgress.stage
+                        ) }}
+                      </template>
+                      <template v-else>
+                        {{ getStatusText(formData.introVideoStatus) }}
+                      </template>
+                    </a-tag>
+                    
+                    <!-- Upload Progress -->
+                    <div v-if="uploadingIntroVideo && introVideoUploadProgress.percent >= 0" style="margin-top: 12px;">
+                      <a-progress 
+                        :percent="introVideoUploadProgress.percent" 
+                        :status="introVideoUploadProgress.percent === 100 ? 'success' : 'active'"
+                        :stroke-color="{
+                          '0%': '#108ee9',
+                          '100%': '#87d068',
+                        }"
+                        :show-info="true"
+                      />
+                      <div style="margin-top: 8px; font-size: 12px; color: #666;">
+                        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px;">
+                          <span>
+                            <strong>{{ introVideoUploadProgress.percent }}%</strong>
+                            <span style="margin-left: 8px; color: #1890ff; font-weight: 500;">
+                              {{ getStatusText(introVideoUploadProgress.stage) }}
+                            </span>
+                          </span>
+                          <span v-if="introVideoUploadProgress.timeRemaining > 0 && introVideoUploadProgress.percent < 100" style="color: #1890ff; font-weight: 500;">
+                            ⏱️ Còn lại: {{ formatTimeRemaining(introVideoUploadProgress.timeRemaining) }}
+                          </span>
+                          <span v-else-if="introVideoUploadProgress.percent === 100" style="color: #52c41a; font-weight: 500;">
+                            ✅ Hoàn thành
+                          </span>
+                        </div>
+                        <div style="display: flex; justify-content: space-between; align-items: center;">
+                          <span>
+                            <span v-if="introVideoUploadProgress.stage === 'uploading'">
+                              {{ formatFileSize(introVideoUploadProgress.uploaded) }} / {{ formatFileSize(introVideoUploadProgress.total) }}
+                            </span>
+                            <span v-else-if="introVideoUploadProgress.stage === 'queueing'">
+                              Đang chờ xử lý...
+                            </span>
+                            <span v-else-if="introVideoUploadProgress.stage === 'processing'">
+                              Đang convert video sang HLS...
+                            </span>
+                            <span v-else-if="introVideoUploadProgress.stage === 'uploading-r2'">
+                              Đang upload lên R2/CDN...
+                            </span>
+                            <span v-if="introVideoUploadProgress.speed > 0 && introVideoUploadProgress.stage === 'uploading'" style="margin-left: 8px; color: #52c41a;">
+                              ({{ formatFileSize(introVideoUploadProgress.speed) }}/s)
+                            </span>
+                          </span>
+                        </div>
+                      </div>
+                      <!-- Cancel button when uploading -->
+                      <div v-if="introVideoUploadProgress.percent < 100" style="margin-top: 8px;">
+                        <a-button size="small" danger @click="handleRemoveIntroVideo">
+                          <DeleteOutlined /> Hủy upload
+                        </a-button>
+                      </div>
+                    </div>
+                    
+                    <!-- Error Message & Actions -->
+                    <div v-if="formData.introVideoStatus === 'error'" style="margin-top: 8px;">
+                      <a-alert
+                        :message="formData.introVideoErrorMessage || 'Lỗi upload video'"
+                        type="error"
+                        show-icon
+                        style="margin-bottom: 8px;"
+                      />
+                      <a-space>
+                        <a-button size="small" type="primary" @click="retryIntroVideoUpload">
+                          <ReloadOutlined /> Thử lại
+                        </a-button>
+                        <a-button size="small" danger @click="handleRemoveIntroVideo">
+                          <DeleteOutlined /> Xóa
+                        </a-button>
+                      </a-space>
+                    </div>
                   </div>
+                  
+                  <!-- Video Preview -->
+                  <div v-if="formData.introVideo && introVideoFileList.length === 0" style="margin-top: 8px">
+                    <video :src="formData.introVideoHlsUrl || formData.introVideo" controls style="max-width: 100%; max-height: 300px;" />
+                  </div>
+                  
+                  <!-- HLS URL -->
+                  <div v-if="formData.introVideoHlsUrl" style="margin-top: 8px; font-size: 12px; color: #666;">
+                    <strong>HLS URL:</strong> 
+                    <a :href="formData.introVideoHlsUrl" target="_blank" style="margin-left: 4px; word-break: break-all;">
+                      {{ formData.introVideoHlsUrl }}
+                    </a>
+                  </div>
+                  
+                  <!-- Quality Metadata -->
+                  <div v-if="formData.introVideoQualityMetadata && (formData.introVideoQualityMetadata.resolution || formData.introVideoQualityMetadata.codec)" style="margin-top: 8px; font-size: 12px; color: #666;">
+                    <strong>Chất lượng:</strong>
+                    <span v-if="formData.introVideoQualityMetadata.resolution" style="margin-left: 4px;">
+                      {{ formData.introVideoQualityMetadata.resolution }}
+                    </span>
+                    <span v-if="formData.introVideoQualityMetadata.codec" style="margin-left: 4px;">
+                      {{ formData.introVideoQualityMetadata.codec }}
+                    </span>
+                    <span v-if="formData.introVideoQualityMetadata.fps" style="margin-left: 4px;">
+                      {{ formData.introVideoQualityMetadata.fps }}fps
+                    </span>
+                    <span v-if="formData.introVideoQualityMetadata.bitrate" style="margin-left: 4px;">
+                      {{ formData.introVideoQualityMetadata.bitrate }}
+                    </span>
+                    <span v-if="formData.introVideoQualityMetadata.segments" style="margin-left: 4px;">
+                      ({{ formData.introVideoQualityMetadata.segments }} segments)
+                    </span>
+                  </div>
+                  
+                  <!-- Thumbnail Upload (Manual) -->
+                  <div style="margin-top: 12px;">
+                    <a-form-item label="Thumbnail video (tùy chọn)">
+                      <a-upload
+                        v-model:file-list="introVideoThumbnailFileList"
+                        :before-upload="() => false"
+                        @change="handleIntroVideoThumbnailChange"
+                        @remove="handleRemoveIntroVideoThumbnail"
+                        accept="image/*"
+                        :max-count="1"
+                        list-type="picture-card"
+                      >
+                        <div v-if="introVideoThumbnailFileList.length < 1">
+                          <PlusOutlined />
+                          <div style="margin-top: 8px">Upload</div>
+                        </div>
+                      </a-upload>
+                      <div v-if="formData.introVideoThumbnail && introVideoThumbnailFileList.length === 0" style="margin-top: 8px">
+                        <img :src="formData.introVideoThumbnail" alt="Video thumbnail" style="max-width: 200px; max-height: 150px; object-fit: cover;" />
+                      </div>
+                    </a-form-item>
+                  </div>
+                  
                   <div v-if="introVideoFileList.length > 0 && introVideoFileList[0] && !introVideoFileList[0].url && !uploadingIntroVideo" style="margin-top: 8px; color: #8c8c8c; font-size: 12px;">
                     Video sẽ được upload khi bạn nhấn "Tạo mới" hoặc "Cập nhật"
                   </div>
@@ -579,8 +727,179 @@
                                 <UploadOutlined /> Chọn video
                               </a-button>
                             </a-upload>
-                            <div v-if="lesson.videos && lesson.videos.length > 0" style="margin-top: 8px;">
+                            
+                            <!-- Video Status -->
+                            <div v-if="lesson.videos && lesson.videos.length > 0 && lesson.videos[0].status" style="margin-top: 8px;">
+                              <a-tag :color="getStatusColor(
+                                (lesson.uploadingVideo && lessonVideoUploadProgress[`chapter-${chapterIndex}-lesson-${lessonIndex}`]?.stage && 
+                                 lessonVideoUploadProgress[`chapter-${chapterIndex}-lesson-${lessonIndex}`].stage !== 'ready')
+                                  ? lessonVideoUploadProgress[`chapter-${chapterIndex}-lesson-${lessonIndex}`].stage === 'uploading-r2'
+                                    ? 'processing'
+                                    : lessonVideoUploadProgress[`chapter-${chapterIndex}-lesson-${lessonIndex}`].stage
+                                  : (lesson.videos[0]?.status === 'uploading' || lesson.videos[0]?.status === 'queueing' || lesson.videos[0]?.status === 'processing')
+                                    && (lesson.videos[0]?.videoUrl || lesson.videos[0]?.hlsUrl)
+                                    ? 'ready'
+                                    : lesson.videos[0]?.status || 'ready'
+                              )">
+                                <template v-if="lesson.uploadingVideo && lessonVideoUploadProgress[`chapter-${chapterIndex}-lesson-${lessonIndex}`]?.stage && 
+                                               lessonVideoUploadProgress[`chapter-${chapterIndex}-lesson-${lessonIndex}`].stage !== 'ready'">
+                                  <a-spin size="small" style="margin-right: 4px;" />
+                                  {{ getStatusText(
+                                    lessonVideoUploadProgress[`chapter-${chapterIndex}-lesson-${lessonIndex}`].stage === 'uploading-r2'
+                                      ? 'processing'
+                                      : lessonVideoUploadProgress[`chapter-${chapterIndex}-lesson-${lessonIndex}`].stage
+                                  ) }}
+                                </template>
+                                <template v-else>
+                                  {{ getStatusText(
+                                    (lesson.videos[0]?.status === 'uploading' || lesson.videos[0]?.status === 'queueing' || lesson.videos[0]?.status === 'processing')
+                                    && (lesson.videos[0]?.videoUrl || lesson.videos[0]?.hlsUrl)
+                                      ? 'ready'
+                                      : lesson.videos[0]?.status || 'ready'
+                                  ) }}
+                                </template>
+                              </a-tag>
+                              
+                              <!-- Upload Progress for Lesson Video -->
+                              <div v-if="lesson.uploadingVideo && lessonVideoUploadProgress[`chapter-${chapterIndex}-lesson-${lessonIndex}`]" style="margin-top: 12px;">
+                                <a-progress 
+                                  :percent="lessonVideoUploadProgress[`chapter-${chapterIndex}-lesson-${lessonIndex}`]?.percent || 0" 
+                                  :status="lessonVideoUploadProgress[`chapter-${chapterIndex}-lesson-${lessonIndex}`]?.percent === 100 ? 'success' : 'active'"
+                                  :stroke-color="{
+                                    '0%': '#108ee9',
+                                    '100%': '#87d068',
+                                  }"
+                                  :show-info="true"
+                                />
+                                <div style="margin-top: 8px; font-size: 12px; color: #666;">
+                                  <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px;">
+                                    <span>
+                                      <strong>{{ lessonVideoUploadProgress[`chapter-${chapterIndex}-lesson-${lessonIndex}`]?.percent || 0 }}%</strong>
+                                      <span style="margin-left: 8px; color: #1890ff; font-weight: 500;">
+                                        {{ getStatusText(lessonVideoUploadProgress[`chapter-${chapterIndex}-lesson-${lessonIndex}`]?.stage || 'uploading') }}
+                                      </span>
+                                    </span>
+                                    <span v-if="lessonVideoUploadProgress[`chapter-${chapterIndex}-lesson-${lessonIndex}`]?.timeRemaining > 0 && lessonVideoUploadProgress[`chapter-${chapterIndex}-lesson-${lessonIndex}`]?.percent < 100" style="color: #1890ff; font-weight: 500;">
+                                      ⏱️ Còn lại: {{ formatTimeRemaining(lessonVideoUploadProgress[`chapter-${chapterIndex}-lesson-${lessonIndex}`]?.timeRemaining || 0) }}
+                                    </span>
+                                    <span v-else-if="lessonVideoUploadProgress[`chapter-${chapterIndex}-lesson-${lessonIndex}`]?.percent === 100" style="color: #52c41a; font-weight: 500;">
+                                      ✅ Hoàn thành
+                                    </span>
+                                  </div>
+                                  <div style="display: flex; justify-content: space-between; align-items: center;">
+                                    <span>
+                                      <span v-if="lessonVideoUploadProgress[`chapter-${chapterIndex}-lesson-${lessonIndex}`]?.stage === 'uploading'">
+                                        {{ formatFileSize(lessonVideoUploadProgress[`chapter-${chapterIndex}-lesson-${lessonIndex}`]?.uploaded || 0) }} / {{ formatFileSize(lessonVideoUploadProgress[`chapter-${chapterIndex}-lesson-${lessonIndex}`]?.total || 0) }}
+                                      </span>
+                                      <span v-else-if="lessonVideoUploadProgress[`chapter-${chapterIndex}-lesson-${lessonIndex}`]?.stage === 'queueing'">
+                                        Đang chờ xử lý...
+                                      </span>
+                                      <span v-else-if="lessonVideoUploadProgress[`chapter-${chapterIndex}-lesson-${lessonIndex}`]?.stage === 'processing'">
+                                        Đang convert video sang HLS...
+                                      </span>
+                                      <span v-else-if="lessonVideoUploadProgress[`chapter-${chapterIndex}-lesson-${lessonIndex}`]?.stage === 'uploading-r2'">
+                                        Đang upload lên R2/CDN...
+                                      </span>
+                                      <span v-if="lessonVideoUploadProgress[`chapter-${chapterIndex}-lesson-${lessonIndex}`]?.speed > 0 && lessonVideoUploadProgress[`chapter-${chapterIndex}-lesson-${lessonIndex}`]?.stage === 'uploading'" style="margin-left: 8px; color: #52c41a;">
+                                        ({{ formatFileSize(lessonVideoUploadProgress[`chapter-${chapterIndex}-lesson-${lessonIndex}`]?.speed || 0) }}/s)
+                                      </span>
+                                    </span>
+                                  </div>
+                                </div>
+                                <!-- Cancel button when uploading -->
+                                <div v-if="lessonVideoUploadProgress[`chapter-${chapterIndex}-lesson-${lessonIndex}`]?.percent < 100" style="margin-top: 8px;">
+                                  <a-button size="small" danger @click="async () => {
+                                    // Cancel upload if in progress
+                                    if (lesson.videos[0]?.jobId && 
+                                        (lesson.videos[0].status === 'uploading' || 
+                                         lesson.videos[0].status === 'queueing' || 
+                                         lesson.videos[0].status === 'processing')) {
+                                      try {
+                                        const uploadsApi = useUploadsApi()
+                                        await uploadsApi.cancelVideoUpload(lesson.videos[0].jobId)
+                                        message.success('Đã hủy upload video và xóa các file đã tạo')
+                                      } catch (error: any) {
+                                        console.error('Cancel video upload error:', error)
+                                        message.warning('Không thể hủy upload, nhưng đã xóa khỏi form')
+                                      }
+                                    }
+                                    lesson.videos = []
+                                    lesson.videoFileList = []
+                                    lesson.uploadingVideo = false
+                                    delete lessonVideoUploadProgress[`chapter-${chapterIndex}-lesson-${lessonIndex}`]
+                                  }">
+                                    <DeleteOutlined /> Hủy upload
+                                  </a-button>
+                                </div>
+                              </div>
+                              
+                              <!-- Error Message & Actions -->
+                              <div v-if="lesson.videos[0].status === 'error'" style="margin-top: 8px;">
+                                <a-alert
+                                  :message="lesson.videos[0].errorMessage || 'Lỗi upload video'"
+                                  type="error"
+                                  show-icon
+                                  style="margin-bottom: 8px;"
+                                />
+                                <a-space>
+                                  <a-button size="small" type="primary" @click="() => handleLessonVideoChange(chapterIndex, lessonIndex, { fileList: lesson.videoFileList })">
+                                    <ReloadOutlined /> Thử lại
+                                  </a-button>
+                                  <a-button size="small" danger @click="async () => {
+                                    // Cancel upload if in progress
+                                    if (lesson.videos[0]?.jobId && 
+                                        (lesson.videos[0].status === 'uploading' || 
+                                         lesson.videos[0].status === 'queueing' || 
+                                         lesson.videos[0].status === 'processing')) {
+                                      try {
+                                        const uploadsApi = useUploadsApi()
+                                        await uploadsApi.cancelVideoUpload(lesson.videos[0].jobId)
+                                        message.success('Đã hủy upload video và xóa các file đã tạo')
+                                      } catch (error: any) {
+                                        console.error('Cancel video upload error:', error)
+                                        message.warning('Không thể hủy upload, nhưng đã xóa khỏi form')
+                                      }
+                                    }
+                                    lesson.videos = []
+                                    lesson.videoFileList = []
+                                  }">
+                                    <DeleteOutlined /> Xóa
+                                  </a-button>
+                                </a-space>
+                              </div>
+                            </div>
+                            
+                            <!-- Video Info -->
+                            <div v-if="lesson.videos && lesson.videos.length > 0 && lesson.videos[0].status !== 'error'" style="margin-top: 8px;">
                               <a-tag color="success">Đã upload: {{ lesson.videos[0].title }}</a-tag>
+                            </div>
+                            
+                            <!-- HLS URL -->
+                            <div v-if="lesson.videos && lesson.videos.length > 0 && lesson.videos[0].hlsUrl" style="margin-top: 8px; font-size: 12px; color: #666;">
+                              <strong>HLS URL:</strong> 
+                              <a :href="lesson.videos[0].hlsUrl" target="_blank" style="margin-left: 4px; word-break: break-all;">
+                                {{ lesson.videos[0].hlsUrl }}
+                              </a>
+                            </div>
+                            
+                            <!-- Quality Metadata -->
+                            <div v-if="lesson.videos && lesson.videos.length > 0 && lesson.videos[0].qualityMetadata && (lesson.videos[0].qualityMetadata.resolution || lesson.videos[0].qualityMetadata.codec)" style="margin-top: 8px; font-size: 12px; color: #666;">
+                              <strong>Chất lượng:</strong>
+                              <span v-if="lesson.videos[0].qualityMetadata.resolution" style="margin-left: 4px;">
+                                {{ lesson.videos[0].qualityMetadata.resolution }}
+                              </span>
+                              <span v-if="lesson.videos[0].qualityMetadata.codec" style="margin-left: 4px;">
+                                {{ lesson.videos[0].qualityMetadata.codec }}
+                              </span>
+                              <span v-if="lesson.videos[0].qualityMetadata.fps" style="margin-left: 4px;">
+                                {{ lesson.videos[0].qualityMetadata.fps }}fps
+                              </span>
+                              <span v-if="lesson.videos[0].qualityMetadata.bitrate" style="margin-left: 4px;">
+                                {{ lesson.videos[0].qualityMetadata.bitrate }}
+                              </span>
+                              <span v-if="lesson.videos[0].qualityMetadata.segments" style="margin-left: 4px;">
+                                ({{ lesson.videos[0].qualityMetadata.segments }} segments)
+                              </span>
                             </div>
                           </a-form-item>
                         </a-col>
@@ -857,6 +1176,7 @@ import {
   LevelOutlined,
   TagsOutlined,
 } from '@ant-design/icons-vue'
+import { useUploadsApi } from '~/composables/api/useUploadsApi'
 import { message } from 'ant-design-vue'
 import type { Course } from '~/types/api'
 import { useCoursesApi } from '~/composables/api/useCoursesApi'
@@ -909,9 +1229,41 @@ const viewingCourse = ref<Course | null>(null)
 // State for file uploads
 const thumbnailFileList = ref<UploadFile[]>([])
 const introVideoFileList = ref<UploadFile[]>([])
+const introVideoThumbnailFileList = ref<UploadFile[]>([]) // Thumbnail riêng cho video
 const instructorAvatarFileList = ref<UploadFile[]>([])
 const uploadingIntroVideo = ref(false)
 const activeTab = ref('basic')
+
+// Video upload progress tracking - includes upload, processing, and R2 upload
+const introVideoUploadProgress = reactive({
+  percent: 0,
+  uploaded: 0,
+  total: 0,
+  speed: 0, // bytes per second
+  timeRemaining: 0, // seconds
+  startTime: 0,
+  lastUpdateTime: 0, // For calculating speed more accurately
+  lastUploaded: 0, // For calculating speed more accurately
+  stage: 'uploading' as 'uploading' | 'queueing' | 'processing' | 'uploading-r2' | 'ready' | '', // Current stage
+  fileUploadPercent: 0, // Progress of file upload (0-100)
+  estimatedProcessingTime: 0, // Estimated time for HLS conversion (seconds)
+  estimatedR2UploadTime: 0, // Estimated time for R2 upload (seconds)
+})
+
+const lessonVideoUploadProgress = reactive<Record<string, {
+  percent: number
+  uploaded: number
+  total: number
+  speed: number
+  timeRemaining: number
+  startTime: number
+  lastUpdateTime: number
+  lastUploaded: number
+  stage: 'uploading' | 'queueing' | 'processing' | 'uploading-r2' | 'ready' | ''
+  fileUploadPercent: number
+  estimatedProcessingTime: number
+  estimatedR2UploadTime: number
+}>>({})
 
 // Updated formData - THÊM LẠI ĐỊNH NGHĨA NÀY
 const formData = reactive({
@@ -921,6 +1273,19 @@ const formData = reactive({
   shortDescription: '',
   thumbnail: '',
   introVideo: '',
+  // Video metadata fields
+  introVideoStatus: 'ready' as 'uploading' | 'queueing' | 'processing' | 'ready' | 'error',
+  introVideoHlsUrl: '',
+  introVideoJobId: '', // Job ID for canceling upload
+  introVideoQualityMetadata: {
+    resolution: '',
+    bitrate: '',
+    codec: '',
+    fps: 0,
+    segments: 0,
+  },
+  introVideoThumbnail: '', // Thumbnail riêng cho video (Admin upload thủ công)
+  introVideoErrorMessage: '', // Error message for intro video
   price: 0,
   originalPrice: 0,
   discount: 0,
@@ -990,6 +1355,30 @@ const paginationConfig = computed(() => ({
 }))
 
 // Format functions
+// Helper functions for video status
+const getStatusColor = (status: string) => {
+  const colors: Record<string, string> = {
+    uploading: 'blue',
+    queueing: 'orange',
+    processing: 'purple',
+    ready: 'green',
+    error: 'red',
+  }
+  return colors[status] || 'default'
+}
+
+const getStatusText = (status: string) => {
+  const texts: Record<string, string> = {
+    uploading: 'Đang upload',
+    queueing: 'Đang chờ xử lý',
+    processing: 'Đang xử lý',
+    'uploading-r2': 'Đang upload lên R2',
+    ready: 'Sẵn sàng',
+    error: 'Lỗi',
+  }
+  return texts[status] || status
+}
+
 const formatNumber = (num: number) => {
   return new Intl.NumberFormat('vi-VN').format(num || 0)
 }
@@ -1067,40 +1456,164 @@ const handleIntroVideoChange = async (info: any) => {
     const file = fileList[0].originFileObj as File
     uploadingIntroVideo.value = true
     
+    // Set status to uploading
+    formData.introVideoStatus = 'uploading'
+    formData.introVideoErrorMessage = ''
+    
     try {
-      // Upload video to R2/CDN
-      const videoUrl = await uploadVideoToR2(file, 'courses/intro-videos')
+      // Upload video to R2/CDN - returns full video object
+      const videoData = await uploadVideoToR2(file, 'courses/intro-videos')
       
-      // Lưu URL vào formData
-      formData.introVideo = videoUrl
+      // Lưu các trường vào formData
+      formData.introVideo = videoData.url || videoData.hlsUrl || ''
+      formData.introVideoHlsUrl = videoData.hlsUrl || ''
+      formData.introVideoStatus = videoData.status || 'ready'
+      formData.introVideoErrorMessage = videoData.errorMessage || ''
+      formData.introVideoJobId = videoData.jobId || ''
+      formData.introVideoQualityMetadata = videoData.qualityMetadata || {
+        resolution: '',
+        bitrate: '',
+        codec: '',
+        fps: 0,
+        segments: 0,
+      }
       
       // Cập nhật fileList với URL
       introVideoFileList.value = [{
         ...fileList[0],
-        url: videoUrl,
+        url: formData.introVideo,
         status: 'done',
       }]
       
-      message.success('Upload video giới thiệu thành công')
+      // If video is ready, clear progress tracker immediately
+      if (formData.introVideoStatus === 'ready') {
+        // Clear progress tracker
+        introVideoUploadProgress.percent = 0
+        introVideoUploadProgress.stage = ''
+        introVideoUploadProgress.uploaded = 0
+        introVideoUploadProgress.total = 0
+        introVideoUploadProgress.speed = 0
+        introVideoUploadProgress.timeRemaining = 0
+        introVideoUploadProgress.fileUploadPercent = 0
+        uploadingIntroVideo.value = false
+        message.success('Upload video giới thiệu thành công')
+      }
     } catch (error: any) {
       console.error('Upload intro video error:', error)
-      // Error message đã được format rõ ràng trong uploadVideoToR2
-      message.error(error.message || 'Upload video giới thiệu thất bại')
-      // Xóa file khỏi fileList nếu upload thất bại
-      introVideoFileList.value = []
-      formData.introVideo = ''
+      
+    // Extract error message from error response
+    let errorMessage = error.message || 'Upload video giới thiệu thất bại'
+    if (error.data?.error?.errorMessage) {
+      errorMessage = error.data.error.errorMessage
+    } else if (error.data?.error?.errorMessage) {
+      errorMessage = error.data.error.errorMessage
+    } else if (error.data?.errorMessage) {
+      errorMessage = error.data.errorMessage
+    } else if (typeof error.data?.error === 'object' && error.data.error?.errorMessage) {
+      errorMessage = error.data.error.errorMessage
+    }
+      
+      // Set error status and message
+      formData.introVideoStatus = 'error'
+      formData.introVideoErrorMessage = errorMessage
+      
+      // Keep file in list but mark as error
+      introVideoFileList.value = [{
+        ...fileList[0],
+        status: 'error',
+      }]
+      
+      message.error(errorMessage)
     } finally {
       uploadingIntroVideo.value = false
     }
   } else {
     // File removed
     formData.introVideo = ''
+    formData.introVideoStatus = 'ready'
+    formData.introVideoHlsUrl = ''
+    formData.introVideoErrorMessage = ''
+    formData.introVideoQualityMetadata = {
+      resolution: '',
+      bitrate: '',
+      codec: '',
+      fps: 0,
+      segments: 0,
+    }
   }
 }
 
-const handleRemoveIntroVideo = () => {
+const handleRemoveIntroVideo = async () => {
+  // If video is uploading/queueing/processing, cancel the job first
+  if (formData.introVideoJobId && 
+      (formData.introVideoStatus === 'uploading' || 
+       formData.introVideoStatus === 'queueing' || 
+       formData.introVideoStatus === 'processing')) {
+    try {
+      const uploadsApi = useUploadsApi()
+      await uploadsApi.cancelVideoUpload(formData.introVideoJobId)
+      message.success('Đã hủy upload video và xóa các file đã tạo')
+    } catch (error: any) {
+      console.error('Cancel video upload error:', error)
+      message.warning('Không thể hủy upload, nhưng đã xóa khỏi form')
+    }
+  }
+  
   formData.introVideo = ''
+  formData.introVideoStatus = 'ready'
+  formData.introVideoHlsUrl = ''
+  formData.introVideoErrorMessage = ''
+  formData.introVideoJobId = ''
+  formData.introVideoQualityMetadata = {
+    resolution: '',
+    bitrate: '',
+    codec: '',
+    fps: 0,
+    segments: 0,
+  }
   introVideoFileList.value = []
+}
+
+// Retry intro video upload
+const retryIntroVideoUpload = async () => {
+  if (introVideoFileList.value.length > 0 && introVideoFileList.value[0].originFileObj) {
+    await handleIntroVideoChange({ fileList: introVideoFileList.value })
+  }
+}
+
+const handleIntroVideoThumbnailChange = async (info: any) => {
+  const { fileList } = info
+  
+  if (fileList.length > 0 && fileList[0].originFileObj) {
+    const file = fileList[0].originFileObj as File
+    try {
+      const uploadsApi = useUploadsApi()
+      const response = await uploadsApi.uploadImage(file)
+      const imageUrl = response?.data?.files?.[0]?.url || response?.data?.url || ''
+      
+      if (imageUrl) {
+        formData.introVideoThumbnail = imageUrl
+        introVideoThumbnailFileList.value = [{
+          ...fileList[0],
+          url: imageUrl,
+          status: 'done',
+        }]
+        message.success('Upload thumbnail video thành công')
+      }
+    } catch (error: any) {
+      console.error('Upload intro video thumbnail error:', error)
+      message.error(error.message || 'Upload thumbnail thất bại')
+      introVideoThumbnailFileList.value = []
+      formData.introVideoThumbnail = ''
+    }
+  } else {
+    formData.introVideoThumbnail = ''
+  }
+}
+
+const handleRemoveIntroVideoThumbnail = () => {
+  formData.introVideoThumbnail = ''
+  introVideoThumbnailFileList.value = []
 }
 
 const handleRemoveInstructorAvatar = () => {
@@ -1156,10 +1669,29 @@ const uploadFileToMinIO = async (file: File, folder: string = 'courses'): Promis
   }
 }
 
-// Upload video to R2/CDN - SỬA URL TƯƠNG TỰ
-const uploadVideoToR2 = async (file: File, folder: string = 'courses/intro-videos'): Promise<string> => {
+// Upload video to R2/CDN with progress tracking
+// Returns full video object with status, hlsUrl, qualityMetadata
+const uploadVideoToR2 = async (
+  file: File, 
+  folder: string = 'courses/intro-videos',
+  progressKey?: string // Key để track progress cho lesson videos
+): Promise<{
+  url: string
+  hlsUrl: string
+  status: 'uploading' | 'queueing' | 'processing' | 'ready' | 'error'
+  errorMessage?: string
+  jobId?: string
+  qualityMetadata: {
+    resolution: string
+    bitrate: string
+    codec: string
+    fps: number
+    segments: number
+  }
+}> => {
   const config = useRuntimeConfig()
   const authStore = useAuthStore()
+  
   // Nếu apiHost rỗng, dùng relative path (Nuxt sẽ proxy)
   // Nếu không, dùng apiHost được cấu hình hoặc fallback localhost cho development
   let apiHost = config.public.apiHost
@@ -1172,59 +1704,381 @@ const uploadVideoToR2 = async (file: File, folder: string = 'courses/intro-video
       apiHost = '' // Relative path
     }
   }
-  const uploadFormData = new FormData()
-  uploadFormData.append('file', file) // Note: 'file' not 'files'
   
-  try {
-    // URL đúng: /api/uploads/video (không có /a)
-    const url = apiHost ? `${apiHost}/api/uploads/video?folder=${folder}` : `/api/uploads/video?folder=${folder}`
-    console.log('📤 Uploading video to:', url) // Debug
+  const uploadFormData = new FormData()
+  uploadFormData.append('file', file)
+  
+  // URL đúng: /api/uploads/video (không có /a)
+  const url = apiHost ? `${apiHost}/api/uploads/video?folder=${folder}` : `/api/uploads/video?folder=${folder}`
+  console.log('📤 Uploading video to:', url)
+  
+  // Use XMLHttpRequest for progress tracking
+  return new Promise((resolve, reject) => {
+    const xhr = new XMLHttpRequest()
     
-    const response: any = await $fetch(url, {
-      method: 'POST',
-      body: uploadFormData,
-      headers: {
-        ...(authStore.token ? { Authorization: `Bearer ${authStore.token}` } : {}),
+    // Initialize progress tracker
+    const now = Date.now()
+    
+    // Estimate processing time based on file size (rough estimate: 1MB = 1 second for conversion)
+    const estimatedProcessingSeconds = Math.max(10, Math.ceil(file.size / (1024 * 1024))) // At least 10 seconds
+    // Estimate R2 upload time (rough estimate: 5MB/s upload speed)
+    const estimatedR2UploadSeconds = Math.max(5, Math.ceil(file.size / (5 * 1024 * 1024)))
+    
+    if (progressKey) {
+      if (!lessonVideoUploadProgress[progressKey]) {
+        lessonVideoUploadProgress[progressKey] = {
+          percent: 0,
+          uploaded: 0,
+          total: file.size,
+          speed: 0,
+          timeRemaining: 0,
+          startTime: now,
+          lastUpdateTime: now,
+          lastUploaded: 0,
+          stage: 'uploading',
+          fileUploadPercent: 0,
+          estimatedProcessingTime: estimatedProcessingSeconds,
+          estimatedR2UploadTime: estimatedR2UploadSeconds,
+        }
+      } else {
+        // Reset if exists
+        lessonVideoUploadProgress[progressKey].percent = 0
+        lessonVideoUploadProgress[progressKey].uploaded = 0
+        lessonVideoUploadProgress[progressKey].total = file.size
+        lessonVideoUploadProgress[progressKey].speed = 0
+        lessonVideoUploadProgress[progressKey].timeRemaining = 0
+        lessonVideoUploadProgress[progressKey].startTime = now
+        lessonVideoUploadProgress[progressKey].lastUpdateTime = now
+        lessonVideoUploadProgress[progressKey].lastUploaded = 0
+        lessonVideoUploadProgress[progressKey].stage = 'uploading'
+        lessonVideoUploadProgress[progressKey].fileUploadPercent = 0
+        lessonVideoUploadProgress[progressKey].estimatedProcessingTime = estimatedProcessingSeconds
+        lessonVideoUploadProgress[progressKey].estimatedR2UploadTime = estimatedR2UploadSeconds
+      }
+    } else {
+      introVideoUploadProgress.percent = 0
+      introVideoUploadProgress.uploaded = 0
+      introVideoUploadProgress.total = file.size
+      introVideoUploadProgress.speed = 0
+      introVideoUploadProgress.timeRemaining = 0
+      introVideoUploadProgress.startTime = now
+      introVideoUploadProgress.lastUpdateTime = now
+      introVideoUploadProgress.lastUploaded = 0
+      introVideoUploadProgress.stage = 'uploading'
+      introVideoUploadProgress.fileUploadPercent = 0
+      introVideoUploadProgress.estimatedProcessingTime = estimatedProcessingSeconds
+      introVideoUploadProgress.estimatedR2UploadTime = estimatedR2UploadSeconds
+    }
+    
+    // Get progress tracker reference
+    const progressTracker = progressKey ? lessonVideoUploadProgress[progressKey] : introVideoUploadProgress
+    
+    // Store interval IDs for cleanup
+    let processingIntervalId: NodeJS.Timeout | null = null
+    let r2UploadIntervalId: NodeJS.Timeout | null = null
+    
+    // Function to start processing stages after file upload completes
+    const startProcessingStages = () => {
+      if (!progressTracker) return
+      
+      // File upload is complete (40%), now simulate processing stages
+      progressTracker.fileUploadPercent = 100
+      progressTracker.stage = 'queueing'
+      progressTracker.percent = 40
+      progressTracker.timeRemaining = progressTracker.estimatedProcessingTime + progressTracker.estimatedR2UploadTime
+      
+      // Simulate queueing stage (40-45%)
+      setTimeout(() => {
+        if (!progressTracker) return
+        
+        progressTracker.stage = 'processing'
+        progressTracker.percent = 45
+        
+        // Simulate processing stage (45-80%)
+        const processingStartTime = Date.now()
+        processingIntervalId = setInterval(() => {
+          if (!progressTracker) {
+            if (processingIntervalId) clearInterval(processingIntervalId)
+            return
+          }
+          
+          const elapsed = (Date.now() - processingStartTime) / 1000
+          const processingProgress = Math.min(80, 45 + (elapsed / progressTracker.estimatedProcessingTime) * 35)
+          progressTracker.percent = Math.round(processingProgress)
+          progressTracker.timeRemaining = Math.max(0, progressTracker.estimatedProcessingTime - elapsed + progressTracker.estimatedR2UploadTime)
+          
+          if (processingProgress >= 80) {
+            if (processingIntervalId) clearInterval(processingIntervalId)
+            processingIntervalId = null
+            progressTracker.stage = 'uploading-r2'
+            
+            // Simulate R2 upload stage (80-100%)
+            const r2UploadStartTime = Date.now()
+            r2UploadIntervalId = setInterval(() => {
+              if (!progressTracker) {
+                if (r2UploadIntervalId) clearInterval(r2UploadIntervalId)
+                return
+              }
+              
+              const r2Elapsed = (Date.now() - r2UploadStartTime) / 1000
+              const r2Progress = Math.min(100, 80 + (r2Elapsed / progressTracker.estimatedR2UploadTime) * 20)
+              progressTracker.percent = Math.round(r2Progress)
+              progressTracker.timeRemaining = Math.max(0, progressTracker.estimatedR2UploadTime - r2Elapsed)
+              
+              if (r2Progress >= 100) {
+                if (r2UploadIntervalId) clearInterval(r2UploadIntervalId)
+                r2UploadIntervalId = null
+                progressTracker.stage = 'ready'
+                progressTracker.percent = 100
+                progressTracker.timeRemaining = 0
+              }
+            }, 200) // Update every 200ms
+          }
+        }, 200) // Update every 200ms
+      }, 500) // Small delay for queueing
+    }
+    
+    // Track upload progress with real-time updates
+    xhr.upload.addEventListener('progress', (e) => {
+      if (e.lengthComputable && progressTracker) {
+        const currentTime = Date.now()
+        const fileUploadPercent = Math.round((e.loaded / e.total) * 100)
+        
+        // Calculate speed based on recent progress (more accurate)
+        const timeDelta = (currentTime - progressTracker.lastUpdateTime) / 1000 // seconds
+        let speed = 0
+        
+        if (timeDelta > 0.1) { // Update speed every 100ms minimum
+          const bytesDelta = e.loaded - progressTracker.lastUploaded
+          speed = bytesDelta / timeDelta // bytes per second
+          
+          // Use moving average for smoother speed calculation
+          if (progressTracker.speed > 0) {
+            // Weighted average: 70% old speed, 30% new speed
+            speed = progressTracker.speed * 0.7 + speed * 0.3
+          }
+          
+          progressTracker.lastUpdateTime = currentTime
+          progressTracker.lastUploaded = e.loaded
+        } else {
+          // Keep previous speed if update is too frequent
+          speed = progressTracker.speed
+        }
+        
+        // Calculate overall progress:
+        // - File upload: 0-40% of total progress
+        // - Processing (HLS conversion): 40-80% of total progress
+        // - R2 upload: 80-100% of total progress
+        const fileUploadProgress = fileUploadPercent * 0.4 // File upload is 40% of total
+        const overallPercent = Math.round(fileUploadProgress)
+        
+        // Calculate time remaining for file upload
+        const fileUploadRemaining = speed > 0 ? (e.total - e.loaded) / speed : 0
+        // Add estimated time for processing and R2 upload
+        const totalRemaining = fileUploadRemaining + progressTracker.estimatedProcessingTime + progressTracker.estimatedR2UploadTime
+        
+        // Update progress tracker
+        progressTracker.percent = overallPercent
+        progressTracker.uploaded = e.loaded
+        progressTracker.total = e.total
+        progressTracker.speed = speed
+        progressTracker.timeRemaining = Math.max(0, totalRemaining)
+        progressTracker.fileUploadPercent = fileUploadPercent
+        progressTracker.stage = 'uploading'
+        
+        // When file upload reaches 100%, start processing stages
+        if (fileUploadPercent >= 100 && progressTracker.stage === 'uploading') {
+          startProcessingStages()
+        }
       }
     })
     
-    console.log('📤 Video upload response:', response) // Debug
+    // Handle response
+    xhr.addEventListener('load', () => {
+      if (xhr.status >= 200 && xhr.status < 300) {
+        try {
+          const response = JSON.parse(xhr.responseText)
+          console.log('📤 Video upload response:', response)
+          
+          // If processing stages haven't started yet, start them now
+          if (progressTracker && progressTracker.stage === 'uploading' && progressTracker.fileUploadPercent >= 100) {
+            startProcessingStages()
+          }
+          
+          // Parse response
+          const videos = response?.data?.videos || response?.videos || []
+          const jobId = response?.data?.jobId || response?.jobId || ''
+          
+          if (videos.length > 0 && videos[0]) {
+            const video = videos[0]
+            const videoData = {
+              url: video.url || video.hlsUrl || '',
+              hlsUrl: video.hlsUrl || video.url || '',
+              status: video.status || 'ready',
+              errorMessage: video.errorMessage || '',
+              jobId: jobId || video.jobId || '',
+              qualityMetadata: video.qualityMetadata || {
+                resolution: '',
+                bitrate: '',
+                codec: '',
+                fps: 0,
+                segments: video.segments || 0,
+              },
+            }
+            console.log('📤 Final videoData:', videoData)
+            
+            // Wait for progress to complete, then reset
+            setTimeout(() => {
+              // Clear any running intervals
+              if (processingIntervalId) {
+                clearInterval(processingIntervalId)
+                processingIntervalId = null
+              }
+              if (r2UploadIntervalId) {
+                clearInterval(r2UploadIntervalId)
+                r2UploadIntervalId = null
+              }
+              
+              if (progressKey) {
+                // Clear lesson video progress tracker
+                delete lessonVideoUploadProgress[progressKey]
+              } else {
+                // Clear intro video progress tracker completely
+                introVideoUploadProgress.percent = 0
+                introVideoUploadProgress.stage = ''
+                introVideoUploadProgress.uploaded = 0
+                introVideoUploadProgress.total = 0
+                introVideoUploadProgress.speed = 0
+                introVideoUploadProgress.timeRemaining = 0
+                introVideoUploadProgress.fileUploadPercent = 0
+              }
+            }, 2000) // Wait 2 seconds for final progress animation
+            
+            resolve(videoData)
+          } else {
+            throw new Error('Video upload failed: No file URL in response')
+          }
+        } catch (error: any) {
+          console.error('❌ Parse response error:', error)
+          
+          // Clear intervals on error
+          if (processingIntervalId) {
+            clearInterval(processingIntervalId)
+            processingIntervalId = null
+          }
+          if (r2UploadIntervalId) {
+            clearInterval(r2UploadIntervalId)
+            r2UploadIntervalId = null
+          }
+          
+          reject(new Error('Lỗi định dạng file hoặc không thể parse response'))
+        }
+      } else {
+        // Handle error response
+        let errorMessage = 'Upload video thất bại'
+        try {
+          const errorResponse = JSON.parse(xhr.responseText)
+          if (errorResponse?.error?.errorMessage) {
+            errorMessage = errorResponse.error.errorMessage
+          } else if (errorResponse?.error) {
+            errorMessage = typeof errorResponse.error === 'string' ? errorResponse.error : 'Upload video thất bại'
+          }
+        } catch (e) {
+          // If can't parse, use status-based message
+          if (xhr.status === 413) {
+            errorMessage = 'File quá lớn! Kích thước file không được vượt quá 5GB.'
+          } else if (xhr.status === 503 || xhr.status === 504) {
+            errorMessage = 'Upload video mất quá nhiều thời gian. Vui lòng thử lại sau.'
+          }
+        }
+        
+        // Reset progress
+        if (progressKey) {
+          delete lessonVideoUploadProgress[progressKey]
+        } else {
+          introVideoUploadProgress.percent = 0
+        }
+        
+        reject(new Error(errorMessage))
+      }
+    })
     
-    // Parse response
-    const videos = response?.data?.videos || response?.videos || []
+    // Handle errors
+    xhr.addEventListener('error', () => {
+      // Clear intervals on error
+      if (processingIntervalId) {
+        clearInterval(processingIntervalId)
+        processingIntervalId = null
+      }
+      if (r2UploadIntervalId) {
+        clearInterval(r2UploadIntervalId)
+        r2UploadIntervalId = null
+      }
+      
+      // Reset progress
+      if (progressKey) {
+        delete lessonVideoUploadProgress[progressKey]
+      } else {
+        introVideoUploadProgress.percent = 0
+        introVideoUploadProgress.stage = 'uploading'
+      }
+      reject(new Error('Lỗi kết nối khi upload video'))
+    })
     
-    if (videos.length > 0 && videos[0].url) {
-      return videos[0].url
+    xhr.addEventListener('abort', () => {
+      // Clear intervals on abort
+      if (processingIntervalId) {
+        clearInterval(processingIntervalId)
+        processingIntervalId = null
+      }
+      if (r2UploadIntervalId) {
+        clearInterval(r2UploadIntervalId)
+        r2UploadIntervalId = null
+      }
+      
+      // Reset progress
+      if (progressKey) {
+        delete lessonVideoUploadProgress[progressKey]
+      } else {
+        introVideoUploadProgress.percent = 0
+        introVideoUploadProgress.stage = 'uploading'
+      }
+      reject(new Error('Upload bị hủy'))
+    })
+    
+    // Send request
+    xhr.open('POST', url)
+    
+    // Set headers
+    if (authStore.token) {
+      xhr.setRequestHeader('Authorization', `Bearer ${authStore.token}`)
     }
     
-    throw new Error('Video upload failed: No file URL in response')
-  } catch (error: any) {
-    console.error('❌ Video upload error:', error)
-    
-    // Handle specific error codes with user-friendly messages
-    let errorMessage = 'Upload video thất bại'
-    
-    // Check status code from various possible locations
-    const status = error.statusCode || error.status || error.response?.status || 
-                   (error.data?.statusCode) || (error.data?.status)
-    
-    // Check error message for specific patterns
-    const errorMsg = error.message || error.data?.message || error.data?.error || ''
-    
-    if (status === 413 || errorMsg.includes('413') || errorMsg.includes('Request Entity Too Large')) {
-      errorMessage = 'File quá lớn! Kích thước file không được vượt quá 2GB. Vui lòng chọn file nhỏ hơn hoặc nén video trước khi upload.'
-    } else if (status === 403 && (errorMsg.includes('413') || errorMsg.includes('Request Entity Too Large'))) {
-      errorMessage = 'File quá lớn! Kích thước file không được vượt quá 2GB. Vui lòng chọn file nhỏ hơn hoặc nén video trước khi upload.'
-    } else if (status === 503 || status === 504 || 
-               errorMsg.includes('504') || errorMsg.includes('503') || 
-               errorMsg.includes('timeout') || errorMsg.includes('Gateway Timeout') ||
-               errorMsg.includes('Service Unavailable')) {
-      errorMessage = 'Upload video mất quá nhiều thời gian. Video có thể quá lớn hoặc quá trình xử lý (convert HLS) mất nhiều thời gian. Vui lòng thử lại với video nhỏ hơn hoặc đợi và thử lại sau.'
-    } else if (errorMsg) {
-      errorMessage = errorMsg
-    }
-    
-    throw new Error(errorMessage)
+    xhr.send(uploadFormData)
+  })
+}
+
+// Helper function to format file size
+const formatFileSize = (bytes: number): string => {
+  if (bytes === 0) return '0 B'
+  const k = 1024
+  const sizes = ['B', 'KB', 'MB', 'GB']
+  const i = Math.floor(Math.log(bytes) / Math.log(k))
+  return Math.round((bytes / Math.pow(k, i)) * 100) / 100 + ' ' + sizes[i]
+}
+
+// Helper function to format time remaining
+const formatTimeRemaining = (seconds: number): string => {
+  if (seconds < 60) {
+    return `${Math.round(seconds)} giây`
+  } else if (seconds < 3600) {
+    const minutes = Math.floor(seconds / 60)
+    const secs = Math.round(seconds % 60)
+    return `${minutes} phút ${secs} giây`
+  } else {
+    const hours = Math.floor(seconds / 3600)
+    const minutes = Math.floor((seconds % 3600) / 60)
+    return `${hours} giờ ${minutes} phút`
   }
 }
 
@@ -1367,6 +2221,17 @@ const resetForm = () => {
     shortDescription: '',
     thumbnail: '',
     introVideo: '',
+    introVideoStatus: 'ready',
+    introVideoHlsUrl: '',
+    introVideoQualityMetadata: {
+      resolution: '',
+      bitrate: '',
+      codec: '',
+      fps: 0,
+      segments: 0,
+    },
+    introVideoThumbnail: '',
+    introVideoErrorMessage: '',
     price: 0,
     originalPrice: 0,
     discount: 0,
@@ -1385,6 +2250,7 @@ const resetForm = () => {
   })
   thumbnailFileList.value = []
   introVideoFileList.value = []
+  introVideoThumbnailFileList.value = []
   instructorAvatarFileList.value = []
   activeTab.value = 'basic'
   formRef.value?.resetFields()
@@ -1423,6 +2289,19 @@ const editCourse = async (course: Course) => {
         shortDescription: courseData.shortDescription || '',
         thumbnail: courseData.thumbnail || '',
         introVideo: courseData.introVideo || '',
+        introVideoStatus: (courseData.introVideoStatus === 'uploading' || courseData.introVideoStatus === 'queueing' || courseData.introVideoStatus === 'processing')
+          && (courseData.introVideo || courseData.introVideoHlsUrl)
+          ? 'ready'
+          : (courseData.introVideoStatus || 'ready'),
+        introVideoHlsUrl: courseData.introVideoHlsUrl || '',
+        introVideoQualityMetadata: courseData.introVideoQualityMetadata || {
+          resolution: '',
+          bitrate: '',
+          codec: '',
+          fps: 0,
+          segments: 0,
+        },
+        introVideoThumbnail: courseData.introVideoThumbnail || '',
         price: courseData.price || 0,
         originalPrice: courseData.originalPrice || 0,
         discount: courseData.discount || 0,
@@ -1444,21 +2323,34 @@ const editCourse = async (course: Course) => {
           description: chapter.description || '',
           index: chapter.index || 0,
           status: chapter.status || 'active',
-          lessons: (chapter.lessons || []).map((lesson: any) => ({
-            _id: lesson._id,
-            title: lesson.title || '',
-            description: lesson.description || '',
-            content: lesson.content || '',
-            type: lesson.type || 'video',
-            isPreview: lesson.isPreview || false,
-            status: lesson.status || 'active',
-            videos: lesson.videos || [],
-            documents: lesson.documents || [],
-            videoFileList: [],
-            documentFileList: [],
-            uploadingVideo: false,
-            uploadingDocument: false,
-            quiz: lesson.quiz ? {
+          lessons: (chapter.lessons || []).map((lesson: any) => {
+            // Fix video status: if video has URL but status is uploading/queueing/processing, set to ready
+            const videos = (lesson.videos || []).map((video: any) => {
+              if (video && (video.videoUrl || video.hlsUrl) && 
+                  (video.status === 'uploading' || video.status === 'queueing' || video.status === 'processing')) {
+                return {
+                  ...video,
+                  status: 'ready'
+                }
+              }
+              return video
+            })
+            
+            return {
+              _id: lesson._id,
+              title: lesson.title || '',
+              description: lesson.description || '',
+              content: lesson.content || '',
+              type: lesson.type || 'video',
+              isPreview: lesson.isPreview || false,
+              status: lesson.status || 'active',
+              videos: videos,
+              documents: lesson.documents || [],
+              videoFileList: [],
+              documentFileList: [],
+              uploadingVideo: false,
+              uploadingDocument: false,
+              quiz: lesson.quiz ? {
               title: lesson.quiz.title || '',
               description: lesson.quiz.description || '',
               questions: (lesson.quiz.questions || []).map((q: any) => ({
@@ -1485,7 +2377,8 @@ const editCourse = async (course: Course) => {
               timeLimit: 0,
               attempts: 3,
             },
-          })),
+          }
+          }),
         }))
       }
 
@@ -1507,10 +2400,22 @@ const editCourse = async (course: Course) => {
           uid: '-1',
           name: 'intro-video',
           status: 'done',
-          url: courseData.introVideo,
+          url: courseData.introVideoHlsUrl || courseData.introVideo,
         }]
       } else {
         introVideoFileList.value = []
+      }
+      
+      // Set intro video thumbnail file list if exists
+      if (courseData.introVideoThumbnail) {
+        introVideoThumbnailFileList.value = [{
+          uid: '-1',
+          name: 'intro-video-thumbnail',
+          status: 'done',
+          url: courseData.introVideoThumbnail,
+        }]
+      } else {
+        introVideoThumbnailFileList.value = []
       }
 
       // Set instructor avatar file list if exists
@@ -1524,6 +2429,19 @@ const editCourse = async (course: Course) => {
       } else {
         instructorAvatarFileList.value = []
       }
+      
+      // Clear all progress trackers when loading course for edit
+      Object.keys(lessonVideoUploadProgress).forEach(key => {
+        delete lessonVideoUploadProgress[key]
+      })
+      introVideoUploadProgress.percent = 0
+      introVideoUploadProgress.stage = ''
+      introVideoUploadProgress.uploaded = 0
+      introVideoUploadProgress.total = 0
+      introVideoUploadProgress.speed = 0
+      introVideoUploadProgress.timeRemaining = 0
+      introVideoUploadProgress.fileUploadPercent = 0
+      uploadingIntroVideo.value = false
     }
   } catch (error) {
     console.error('Error loading course:', error)
@@ -1552,13 +2470,32 @@ const handleModalOk = async () => {
     // Upload intro video to R2/CDN - CHỈ KHI CÓ FILE MỚI VÀ CHƯA CÓ URL
     // Nếu đã upload qua handleIntroVideoChange thì sẽ có URL rồi, không cần upload lại
     if (introVideoFileList.value.length > 0 && introVideoFileList.value[0].originFileObj && !formData.introVideo) {
-      formData.introVideo = await uploadVideoToR2(introVideoFileList.value[0].originFileObj as File, 'courses/intro-videos')
+      const videoData = await uploadVideoToR2(introVideoFileList.value[0].originFileObj as File, 'courses/intro-videos')
+      formData.introVideo = videoData.url
+      formData.introVideoHlsUrl = videoData.hlsUrl
+      formData.introVideoStatus = videoData.status
+      formData.introVideoQualityMetadata = videoData.qualityMetadata
     }
     // Nếu không có file mới nhưng có URL (khi edit hoặc đã upload), giữ nguyên URL
     else if (introVideoFileList.value.length > 0 && introVideoFileList.value[0].url) {
       formData.introVideo = introVideoFileList.value[0].url
+      // Keep existing metadata if not set
+      if (!formData.introVideoHlsUrl) {
+        formData.introVideoHlsUrl = formData.introVideo
+      }
     }
     // Nếu formData.introVideo đã có (đã upload qua handleIntroVideoChange), giữ nguyên
+    
+    // Upload intro video thumbnail - CHỈ KHI CÓ FILE MỚI
+    if (introVideoThumbnailFileList.value.length > 0 && introVideoThumbnailFileList.value[0].originFileObj) {
+      const uploadsApi = useUploadsApi()
+      const response = await uploadsApi.uploadImage(introVideoThumbnailFileList.value[0].originFileObj as File)
+      formData.introVideoThumbnail = response?.data?.files?.[0]?.url || response?.data?.url || ''
+    }
+    // Nếu không có file mới nhưng có URL (khi edit), giữ nguyên URL
+    else if (introVideoThumbnailFileList.value.length > 0 && introVideoThumbnailFileList.value[0].url) {
+      formData.introVideoThumbnail = introVideoThumbnailFileList.value[0].url
+    }
     
     // Upload instructor avatar to MinIO - CHỈ KHI CÓ FILE MỚI
     if (instructorAvatarFileList.value.length > 0 && instructorAvatarFileList.value[0].originFileObj) {
@@ -1656,12 +2593,58 @@ const handleModalOk = async () => {
     // Các lỗi khác (API / logic)
     console.error('Lỗi khi lưu khóa học:', error)
 
-    const apiMessage =
+    // Extract error message from various possible locations
+    let apiMessage = 
       error?.message ||
+      error?.response?.data?.error ||
       error?.response?.data?.message ||
-      error?.data?.message
+      error?.data?.error ||
+      error?.data?.message ||
+      'Có lỗi xảy ra khi lưu khóa học. Vui lòng thử lại.'
 
-    message.error(apiMessage || 'Có lỗi xảy ra khi lưu khóa học. Vui lòng thử lại.')
+    // Parse validation errors (Mongoose format)
+    if (apiMessage.includes('validation failed') || apiMessage.includes('Path `') || apiMessage.includes('is required')) {
+      // Format: "chapters validation failed: title: Path `title` is required."
+      if (apiMessage.includes('chapters validation failed')) {
+        const fieldMatch = apiMessage.match(/Path\s+`(\w+)`\s+is\s+required/i)
+        if (fieldMatch) {
+          const field = fieldMatch[1]
+          const fieldMap: Record<string, string> = {
+            'title': 'tiêu đề',
+            'description': 'mô tả',
+            'content': 'nội dung',
+          }
+          const fieldName = fieldMap[field.toLowerCase()] || field
+          apiMessage = `Lỗi validation: Một số chương học thiếu ${fieldName}. Vui lòng kiểm tra lại các chương học và đảm bảo tất cả các trường bắt buộc đã được điền.`
+        } else {
+          apiMessage = 'Lỗi validation: Một số chương học thiếu thông tin bắt buộc. Vui lòng kiểm tra lại các chương học.'
+        }
+      } else if (apiMessage.includes('lessons validation failed')) {
+        const fieldMatch = apiMessage.match(/Path\s+`(\w+)`\s+is\s+required/i)
+        if (fieldMatch) {
+          const field = fieldMatch[1]
+          const fieldMap: Record<string, string> = {
+            'title': 'tiêu đề',
+            'description': 'mô tả',
+            'content': 'nội dung',
+            'videoUrl': 'video',
+          }
+          const fieldName = fieldMap[field.toLowerCase()] || field
+          apiMessage = `Lỗi validation: Một số bài học thiếu ${fieldName}. Vui lòng kiểm tra lại các bài học và đảm bảo tất cả các trường bắt buộc đã được điền.`
+        } else {
+          apiMessage = 'Lỗi validation: Một số bài học thiếu thông tin bắt buộc. Vui lòng kiểm tra lại các bài học.'
+        }
+      } else {
+        // General validation error - try to extract field name
+        const fieldMatch = apiMessage.match(/Path\s+`(\w+)`\s+is\s+required/i)
+        if (fieldMatch) {
+          const field = fieldMatch[1]
+          apiMessage = `Lỗi validation: Trường "${field}" là bắt buộc nhưng chưa được điền. Vui lòng kiểm tra lại.`
+        }
+      }
+    }
+
+    message.error(apiMessage)
   } finally {
     modalLoading.value = false
   }
@@ -1884,34 +2867,118 @@ const handleLessonVideoChange = async (chapterIndex: number, lessonIndex: number
     // Set uploading state
     lesson.uploadingVideo = true
     
-    try {
-      // Upload video to R2/CDN
-      const videoUrl = await uploadVideoToR2(file, `courses/lessons/${Date.now()}`)
-      
-      // Lưu vào lesson.videos
-      if (!lesson.videos) {
-        lesson.videos = []
-      }
-      
-      // Thêm hoặc cập nhật video
+    // Create unique progress key for this lesson
+    const progressKey = `chapter-${chapterIndex}-lesson-${lessonIndex}`
+    
+    // Initialize videos array if not exists
+    if (!lesson.videos) {
+      lesson.videos = []
+    }
+    
+    // Set initial status to uploading
+    if (lesson.videos.length === 0) {
       lesson.videos = [{
         title: file.name,
-        videoUrl: videoUrl,
+        videoUrl: '',
         thumbnail: '',
         duration: 0,
         fileSize: file.size,
         quality: '720',
         index: 0,
+        status: 'uploading',
+        hlsUrl: '',
+        errorMessage: '',
+        qualityMetadata: {
+          resolution: '',
+          bitrate: '',
+          codec: '',
+          fps: 0,
+          segments: 0,
+        },
       }]
+    } else {
+      lesson.videos[0].status = 'uploading'
+      lesson.videos[0].errorMessage = ''
+    }
+    
+    try {
+      // Upload video to R2/CDN - returns full video object with progress tracking
+      const videoData = await uploadVideoToR2(file, `courses/lessons/${Date.now()}`, progressKey)
       
+      // Cập nhật video với đầy đủ thông tin (bao gồm jobId)
+      if (lesson.videos.length === 0) {
+        lesson.videos = [{
+          title: file.name,
+          videoUrl: videoData.url || videoData.hlsUrl || '',
+          thumbnail: '',
+          duration: 0,
+          fileSize: file.size,
+          quality: '720',
+          index: 0,
+          status: videoData.status || 'ready',
+          hlsUrl: videoData.hlsUrl || '',
+          errorMessage: videoData.errorMessage || '',
+          jobId: videoData.jobId || '',
+          qualityMetadata: videoData.qualityMetadata || {
+            resolution: '',
+            bitrate: '',
+            codec: '',
+            fps: 0,
+            segments: 0,
+          },
+        }]
+      } else {
+        lesson.videos[0] = {
+          ...lesson.videos[0],
+          title: file.name,
+          videoUrl: videoData.url || videoData.hlsUrl || '',
+          fileSize: file.size,
+          status: videoData.status || 'ready',
+          hlsUrl: videoData.hlsUrl || '',
+          errorMessage: videoData.errorMessage || '',
+          jobId: videoData.jobId || '',
+          qualityMetadata: videoData.qualityMetadata || {
+            resolution: '',
+            bitrate: '',
+            codec: '',
+            fps: 0,
+            segments: 0,
+        },
+      }
+    }
+    
+    if (videoData.status === 'ready') {
+      // Clear progress tracker for lesson video
+      const progressKey = `chapter-${chapterIndex}-lesson-${lessonIndex}`
+      delete lessonVideoUploadProgress[progressKey]
+      lesson.uploadingVideo = false
       message.success('Upload video thành công')
+    }
     } catch (error: any) {
       console.error('Upload video error:', error)
-      // Error message đã được format rõ ràng trong uploadVideoToR2
-      const errorMsg = error.message || 'Upload video thất bại'
+      
+      // Extract error message from error response
+      let errorMsg = error.message || 'Upload video thất bại'
+      if (error.data?.error?.errorMessage) {
+        errorMsg = error.data.error.errorMessage
+      } else if (error.data?.errorMessage) {
+        errorMsg = error.data.errorMessage
+      } else if (typeof error.data?.error === 'object' && error.data.error?.errorMessage) {
+        errorMsg = error.data.error.errorMessage
+      }
+      
       message.error(errorMsg)
-      // Xóa file khỏi fileList nếu upload thất bại
-      lesson.videoFileList = []
+      
+      // Set status to error with error message
+      if (lesson.videos.length > 0) {
+        lesson.videos[0].status = 'error'
+        lesson.videos[0].errorMessage = errorMsg
+      }
+      
+      // Keep file in list but mark as error
+      if (lesson.videoFileList.length > 0) {
+        lesson.videoFileList[0].status = 'error'
+      }
     } finally {
       lesson.uploadingVideo = false
     }

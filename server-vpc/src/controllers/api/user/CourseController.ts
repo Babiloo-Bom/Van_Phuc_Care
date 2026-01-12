@@ -33,6 +33,42 @@ const courseSchema = new mongoose.Schema(
       type: String,
       default: null,
     },
+    // Video metadata fields
+    introVideoStatus: {
+      type: String,
+      enum: ['uploading', 'queueing', 'processing', 'ready', 'error'],
+      default: 'ready',
+    },
+    introVideoHlsUrl: {
+      type: String,
+      default: '',
+    },
+    introVideoQualityMetadata: {
+      resolution: {
+        type: String,
+        default: '',
+      },
+      bitrate: {
+        type: String,
+        default: '',
+      },
+      codec: {
+        type: String,
+        default: '',
+      },
+      fps: {
+        type: Number,
+        default: 0,
+      },
+      segments: {
+        type: Number,
+        default: 0,
+      },
+    },
+    introVideoThumbnail: {
+      type: String,
+      default: '',
+    },
     price: {
       type: Number,
       required: true,

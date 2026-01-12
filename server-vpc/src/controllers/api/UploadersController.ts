@@ -6,6 +6,7 @@ import dayjs from 'dayjs';
 import MinioService from '@services/minio';
 import CloudflareService from '@services/cloudflare';
 import HlsConverter from '@services/HlsConverter';
+import { videoQueue, VideoJobData } from '@services/videoQueue';
 import * as fs from 'fs';
 import * as path from 'path';
 import * as os from 'os';
@@ -120,6 +121,26 @@ class UploadController {
           folder
         );
         const publicUrl = CloudflareService.getPublicUrl(objectName);
+        
+        // Get video metadata
+        let qualityMetadata = {
+          resolution: '',
+          bitrate: '',
+          codec: '',
+          fps: 0,
+          segments: 0,
+        };
+        
+        try {
+          const metadata = await HlsConverter.getVideoMetadataFromBuffer(file.buffer, file.originalname);
+          qualityMetadata = {
+            ...metadata,
+            segments: 0,
+          };
+        } catch (error) {
+          console.warn('⚠️ Could not get video metadata:', error);
+        }
+
         return sendSuccess(res, { 
           videos: [{
             filename: file.originalname,
@@ -128,63 +149,74 @@ class UploadController {
             size: file.size,
             type: file.mimetype,
             uploadedAt: new Date().toISOString(),
+            status: 'ready', // MP4 upload is ready immediately
+            hlsUrl: '', // No HLS for MP4 fallback
+            qualityMetadata,
+            errorMessage: '', // No error
           }],
           message: 'Video uploaded successfully to R2+CDN (MP4)'
         });
       }
 
-      // Convert MP4 to HLS
-      console.log('🔄 Converting MP4 to HLS format...');
-      const { playlistPath, segmentPaths } = await HlsConverter.convertBufferToHls(
-        file.buffer,
-        tempHlsDir
-      );
-
-      // Upload HLS playlist (.m3u8) to R2
-      const playlistBuffer = fs.readFileSync(playlistPath);
-      const playlistName = file.originalname.replace(/\.(mp4|mov|avi|mkv)$/i, '.m3u8');
-      const hlsFolder = `${folder}/hls`;
-      const playlistObjectName = await CloudflareService.uploadFile(
-        playlistBuffer,
-        playlistName,
-        'application/vnd.apple.mpegurl',
-        hlsFolder
-      );
-      const playlistUrl = CloudflareService.getPublicUrl(playlistObjectName);
-
-      // Upload all HLS segments (.ts) to R2
-      const segmentUrls: string[] = [];
-      for (const segmentPath of segmentPaths) {
-        const segmentBuffer = fs.readFileSync(segmentPath);
-        const segmentFileName = path.basename(segmentPath);
-        const segmentObjectName = await CloudflareService.uploadFile(
-          segmentBuffer,
-          segmentFileName,
-          'video/mp2t',
-          hlsFolder
-        );
-        segmentUrls.push(CloudflareService.getPublicUrl(segmentObjectName));
+      // Status progression: uploading -> queueing -> processing -> ready
+      // Use Bull queue to process video with concurrency = 2
+      
+      // Save file buffer to temporary file for queue processing
+      const tempUploadDir = path.join(os.tmpdir(), 'video-uploads');
+      if (!fs.existsSync(tempUploadDir)) {
+        fs.mkdirSync(tempUploadDir, { recursive: true });
       }
-
-      // Cleanup temp files
-      if (fs.existsSync(tempHlsDir)) {
-        fs.rmSync(tempHlsDir, { recursive: true, force: true });
-      }
-
-      console.log(`✅ HLS conversion complete: ${segmentPaths.length} segments`);
-
+      
+      const jobId = `video-${Date.now()}-${Math.random().toString(36).substring(7)}`;
+      const tempFilePath = path.join(tempUploadDir, `${jobId}-${file.originalname}`);
+      
+      // Write file buffer to temporary file
+      fs.writeFileSync(tempFilePath, file.buffer as any);
+      
+      // Create job data
+      const jobData: VideoJobData = {
+        jobId,
+        filePath: tempFilePath,
+        fileName: `${jobId}-${file.originalname}`,
+        originalName: file.originalname,
+        folder,
+        fileSize: file.size,
+        mimetype: file.mimetype,
+      };
+      
+      // Add job to queue
+      const job = await videoQueue.add(jobData, {
+        jobId,
+        removeOnComplete: true,
+        removeOnFail: false,
+      });
+      
+      console.log(`📋 [Video Upload] Video queued for processing. Job ID: ${job.id}`);
+      
+      // Return immediately with queueing status
       sendSuccess(res, { 
         videos: [{
           filename: file.originalname,
-          url: playlistUrl, // Return HLS playlist URL
-          hlsUrl: playlistUrl, // HLS playlist URL
-          objectName: playlistObjectName,
-          segments: segmentUrls.length,
+          url: '', // Will be available after processing
+          hlsUrl: '', // Will be available after processing
+          objectName: '',
+          segments: 0,
           size: file.size,
-          type: 'application/vnd.apple.mpegurl', // HLS MIME type
+          type: file.mimetype,
           uploadedAt: new Date().toISOString(),
+          status: 'queueing', // Video is queued for processing
+          qualityMetadata: {
+            resolution: '',
+            bitrate: '',
+            codec: '',
+            fps: 0,
+            segments: 0,
+          },
+          errorMessage: '',
+          jobId: job.id.toString(), // Return job ID for status checking
         }],
-        message: 'Video uploaded and converted to HLS format successfully'
+        message: 'Video queued for processing',
+        jobId: job.id.toString(),
       });
     } catch (error: any) {
       // Cleanup temp files on error
@@ -192,7 +224,178 @@ class UploadController {
         fs.rmSync(tempHlsDir, { recursive: true, force: true });
       }
       console.error('Upload video to R2 error:', error);
-      sendError(res, 500, error.message, error as Error);
+      
+      // Determine error message
+      let errorMessage = 'Lỗi upload video';
+      if (error.message?.includes('format') || error.message?.includes('codec')) {
+        errorMessage = 'Lỗi định dạng file';
+      } else if (error.message?.includes('size') || error.message?.includes('large')) {
+        errorMessage = 'File quá lớn';
+      } else if (error.message?.includes('timeout')) {
+        errorMessage = 'Upload mất quá nhiều thời gian';
+      } else {
+        errorMessage = error.message || 'Lỗi upload video';
+      }
+      
+      sendError(res, 500, {
+        status: 'error',
+        errorMessage,
+        filename: (req.file as Express.Multer.File)?.originalname || 'unknown',
+      }, error as Error);
+    }
+  }
+
+  /**
+   * Get video processing job status
+   * GET /uploads/video/status/:jobId
+   */
+  public async getVideoJobStatus(req: Request, res: Response) {
+    try {
+      const { jobId } = req.params;
+
+      if (!jobId) {
+        return sendError(res, 400, 'Job ID is required');
+      }
+
+      const job = await videoQueue.getJob(jobId);
+
+      if (!job) {
+        return sendError(res, 404, 'Job not found');
+      }
+
+      const state = await job.getState();
+      const progress = job.progress();
+      const result = job.returnvalue;
+      const failedReason = job.failedReason;
+
+      let status = 'queueing';
+      if (state === 'completed') {
+        status = 'ready';
+      } else if (state === 'failed') {
+        status = 'error';
+      } else if (state === 'active') {
+        status = 'processing';
+      } else if (state === 'waiting' || state === 'delayed') {
+        status = 'queueing';
+      }
+
+      sendSuccess(res, {
+        jobId: job.id.toString(),
+        status,
+        progress: typeof progress === 'number' ? progress : 0,
+        state,
+        result: result || null,
+        errorMessage: failedReason || null,
+        createdAt: new Date(job.timestamp).toISOString(),
+        processedAt: job.processedOn ? new Date(job.processedOn).toISOString() : null,
+        finishedAt: job.finishedOn ? new Date(job.finishedOn).toISOString() : null,
+      });
+    } catch (error: any) {
+      console.error('Get video job status error:', error);
+      sendError(res, 500, error.message || 'Failed to get job status', error as Error);
+    }
+  }
+
+  /**
+   * Cancel/Delete video upload job and cleanup files
+   * DELETE /uploads/video/:jobId
+   */
+  public async cancelVideoUpload(req: Request, res: Response) {
+    try {
+      const { jobId } = req.params;
+
+      if (!jobId) {
+        return sendError(res, 400, 'Job ID is required');
+      }
+
+      const job = await videoQueue.getJob(jobId);
+
+      if (!job) {
+        return sendError(res, 404, 'Job not found');
+      }
+
+      const state = await job.getState();
+      const jobData = job.data as VideoJobData;
+
+      // Cancel job if it's still in queue or processing
+      if (state === 'waiting' || state === 'delayed' || state === 'active') {
+        await job.remove();
+        console.log(`🗑️ [Video Upload] Cancelled job ${jobId} (state: ${state})`);
+      } else if (state === 'completed') {
+        // If already completed, we still need to cleanup files
+        console.log(`🗑️ [Video Upload] Job ${jobId} already completed, cleaning up files`);
+      }
+
+      // Cleanup temp files
+      const tempFiles: string[] = [];
+      
+      // 1. Cleanup uploaded temp file
+      if (jobData.filePath && fs.existsSync(jobData.filePath)) {
+        tempFiles.push(jobData.filePath);
+      }
+
+      // 2. Cleanup HLS temp directory
+      const tempHlsDir = path.join(os.tmpdir(), 'hls-uploads', jobId);
+      if (fs.existsSync(tempHlsDir)) {
+        tempFiles.push(tempHlsDir);
+      }
+
+      // Delete temp files
+      for (const filePath of tempFiles) {
+        try {
+          if (fs.existsSync(filePath)) {
+            if (fs.statSync(filePath).isDirectory()) {
+              fs.rmSync(filePath, { recursive: true, force: true });
+            } else {
+              fs.unlinkSync(filePath);
+            }
+            console.log(`🗑️ [Video Upload] Deleted temp file: ${filePath}`);
+          }
+        } catch (error: any) {
+          console.warn(`⚠️ [Video Upload] Failed to delete temp file ${filePath}:`, error.message);
+        }
+      }
+
+      // Cleanup files on R2 if job was processing/completed
+      if (state === 'active' || state === 'completed') {
+        try {
+          const result = job.returnvalue;
+          
+          // If job completed, delete HLS files from R2
+          if (result && result.hlsUrl) {
+            const hlsFolder = CloudflareService.extractHlsFolderFromUrl(result.hlsUrl);
+            if (hlsFolder) {
+              await CloudflareService.deleteFilesByPrefix(hlsFolder);
+              console.log(`🗑️ [Video Upload] Deleted HLS folder from R2: ${hlsFolder}`);
+            }
+          }
+
+          // Also try to delete based on folder structure
+          const folder = jobData.folder || 'courses/intro-videos';
+          const hlsFolderPath = `${folder}/hls`;
+          
+          // Try to delete any files that might have been uploaded
+          // Note: This is a best-effort cleanup, might not catch all files
+          try {
+            await CloudflareService.deleteFilesByPrefix(hlsFolderPath);
+            console.log(`🗑️ [Video Upload] Cleaned up R2 folder: ${hlsFolderPath}`);
+          } catch (error: any) {
+            console.warn(`⚠️ [Video Upload] Failed to cleanup R2 folder ${hlsFolderPath}:`, error.message);
+          }
+        } catch (error: any) {
+          console.warn(`⚠️ [Video Upload] Error cleaning up R2 files:`, error.message);
+        }
+      }
+
+      sendSuccess(res, {
+        message: 'Video upload cancelled and files cleaned up successfully',
+        jobId: jobId.toString(),
+        state,
+        cleanedFiles: tempFiles.length,
+      });
+    } catch (error: any) {
+      console.error('Cancel video upload error:', error);
+      sendError(res, 500, error.message || 'Failed to cancel video upload', error as Error);
     }
   }
 }

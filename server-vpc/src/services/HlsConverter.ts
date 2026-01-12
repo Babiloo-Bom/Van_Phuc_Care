@@ -59,14 +59,16 @@ export default class HlsConverter {
   }
 
   /**
-   * Convert MP4 buffer to HLS format
-   * @param inputBuffer MP4 file buffer
+   * Convert video buffer to HLS format (supports MP4, MOV, AVI, MKV)
+   * @param inputBuffer Video file buffer
    * @param outputDir Directory to save HLS files
+   * @param originalFilename Optional original filename to extract extension
    * @returns Object containing playlist path and all segment paths
    */
   public static async convertBufferToHls(
     inputBuffer: Buffer,
-    outputDir: string
+    outputDir: string,
+    originalFilename?: string
   ): Promise<{ playlistPath: string; segmentPaths: string[] }> {
     // Ensure temp directory exists
     if (!fs.existsSync(this.TEMP_DIR)) {
@@ -78,8 +80,17 @@ export default class HlsConverter {
       fs.mkdirSync(outputDir, { recursive: true });
     }
 
-    // Save buffer to temp file
-    const tempInputPath = path.join(this.TEMP_DIR, `input_${Date.now()}.mp4`);
+    // Get extension from original filename or default to .mp4
+    let extension = '.mp4';
+    if (originalFilename) {
+      const extMatch = originalFilename.match(/\.(mp4|mov|avi|mkv|webm|flv)$/i);
+      if (extMatch) {
+        extension = extMatch[0].toLowerCase();
+      }
+    }
+
+    // Save buffer to temp file with correct extension
+    const tempInputPath = path.join(this.TEMP_DIR, `input_${Date.now()}${extension}`);
     fs.writeFileSync(tempInputPath, inputBuffer);
 
     const playlistPath = path.join(outputDir, 'playlist.m3u8');
@@ -142,6 +153,102 @@ export default class HlsConverter {
       return true;
     } catch {
       return false;
+    }
+  }
+
+  /**
+   * Get video metadata using ffprobe
+   * @param videoPath Path to video file
+   * @returns Video metadata (resolution, bitrate, codec, fps)
+   */
+  public static async getVideoMetadata(videoPath: string): Promise<{
+    resolution: string;
+    bitrate: string;
+    codec: string;
+    fps: number;
+  }> {
+    try {
+      const ffprobeCommand = `ffprobe -v error -select_streams v:0 -show_entries stream=width,height,bit_rate,codec_name,r_frame_rate -of json "${videoPath}"`;
+      const { stdout } = await execAsync(ffprobeCommand);
+      const metadata = JSON.parse(stdout);
+      
+      if (!metadata.streams || metadata.streams.length === 0) {
+        return {
+          resolution: '',
+          bitrate: '',
+          codec: '',
+          fps: 0,
+        };
+      }
+
+      const stream = metadata.streams[0];
+      const width = stream.width || 0;
+      const height = stream.height || 0;
+      const resolution = width && height ? `${width}x${height}` : '';
+      
+      const bitrate = stream.bit_rate ? `${Math.round(parseInt(stream.bit_rate) / 1000)}k` : '';
+      const codec = stream.codec_name || '';
+      
+      // Parse FPS from r_frame_rate (e.g., "30/1" = 30 fps)
+      let fps = 0;
+      if (stream.r_frame_rate) {
+        const [num, den] = stream.r_frame_rate.split('/').map(Number);
+        if (den && den > 0) {
+          fps = Math.round((num / den) * 10) / 10;
+        }
+      }
+
+      return {
+        resolution,
+        bitrate,
+        codec,
+        fps,
+      };
+    } catch (error: any) {
+      console.error('❌ Error getting video metadata:', error);
+      return {
+        resolution: '',
+        bitrate: '',
+        codec: '',
+        fps: 0,
+      };
+    }
+  }
+
+  /**
+   * Get video metadata from buffer (supports MP4, MOV, AVI, MKV)
+   * @param videoBuffer Video file buffer
+   * @param originalFilename Optional original filename to extract extension
+   * @returns Video metadata
+   */
+  public static async getVideoMetadataFromBuffer(
+    videoBuffer: Buffer,
+    originalFilename?: string
+  ): Promise<{
+    resolution: string;
+    bitrate: string;
+    codec: string;
+    fps: number;
+  }> {
+    // Get extension from original filename or default to .mp4
+    let extension = '.mp4';
+    if (originalFilename) {
+      const extMatch = originalFilename.match(/\.(mp4|mov|avi|mkv|webm|flv)$/i);
+      if (extMatch) {
+        extension = extMatch[0].toLowerCase();
+      }
+    }
+
+    const tempInputPath = path.join(this.TEMP_DIR, `metadata_${Date.now()}${extension}`);
+    try {
+      fs.writeFileSync(tempInputPath, videoBuffer);
+      const metadata = await this.getVideoMetadata(tempInputPath);
+      return metadata;
+    } finally {
+      // Cleanup temp file
+      if (fs.existsSync(tempInputPath)) {
+        fs.unlinkSync(tempInputPath);
+      }
     }
   }
 }

@@ -92,6 +92,40 @@ class Lessons {
             type: Number,
             default: 0,
           },
+          // Trạng thái xử lý video
+          status: {
+            type: String,
+            enum: ['uploading', 'queueing', 'processing', 'ready', 'error'],
+            default: 'uploading',
+          },
+          // HLS URL (sau khi convert)
+          hlsUrl: {
+            type: String,
+            default: '',
+          },
+          // Metadata về chất lượng video
+          qualityMetadata: {
+            resolution: {
+              type: String,
+              default: '',
+            },
+            bitrate: {
+              type: String,
+              default: '',
+            },
+            codec: {
+              type: String,
+              default: '',
+            },
+            fps: {
+              type: Number,
+              default: 0,
+            },
+            segments: {
+              type: Number,
+              default: 0,
+            },
+          },
         },
       ],
       duration: {

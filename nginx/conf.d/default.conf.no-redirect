@@ -61,7 +61,7 @@ server {
     access_log /var/log/nginx/admin-access.log;
     error_log /var/log/nginx/admin-error.log;
 
-    client_max_body_size 100M;
+    client_max_body_size 5G;
 
     location / {
         proxy_pass http://admin_backend;
@@ -94,7 +94,7 @@ server {
         proxy_pass http://api_backend;
         proxy_http_version 1.1;
         
-        client_max_body_size 100M;
+        client_max_body_size 5G;
         
         proxy_set_header Host $host;
         proxy_set_header X-Real-IP $remote_addr;
@@ -138,7 +138,7 @@ server {
     access_log /var/log/nginx/crm-access.log;
     error_log /var/log/nginx/crm-error.log;
 
-    client_max_body_size 100M;
+    client_max_body_size 5G;
 
     location / {
         proxy_pass http://crm_backend;
@@ -171,7 +171,7 @@ server {
         proxy_pass http://api_backend;
         proxy_http_version 1.1;
         
-        client_max_body_size 100M;
+        client_max_body_size 5G;
         
         proxy_set_header Host $host;
         proxy_set_header X-Real-IP $remote_addr;
@@ -215,7 +215,7 @@ server {
     access_log /var/log/nginx/elearning-access.log;
     error_log /var/log/nginx/elearning-error.log;
 
-    client_max_body_size 100M;
+    client_max_body_size 5G;
 
     location / {
         proxy_pass http://elearning_backend;
@@ -271,7 +271,7 @@ server {
         proxy_pass http://api_backend;
         proxy_http_version 1.1;
         
-        client_max_body_size 100M;
+        client_max_body_size 5G;
         
         proxy_set_header Host $host;
         proxy_set_header X-Real-IP $remote_addr;
@@ -288,7 +288,7 @@ server {
         proxy_pass http://api_backend;
         proxy_http_version 1.1;
 
-        client_max_body_size 100M;
+        client_max_body_size 5G;
 
         proxy_set_header Host $host;
         proxy_set_header X-Real-IP $remote_addr;
@@ -305,7 +305,7 @@ server {
         proxy_pass http://api_backend;
         proxy_http_version 1.1;
 
-        client_max_body_size 100M;
+        client_max_body_size 5G;
 
         proxy_set_header Host $host;
         proxy_set_header X-Real-IP $remote_addr;
@@ -348,7 +348,7 @@ server {
     error_log /var/log/nginx/minio-error.log;
 
     # MinIO requires large file uploads
-    client_max_body_size 500M;
+    client_max_body_size 5G;
     client_body_buffer_size 500M;
 
     location / {

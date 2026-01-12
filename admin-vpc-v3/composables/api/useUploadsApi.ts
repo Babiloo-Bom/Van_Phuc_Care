@@ -83,9 +83,9 @@ export const useUploadsApi = () => {
         throw new Error('Chỉ chấp nhận file video (MP4, AVI, MOV)')
       }
 
-      // Validate size (max 100MB)
-      if (file.size > 100 * 1024 * 1024) {
-        throw new Error('Kích thước video không được vượt quá 100MB')
+      // Validate size (max 5GB)
+      if (file.size > 5 * 1024 * 1024 * 1024) {
+        throw new Error('Kích thước video không được vượt quá 5GB')
       }
 
       const formData = new FormData()
@@ -93,7 +93,7 @@ export const useUploadsApi = () => {
 
       return apiClient.upload('/api/uploaders/video', formData, {
         errorMessage: 'Không thể upload video',
-        timeout: 300000 // 5 minutes for large videos
+        timeout: 1800000 // 30 minutes for large videos (5GB)
       })
     },
 
@@ -119,6 +119,24 @@ export const useUploadsApi = () => {
     async deleteFile(url: string) {
       return apiClient.post('/api/uploads/delete', { url }, {
         errorMessage: 'Không thể xóa file'
+      })
+    },
+
+    /**
+     * Cancel video upload job and cleanup files
+     */
+    async cancelVideoUpload(jobId: string) {
+      return apiClient.delete(`/api/uploads/video/${jobId}`, {
+        errorMessage: 'Không thể hủy upload video'
+      })
+    },
+
+    /**
+     * Get video upload job status
+     */
+    async getVideoJobStatus(jobId: string) {
+      return apiClient.get(`/api/uploads/video/status/${jobId}`, {
+        errorMessage: 'Không thể lấy trạng thái upload video'
       })
     }
   }

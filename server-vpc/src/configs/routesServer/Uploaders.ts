@@ -97,4 +97,50 @@ router.post('/minio', withoutSavingUploader.any(), UploaderController.uploadMini
  */
 router.post('/video', withoutSavingUploader.single('file'), UploaderController.uploadVideoToR2);
 
+/**
+ * @openapi
+ * /uploads/video/status/:jobId:
+ *   get:
+ *     tags:
+ *      - "Uploaders"
+ *     summary: Get video processing job status
+ *     parameters:
+ *      - in: "path"
+ *        name: "jobId"
+ *        description: "Job ID from video upload response"
+ *        required: true
+ *        type: "string"
+ *     responses:
+ *       200:
+ *         description: "Job status retrieved successfully"
+ *       404:
+ *         description: Job not found
+ *       500:
+ *         description: Server error
+ */
+router.get('/video/status/:jobId', UploaderController.getVideoJobStatus);
+
+/**
+ * @openapi
+ * /uploads/video/:jobId:
+ *   delete:
+ *     tags:
+ *      - "Uploaders"
+ *     summary: Cancel/Delete video upload job and cleanup files
+ *     parameters:
+ *      - in: "path"
+ *        name: "jobId"
+ *        description: "Job ID from video upload response"
+ *        required: true
+ *        type: "string"
+ *     responses:
+ *       200:
+ *         description: "Video upload cancelled and files cleaned up successfully"
+ *       404:
+ *         description: Job not found
+ *       500:
+ *         description: Server error
+ */
+router.delete('/video/:jobId', UploaderController.cancelVideoUpload);
+
 export default router;

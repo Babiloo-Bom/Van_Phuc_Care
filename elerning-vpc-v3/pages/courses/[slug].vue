@@ -33,9 +33,7 @@
 
               <!-- Short Description -->
               <div class="mt-3 sm:mt-4 max-lg:hidden">
-                <p class="mb-0 text-sm sm:text-base md:max-w-[90%] line-clamp-3 sm:line-clamp-none">
-                  {{ course?.description }}
-                </p>
+                <div class="mb-0 text-sm sm:text-base md:max-w-[90%] line-clamp-3 sm:line-clamp-none" v-html="course?.description || course?.shortDescription"></div>
               </div>
             </div>
           </div>

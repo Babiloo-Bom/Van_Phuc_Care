@@ -17,7 +17,8 @@
     "watch-node": "nodemon dist/server.js",
     "watch-test": "npm run test -- --watchAll",
     "watch-ts": "tsc -w",
-    "create-discount-99": "node scripts/create-99-discount.js"
+    "create-discount-99": "node scripts/create-99-discount.js",
+    "setup-r2-lifecycle": "ts-node -r tsconfig-paths/register src/scripts/setupR2LifecycleRule.ts"
   },
   "dependencies": {
     "@aws-sdk/client-s3": "^3.839.0",

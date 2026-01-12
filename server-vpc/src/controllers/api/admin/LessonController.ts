@@ -125,7 +125,8 @@ class LessonController {
                 console.log(`🔄 Converting video to HLS for lesson ${lesson._id}...`);
                 const { playlistPath, segmentPaths } = await HlsConverter.convertBufferToHls(
                   file.buffer,
-                  tempHlsDir
+                  tempHlsDir,
+                  file.originalname
                 );
 
                 // Upload HLS playlist
@@ -231,6 +232,9 @@ class LessonController {
       let existingDocuments = [...(lessonData.documents || [])];
       let existingVideos = [...(lessonData.videos || [])];
 
+      // Lưu videos cũ để so sánh và xóa folder HLS của videos bị xóa
+      const oldVideos = [...(lessonData.videos || [])];
+
       if (files && files.length > 0) {
         for (const file of files) {
           const folderType = file.fieldname.includes('document') ? 'documents' : 'videos';
@@ -273,6 +277,12 @@ class LessonController {
         }
       }
 
+      // Xử lý videos được cập nhật từ request body (nếu có)
+      if (req.body.videos) {
+        const updatedVideos = typeof req.body.videos === 'string' ? JSON.parse(req.body.videos) : req.body.videos;
+        existingVideos = updatedVideos;
+      }
+
       if (req.body.quizData) {
         const quizDataJson = typeof req.body.quizData === 'string' ? JSON.parse(req.body.quizData) : req.body.quizData;
 
@@ -307,6 +317,35 @@ class LessonController {
 
           (lessonData as any).quizId = newQuiz._id;
           existingDocuments = [...existingDocuments]; // no-op to keep vars used
+        }
+      }
+
+      // Xóa folder HLS của videos bị xóa
+      const hlsFoldersToDelete = new Set<string>();
+      const existingVideoUrls = new Set(
+        existingVideos
+          .map((v: any) => v.hlsUrl || v.videoUrl)
+          .filter((url: string) => url)
+      );
+
+      for (const oldVideo of oldVideos) {
+        const oldVideoUrl = oldVideo.hlsUrl || oldVideo.videoUrl;
+        // Nếu video cũ không còn trong danh sách mới, xóa folder HLS
+        if (oldVideoUrl && !existingVideoUrls.has(oldVideoUrl)) {
+          const hlsFolder = CloudflareService.extractHlsFolderFromUrl(oldVideoUrl);
+          if (hlsFolder) {
+            hlsFoldersToDelete.add(hlsFolder);
+          }
+        }
+      }
+
+      // Xóa toàn bộ folder HLS của videos bị xóa
+      for (const hlsFolder of hlsFoldersToDelete) {
+        try {
+          await CloudflareService.deleteFilesByPrefix(hlsFolder);
+          console.log(`✅ Deleted HLS folder for removed video: ${hlsFolder}`);
+        } catch (err) {
+          console.error(`Error deleting HLS folder ${hlsFolder}:`, err);
         }
       }
 
@@ -348,31 +387,85 @@ class LessonController {
       }
 
       const lessonData = lesson as any;
+
+      // Bước 1: Xóa documents từ R2
       if (lessonData.documents && lessonData.documents.length > 0) {
         for (const doc of lessonData.documents) {
           try {
-            await CloudflareService.deleteFile(doc.fileUrl.replace(`/${process.env.MINIO_BUCKET_NAME}/`, ''));
+            if (doc.fileUrl) {
+              // Extract object name from URL
+              let objectName = doc.fileUrl;
+              if (doc.fileUrl.includes(process.env.CLOUDFLARE_R2_PUBLIC_URL || '')) {
+                objectName = doc.fileUrl.replace(process.env.CLOUDFLARE_R2_PUBLIC_URL || '', '').replace(/^\//, '');
+              } else if (doc.fileUrl.includes('/')) {
+                const urlParts = doc.fileUrl.split('/');
+                const coursesIndex = urlParts.findIndex((part: string) => part === 'courses' || part === 'lessons');
+                if (coursesIndex !== -1) {
+                  objectName = urlParts.slice(coursesIndex).join('/');
+                }
+              }
+              if (objectName) {
+                await CloudflareService.deleteFile(objectName);
+              }
+            }
           } catch (err) {
-            console.error('Error deleting document from MinIO:', err);
+            console.error('Error deleting document from R2:', err);
           }
         }
       }
 
+      // Bước 2: Xóa videos và folder HLS từ R2
       if (lessonData.videos && lessonData.videos.length > 0) {
+        const hlsFoldersToDelete = new Set<string>();
+        
         for (const video of lessonData.videos) {
           try {
-            await CloudflareService.deleteFile(video.videoUrl.replace(`/${process.env.MINIO_BUCKET_NAME}/`, ''));
+            if (video.videoUrl || video.hlsUrl) {
+              const videoUrl = video.hlsUrl || video.videoUrl;
+              
+              // Extract HLS folder path
+              const hlsFolder = CloudflareService.extractHlsFolderFromUrl(videoUrl);
+              if (hlsFolder) {
+                hlsFoldersToDelete.add(hlsFolder);
+              } else {
+                // Fallback: try to delete single file
+                let objectName = videoUrl;
+                if (videoUrl.includes(process.env.CLOUDFLARE_R2_PUBLIC_URL || '')) {
+                  objectName = videoUrl.replace(process.env.CLOUDFLARE_R2_PUBLIC_URL || '', '').replace(/^\//, '');
+                  } else if (videoUrl.includes('/')) {
+                    const urlParts = videoUrl.split('/');
+                    const coursesIndex = urlParts.findIndex((part: string) => part === 'courses' || part === 'lessons');
+                    if (coursesIndex !== -1) {
+                      objectName = urlParts.slice(coursesIndex).join('/');
+                    }
+                  }
+                if (objectName) {
+                  await CloudflareService.deleteFile(objectName);
+                }
+              }
+            }
           } catch (err) {
-            console.error('Error deleting video from MinIO:', err);
+            console.error('Error deleting video from R2:', err);
+          }
+        }
+
+        // Xóa toàn bộ folder HLS
+        for (const hlsFolder of hlsFoldersToDelete) {
+          try {
+            await CloudflareService.deleteFilesByPrefix(hlsFolder);
+            console.log(`✅ Deleted HLS folder: ${hlsFolder}`);
+          } catch (err) {
+            console.error(`Error deleting HLS folder ${hlsFolder}:`, err);
           }
         }
       }
 
+      // Bước 3: Xóa lesson từ database
       await LessonsModel.model.findByIdAndDelete(lessonId);
 
       sendSuccess(res, { message: 'Lesson đã được xóa' });
     } catch (error: any) {
-      console.error(' Delete lesson error:', error);
+      console.error('❌ Delete lesson error:', error);
       sendError(res, 500, error.message, error as Error);
     }
   }
