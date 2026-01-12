@@ -42,23 +42,11 @@ function calculateAllocation(totalCores) {
   const admin = totalCores * 0.125;
   const api = totalCores * 0.125;
   
-  // Làm tròn đến 1 chữ số thập phân
-  let elearningRounded = parseFloat(elearning.toFixed(1));
-  let crmRounded = parseFloat(crm.toFixed(1));
-  let adminRounded = parseFloat(admin.toFixed(1));
-  let apiRounded = parseFloat(api.toFixed(1));
-  
-  // Kiểm tra tổng có vượt quá totalCores không
-  let total = elearningRounded + crmRounded + adminRounded + apiRounded;
-  
-  // Nếu tổng vượt quá, scale down để đảm bảo tổng = totalCores
-  if (total > totalCores) {
-    const scale = totalCores / total;
-    elearningRounded = parseFloat((elearningRounded * scale).toFixed(1));
-    crmRounded = parseFloat((crmRounded * scale).toFixed(1));
-    adminRounded = parseFloat((adminRounded * scale).toFixed(1));
-    apiRounded = parseFloat((apiRounded * scale).toFixed(1));
-  }
+  // Làm tròn xuống đến 1 chữ số thập phân để đảm bảo không vượt quá
+  let elearningRounded = Math.floor(elearning * 10) / 10;
+  let crmRounded = Math.floor(crm * 10) / 10;
+  let adminRounded = Math.floor(admin * 10) / 10;
+  let apiRounded = Math.floor(api * 10) / 10;
   
   // Đảm bảo tất cả giá trị >= 0.1 (minimum cho Docker)
   elearningRounded = Math.max(0.1, elearningRounded);
@@ -66,15 +54,59 @@ function calculateAllocation(totalCores) {
   adminRounded = Math.max(0.1, adminRounded);
   apiRounded = Math.max(0.1, apiRounded);
   
-  // Kiểm tra lại tổng cuối cùng và điều chỉnh nếu cần
-  total = elearningRounded + crmRounded + adminRounded + apiRounded;
+  // Tính tổng sau khi làm tròn xuống
+  let total = elearningRounded + crmRounded + adminRounded + apiRounded;
+  let remaining = parseFloat((totalCores - total).toFixed(1));
+  
+  // Phân bổ phần còn lại cho các service ưu tiên (elearning và crm)
+  // Mỗi lần thêm 0.1 cores, đảm bảo không vượt quá totalCores
+  if (remaining >= 0.2) {
+    elearningRounded = parseFloat((elearningRounded + 0.1).toFixed(1));
+    crmRounded = parseFloat((crmRounded + 0.1).toFixed(1));
+    remaining = parseFloat((remaining - 0.2).toFixed(1));
+  } else if (remaining >= 0.1) {
+    elearningRounded = parseFloat((elearningRounded + 0.1).toFixed(1));
+    remaining = parseFloat((remaining - 0.1).toFixed(1));
+  }
+  
+  // Kiểm tra lại tổng cuối cùng - đảm bảo không vượt quá
+  total = parseFloat((elearningRounded + crmRounded + adminRounded + apiRounded).toFixed(1));
+  
+  // Nếu vẫn vượt quá (do làm tròn), giảm từ service lớn nhất
   if (total > totalCores) {
-    // Scale down một lần nữa
-    const scale = totalCores / total;
-    elearningRounded = parseFloat((elearningRounded * scale).toFixed(1));
-    crmRounded = parseFloat((crmRounded * scale).toFixed(1));
-    adminRounded = parseFloat((adminRounded * scale).toFixed(1));
-    apiRounded = parseFloat((apiRounded * scale).toFixed(1));
+    const excess = parseFloat((total - totalCores).toFixed(1));
+    // Giảm từ service có giá trị lớn nhất
+    if (elearningRounded >= crmRounded && elearningRounded > 0.1) {
+      elearningRounded = Math.max(0.1, parseFloat((elearningRounded - excess).toFixed(1)));
+    } else if (crmRounded > 0.1) {
+      crmRounded = Math.max(0.1, parseFloat((crmRounded - excess).toFixed(1)));
+    } else if (adminRounded > 0.1) {
+      adminRounded = Math.max(0.1, parseFloat((adminRounded - excess).toFixed(1)));
+    } else if (apiRounded > 0.1) {
+      apiRounded = Math.max(0.1, parseFloat((apiRounded - excess).toFixed(1)));
+    }
+  }
+  
+  // Kiểm tra lần cuối cùng - đảm bảo tổng không bao giờ vượt quá totalCores
+  total = parseFloat((elearningRounded + crmRounded + adminRounded + apiRounded).toFixed(2));
+  
+  // Nếu vẫn vượt quá, giảm từng service một cho đến khi tổng <= totalCores
+  while (total > totalCores) {
+    const excess = total - totalCores;
+    // Giảm từ service có giá trị lớn nhất
+    if (elearningRounded >= crmRounded && elearningRounded >= adminRounded && elearningRounded >= apiRounded && elearningRounded > 0.1) {
+      elearningRounded = Math.max(0.1, parseFloat((elearningRounded - Math.min(excess, 0.1)).toFixed(1)));
+    } else if (crmRounded >= adminRounded && crmRounded >= apiRounded && crmRounded > 0.1) {
+      crmRounded = Math.max(0.1, parseFloat((crmRounded - Math.min(excess, 0.1)).toFixed(1)));
+    } else if (adminRounded >= apiRounded && adminRounded > 0.1) {
+      adminRounded = Math.max(0.1, parseFloat((adminRounded - Math.min(excess, 0.1)).toFixed(1)));
+    } else if (apiRounded > 0.1) {
+      apiRounded = Math.max(0.1, parseFloat((apiRounded - Math.min(excess, 0.1)).toFixed(1)));
+    } else {
+      // Nếu tất cả đều = 0.1, không thể giảm thêm
+      break;
+    }
+    total = parseFloat((elearningRounded + crmRounded + adminRounded + apiRounded).toFixed(2));
   }
   
   return {
@@ -184,4 +216,5 @@ function main() {
 }
 
 main();
+
 
