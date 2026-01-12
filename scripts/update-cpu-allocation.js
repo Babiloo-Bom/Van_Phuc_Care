@@ -113,17 +113,17 @@ function calculateAllocation(totalCores) {
     }
   }
   
-  // Kiểm tra lại tổng cuối cùng - đảm bảo tổng tất cả services < totalCores với buffer
+  // Kiểm tra lại tổng cuối cùng - đảm bảo tổng tất cả services < totalCores với buffer lớn hơn
   total = parseFloat((elearningRounded + crmRounded + adminRounded + apiRounded).toFixed(2));
-  const totalAllServices = total + otherServicesTotal;
-  const maxAllowed = totalCores - 0.1; // Buffer 0.1 để tránh lỗi làm tròn
+  let totalAllServices = total + otherServicesTotal;
+  const maxAllowed = totalCores - 0.2; // Buffer 0.2 để tránh lỗi làm tròn và đảm bảo an toàn
   
-  // Nếu tổng tất cả services >= maxAllowed, giảm từ service lớn nhất
-  if (totalAllServices >= maxAllowed) {
+  // Nếu tổng tất cả services >= maxAllowed, giảm từ service lớn nhất cho đến khi < maxAllowed
+  while (totalAllServices >= maxAllowed) {
     const excess = totalAllServices - maxAllowed;
-    // Giảm từ service có giá trị lớn nhất
-    const reduceAmount = Math.min(excess + 0.05, 0.2); // Đảm bảo tổng < maxAllowed
+    const reduceAmount = Math.min(excess + 0.05, 0.2); // Giảm tối đa 0.2 mỗi lần
     
+    // Giảm từ service có giá trị lớn nhất
     if (elearningRounded >= crmRounded && elearningRounded >= adminRounded && elearningRounded >= apiRounded && elearningRounded > 0.1) {
       elearningRounded = Math.max(0.1, parseFloat((elearningRounded - reduceAmount).toFixed(1)));
     } else if (crmRounded >= adminRounded && crmRounded >= apiRounded && crmRounded > 0.1) {
@@ -132,24 +132,14 @@ function calculateAllocation(totalCores) {
       adminRounded = Math.max(0.1, parseFloat((adminRounded - reduceAmount).toFixed(1)));
     } else if (apiRounded > 0.1) {
       apiRounded = Math.max(0.1, parseFloat((apiRounded - reduceAmount).toFixed(1)));
+    } else {
+      // Nếu tất cả đều = 0.1, không thể giảm thêm
+      break;
     }
     
-    // Kiểm tra lại sau khi giảm
+    // Tính lại tổng
     total = parseFloat((elearningRounded + crmRounded + adminRounded + apiRounded).toFixed(2));
-    const totalAllServicesAfter = total + otherServicesTotal;
-    
-    // Nếu vẫn >= maxAllowed, giảm thêm 0.1 từ service lớn nhất
-    if (totalAllServicesAfter >= maxAllowed) {
-      if (elearningRounded >= crmRounded && elearningRounded > 0.1) {
-        elearningRounded = Math.max(0.1, parseFloat((elearningRounded - 0.1).toFixed(1)));
-      } else if (crmRounded > 0.1) {
-        crmRounded = Math.max(0.1, parseFloat((crmRounded - 0.1).toFixed(1)));
-      } else if (adminRounded > 0.1) {
-        adminRounded = Math.max(0.1, parseFloat((adminRounded - 0.1).toFixed(1)));
-      } else if (apiRounded > 0.1) {
-        apiRounded = Math.max(0.1, parseFloat((apiRounded - 0.1).toFixed(1)));
-      }
-    }
+    totalAllServices = total + otherServicesTotal;
   }
   
   return {
