@@ -52,11 +52,21 @@ function getTotalCores() {
 
 // Tính toán phân bổ CPU
 function calculateAllocation(totalCores) {
-  // Tính toán chính xác trước
-  const elearning = totalCores * 0.375;
-  const crm = totalCores * 0.375;
-  const admin = totalCores * 0.125;
-  const api = totalCores * 0.125;
+  // Dành CPU cho các service khác (mongodb, minio, redis)
+  // Mỗi service cần khoảng 0.1 cores
+  const mongodbCpu = 0.1;
+  const minioCpu = 0.1;
+  const redisCpu = 0.1;
+  const otherServicesTotal = mongodbCpu + minioCpu + redisCpu; // 0.3 cores
+  
+  // CPU còn lại cho các service chính (api, admin, crm, elearning)
+  const availableCores = totalCores - otherServicesTotal;
+  
+  // Tính toán phân bổ cho các service chính dựa trên availableCores
+  const elearning = availableCores * 0.375;
+  const crm = availableCores * 0.375;
+  const admin = availableCores * 0.125;
+  const api = availableCores * 0.125;
   
   // Làm tròn xuống đến 1 chữ số thập phân để đảm bảo không vượt quá
   let elearningRounded = Math.floor(elearning * 10) / 10;
@@ -103,14 +113,15 @@ function calculateAllocation(totalCores) {
     }
   }
   
-  // Kiểm tra lại tổng cuối cùng - đảm bảo tổng < totalCores
+  // Kiểm tra lại tổng cuối cùng - đảm bảo tổng < totalCores với buffer 0.1
   total = parseFloat((elearningRounded + crmRounded + adminRounded + apiRounded).toFixed(2));
+  const maxAllowed = totalCores - 0.1; // Buffer 0.1 để tránh lỗi làm tròn
   
-  // Nếu tổng >= totalCores, giảm từ service lớn nhất
-  if (total >= totalCores) {
-    const excess = total - totalCores;
-    // Giảm từ service có giá trị lớn nhất, tối đa 0.1 mỗi lần
-    const reduceAmount = Math.min(excess + 0.01, 0.1); // Đảm bảo tổng < totalCores
+  // Nếu tổng >= maxAllowed, giảm từ service lớn nhất
+  if (total >= maxAllowed) {
+    const excess = total - maxAllowed;
+    // Giảm từ service có giá trị lớn nhất
+    const reduceAmount = Math.min(excess + 0.05, 0.2); // Đảm bảo tổng < maxAllowed
     
     if (elearningRounded >= crmRounded && elearningRounded >= adminRounded && elearningRounded >= apiRounded && elearningRounded > 0.1) {
       elearningRounded = Math.max(0.1, parseFloat((elearningRounded - reduceAmount).toFixed(1)));
@@ -125,8 +136,8 @@ function calculateAllocation(totalCores) {
     // Kiểm tra lại sau khi giảm
     total = parseFloat((elearningRounded + crmRounded + adminRounded + apiRounded).toFixed(2));
     
-    // Nếu vẫn >= totalCores, giảm thêm 0.1 từ service lớn nhất
-    if (total >= totalCores) {
+    // Nếu vẫn >= maxAllowed, giảm thêm 0.1 từ service lớn nhất
+    if (total >= maxAllowed) {
       if (elearningRounded >= crmRounded && elearningRounded > 0.1) {
         elearningRounded = Math.max(0.1, parseFloat((elearningRounded - 0.1).toFixed(1)));
       } else if (crmRounded > 0.1) {
@@ -144,6 +155,9 @@ function calculateAllocation(totalCores) {
     crm: crmRounded,
     admin: adminRounded,
     api: apiRounded,
+    mongodb: mongodbCpu,
+    minio: minioCpu,
+    redis: redisCpu,
   };
 }
 
@@ -155,6 +169,12 @@ function updateDockerCompose(filePath, allocation) {
   let inAdmin = false;
   let inCrm = false;
   let inElearning = false;
+  let inMongodb = false;
+  let inMinio = false;
+  let inRedis = false;
+  let mongodbHasCpus = false;
+  let minioHasCpus = false;
+  let redisHasCpus = false;
   
   const updatedLines = lines.map((line, index) => {
     // Detect service block
@@ -163,40 +183,136 @@ function updateDockerCompose(filePath, allocation) {
       inAdmin = false;
       inCrm = false;
       inElearning = false;
+      inMongodb = false;
+      inMinio = false;
+      inRedis = false;
     } else if (line.match(/^\s+admin:/)) {
       inApi = false;
       inAdmin = true;
       inCrm = false;
       inElearning = false;
+      inMongodb = false;
+      inMinio = false;
+      inRedis = false;
     } else if (line.match(/^\s+crm:/)) {
       inApi = false;
       inAdmin = false;
       inCrm = true;
       inElearning = false;
+      inMongodb = false;
+      inMinio = false;
+      inRedis = false;
     } else if (line.match(/^\s+elearning:/)) {
       inApi = false;
       inAdmin = false;
       inCrm = false;
       inElearning = true;
-    } else if (line.match(/^\s+\w+:/) && !line.match(/^\s+(api|admin|crm|elearning):/)) {
+      inMongodb = false;
+      inMinio = false;
+      inRedis = false;
+    } else if (line.match(/^\s+mongodb:/)) {
+      inApi = false;
+      inAdmin = false;
+      inCrm = false;
+      inElearning = false;
+      inMongodb = true;
+      inMinio = false;
+      inRedis = false;
+      mongodbHasCpus = false; // Reset flag
+    } else if (line.match(/^\s+minio:/)) {
+      inApi = false;
+      inAdmin = false;
+      inCrm = false;
+      inElearning = false;
+      inMongodb = false;
+      inMinio = true;
+      inRedis = false;
+      minioHasCpus = false; // Reset flag
+    } else if (line.match(/^\s+redis:/)) {
+      inApi = false;
+      inAdmin = false;
+      inCrm = false;
+      inElearning = false;
+      inMongodb = false;
+      inMinio = false;
+      inRedis = true;
+      redisHasCpus = false; // Reset flag
+    } else if (line.match(/^\s+\w+:/) && !line.match(/^\s+(api|admin|crm|elearning|mongodb|minio|redis):/)) {
       // Reset flags when entering a new service
       inApi = false;
       inAdmin = false;
       inCrm = false;
       inElearning = false;
+      inMongodb = false;
+      inMinio = false;
+      inRedis = false;
+    }
+    
+    // Check if service already has cpus limit
+    if (line.match(/cpus:\s*['"][\d.]+['"]/)) {
+      if (inMongodb) mongodbHasCpus = true;
+      if (inMinio) minioHasCpus = true;
+      if (inRedis) redisHasCpus = true;
     }
     
     // Update cpus line
     if (line.match(/cpus:\s*['"][\d.]+['"]/)) {
       if (inApi) {
-        return line.replace(/cpus:\s*['"][\d.]+['"]/, `cpus: '${allocation.api}'`);
+        const oldValue = line.match(/cpus:\s*['"]([\d.]+)['"]/)[1];
+        const newLine = line.replace(/cpus:\s*['"][\d.]+['"]/, `cpus: '${allocation.api}'`);
+        console.log(`   API: ${oldValue} -> ${allocation.api}`);
+        return newLine;
       } else if (inAdmin) {
-        return line.replace(/cpus:\s*['"][\d.]+['"]/, `cpus: '${allocation.admin}'`);
+        const oldValue = line.match(/cpus:\s*['"]([\d.]+)['"]/)[1];
+        const newLine = line.replace(/cpus:\s*['"][\d.]+['"]/, `cpus: '${allocation.admin}'`);
+        console.log(`   Admin: ${oldValue} -> ${allocation.admin}`);
+        return newLine;
       } else if (inCrm) {
-        return line.replace(/cpus:\s*['"][\d.]+['"]/, `cpus: '${allocation.crm}'`);
+        const oldValue = line.match(/cpus:\s*['"]([\d.]+)['"]/)[1];
+        const newLine = line.replace(/cpus:\s*['"][\d.]+['"]/, `cpus: '${allocation.crm}'`);
+        console.log(`   CRM: ${oldValue} -> ${allocation.crm}`);
+        return newLine;
       } else if (inElearning) {
-        return line.replace(/cpus:\s*['"][\d.]+['"]/, `cpus: '${allocation.elearning}'`);
+        const oldValue = line.match(/cpus:\s*['"]([\d.]+)['"]/)[1];
+        const newLine = line.replace(/cpus:\s*['"][\d.]+['"]/, `cpus: '${allocation.elearning}'`);
+        console.log(`   E-Learning: ${oldValue} -> ${allocation.elearning}`);
+        return newLine;
+      } else if (inMongodb) {
+        const oldValue = line.match(/cpus:\s*['"]([\d.]+)['"]/)[1];
+        const newLine = line.replace(/cpus:\s*['"][\d.]+['"]/, `cpus: '${allocation.mongodb}'`);
+        console.log(`   MongoDB: ${oldValue} -> ${allocation.mongodb}`);
+        return newLine;
+      } else if (inMinio) {
+        const oldValue = line.match(/cpus:\s*['"]([\d.]+)['"]/)[1];
+        const newLine = line.replace(/cpus:\s*['"][\d.]+['"]/, `cpus: '${allocation.minio}'`);
+        console.log(`   MinIO: ${oldValue} -> ${allocation.minio}`);
+        return newLine;
+      } else if (inRedis) {
+        const oldValue = line.match(/cpus:\s*['"]([\d.]+)['"]/)[1];
+        const newLine = line.replace(/cpus:\s*['"][\d.]+['"]/, `cpus: '${allocation.redis}'`);
+        console.log(`   Redis: ${oldValue} -> ${allocation.redis}`);
+        return newLine;
       }
+    }
+    
+    // Add cpus limit if service doesn't have one (add before networks line)
+    if (inMongodb && line.match(/^\s+networks:/) && !mongodbHasCpus) {
+      const indent = line.match(/^(\s+)/)[1];
+      const cpusLine = `${indent}cpus: '${allocation.mongodb}'  # CPU limit`;
+      console.log(`   MongoDB: added cpus limit -> ${allocation.mongodb}`);
+      return `${cpusLine}\n${line}`;
+    }
+    if (inMinio && line.match(/^\s+networks:/) && !minioHasCpus) {
+      const indent = line.match(/^(\s+)/)[1];
+      const cpusLine = `${indent}cpus: '${allocation.minio}'  # CPU limit`;
+      console.log(`   MinIO: added cpus limit -> ${allocation.minio}`);
+      return `${cpusLine}\n${line}`;
+    }
+    if (inRedis && line.match(/^\s+networks:/) && !redisHasCpus) {
+      const indent = line.match(/^(\s+)/)[1];
+      const cpusLine = `${indent}cpus: '${allocation.redis}'  # CPU limit`;
+      console.log(`   Redis: added cpus limit -> ${allocation.redis}`);
+      return `${cpusLine}\n${line}`;
     }
     
     return line;
@@ -217,12 +333,16 @@ function main() {
   console.log(`Tổng số cores: ${totalCores}`);
   console.log('');
   console.log('Phân bổ đề xuất:');
-  console.log(`  E-Learning Portal: ${allocation.elearning} cores (37.5%)`);
-  console.log(`  CRM Portal:        ${allocation.crm} cores (37.5%)`);
-  console.log(`  Admin Portal:      ${allocation.admin} cores (12.5%)`);
-  console.log(`  API Server:        ${allocation.api} cores (12.5%)`);
-  const totalAllocated = allocation.elearning + allocation.crm + allocation.admin + allocation.api;
-  console.log(`  Tổng phân bổ:      ${totalAllocated.toFixed(2)} cores (${((totalAllocated / totalCores) * 100).toFixed(1)}%)`);
+  console.log(`  E-Learning Portal: ${allocation.elearning} cores (37.5% của ${(totalCores - allocation.mongodb - allocation.minio - allocation.redis).toFixed(1)} cores còn lại)`);
+  console.log(`  CRM Portal:        ${allocation.crm} cores (37.5% của ${(totalCores - allocation.mongodb - allocation.minio - allocation.redis).toFixed(1)} cores còn lại)`);
+  console.log(`  Admin Portal:      ${allocation.admin} cores (12.5% của ${(totalCores - allocation.mongodb - allocation.minio - allocation.redis).toFixed(1)} cores còn lại)`);
+  console.log(`  API Server:        ${allocation.api} cores (12.5% của ${(totalCores - allocation.mongodb - allocation.minio - allocation.redis).toFixed(1)} cores còn lại)`);
+  console.log(`  MongoDB:           ${allocation.mongodb} cores`);
+  console.log(`  MinIO:             ${allocation.minio} cores`);
+  console.log(`  Redis:             ${allocation.redis} cores`);
+  const totalAllocated = allocation.elearning + allocation.crm + allocation.admin + allocation.api + 
+                         allocation.mongodb + allocation.minio + allocation.redis;
+  console.log(`  Tổng phân bổ:      ${totalAllocated.toFixed(2)} cores / ${totalCores} cores (${((totalAllocated / totalCores) * 100).toFixed(1)}%)`);
   console.log('');
   
   // Đường dẫn đến các file docker-compose
