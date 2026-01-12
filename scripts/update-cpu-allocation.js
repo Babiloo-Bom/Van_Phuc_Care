@@ -248,8 +248,8 @@ function updateDockerCompose(filePath, allocation) {
       inMinio = false;
       inRedis = true;
       redisHasCpus = false; // Reset flag
-    } else if (line.match(/^\s*\w+:\s*$/) && !line.match(/^\s*(api|admin|crm|elearning|mongodb|minio|redis):\s*$/)) {
-      // Reset flags when entering a new service
+    } else if (line.match(/^\w+:\s*$/) && !line.match(/^(api|admin|crm|elearning|mongodb|minio|redis):\s*$/)) {
+      // Reset flags only when hitting a top-level (no indent) service block
       inApi = false;
       inAdmin = false;
       inCrm = false;
