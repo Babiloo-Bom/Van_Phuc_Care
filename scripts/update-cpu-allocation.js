@@ -36,11 +36,52 @@ function getTotalCores() {
 
 // Tính toán phân bổ CPU
 function calculateAllocation(totalCores) {
+  // Tính toán chính xác trước
+  const elearning = totalCores * 0.375;
+  const crm = totalCores * 0.375;
+  const admin = totalCores * 0.125;
+  const api = totalCores * 0.125;
+  
+  // Làm tròn đến 1 chữ số thập phân
+  let elearningRounded = parseFloat(elearning.toFixed(1));
+  let crmRounded = parseFloat(crm.toFixed(1));
+  let adminRounded = parseFloat(admin.toFixed(1));
+  let apiRounded = parseFloat(api.toFixed(1));
+  
+  // Kiểm tra tổng có vượt quá totalCores không
+  let total = elearningRounded + crmRounded + adminRounded + apiRounded;
+  
+  // Nếu tổng vượt quá, scale down để đảm bảo tổng = totalCores
+  if (total > totalCores) {
+    const scale = totalCores / total;
+    elearningRounded = parseFloat((elearningRounded * scale).toFixed(1));
+    crmRounded = parseFloat((crmRounded * scale).toFixed(1));
+    adminRounded = parseFloat((adminRounded * scale).toFixed(1));
+    apiRounded = parseFloat((apiRounded * scale).toFixed(1));
+  }
+  
+  // Đảm bảo tất cả giá trị >= 0.1 (minimum cho Docker)
+  elearningRounded = Math.max(0.1, elearningRounded);
+  crmRounded = Math.max(0.1, crmRounded);
+  adminRounded = Math.max(0.1, adminRounded);
+  apiRounded = Math.max(0.1, apiRounded);
+  
+  // Kiểm tra lại tổng cuối cùng và điều chỉnh nếu cần
+  total = elearningRounded + crmRounded + adminRounded + apiRounded;
+  if (total > totalCores) {
+    // Scale down một lần nữa
+    const scale = totalCores / total;
+    elearningRounded = parseFloat((elearningRounded * scale).toFixed(1));
+    crmRounded = parseFloat((crmRounded * scale).toFixed(1));
+    adminRounded = parseFloat((adminRounded * scale).toFixed(1));
+    apiRounded = parseFloat((apiRounded * scale).toFixed(1));
+  }
+  
   return {
-    elearning: parseFloat((totalCores * 0.375).toFixed(1)),
-    crm: parseFloat((totalCores * 0.375).toFixed(1)),
-    admin: parseFloat((totalCores * 0.125).toFixed(1)),
-    api: parseFloat((totalCores * 0.125).toFixed(1)),
+    elearning: elearningRounded,
+    crm: crmRounded,
+    admin: adminRounded,
+    api: apiRounded,
   };
 }
 
@@ -118,6 +159,8 @@ function main() {
   console.log(`  CRM Portal:        ${allocation.crm} cores (37.5%)`);
   console.log(`  Admin Portal:      ${allocation.admin} cores (12.5%)`);
   console.log(`  API Server:        ${allocation.api} cores (12.5%)`);
+  const totalAllocated = allocation.elearning + allocation.crm + allocation.admin + allocation.api;
+  console.log(`  Tổng phân bổ:      ${totalAllocated.toFixed(2)} cores (${((totalAllocated / totalCores) * 100).toFixed(1)}%)`);
   console.log('');
   
   // Đường dẫn đến các file docker-compose
