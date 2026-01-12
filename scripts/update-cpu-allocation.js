@@ -267,14 +267,16 @@ function updateDockerCompose(filePath, allocation) {
     }
     
     // Update cpus line (match cả khi có comment)
+    // Debug: log tất cả dòng có chứa "cpus" để xem pattern có match không
+    if (line.includes('cpus')) {
+      console.log(`   [DEBUG] Line with 'cpus': ${line.trim()}, inApi=${inApi}, inAdmin=${inAdmin}, inCrm=${inCrm}, inElearning=${inElearning}, match=${!!line.match(/cpus:\s*['"][\d.]+['"]/)}`);
+    }
+    
     if (line.match(/cpus:\s*['"][\d.]+['"]/)) {
       const indent = line.match(/^(\s+)/) ? line.match(/^(\s+)/)[1] : '    ';
       const comment = line.match(/#.*$/) ? '  ' + line.match(/#.*$/)[0] : '';
       
-      // Debug: log khi tìm thấy dòng cpus
-      if (inApi || inAdmin || inCrm || inElearning || inMongodb || inMinio || inRedis) {
-        console.log(`   [DEBUG] Found cpus line: ${line.trim()}, inApi=${inApi}, inAdmin=${inAdmin}, inCrm=${inCrm}, inElearning=${inElearning}`);
-      }
+      console.log(`   [DEBUG] Found cpus line: ${line.trim()}, inApi=${inApi}, inAdmin=${inAdmin}, inCrm=${inCrm}, inElearning=${inElearning}`);
       
       if (inApi) {
         const oldValue = line.match(/cpus:\s*['"]([\d.]+)['"]/)[1];
