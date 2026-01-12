@@ -167,6 +167,7 @@ function updateDockerCompose(filePath, allocation) {
   let mongodbHasCpus = false;
   let minioHasCpus = false;
   let redisHasCpus = false;
+  let updatedCount = 0;
   
   const updatedLines = lines.map((line, index) => {
     // Detect service block
@@ -247,41 +248,48 @@ function updateDockerCompose(filePath, allocation) {
       if (inRedis) redisHasCpus = true;
     }
     
-    // Update cpus line
+    // Update cpus line (match cả khi có comment)
     if (line.match(/cpus:\s*['"][\d.]+['"]/)) {
+      const indent = line.match(/^(\s+)/) ? line.match(/^(\s+)/)[1] : '    ';
+      const comment = line.match(/#.*$/) ? '  ' + line.match(/#.*$/)[0] : '';
+      
       if (inApi) {
         const oldValue = line.match(/cpus:\s*['"]([\d.]+)['"]/)[1];
-        const newLine = line.replace(/cpus:\s*['"][\d.]+['"]/, `cpus: '${allocation.api}'`);
+        const newLine = `${indent}cpus: '${allocation.api}'${comment}`;
         console.log(`   API: ${oldValue} -> ${allocation.api}`);
+        updatedCount++;
         return newLine;
       } else if (inAdmin) {
         const oldValue = line.match(/cpus:\s*['"]([\d.]+)['"]/)[1];
-        const newLine = line.replace(/cpus:\s*['"][\d.]+['"]/, `cpus: '${allocation.admin}'`);
+        const newLine = `${indent}cpus: '${allocation.admin}'${comment}`;
         console.log(`   Admin: ${oldValue} -> ${allocation.admin}`);
+        updatedCount++;
         return newLine;
       } else if (inCrm) {
         const oldValue = line.match(/cpus:\s*['"]([\d.]+)['"]/)[1];
-        const newLine = line.replace(/cpus:\s*['"][\d.]+['"]/, `cpus: '${allocation.crm}'`);
+        const newLine = `${indent}cpus: '${allocation.crm}'${comment}`;
         console.log(`   CRM: ${oldValue} -> ${allocation.crm}`);
+        updatedCount++;
         return newLine;
       } else if (inElearning) {
         const oldValue = line.match(/cpus:\s*['"]([\d.]+)['"]/)[1];
-        const newLine = line.replace(/cpus:\s*['"][\d.]+['"]/, `cpus: '${allocation.elearning}'`);
+        const newLine = `${indent}cpus: '${allocation.elearning}'${comment}`;
         console.log(`   E-Learning: ${oldValue} -> ${allocation.elearning}`);
+        updatedCount++;
         return newLine;
       } else if (inMongodb) {
         const oldValue = line.match(/cpus:\s*['"]([\d.]+)['"]/)[1];
-        const newLine = line.replace(/cpus:\s*['"][\d.]+['"]/, `cpus: '${allocation.mongodb}'`);
+        const newLine = `${indent}cpus: '${allocation.mongodb}'${comment}`;
         console.log(`   MongoDB: ${oldValue} -> ${allocation.mongodb}`);
         return newLine;
       } else if (inMinio) {
         const oldValue = line.match(/cpus:\s*['"]([\d.]+)['"]/)[1];
-        const newLine = line.replace(/cpus:\s*['"][\d.]+['"]/, `cpus: '${allocation.minio}'`);
+        const newLine = `${indent}cpus: '${allocation.minio}'${comment}`;
         console.log(`   MinIO: ${oldValue} -> ${allocation.minio}`);
         return newLine;
       } else if (inRedis) {
         const oldValue = line.match(/cpus:\s*['"]([\d.]+)['"]/)[1];
-        const newLine = line.replace(/cpus:\s*['"][\d.]+['"]/, `cpus: '${allocation.redis}'`);
+        const newLine = `${indent}cpus: '${allocation.redis}'${comment}`;
         console.log(`   Redis: ${oldValue} -> ${allocation.redis}`);
         return newLine;
       }
@@ -311,7 +319,10 @@ function updateDockerCompose(filePath, allocation) {
   });
   
   fs.writeFileSync(filePath, updatedLines.join('\n'), 'utf-8');
-  console.log(`✅ Đã cập nhật ${path.basename(filePath)}`);
+  console.log(`✅ Đã cập nhật ${path.basename(filePath)} (${updatedCount} services updated)`);
+  if (updatedCount === 0) {
+    console.warn(`⚠️  Warning: Không tìm thấy dòng cpus nào để cập nhật trong ${path.basename(filePath)}`);
+  }
 }
 
 // Main function
