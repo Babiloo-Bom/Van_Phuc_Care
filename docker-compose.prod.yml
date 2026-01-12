@@ -20,7 +20,7 @@ services:
       test:
         [
           "CMD-SHELL",
-          "mongosh \"mongodb://$MONGO_INITDB_ROOT_USERNAME:$MONGO_INITDB_ROOT_PASSWORD@localhost:27017/admin\" --eval \"db.runCommand({ ping: 1 })\" || exit 1"
+          "mongosh \"mongodb://admin:vanphuccare2025@localhost:27017/admin\" --eval \"db.runCommand({ ping: 1 })\" || exit 1"
         ]
       interval: 10s
       timeout: 10s
