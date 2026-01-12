@@ -244,6 +244,10 @@ class CloudflareR2Service {
    */
   public async setupLifecycleRule(daysAfterInitiation: number = 1): Promise<void> {
     try {
+      console.log(`🔄 [R2 Lifecycle] Đang thiết lập lifecycle rule cho bucket: ${this.bucketName}`);
+      console.log(`🔑 [R2 Lifecycle] Sử dụng Account ID: ${process.env.CLOUDFLARE_R2_ACCOUNT_ID?.substring(0, 8)}...`);
+      console.log(`🔑 [R2 Lifecycle] Sử dụng Access Key ID: ${process.env.CLOUDFLARE_R2_ACCESS_KEY_ID?.substring(0, 8)}...`);
+      
       const command = new PutBucketLifecycleConfigurationCommand({
         Bucket: this.bucketName,
         LifecycleConfiguration: {
@@ -259,10 +263,29 @@ class CloudflareR2Service {
         },
       });
 
-      await this.client.send(command);
-      console.log(`✅ Lifecycle rule đã được thiết lập: Tự động xóa incomplete multipart uploads sau ${daysAfterInitiation} ngày`);
-    } catch (error) {
-      console.error('❌ Setup lifecycle rule error:', error);
+      const response = await this.client.send(command);
+      console.log(`✅ [R2 Lifecycle] Lifecycle rule đã được thiết lập thành công: Tự động xóa incomplete multipart uploads sau ${daysAfterInitiation} ngày`);
+      console.log(`📋 [R2 Lifecycle] Response:`, JSON.stringify(response, null, 2));
+    } catch (error: any) {
+      console.error('❌ [R2 Lifecycle] Setup lifecycle rule error:', error);
+      console.error('❌ [R2 Lifecycle] Error details:', {
+        name: error.name,
+        Code: error.Code,
+        message: error.message,
+        statusCode: error.$metadata?.httpStatusCode,
+        requestId: error.$metadata?.requestId,
+      });
+      
+      // Nếu là AccessDenied, cung cấp hướng dẫn
+      if (error.Code === 'AccessDenied' || error.name === 'AccessDenied' || error.message?.includes('Access Denied')) {
+        console.error('⚠️ [R2 Lifecycle] HƯỚNG DẪN SỬA LỖI:');
+        console.error('   1. Vào Cloudflare Dashboard → R2 → Manage R2 API Tokens');
+        console.error('   2. Tạo API Token mới với quyền "Object Read & Write" và "Bucket Configuration Read & Write"');
+        console.error('   3. Hoặc sử dụng Admin API Token với quyền đầy đủ');
+        console.error('   4. Cập nhật CLOUDFLARE_R2_ACCESS_KEY_ID và CLOUDFLARE_R2_SECRET_ACCESS_KEY trong .env');
+        console.error('   5. Restart server');
+      }
+      
       throw error;
     }
   }
@@ -285,8 +308,18 @@ class CloudflareR2Service {
         console.log('ℹ️ Bucket chưa có lifecycle rules');
         return null;
       }
-      console.error('❌ Get lifecycle rules error:', error);
-      throw error;
+      
+      // Nếu là AccessDenied, log warning và hướng dẫn
+      if (error.Code === 'AccessDenied' || error.name === 'AccessDenied' || error.message?.includes('Access Denied')) {
+        console.warn('⚠️ [R2 Lifecycle] Access Denied - Không có quyền truy cập lifecycle rules.');
+        console.warn('   Để sửa lỗi này, cần tạo R2 API Token với quyền "Bucket Configuration Read & Write"');
+        console.warn('   Xem hướng dẫn trong Cloudflare Dashboard → R2 → Manage R2 API Tokens');
+        return null;
+      }
+      
+      // Log error nhưng không throw để không crash server (non-critical)
+      console.warn('⚠️ [R2 Lifecycle] Get lifecycle rules error (non-critical):', error.message || error);
+      return null;
     }
   }
 }

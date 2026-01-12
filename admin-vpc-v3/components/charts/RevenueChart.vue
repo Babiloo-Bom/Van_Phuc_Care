@@ -21,8 +21,6 @@
 </template>
 
 <script setup lang="ts">
-console.log('🔵 RevenueChart component script loaded')
-
 import { ref, onMounted, onUnmounted, watch, nextTick, watchEffect } from 'vue'
 
 // Import Chart.js directly (Nuxt 3 handles SSR)
@@ -49,20 +47,11 @@ const isReady = ref(false)
 
 // Load Chart.js on client side only
 onMounted(async () => {
-  console.log('🎯 RevenueChart component mounted')
-  console.log('📊 Initial props:', {
-    loading: props.loading,
-    dataLength: props.data?.length || 0,
-    data: props.data
-  })
-  
   if (typeof window === 'undefined') {
-    console.log('⏸️ Not in browser, skipping Chart.js load')
     return
   }
   
   try {
-    console.log('📦 Loading Chart.js...')
     const chartModule = await import('chart.js')
     Chart = chartModule.Chart
     
@@ -91,7 +80,6 @@ onMounted(async () => {
     )
     
     isReady.value = true
-    console.log('✅ Chart.js loaded successfully')
     
     // Wait for DOM to be ready
     await nextTick()
@@ -100,18 +88,8 @@ onMounted(async () => {
     
     // Try to render after Chart.js is loaded and DOM is ready
     setTimeout(() => {
-      console.log('🚀 Attempting initial render after Chart.js load', {
-        isReady: isReady.value,
-        hasChart: !!Chart,
-        loading: props.loading,
-        dataLength: props.data?.length || 0,
-        hasCanvas: !!chartCanvas.value
-      })
-      
       if (!props.loading && props.data && props.data.length > 0 && chartCanvas.value) {
         renderChart()
-      } else {
-        console.log('⏸️ Cannot render yet, will wait for watchEffect')
       }
     }, 500)
   } catch (error) {
@@ -131,25 +109,15 @@ const formatCurrency = (amount: number) => {
 const renderChart = () => {
   try {
     if (!Chart || !isReady.value) {
-      console.log('⏸️ Chart.js not loaded yet', { hasChart: !!Chart, isReady: isReady.value })
       return
     }
     
     if (!chartCanvas.value || !props.data || props.data.length === 0 || props.loading) {
-      console.log('⏸️ Chart render skipped:', {
-        hasChart: !!Chart,
-        isReady: isReady.value,
-        hasCanvas: !!chartCanvas.value,
-        hasData: !!props.data,
-        dataLength: props.data?.length || 0,
-        loading: props.loading
-      })
       return
     }
 
     // Destroy existing chart - QUAN TRỌNG: phải destroy trước khi tạo mới
     if (chartInstance) {
-      console.log('🗑️ Destroying existing chart instance')
       try {
         chartInstance.destroy()
       } catch (e) {
@@ -161,7 +129,6 @@ const renderChart = () => {
     // Đảm bảo canvas không còn chart nào
     const existingChart = Chart.getChart(chartCanvas.value)
     if (existingChart) {
-      console.log('🗑️ Found existing chart on canvas, destroying it')
       existingChart.destroy()
     }
 
@@ -173,16 +140,6 @@ const renderChart = () => {
 
     const labels = props.data.map(item => item.month)
     const revenueData = props.data.map(item => item.revenue)
-    
-    console.log('📈 Rendering chart with data:', { labels, revenueData })
-    console.log('📐 Canvas dimensions:', {
-      width: chartCanvas.value.width,
-      height: chartCanvas.value.height,
-      clientWidth: chartCanvas.value.clientWidth,
-      clientHeight: chartCanvas.value.clientHeight,
-      offsetWidth: chartCanvas.value.offsetWidth,
-      offsetHeight: chartCanvas.value.offsetHeight
-    })
 
     chartInstance = new Chart(ctx, {
     type: 'line',
@@ -276,16 +233,9 @@ const renderChart = () => {
     }
   })
   
-  console.log('✅ Chart rendered successfully', {
-    chartId: chartInstance?.id,
-    canvas: chartCanvas.value,
-    chart: chartInstance
-  })
-  
   // Force update để đảm bảo chart được hiển thị
   if (chartInstance) {
     chartInstance.update()
-    console.log('🔄 Chart updated')
   }
   } catch (error) {
     console.error('❌ Error rendering chart:', error)
@@ -300,20 +250,10 @@ const renderChart = () => {
 watchEffect(async () => {
   const shouldRender = isReady.value && Chart && !props.loading && props.data && props.data.length > 0
   
-  console.log('🔄 WatchEffect triggered:', {
-    isReady: isReady.value,
-    hasChart: !!Chart,
-    loading: props.loading,
-    dataLength: props.data?.length || 0,
-    hasCanvas: !!chartCanvas.value,
-    shouldRender
-  })
-  
   if (shouldRender && chartCanvas.value) {
     await nextTick()
     await nextTick()
     setTimeout(() => {
-      console.log('🚀 WatchEffect: Attempting to render chart')
       renderChart()
     }, 200)
   }

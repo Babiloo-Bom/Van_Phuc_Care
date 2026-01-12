@@ -132,11 +132,9 @@ export default defineNuxtConfig({
       ],
       link: [
         { rel: 'icon', type: 'image/png', href: '/images/logo_van_phuc.png' },
-        { rel: 'apple-touch-icon', href: '/images/logo_van_phuc.png' },
-        // Only preload the most critical font (Regular - used most frequently above the fold)
-        { rel: 'preload', href: '/fonts/SVN-Gilroy Regular.otf', as: 'font', type: 'font/otf', crossorigin: 'anonymous' }
-        // Note: Medium & Bold fonts will load on-demand (font-display: swap handles this)
-        // Note: baby-default.png removed - only shown as fallback, not always needed
+        { rel: 'apple-touch-icon', href: '/images/logo_van_phuc.png' }
+        // Font preload removed to avoid browser warnings
+        // Fonts will load on-demand via @font-face (font-display: swap handles this)
       ]
     }
   },

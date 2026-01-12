@@ -15,8 +15,5 @@ useHead({
   }
 })
 
-// Log app info
-console.log('🎉 Admin Portal initialized!')
-console.log('📡 API Host:', apiHost)
-console.log('🌍 Environment:', isDevelopment ? 'Development' : 'Production')
+// App initialized
 </script>

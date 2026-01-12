@@ -254,15 +254,15 @@ export const useAuthStore = defineStore('auth', {
           this.saveAuth()
         }
       } catch (error) {
-        // Don't throw error - just log it. This is a non-critical operation.
+        // Don't throw error - just silently ignore it. This is a non-critical operation.
         // The session is still valid even if refresh fails.
-        console.warn('⚠️ Error refreshing user data (non-critical):', error)
-        // Re-throw only if it's a critical error (not 401, not network error)
+        // Silently ignore 401 errors (user not logged in) and network errors
         const status = (error as any)?.statusCode || (error as any)?.status
         if (status && status !== 401 && status !== 0) {
           // Only re-throw for unexpected server errors (500, 403, etc.)
           throw error
         }
+        // Silently ignore 401 and network errors (non-critical)
       }
     },
 

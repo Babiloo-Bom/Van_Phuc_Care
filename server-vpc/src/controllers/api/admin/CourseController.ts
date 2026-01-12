@@ -990,6 +990,42 @@ class CourseController {
 
             // Tạo lessons mới
             for (const lessonData of chapter.lessons) {
+              // Validate và clean videos data
+              let validVideos = [];
+              if (Array.isArray(lessonData.videos)) {
+                validVideos = lessonData.videos.map((video: any) => {
+                  // Đảm bảo video có đầy đủ các trường cần thiết
+                  const validVideo: any = {
+                    title: video.title || '',
+                    videoUrl: video.videoUrl || video.hlsUrl || '',
+                    thumbnail: video.thumbnail || '',
+                    duration: video.duration || 0,
+                    fileSize: video.fileSize || 0,
+                    quality: video.quality || '720',
+                    index: video.index || 0,
+                    status: video.status || 'uploading',
+                    hlsUrl: video.hlsUrl || '',
+                    qualityMetadata: video.qualityMetadata || {
+                      resolution: '',
+                      bitrate: '',
+                      codec: '',
+                      fps: 0,
+                      segments: 0,
+                    },
+                    errorMessage: video.errorMessage || '',
+                    jobId: video.jobId || '', // Store jobId to allow auto-update from worker
+                  };
+                  
+                  // Nếu status là "ready" nhưng không có videoUrl hoặc hlsUrl, đặt status là "error"
+                  if (validVideo.status === 'ready' && !validVideo.videoUrl && !validVideo.hlsUrl) {
+                    validVideo.status = 'error';
+                    validVideo.errorMessage = 'Video URL is missing';
+                  }
+                  
+                  return validVideo;
+                });
+              }
+
               const lesson = await LessonsModel.model.create({
                 chapterId: updatedChapter._id,
                 quizId: null,
@@ -998,7 +1034,7 @@ class CourseController {
                 content: lessonData.content || "",
                 type: lessonData.type || "video",
                 isPreview: lessonData.isPreview || false,
-                videos: lessonData.videos || [],
+                videos: validVideos,
                 documents: lessonData.documents || [],
                 duration: lessonData.duration || 0,
                 status: lessonData.status || "active",

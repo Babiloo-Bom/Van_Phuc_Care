@@ -26,11 +26,9 @@ export default defineNuxtPlugin((nuxtApp) => {
     onRequest({ request, options }) {
       // Add auth token to all API requests
       if (authStore.token) {
-        options.headers = options.headers || {}
-        options.headers = {
-          ...options.headers,
-          'Authorization': `Bearer ${authStore.token}`
-        }
+        const headers = new Headers(options.headers as HeadersInit)
+        headers.set('Authorization', `Bearer ${authStore.token}`)
+        options.headers = headers
       }
     },
     onRequestError({ request, error }) {
@@ -44,7 +42,7 @@ export default defineNuxtPlugin((nuxtApp) => {
     onResponseError({ request, response }) {
       // Handle 401 - unauthorized
       if (response.status === 401) {
-        console.warn('Unauthorized, logging out...')
+        // Silently logout without logging
         authStore.logout()
       }
     }

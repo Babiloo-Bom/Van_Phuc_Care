@@ -401,15 +401,17 @@
                   </a-upload>
                   
                   <!-- Video Status -->
-                  <div v-if="formData.introVideoStatus" style="margin-top: 8px;">
-                    <a-tag :color="getStatusColor(
-                      (uploadingIntroVideo && introVideoUploadProgress.stage && introVideoUploadProgress.stage !== 'ready')
-                        ? introVideoUploadProgress.stage === 'uploading-r2' 
-                          ? 'processing' 
-                          : introVideoUploadProgress.stage
-                        : formData.introVideoStatus
-                    )">
-                      <template v-if="uploadingIntroVideo && introVideoUploadProgress.stage && introVideoUploadProgress.stage !== 'ready'">
+                  <div v-if="formData.introVideoStatus" style="margin-top: 8px;" :key="`intro-video-status-${formData.introVideoStatus}-${uploadingIntroVideo}`">
+                    <a-tag :color="getStatusColor(formData.introVideoStatus)">
+                      <!-- CRITICAL FIX: Hardcode 'Sẵn sàng' when status is 'ready' to avoid any reactive issues -->
+                      <span v-if="formData.introVideoStatus === 'ready'">Sẵn sàng</span>
+                      <!-- Only show progress when actively uploading AND status is not ready -->
+                      <template v-else-if="uploadingIntroVideo === true && 
+                                      introVideoUploadProgress.stage && 
+                                      introVideoUploadProgress.stage !== 'ready' && 
+                                      introVideoUploadProgress.stage !== '' &&
+                                      introVideoUploadProgress.percent < 100 &&
+                                      formData.introVideoStatus !== 'ready'">
                         <a-spin size="small" style="margin-right: 4px;" />
                         {{ getStatusText(
                           introVideoUploadProgress.stage === 'uploading-r2' 
@@ -417,6 +419,7 @@
                             : introVideoUploadProgress.stage
                         ) }}
                       </template>
+                      <!-- Fallback: show formData.introVideoStatus -->
                       <template v-else>
                         {{ getStatusText(formData.introVideoStatus) }}
                       </template>
@@ -1234,6 +1237,10 @@ const instructorAvatarFileList = ref<UploadFile[]>([])
 const uploadingIntroVideo = ref(false)
 const activeTab = ref('basic')
 
+// Store polling interval references to clear them when needed
+const introVideoPollInterval = ref<NodeJS.Timeout | null>(null)
+const lessonVideoPollIntervals = ref<Record<string, NodeJS.Timeout>>({})
+
 // Video upload progress tracking - includes upload, processing, and R2 upload
 const introVideoUploadProgress = reactive({
   percent: 0,
@@ -1497,6 +1504,9 @@ const handleIntroVideoChange = async (info: any) => {
         introVideoUploadProgress.fileUploadPercent = 0
         uploadingIntroVideo.value = false
         message.success('Upload video giới thiệu thành công')
+      } else if (formData.introVideoJobId && (formData.introVideoStatus === 'queueing' || formData.introVideoStatus === 'processing')) {
+        // Poll job status if video is still processing
+        pollIntroVideoJobStatus(formData.introVideoJobId)
       }
     } catch (error: any) {
       console.error('Upload intro video error:', error)
@@ -1674,7 +1684,8 @@ const uploadFileToMinIO = async (file: File, folder: string = 'courses'): Promis
 const uploadVideoToR2 = async (
   file: File, 
   folder: string = 'courses/intro-videos',
-  progressKey?: string // Key để track progress cho lesson videos
+  progressKey?: string, // Key để track progress cho lesson videos
+  lessonId?: string // Optional: lesson ID if this is a lesson video (for auto-update)
 ): Promise<{
   url: string
   hlsUrl: string
@@ -1708,8 +1719,15 @@ const uploadVideoToR2 = async (
   const uploadFormData = new FormData()
   uploadFormData.append('file', file)
   
-  // URL đúng: /api/uploads/video (không có /a)
-  const url = apiHost ? `${apiHost}/api/uploads/video?folder=${folder}` : `/api/uploads/video?folder=${folder}`
+  // Build URL with folder and optional lessonId
+  let url = apiHost ? `${apiHost}/api/uploads/video?folder=${folder}` : `/api/uploads/video?folder=${folder}`
+  if (lessonId) {
+    url += `&lessonId=${lessonId}`
+    console.log('✅ [Video Upload] Including lessonId in URL:', lessonId)
+  } else {
+    console.log('⚠️ [Video Upload] No lessonId provided - lesson may not be saved to database yet')
+    console.log('⚠️ [Video Upload] Worker will try to find lesson by jobId after course is saved')
+  }
   console.log('📤 Uploading video to:', url)
   
   // Use XMLHttpRequest for progress tracking
@@ -1900,14 +1918,37 @@ const uploadVideoToR2 = async (
           const response = JSON.parse(xhr.responseText)
           console.log('📤 Video upload response:', response)
           
-          // If processing stages haven't started yet, start them now
-          if (progressTracker && progressTracker.stage === 'uploading' && progressTracker.fileUploadPercent >= 100) {
-            startProcessingStages()
-          }
-          
-          // Parse response
+          // Parse response first to check status
           const videos = response?.data?.videos || response?.videos || []
           const jobId = response?.data?.jobId || response?.jobId || ''
+          const videoStatus = videos.length > 0 ? videos[0].status : 'ready'
+          
+          // CRITICAL: Only start simulated processing if video is ready
+          // If status is 'queueing' or 'processing', stop simulated progress immediately
+          // Real progress will come from polling
+          if (videoStatus === 'ready') {
+            // If processing stages haven't started yet, start them now
+            if (progressTracker && progressTracker.stage === 'uploading' && progressTracker.fileUploadPercent >= 100) {
+              startProcessingStages()
+            }
+          } else {
+            // Stop simulated progress immediately - polling will handle real progress
+            if (processingIntervalId) {
+              clearInterval(processingIntervalId)
+              processingIntervalId = null
+            }
+            if (r2UploadIntervalId) {
+              clearInterval(r2UploadIntervalId)
+              r2UploadIntervalId = null
+            }
+            // Reset progress to 40% (after file upload, before processing)
+            // Polling will update it with real backend progress
+            if (progressTracker) {
+              progressTracker.percent = 40
+              progressTracker.stage = 'queueing'
+            }
+            console.log('⏸️ [Video Upload] Stopped simulated progress - reset to 40%, will use polling for real progress')
+          }
           
           if (videos.length > 0 && videos[0]) {
             const video = videos[0]
@@ -1927,8 +1968,10 @@ const uploadVideoToR2 = async (
             }
             console.log('📤 Final videoData:', videoData)
             
-            // Wait for progress to complete, then reset
-            setTimeout(() => {
+            // CRITICAL: Only clear progress tracker if video is ready
+            // If status is 'queueing' or 'processing', keep progress tracker visible
+            // Progress tracker will be cleared when polling detects 'ready' status
+            if (videoData.status === 'ready') {
               // Clear any running intervals
               if (processingIntervalId) {
                 clearInterval(processingIntervalId)
@@ -1939,20 +1982,35 @@ const uploadVideoToR2 = async (
                 r2UploadIntervalId = null
               }
               
-              if (progressKey) {
-                // Clear lesson video progress tracker
-                delete lessonVideoUploadProgress[progressKey]
-              } else {
-                // Clear intro video progress tracker completely
-                introVideoUploadProgress.percent = 0
-                introVideoUploadProgress.stage = ''
-                introVideoUploadProgress.uploaded = 0
-                introVideoUploadProgress.total = 0
-                introVideoUploadProgress.speed = 0
-                introVideoUploadProgress.timeRemaining = 0
-                introVideoUploadProgress.fileUploadPercent = 0
+              // Wait for progress to complete, then reset
+              setTimeout(() => {
+                if (progressKey) {
+                  // Clear lesson video progress tracker
+                  delete lessonVideoUploadProgress[progressKey]
+                } else {
+                  // Clear intro video progress tracker completely
+                  introVideoUploadProgress.percent = 0
+                  introVideoUploadProgress.stage = ''
+                  introVideoUploadProgress.uploaded = 0
+                  introVideoUploadProgress.total = 0
+                  introVideoUploadProgress.speed = 0
+                  introVideoUploadProgress.timeRemaining = 0
+                  introVideoUploadProgress.fileUploadPercent = 0
+                }
+              }, 2000) // Wait 2 seconds for final progress animation
+            } else {
+              // If still processing, keep progress tracker and stop simulated intervals
+              // Real progress will come from polling
+              if (processingIntervalId) {
+                clearInterval(processingIntervalId)
+                processingIntervalId = null
               }
-            }, 2000) // Wait 2 seconds for final progress animation
+              if (r2UploadIntervalId) {
+                clearInterval(r2UploadIntervalId)
+                r2UploadIntervalId = null
+              }
+              console.log('⏳ [Video Upload] Video is still processing, keeping progress tracker visible for polling')
+            }
             
             resolve(videoData)
           } else {
@@ -2282,6 +2340,15 @@ const editCourse = async (course: Course) => {
     if (response.status && response.data) {
       const courseData = response.data.course || response.data.data?.course || response.data
       
+      // Determine intro video status first - ALWAYS set to 'ready' if URL exists
+      const hasIntroVideoUrl = !!(courseData.introVideo || courseData.introVideoHlsUrl)
+      // Force 'ready' if URL exists, regardless of what's in database
+      const introVideoStatusValue = hasIntroVideoUrl ? 'ready' : (courseData.introVideoStatus || 'ready')
+      
+      console.log('🔍 [Load Course] courseData.introVideoStatus from DB:', courseData.introVideoStatus)
+      console.log('🔍 [Load Course] hasIntroVideoUrl:', hasIntroVideoUrl)
+      console.log('🔍 [Load Course] introVideoStatusValue (will be set):', introVideoStatusValue)
+      
       Object.assign(formData, {
         title: courseData.title || '',
         slug: courseData.slug || '',
@@ -2289,11 +2356,11 @@ const editCourse = async (course: Course) => {
         shortDescription: courseData.shortDescription || '',
         thumbnail: courseData.thumbnail || '',
         introVideo: courseData.introVideo || '',
-        introVideoStatus: (courseData.introVideoStatus === 'uploading' || courseData.introVideoStatus === 'queueing' || courseData.introVideoStatus === 'processing')
-          && (courseData.introVideo || courseData.introVideoHlsUrl)
-          ? 'ready'
-          : (courseData.introVideoStatus || 'ready'),
+        // Auto-fix status: if video has URL, it should be 'ready' (regardless of stored status)
+        introVideoStatus: introVideoStatusValue,
         introVideoHlsUrl: courseData.introVideoHlsUrl || '',
+        introVideoJobId: '', // Clear jobId when loading course (no need to poll old jobs)
+        introVideoErrorMessage: '', // Clear error message when loading
         introVideoQualityMetadata: courseData.introVideoQualityMetadata || {
           resolution: '',
           bitrate: '',
@@ -2324,16 +2391,20 @@ const editCourse = async (course: Course) => {
           index: chapter.index || 0,
           status: chapter.status || 'active',
           lessons: (chapter.lessons || []).map((lesson: any) => {
-            // Fix video status: if video has URL but status is uploading/queueing/processing, set to ready
+            // Fix video status: if video has URL, it should be 'ready' (regardless of stored status)
             const videos = (lesson.videos || []).map((video: any) => {
-              if (video && (video.videoUrl || video.hlsUrl) && 
-                  (video.status === 'uploading' || video.status === 'queueing' || video.status === 'processing')) {
+              if (video && (video.videoUrl || video.hlsUrl)) {
                 return {
                   ...video,
-                  status: 'ready'
+                  status: 'ready', // Always set to ready if URL exists
+                  jobId: '', // Clear jobId when loading (no need to poll old jobs)
+                  errorMessage: '', // Clear error message when loading
                 }
               }
-              return video
+              return {
+                ...video,
+                jobId: '', // Clear jobId even if no URL
+              }
             })
             
             return {
@@ -2430,6 +2501,18 @@ const editCourse = async (course: Course) => {
         instructorAvatarFileList.value = []
       }
       
+      // Clear all polling intervals first
+      if (introVideoPollInterval.value) {
+        clearInterval(introVideoPollInterval.value)
+        introVideoPollInterval.value = null
+      }
+      Object.keys(lessonVideoPollIntervals.value).forEach(key => {
+        if (lessonVideoPollIntervals.value[key]) {
+          clearInterval(lessonVideoPollIntervals.value[key])
+        }
+        delete lessonVideoPollIntervals.value[key]
+      })
+      
       // Clear all progress trackers when loading course for edit
       Object.keys(lessonVideoUploadProgress).forEach(key => {
         delete lessonVideoUploadProgress[key]
@@ -2442,6 +2525,51 @@ const editCourse = async (course: Course) => {
       introVideoUploadProgress.timeRemaining = 0
       introVideoUploadProgress.fileUploadPercent = 0
       uploadingIntroVideo.value = false
+      
+      // Ensure status is 'ready' if video URL exists (override any stale status)
+      // This is a final check to make sure status is correct
+      // Use nextTick to ensure reactive update happens after all assignments
+      await nextTick()
+      if (formData.introVideo || formData.introVideoHlsUrl) {
+        // Force set status to ready - this should override any stale status
+        formData.introVideoStatus = 'ready'
+        // Force clear progress stage to prevent template from showing old status
+        introVideoUploadProgress.stage = ''
+        introVideoUploadProgress.percent = 0
+        // Ensure uploading flag is false
+        uploadingIntroVideo.value = false
+        console.log('✅ [Load Course] Auto-fixed introVideoStatus to ready (has URL):', formData.introVideo || formData.introVideoHlsUrl)
+        console.log('✅ [Load Course] formData.introVideoStatus =', formData.introVideoStatus)
+        console.log('✅ [Load Course] introVideoUploadProgress.stage =', introVideoUploadProgress.stage)
+        console.log('✅ [Load Course] uploadingIntroVideo =', uploadingIntroVideo.value)
+        console.log('✅ [Load Course] introVideoUploadProgress.percent =', introVideoUploadProgress.percent)
+        
+        // Force another nextTick to ensure template updates
+        await nextTick()
+        console.log('✅ [Load Course] After second nextTick, formData.introVideoStatus =', formData.introVideoStatus)
+        console.log('✅ [Load Course] getStatusText result =', getStatusText(formData.introVideoStatus))
+        
+        // Final verification: check if status is actually 'ready'
+        if (formData.introVideoStatus !== 'ready') {
+          console.error('❌ [Load Course] CRITICAL ERROR: formData.introVideoStatus is NOT ready! Value:', formData.introVideoStatus)
+          // Force set one more time
+          formData.introVideoStatus = 'ready'
+          await nextTick()
+          console.log('✅ [Load Course] Force set again, now:', formData.introVideoStatus)
+        } else {
+          console.log('✅ [Load Course] Status verified: ready')
+        }
+        
+        // Force Vue to re-render the component
+        // Use setTimeout to ensure DOM is ready
+        setTimeout(() => {
+          console.log('🔄 [Load Course] Force checking template values after timeout')
+          console.log('🔄 [Load Course] formData.introVideoStatus =', formData.introVideoStatus)
+          console.log('🔄 [Load Course] getStatusText =', getStatusText(formData.introVideoStatus))
+        }, 100)
+      } else {
+        console.log('⚠️ [Load Course] No intro video URL, status:', formData.introVideoStatus)
+      }
     }
   } catch (error) {
     console.error('Error loading course:', error)
@@ -2903,7 +3031,10 @@ const handleLessonVideoChange = async (chapterIndex: number, lessonIndex: number
     
     try {
       // Upload video to R2/CDN - returns full video object with progress tracking
-      const videoData = await uploadVideoToR2(file, `courses/lessons/${Date.now()}`, progressKey)
+      // Pass lessonId if lesson already exists in database (for auto-update from worker)
+      const lessonId = lesson._id || undefined
+      console.log('🔍 [Lesson Video Upload] lesson._id:', lesson._id, 'lessonId:', lessonId)
+      const videoData = await uploadVideoToR2(file, `courses/lessons/${Date.now()}`, progressKey, lessonId)
       
       // Cập nhật video với đầy đủ thông tin (bao gồm jobId)
       if (lesson.videos.length === 0) {
@@ -2947,12 +3078,46 @@ const handleLessonVideoChange = async (chapterIndex: number, lessonIndex: number
       }
     }
     
+    // CRITICAL: If lesson already exists in database (has _id), save jobId immediately
+    // This allows worker to auto-update lesson when video processing completes
+    if (lesson._id && videoData.jobId && (videoData.status === 'queueing' || videoData.status === 'processing')) {
+      try {
+        // Save jobId to database immediately so worker can find and update lesson
+        const updatePayload = {
+          videos: JSON.stringify(lesson.videos || []),
+        }
+        await coursesApi.updateCourse(editingCourse.value?._id || '', {
+          ...formData,
+          chapters: formData.chapters.map((ch: any, chIdx: number) => ({
+            ...ch,
+            index: chIdx,
+            lessons: ch.lessons?.map((l: any, lIdx: number) => {
+              if (chIdx === chapterIndex && lIdx === lessonIndex) {
+                return {
+                  ...l,
+                  videos: l.videos || [],
+                }
+              }
+              return l
+            }) || [],
+          })),
+        })
+        console.log('✅ [Lesson Video] Saved jobId to database for lesson:', lesson._id, 'jobId:', videoData.jobId)
+      } catch (error: any) {
+        console.error('⚠️ [Lesson Video] Failed to save jobId to database:', error.message)
+        // Don't fail the upload if save fails - jobId is still in formData
+      }
+    }
+    
     if (videoData.status === 'ready') {
       // Clear progress tracker for lesson video
       const progressKey = `chapter-${chapterIndex}-lesson-${lessonIndex}`
       delete lessonVideoUploadProgress[progressKey]
       lesson.uploadingVideo = false
       message.success('Upload video thành công')
+    } else if (videoData.jobId && (videoData.status === 'queueing' || videoData.status === 'processing')) {
+      // Poll job status if video is still processing
+      pollLessonVideoJobStatus(chapterIndex, lessonIndex, videoData.jobId)
     }
     } catch (error: any) {
       console.error('Upload video error:', error)
@@ -2986,6 +3151,302 @@ const handleLessonVideoChange = async (chapterIndex: number, lessonIndex: number
     // File removed
     lesson.videos = []
   }
+}
+
+// Poll intro video job status
+const pollIntroVideoJobStatus = async (jobId: string) => {
+  // Clear any existing polling interval
+  if (introVideoPollInterval.value) {
+    clearInterval(introVideoPollInterval.value)
+    introVideoPollInterval.value = null
+  }
+  
+  const uploadsApi = useUploadsApi()
+  let pollCount = 0
+  const maxPolls = 120 // Poll for up to 10 minutes (5 seconds * 120 = 600 seconds)
+  
+  introVideoPollInterval.value = setInterval(async () => {
+    try {
+      pollCount++
+      const response = await uploadsApi.getVideoJobStatus(jobId)
+      const jobStatus = response?.data?.status || response?.status
+      const jobResult = response?.data?.result || response?.result
+      const errorMessage = response?.data?.errorMessage || response?.errorMessage
+      const state = response?.data?.state || response?.state
+      
+      // If job not found but video URL exists, consider it ready
+      if (state === 'not_found' || jobStatus === 'unknown') {
+        if (formData.introVideo || formData.introVideoHlsUrl) {
+          if (introVideoPollInterval.value) {
+            clearInterval(introVideoPollInterval.value)
+            introVideoPollInterval.value = null
+          }
+          formData.introVideoStatus = 'ready'
+          introVideoUploadProgress.percent = 0
+          introVideoUploadProgress.stage = ''
+          introVideoUploadProgress.uploaded = 0
+          introVideoUploadProgress.total = 0
+          introVideoUploadProgress.speed = 0
+          introVideoUploadProgress.timeRemaining = 0
+          introVideoUploadProgress.fileUploadPercent = 0
+          uploadingIntroVideo.value = false
+          message.success('Video đã xử lý xong')
+          return
+        }
+      }
+      
+      if (jobStatus === 'ready') {
+        if (introVideoPollInterval.value) {
+          clearInterval(introVideoPollInterval.value)
+          introVideoPollInterval.value = null
+        }
+        
+        // Update formData with final video data
+        if (jobResult) {
+          formData.introVideo = jobResult.hlsUrl || jobResult.url || formData.introVideo
+          formData.introVideoHlsUrl = jobResult.hlsUrl || formData.introVideoHlsUrl
+          formData.introVideoStatus = 'ready'
+          formData.introVideoQualityMetadata = jobResult.qualityMetadata || formData.introVideoQualityMetadata
+        } else {
+          formData.introVideoStatus = 'ready'
+        }
+        
+        // Clear progress tracker
+        introVideoUploadProgress.percent = 0
+        introVideoUploadProgress.stage = ''
+        introVideoUploadProgress.uploaded = 0
+        introVideoUploadProgress.total = 0
+        introVideoUploadProgress.speed = 0
+        introVideoUploadProgress.timeRemaining = 0
+        introVideoUploadProgress.fileUploadPercent = 0
+        uploadingIntroVideo.value = false
+        
+        message.success('Video đã xử lý xong')
+      } else if (jobStatus === 'error') {
+        if (introVideoPollInterval.value) {
+          clearInterval(introVideoPollInterval.value)
+          introVideoPollInterval.value = null
+        }
+        formData.introVideoStatus = 'error'
+        formData.introVideoErrorMessage = errorMessage || 'Lỗi xử lý video'
+        uploadingIntroVideo.value = false
+        message.error('Lỗi xử lý video: ' + (errorMessage || 'Unknown error'))
+      } else if (jobStatus === 'processing') {
+        // Only update status if we're actually uploading (not loading from database)
+        if (uploadingIntroVideo.value) {
+          formData.introVideoStatus = 'processing'
+        }
+      } else if (jobStatus === 'queueing') {
+        // Only update status if we're actually uploading (not loading from database)
+        if (uploadingIntroVideo.value) {
+          formData.introVideoStatus = 'queueing'
+        }
+      }
+      
+      // Stop polling after max attempts
+      if (pollCount >= maxPolls) {
+        if (introVideoPollInterval.value) {
+          clearInterval(introVideoPollInterval.value)
+          introVideoPollInterval.value = null
+        }
+        if (formData.introVideoStatus !== 'ready' && formData.introVideoStatus !== 'error') {
+          formData.introVideoStatus = 'error'
+          formData.introVideoErrorMessage = 'Timeout: Video processing took too long'
+          uploadingIntroVideo.value = false
+        }
+      }
+    } catch (error: any) {
+      console.error('Error polling intro video job status:', error)
+      // Continue polling on error (might be temporary)
+      if (pollCount >= maxPolls) {
+        if (introVideoPollInterval.value) {
+          clearInterval(introVideoPollInterval.value)
+          introVideoPollInterval.value = null
+        }
+      }
+    }
+  }, 5000) // Poll every 5 seconds
+}
+
+// Poll lesson video job status
+const pollLessonVideoJobStatus = async (chapterIndex: number, lessonIndex: number, jobId: string) => {
+  const uploadsApi = useUploadsApi()
+  const lesson = formData.chapters[chapterIndex].lessons[lessonIndex]
+  const progressKey = `chapter-${chapterIndex}-lesson-${lessonIndex}`
+  
+  // Clear any existing polling interval for this lesson
+  if (lessonVideoPollIntervals.value[progressKey]) {
+    clearInterval(lessonVideoPollIntervals.value[progressKey])
+    delete lessonVideoPollIntervals.value[progressKey]
+  }
+  
+  let pollCount = 0
+  const maxPolls = 120 // Poll for up to 10 minutes
+  
+  lessonVideoPollIntervals.value[progressKey] = setInterval(async () => {
+    try {
+      pollCount++
+      console.log(`🔍 [Lesson Video Polling] Polling job ${jobId}, attempt ${pollCount}`)
+      const response = await uploadsApi.getVideoJobStatus(jobId)
+      const jobData = response?.data || response
+      // jobData.status is the real job status; response.status is only success boolean
+      const jobStatus = jobData?.status ?? jobData?.data?.status ?? ''
+      const jobResult = jobData?.result ?? jobData?.data?.result ?? null
+      const errorMessage = jobData?.errorMessage ?? jobData?.data?.errorMessage ?? null
+      const state = jobData?.state ?? jobData?.data?.state ?? ''
+      const progress = jobData?.progress ?? jobData?.data?.progress ?? 0
+      
+      console.log(`🔍 [Lesson Video Polling] Job ${jobId} status: ${jobStatus}, state: ${state}, progress: ${progress}%`)
+      
+      // If job not found but video URL exists, consider it ready
+      if (state === 'not_found' || jobStatus === 'unknown') {
+        if (lesson.videos.length > 0 && (lesson.videos[0].videoUrl || lesson.videos[0].hlsUrl)) {
+          if (lessonVideoPollIntervals.value[progressKey]) {
+            clearInterval(lessonVideoPollIntervals.value[progressKey])
+            delete lessonVideoPollIntervals.value[progressKey]
+          }
+          lesson.videos[0].status = 'ready'
+          lesson.videos[0].errorMessage = ''
+          delete lessonVideoUploadProgress[progressKey]
+          lesson.uploadingVideo = false
+          message.success('Video đã xử lý xong')
+          return
+        }
+      }
+      
+      if (jobStatus === 'ready') {
+        if (lessonVideoPollIntervals.value[progressKey]) {
+          clearInterval(lessonVideoPollIntervals.value[progressKey])
+          delete lessonVideoPollIntervals.value[progressKey]
+        }
+        
+        // Update lesson video with final data
+        if (lesson.videos.length > 0 && jobResult) {
+          lesson.videos[0] = {
+            ...lesson.videos[0],
+            videoUrl: jobResult.hlsUrl || jobResult.url || lesson.videos[0].videoUrl,
+            hlsUrl: jobResult.hlsUrl || lesson.videos[0].hlsUrl,
+            status: 'ready',
+            qualityMetadata: jobResult.qualityMetadata || lesson.videos[0].qualityMetadata,
+            errorMessage: '',
+          }
+          console.log('✅ [Lesson Video Polling] Updated lesson video with hlsUrl:', jobResult.hlsUrl)
+        } else if (lesson.videos.length > 0) {
+          lesson.videos[0].status = 'ready'
+          lesson.videos[0].errorMessage = ''
+        }
+        
+        // CRITICAL: If lesson has _id, save to database immediately
+        // This ensures database is updated even if worker didn't find the lesson
+        if (lesson._id && lesson.videos.length > 0 && jobResult) {
+          try {
+            // Update lesson in database via course update
+            if (editingCourse.value?._id) {
+              await coursesApi.updateCourse(editingCourse.value._id, {
+                ...formData,
+                chapters: formData.chapters.map((ch: any, chIdx: number) => ({
+                  ...ch,
+                  index: chIdx,
+                  lessons: ch.lessons?.map((l: any, lIdx: number) => {
+                    if (chIdx === chapterIndex && lIdx === lessonIndex) {
+                      return {
+                        ...l,
+                        videos: l.videos || [],
+                      }
+                    }
+                    return l
+                  }) || [],
+                })),
+              })
+              console.log('✅ [Lesson Video Polling] Saved video URL to database for lesson:', lesson._id)
+            }
+          } catch (error: any) {
+            console.error('⚠️ [Lesson Video Polling] Failed to save video URL to database:', error.message)
+            // Don't fail - video is still updated in local state
+          }
+        }
+        
+        // Update progress to 100% before hiding
+        if (progressKey && lessonVideoUploadProgress[progressKey]) {
+          lessonVideoUploadProgress[progressKey].percent = 100
+          lessonVideoUploadProgress[progressKey].stage = 'ready'
+        }
+        
+        // Wait 2 seconds for final progress animation, then hide
+        setTimeout(() => {
+          lesson.uploadingVideo = false
+          if (progressKey) {
+            delete lessonVideoUploadProgress[progressKey]
+          }
+        }, 2000)
+        
+        message.success('Video đã xử lý xong')
+      } else if (jobStatus === 'error') {
+        if (lessonVideoPollIntervals.value[progressKey]) {
+          clearInterval(lessonVideoPollIntervals.value[progressKey])
+          delete lessonVideoPollIntervals.value[progressKey]
+        }
+        if (lesson.videos.length > 0) {
+          lesson.videos[0].status = 'error'
+          lesson.videos[0].errorMessage = errorMessage || 'Lỗi xử lý video'
+        }
+        lesson.uploadingVideo = false
+        delete lessonVideoUploadProgress[progressKey]
+        message.error('Lỗi xử lý video: ' + (errorMessage || 'Unknown error'))
+      } else if (jobStatus === 'processing') {
+        if (lesson.videos.length > 0) {
+          lesson.videos[0].status = 'processing'
+        }
+        // CRITICAL: Sync frontend progress with backend job progress
+        // Backend progress: 50% (reading file), 70% (converting HLS), 85% (uploading), 100% (done)
+        if (progressKey && lessonVideoUploadProgress[progressKey]) {
+          // Use actual backend progress instead of simulated
+          lessonVideoUploadProgress[progressKey].percent = progress || 70
+          lessonVideoUploadProgress[progressKey].stage = progress >= 85 ? 'uploading-r2' : progress >= 70 ? 'processing' : 'queueing'
+          // Keep progress tracker visible while backend is processing
+          lesson.uploadingVideo = true
+        }
+        console.log(`🔄 [Lesson Video Polling] Job ${jobId} is processing, progress: ${progress}% (synced with backend)`)
+      } else if (jobStatus === 'queueing') {
+        if (lesson.videos.length > 0) {
+          lesson.videos[0].status = 'queueing'
+        }
+        console.log(`⏳ [Lesson Video Polling] Job ${jobId} is queueing`)
+      }
+      
+      // Stop polling after max attempts
+      if (pollCount >= maxPolls) {
+        if (lessonVideoPollIntervals.value[progressKey]) {
+          clearInterval(lessonVideoPollIntervals.value[progressKey])
+          delete lessonVideoPollIntervals.value[progressKey]
+        }
+        if (lesson.videos.length > 0 && lesson.videos[0].status !== 'ready' && lesson.videos[0].status !== 'error') {
+          lesson.videos[0].status = 'error'
+          lesson.videos[0].errorMessage = 'Timeout: Video processing took too long'
+        }
+        lesson.uploadingVideo = false
+        delete lessonVideoUploadProgress[progressKey]
+      }
+    } catch (error: any) {
+      console.error(`❌ [Lesson Video Polling] Error polling job ${jobId}:`, error)
+      // Continue polling on error (might be temporary network issue)
+      // But stop after max attempts
+      if (pollCount >= maxPolls) {
+        if (lessonVideoPollIntervals.value[progressKey]) {
+          clearInterval(lessonVideoPollIntervals.value[progressKey])
+          delete lessonVideoPollIntervals.value[progressKey]
+        }
+        // Set status to error if still not ready
+        if (lesson.videos.length > 0 && lesson.videos[0].status !== 'ready') {
+          lesson.videos[0].status = 'error'
+          lesson.videos[0].errorMessage = 'Timeout: Video processing took too long or server error'
+          lesson.uploadingVideo = false
+          delete lessonVideoUploadProgress[progressKey]
+          message.error('Lỗi xử lý video: Timeout hoặc lỗi server')
+        }
+      }
+    }
+  }, 5000) // Poll every 5 seconds
 }
 
 // Upload lesson document to MinIO
@@ -3508,3 +3969,4 @@ const handleLessonDocumentChange = async (chapterIndex: number, lessonIndex: num
   overflow-y: auto;
 }
 </style>
+

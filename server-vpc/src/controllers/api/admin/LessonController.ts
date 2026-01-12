@@ -6,6 +6,7 @@ import QuizzesModel from '@mongodb/quizzes';
 import MinioService from '@services/minio';
 import CloudflareService from '@services/cloudflare';
 import HlsConverter from '@services/HlsConverter';
+import FileValidator from '@services/fileValidator';
 import * as fs from 'fs';
 import * as path from 'path';
 import * as os from 'os';
@@ -89,6 +90,14 @@ class LessonController {
           const folderType = file.fieldname.includes('document') ? 'documents' : 'videos';
           
           if (folderType === 'documents') {
+            // Validate document file by magic bytes
+            const validation = FileValidator.validateFileByMagicBytes(file.buffer, file.mimetype);
+            if (!validation.isValid) {
+              console.error(`⚠️ [Lesson Document Validation] File ${file.originalname} failed validation:`, validation.error);
+              // Skip this file and continue with others
+              continue;
+            }
+
             const fileUrl = await CloudflareService.uploadFile(
               file.buffer,
               file.originalname,
@@ -113,6 +122,19 @@ class LessonController {
             const videoMeta = parsedVideos.find((v: any, idx: number) => 
               parseInt(file.fieldname.replace('video-', '')) === idx
             );
+
+            // Validate video file by magic bytes
+            if (!file.mimetype.startsWith('video/')) {
+              console.error(`⚠️ [Lesson Video Validation] File ${file.originalname} is not a video file`);
+              continue;
+            }
+
+            const validation = FileValidator.validateVideoFile(file.buffer, file.mimetype);
+            if (!validation.isValid) {
+              console.error(`⚠️ [Lesson Video Validation] File ${file.originalname} failed validation:`, validation.error);
+              // Skip this file and continue with others
+              continue;
+            }
 
             let videoUrl: string;
             const tempHlsDir = path.join(os.tmpdir(), 'hls-lessons', `${lesson._id}_${Date.now()}`);

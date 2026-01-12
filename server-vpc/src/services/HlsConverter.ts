@@ -1,4 +1,4 @@
-import { exec } from 'child_process';
+import { exec, spawn } from 'child_process';
 import { promisify } from 'util';
 import * as fs from 'fs';
 import * as path from 'path';
@@ -91,13 +91,20 @@ export default class HlsConverter {
 
     // Save buffer to temp file with correct extension
     const tempInputPath = path.join(this.TEMP_DIR, `input_${Date.now()}${extension}`);
+    // @ts-ignore - Buffer is compatible with fs.writeFileSync
     fs.writeFileSync(tempInputPath, inputBuffer);
 
     const playlistPath = path.join(outputDir, 'playlist.m3u8');
     const segmentPattern = path.join(outputDir, 'segment_%03d.ts');
 
     try {
-      // Convert MP4 to HLS using FFmpeg
+      // Convert MP4 to HLS using FFmpeg with timeout (30 minutes max for large videos)
+      // Calculate timeout based on file size: ~1 minute per 100MB, minimum 5 minutes, maximum 30 minutes
+      const fileSizeMB = inputBuffer.length / (1024 * 1024);
+      const timeoutMs = Math.max(5 * 60 * 1000, Math.min(30 * 60 * 1000, (fileSizeMB / 100) * 60 * 1000));
+      
+      console.log(`⏳ [HLS Converter] Starting conversion for ${originalFilename || 'video'} (${fileSizeMB.toFixed(2)}MB), timeout: ${timeoutMs / 1000 / 60} minutes`);
+      
       const ffmpegCommand = `ffmpeg -i "${tempInputPath}" \
         -c:v libx264 -c:a aac \
         -hls_time ${this.SEGMENT_DURATION} \
@@ -106,7 +113,112 @@ export default class HlsConverter {
         -f hls \
         "${playlistPath}"`;
 
-      await execAsync(ffmpegCommand);
+      // Execute with timeout and process killing
+      let ffmpegProcess: any = null;
+      console.log(`🚀 [HLS Converter] About to spawn FFmpeg process...`);
+      console.log(`🚀 [HLS Converter] Temp input path: ${tempInputPath}`);
+      console.log(`🚀 [HLS Converter] Output dir: ${outputDir}`);
+      console.log(`🚀 [HLS Converter] Playlist path: ${playlistPath}`);
+      
+      const execPromise = new Promise<void>((resolve, reject) => {
+        try {
+          // Use spawn instead of exec to have process handle for killing
+          const commandParts = ffmpegCommand.split(/\s+/);
+          const command = commandParts[0];
+          const args = commandParts.slice(1);
+          
+          console.log(`🚀 [HLS Converter] Spawning FFmpeg: ${command}`);
+          console.log(`🚀 [HLS Converter] Args: ${args.slice(0, 5).join(' ')}...`);
+          
+          try {
+            ffmpegProcess = spawn(command, args, {
+              shell: true,
+              stdio: 'pipe'
+            });
+            
+            console.log(`✅ [HLS Converter] FFmpeg process spawned (PID: ${ffmpegProcess.pid || 'unknown'})`);
+            console.log(`🔍 [HLS Converter] Process details: killed=${ffmpegProcess.killed}, exitCode=${ffmpegProcess.exitCode}, signalCode=${ffmpegProcess.signalCode}`);
+          } catch (spawnError: any) {
+            console.error(`❌ [HLS Converter] Error during spawn():`, spawnError);
+            throw spawnError;
+          }
+          
+          // Check if process was killed immediately (FFmpeg not found)
+          if (ffmpegProcess.killed) {
+            console.error(`❌ [HLS Converter] FFmpeg process was killed immediately - FFmpeg may not be installed`);
+            reject(new Error('FFmpeg process was killed immediately - FFmpeg may not be installed or not in PATH'));
+            return;
+          }
+          
+          let stderr = '';
+          let hasOutput = false;
+          let lastProgressTime = Date.now();
+          
+          // Set up error handler FIRST before any other events
+          ffmpegProcess.on('error', (error: Error) => {
+            console.error(`❌ [HLS Converter] FFmpeg spawn error:`, error);
+            console.error(`❌ [HLS Converter] Error details:`, {
+              message: error.message,
+              name: error.name,
+              stack: error.stack?.substring(0, 500)
+            });
+            reject(new Error(`FFmpeg spawn error: ${error.message}`));
+          });
+          
+          ffmpegProcess.stderr.on('data', (data: Buffer) => {
+            const output = data.toString();
+            stderr += output;
+            hasOutput = true;
+            
+            // Log progress every 10 seconds
+            const now = Date.now();
+            if (now - lastProgressTime > 10000) {
+              console.log(`⏳ [HLS Converter] FFmpeg still running... (last output: ${output.substring(0, 200)})`);
+              lastProgressTime = now;
+            }
+          });
+          
+          ffmpegProcess.on('close', (code: number, signal: string) => {
+            console.log(`🔚 [HLS Converter] FFmpeg process closed - code: ${code}, signal: ${signal || 'none'}`);
+            if (code === 0) {
+              console.log(`✅ [HLS Converter] FFmpeg completed successfully`);
+              resolve();
+            } else {
+              console.error(`❌ [HLS Converter] FFmpeg exited with code ${code}`);
+              console.error(`❌ [HLS Converter] FFmpeg stderr (first 1000 chars): ${stderr.substring(0, 1000)}`);
+              reject(new Error(`FFmpeg exited with code ${code}: ${stderr.substring(0, 500)}`));
+            }
+          });
+          
+          // Check if process is actually running after a short delay
+          setTimeout(() => {
+            if (ffmpegProcess) {
+              const isRunning = !ffmpegProcess.killed && ffmpegProcess.exitCode === null;
+              console.log(`🔍 [HLS Converter] FFmpeg process check - running: ${isRunning}, killed: ${ffmpegProcess.killed}, exitCode: ${ffmpegProcess.exitCode}, hasOutput: ${hasOutput}`);
+            }
+          }, 2000);
+          
+        } catch (error: any) {
+          console.error(`❌ [HLS Converter] Error in execPromise:`, error);
+          reject(new Error(`Failed to create FFmpeg process: ${error.message}`));
+        }
+      });
+      
+      const timeoutPromise = new Promise<void>((_, reject) => {
+        setTimeout(() => {
+          if (ffmpegProcess) {
+            console.error(`⏰ [HLS Converter] FFmpeg timeout, killing process...`);
+            try {
+              ffmpegProcess.kill('SIGKILL');
+            } catch (e) {
+              console.error(`⚠️ [HLS Converter] Failed to kill FFmpeg process:`, e);
+            }
+          }
+          reject(new Error(`FFmpeg conversion timeout after ${(timeoutMs / 1000 / 60).toFixed(1)} minutes`));
+        }, timeoutMs);
+      });
+
+      await Promise.race([execPromise, timeoutPromise]);
 
       // Read all segment files
       const segmentPaths: string[] = [];
@@ -241,6 +353,7 @@ export default class HlsConverter {
 
     const tempInputPath = path.join(this.TEMP_DIR, `metadata_${Date.now()}${extension}`);
     try {
+      // @ts-ignore - Buffer is compatible with fs.writeFileSync
       fs.writeFileSync(tempInputPath, videoBuffer);
       const metadata = await this.getVideoMetadata(tempInputPath);
       return metadata;

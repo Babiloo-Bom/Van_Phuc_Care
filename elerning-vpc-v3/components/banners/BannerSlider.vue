@@ -205,7 +205,6 @@ const onSwiper = (swiper: any) => {
 const handleBannerClick = (banner: Banner) => {
   if (banner.url) {
     // Analytics tracking can be added here
-    console.log('Banner clicked:', banner.title, banner.url)
   }
 }
 
@@ -213,15 +212,8 @@ const fetchBanners = async () => {
   loading.value = true
   try {
     const data = await getBanners(props.pageType)
-    console.log('🔍 Fetched banners for', props.pageType, ':', data)
     banners.value = data || []
-    
-    // If no banners, log for debugging
-    if (!data || data.length === 0) {
-      console.warn('⚠️ No banners found for', props.pageType)
-    }
   } catch (error) {
-    console.error('❌ Error fetching banners:', error)
     banners.value = []
   } finally {
     loading.value = false

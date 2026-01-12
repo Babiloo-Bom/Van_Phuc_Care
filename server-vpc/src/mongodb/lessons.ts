@@ -70,7 +70,9 @@ class Lessons {
           },
           videoUrl: {
             type: String,
-            required: true,
+            default: '',
+            // videoUrl không required vì có thể đang trong quá trình upload/processing
+            // Sẽ validate trong code logic
           },
           thumbnail: {
             type: String,
@@ -100,6 +102,16 @@ class Lessons {
           },
           // HLS URL (sau khi convert)
           hlsUrl: {
+            type: String,
+            default: '',
+          },
+          // Job ID để track video processing status
+          jobId: {
+            type: String,
+            default: '',
+          },
+          // Error message nếu có lỗi
+          errorMessage: {
             type: String,
             default: '',
           },

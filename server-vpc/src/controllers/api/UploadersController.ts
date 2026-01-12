@@ -7,6 +7,7 @@ import MinioService from '@services/minio';
 import CloudflareService from '@services/cloudflare';
 import HlsConverter from '@services/HlsConverter';
 import { videoQueue, VideoJobData } from '@services/videoQueue';
+import FileValidator from '@services/fileValidator';
 import * as fs from 'fs';
 import * as path from 'path';
 import * as os from 'os';
@@ -27,6 +28,17 @@ class UploadController {
       });
       const storage = await getStorage();
       for (const file of files) {
+        // Validate file by magic bytes to prevent malicious file extension spoofing
+        const validation = FileValidator.validateFileByMagicBytes(file.buffer, file.mimetype);
+        if (!validation.isValid) {
+          console.error(`⚠️ [File Validation] File ${file.originalname} failed validation:`, validation.error);
+          return sendError(res, 400, {
+            message: `File validation failed: ${validation.error}`,
+            filename: file.originalname,
+            detectedType: validation.detectedType,
+          });
+        }
+
         const attribute: any = {};
         const storageRef = await ref(storage, `${dayjs().format('YYYYMMDDHHmmss')}_${file.originalname}`);
         const metadata = {
@@ -62,6 +74,17 @@ class UploadController {
       const uploadedFiles: any[] = [];
 
       for (const file of files) {
+        // Validate file by magic bytes to prevent malicious file extension spoofing
+        const validation = FileValidator.validateFileByMagicBytes(file.buffer, file.mimetype);
+        if (!validation.isValid) {
+          console.error(`⚠️ [File Validation] File ${file.originalname} failed validation:`, validation.error);
+          return sendError(res, 400, {
+            message: `File validation failed: ${validation.error}`,
+            filename: file.originalname,
+            detectedType: validation.detectedType,
+          });
+        }
+
         const fileUrl = await MinioService.uploadFile(
           file.buffer,
           file.originalname,
@@ -107,6 +130,17 @@ class UploadController {
       // Validate video file
       if (!file.mimetype.startsWith('video/')) {
         return sendError(res, 400, `File ${file.originalname} is not a video file`);
+      }
+
+      // Validate file by magic bytes to prevent malicious file extension spoofing
+      const validation = FileValidator.validateVideoFile(file.buffer, file.mimetype);
+      if (!validation.isValid) {
+        console.error(`⚠️ [Video Validation] File ${file.originalname} failed validation:`, validation.error);
+        return sendError(res, 400, {
+          message: `Video file validation failed: ${validation.error}`,
+          filename: file.originalname,
+          detectedType: validation.detectedType,
+        });
       }
 
       // Check if FFmpeg is available
@@ -173,6 +207,10 @@ class UploadController {
       // Write file buffer to temporary file
       fs.writeFileSync(tempFilePath, file.buffer as any);
       
+      // Extract lessonId from query if provided (for lesson videos)
+      const lessonId = req.query.lessonId as string | undefined;
+      console.log(`📋 [Video Upload] Received lessonId: ${lessonId || 'none'}`);
+      
       // Create job data
       const jobData: VideoJobData = {
         jobId,
@@ -182,16 +220,22 @@ class UploadController {
         folder,
         fileSize: file.size,
         mimetype: file.mimetype,
+        lessonId: lessonId || undefined, // Add lessonId if provided
       };
       
+      console.log(`📋 [Video Upload] Job data created with lessonId: ${jobData.lessonId || 'none'}`);
+      
       // Add job to queue
+      // Use removeOnComplete: 50 to keep completed jobs for status checking
+      console.log(`📋 [Video Upload] Adding job to queue: ${jobId}, file: ${file.originalname}, size: ${file.size} bytes`);
       const job = await videoQueue.add(jobData, {
         jobId,
-        removeOnComplete: true,
+        removeOnComplete: 50, // Keep last 50 completed jobs for status checking
         removeOnFail: false,
       });
       
-      console.log(`📋 [Video Upload] Video queued for processing. Job ID: ${job.id}`);
+      console.log(`✅ [Video Upload] Video queued for processing. Job ID: ${job.id}, Queue Job ID: ${job.id}`);
+      console.log(`📊 [Video Upload] Queue stats - waiting: ${await videoQueue.getWaitingCount()}, active: ${await videoQueue.getActiveCount()}, completed: ${await videoQueue.getCompletedCount()}`);
       
       // Return immediately with queueing status
       sendSuccess(res, { 
@@ -260,7 +304,20 @@ class UploadController {
       const job = await videoQueue.getJob(jobId);
 
       if (!job) {
-        return sendError(res, 404, 'Job not found');
+        // Job might have been removed or never existed
+        // Return a status indicating we can't find it
+        // Frontend should check if video URL exists to determine if it's actually ready
+        return sendSuccess(res, {
+          jobId,
+          status: 'unknown',
+          progress: 0,
+          state: 'not_found',
+          result: null,
+          errorMessage: 'Job not found in queue. It may have been completed and removed.',
+          createdAt: null,
+          processedAt: null,
+          finishedAt: null,
+        });
       }
 
       const state = await job.getState();

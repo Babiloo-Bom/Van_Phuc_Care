@@ -2,6 +2,7 @@ import type { Request, Response } from 'express';
 import { sendError, sendSuccess } from '@libs/response';
 import { MongoDbTicketComments } from '@mongodb/ticket-comments';
 import { MongoDbTickets } from '@mongodb/tickets';
+import FileValidator from '@services/fileValidator';
 
 /**
  * Ticket Comment Controller
@@ -73,6 +74,14 @@ class TicketCommentController {
         
         for (const file of files) {
           try {
+            // Validate file by magic bytes to prevent malicious file extension spoofing
+            const validation = FileValidator.validateFileByMagicBytes(file.buffer, file.mimetype);
+            if (!validation.isValid) {
+              console.error(`⚠️ [Ticket Comment File Validation] File ${file.originalname} failed validation:`, validation.error);
+              // Skip this file and continue with others
+              continue;
+            }
+
             // Upload to MinIO
             const folder = 'ticket-comments';
             const filePath = await MinioService.uploadFile(file.buffer, file.originalname, file.mimetype, folder);

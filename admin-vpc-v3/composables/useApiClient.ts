@@ -275,8 +275,6 @@ export const useApiClient = () => {
       const fetchOptions = createFetchOptions(options)
       const fullUrl = buildUrl(url)
       
-      console.log('🔍 GET request:', { url, baseURL, fullUrl })
-      
       const response = await $fetch<T>(fullUrl, {
         method: 'GET',
         params: options.params,

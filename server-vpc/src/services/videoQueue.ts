@@ -1,6 +1,7 @@
 import Queue from 'bull';
 import CloudflareService from './cloudflare';
 import HlsConverter from './HlsConverter';
+import FileValidator from './fileValidator';
 import * as fs from 'fs';
 import * as path from 'path';
 import * as os from 'os';
@@ -22,7 +23,7 @@ export const videoQueue = new Queue('video-processing', {
       type: 'exponential',
       delay: 2000,
     },
-    removeOnComplete: true,
+    removeOnComplete: 50, // Keep last 50 completed jobs for status checking
     removeOnFail: false,
   },
 });
@@ -36,6 +37,7 @@ export interface VideoJobData {
   folder: string;
   fileSize: number;
   mimetype: string;
+  lessonId?: string; // Optional: lesson ID if this is a lesson video (for auto-update)
 }
 
 /**
@@ -55,6 +57,13 @@ export async function processVideoJob(job: Queue.Job<VideoJobData>) {
       throw new Error(`File not found: ${filePath}`);
     }
     const fileBuffer = fs.readFileSync(filePath);
+
+    // Validate file by magic bytes to prevent malicious file extension spoofing
+    const validation = FileValidator.validateVideoFile(fileBuffer, mimetype);
+    if (!validation.isValid) {
+      console.error(`⚠️ [Video Queue] File ${originalName} failed validation:`, validation.error);
+      throw new Error(`Video file validation failed: ${validation.error}`);
+    }
 
     // Check if FFmpeg is available
     const hasFFmpeg = await HlsConverter.checkFFmpeg();
@@ -109,14 +118,27 @@ export async function processVideoJob(job: Queue.Job<VideoJobData>) {
 
     // Update job progress: converting
     await job.progress(70);
-    console.log(`🔄 [Video Queue] Converting to HLS: ${originalName}`);
+    console.log(`🔄 [Video Queue] Converting to HLS: ${originalName} (progress: 70%)`);
 
     // Convert video to HLS
-    const result = await HlsConverter.convertBufferToHls(
-      fileBuffer,
-      tempHlsDir,
-      originalName
-    );
+    // This might take a while depending on video size
+    console.log(`⏳ [Video Queue] Starting HLS conversion for ${originalName}...`);
+    const conversionStartTime = Date.now();
+    let result;
+    try {
+      result = await HlsConverter.convertBufferToHls(
+        fileBuffer,
+        tempHlsDir,
+        originalName
+      );
+      const conversionDuration = ((Date.now() - conversionStartTime) / 1000).toFixed(2);
+      const { playlistPath, segmentPaths } = result;
+      console.log(`✅ [Video Queue] HLS conversion completed in ${conversionDuration}s: ${segmentPaths.length} segments created`);
+    } catch (error: any) {
+      const conversionDuration = ((Date.now() - conversionStartTime) / 1000).toFixed(2);
+      console.error(`❌ [Video Queue] HLS conversion failed after ${conversionDuration}s:`, error.message);
+      throw error;
+    }
     const { playlistPath, segmentPaths } = result;
 
     // Update job progress: uploading
@@ -157,6 +179,10 @@ export async function processVideoJob(job: Queue.Job<VideoJobData>) {
       await job.progress(segmentProgress);
     }
 
+    // Update job progress to 100% before cleanup
+    await job.progress(100);
+    console.log(`✅ [Video Queue] Job ${job.id} progress: 100%`);
+
     // Cleanup temp files
     if (fs.existsSync(tempHlsDir)) {
       fs.rmSync(tempHlsDir, { recursive: true, force: true });
@@ -166,6 +192,7 @@ export async function processVideoJob(job: Queue.Job<VideoJobData>) {
     }
 
     console.log(`✅ [Video Queue] Job ${job.id} completed: ${originalName}`);
+    console.log(`✅ [Video Queue] Job ${job.id} result hlsUrl: ${playlistUrl}`);
 
     return {
       filename: originalName,
@@ -216,16 +243,131 @@ export async function processVideoJob(job: Queue.Job<VideoJobData>) {
 
 // Process jobs with concurrency = 2 (2 videos at a time)
 videoQueue.process(2, async (job) => {
+  console.log(`🚀 [Video Queue] Worker picked up job ${job.id}: ${job.data.originalName}`);
   return await processVideoJob(job);
 });
 
+// Import Lessons model to update video status
+import LessonsModel from '@mongodb/lessons';
+
 // Queue event listeners
-videoQueue.on('completed', (job, result) => {
+videoQueue.on('completed', async (job, result) => {
   console.log(`✅ [Video Queue] Job ${job.id} completed successfully`);
+  console.log(`✅ [Video Queue] Result:`, JSON.stringify(result, null, 2));
+  
+  // Auto-update lesson video in database
+  try {
+    const jobId = job.id.toString();
+    const { lessonId } = job.data;
+    
+    console.log(`🔍 [Video Queue] Looking for lesson - jobId: ${jobId}, lessonId: ${lessonId || 'none'}`);
+    
+    let lesson = null;
+    
+    // If lessonId is provided in job data, find lesson directly
+    if (lessonId) {
+      lesson = await LessonsModel.model.findById(lessonId);
+      if (lesson) {
+        console.log(`✅ [Video Queue] Found lesson ${lesson._id} by lessonId`);
+      } else {
+        console.log(`⚠️ [Video Queue] Lesson ${lessonId} not found in database`);
+      }
+    }
+    
+    // If not found by lessonId, try finding by jobId
+    if (!lesson) {
+      lesson = await LessonsModel.model.findOne({
+        'videos.jobId': jobId
+      });
+      if (lesson) {
+        console.log(`✅ [Video Queue] Found lesson ${lesson._id} by jobId`);
+      }
+    }
+    
+    if (lesson) {
+      const videos = (lesson as any).videos || [];
+      const videoIndex = videos.findIndex((v: any) => v.jobId === jobId);
+      
+      if (videoIndex !== -1) {
+        // Found video by jobId - update it
+        videos[videoIndex] = {
+          ...videos[videoIndex],
+          videoUrl: result.url || videos[videoIndex].videoUrl,
+          hlsUrl: result.hlsUrl || videos[videoIndex].hlsUrl,
+          status: 'ready',
+          qualityMetadata: result.qualityMetadata || videos[videoIndex].qualityMetadata,
+          errorMessage: '',
+        };
+        
+        await LessonsModel.model.findByIdAndUpdate(lesson._id, {
+          videos: videos
+        });
+        
+        console.log(`✅ [Video Queue] Auto-updated lesson ${lesson._id} video ${videoIndex} with hlsUrl: ${result.hlsUrl}`);
+      } else if (lessonId && videos.length > 0) {
+        // Video not found by jobId but lessonId exists - update first video and add jobId
+        videos[0] = {
+          ...videos[0],
+          videoUrl: result.url || videos[0].videoUrl,
+          hlsUrl: result.hlsUrl || videos[0].hlsUrl,
+          status: 'ready',
+          jobId: jobId, // Ensure jobId is saved
+          qualityMetadata: result.qualityMetadata || videos[0].qualityMetadata,
+          errorMessage: '',
+        };
+        
+        await LessonsModel.model.findByIdAndUpdate(lesson._id, {
+          videos: videos
+        });
+        
+        console.log(`✅ [Video Queue] Auto-updated lesson ${lesson._id} video 0 with hlsUrl: ${result.hlsUrl} (added jobId: ${jobId})`);
+      } else {
+        console.log(`⚠️ [Video Queue] Video with jobId ${jobId} not found in lesson videos array`);
+      }
+    } else {
+      console.log(`⚠️ [Video Queue] No lesson found - jobId: ${jobId}, lessonId: ${lessonId || 'none'}`);
+      console.log(`⚠️ [Video Queue] This might be an intro video or lesson not saved to database yet`);
+    }
+  } catch (error: any) {
+    console.error(`⚠️ [Video Queue] Error auto-updating lesson video:`, error.message);
+    console.error(`⚠️ [Video Queue] Error stack:`, error.stack);
+    // Don't throw - this is a background update, shouldn't fail the job
+  }
 });
 
-videoQueue.on('failed', (job, err) => {
+videoQueue.on('failed', async (job, err) => {
   console.error(`❌ [Video Queue] Job ${job?.id} failed:`, err.message);
+  
+  // Auto-update lesson video status to error
+  try {
+    if (job) {
+      const jobId = job.id.toString();
+      const lesson = await LessonsModel.model.findOne({
+        'videos.jobId': jobId
+      });
+      
+      if (lesson) {
+        const videos = (lesson as any).videos || [];
+        const videoIndex = videos.findIndex((v: any) => v.jobId === jobId);
+        
+        if (videoIndex !== -1) {
+          videos[videoIndex] = {
+            ...videos[videoIndex],
+            status: 'error',
+            errorMessage: err.message || 'Lỗi xử lý video',
+          };
+          
+          await LessonsModel.model.findByIdAndUpdate(lesson._id, {
+            videos: videos
+          });
+          
+          console.log(`✅ [Video Queue] Auto-updated lesson ${lesson._id} video ${videoIndex} status to error`);
+        }
+      }
+    }
+  } catch (error: any) {
+    console.error(`⚠️ [Video Queue] Error auto-updating lesson video error status:`, error.message);
+  }
 });
 
 videoQueue.on('stalled', (job) => {
@@ -233,7 +375,15 @@ videoQueue.on('stalled', (job) => {
 });
 
 videoQueue.on('active', (job) => {
-  console.log(`🔄 [Video Queue] Job ${job.id} started processing`);
+  console.log(`🔄 [Video Queue] Job ${job.id} started processing: ${job.data.originalName}`);
+});
+
+videoQueue.on('waiting', (jobId) => {
+  console.log(`⏳ [Video Queue] Job ${jobId} is waiting in queue`);
+});
+
+videoQueue.on('error', (error) => {
+  console.error(`❌ [Video Queue] Queue error:`, error);
 });
 
 export default videoQueue;

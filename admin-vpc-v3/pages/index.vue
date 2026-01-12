@@ -490,7 +490,6 @@ const fetchDashboardData = async () => {
         // Backend trả về: { message: "", data: { data: [...], months: 12 } }
         const responseData = revenueRes.data.data || revenueRes.data
         const chartData = responseData?.data || responseData || []
-        console.log('📊 Revenue chart data:', chartData)
         revenueChartData.value = Array.isArray(chartData) ? chartData : []
       }
     } catch (error) {

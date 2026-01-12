@@ -3,6 +3,7 @@ import { sendError, sendSuccess } from '@libs/response';
 import { MongoDbTickets } from '@mongodb/tickets';
 import { MongoDbTicketComments } from '@mongodb/ticket-comments';
 import MinioService from '@services/minio';
+import FileValidator from '@services/fileValidator';
 
 /**
  * User Ticket Controller
@@ -155,6 +156,14 @@ class UserTicketController {
         
         for (const file of files) {
           try {
+            // Validate file by magic bytes to prevent malicious file extension spoofing
+            const validation = FileValidator.validateFileByMagicBytes(file.buffer, file.mimetype);
+            if (!validation.isValid) {
+              console.error(`⚠️ [Ticket File Validation] File ${file.originalname} failed validation:`, validation.error);
+              // Skip this file and continue with others
+              continue;
+            }
+
             // Upload to MinIO - returns the file path like "/bucket/folder/filename"
             const folder = 'tickets';
             const filePath = await MinioService.uploadFile(file.buffer, file.originalname, file.mimetype, folder);

@@ -3,6 +3,7 @@ import { sendError, sendSuccess } from '@libs/response';
 import MongoDbHealthBooks from '@mongodb/vanphuccare/health-book';
 import MongoDbHealthRecords from '@mongodb/vanphuccare/health-record';
 import MinioService from "@services/minio";
+import FileValidator from "@services/fileValidator";
 import moment from "moment";
 
 class HealthBookController {
@@ -545,6 +546,21 @@ class HealthBookController {
       const file = (req as any).file as Express.Multer.File | undefined;
       if (file) {
         try {
+          // Validate image file by magic bytes
+          if (!file.mimetype.startsWith('image/')) {
+            return sendError(res, 400, "File phải là ảnh");
+          }
+
+          const validation = FileValidator.validateImageFile(file.buffer, file.mimetype);
+          if (!validation.isValid) {
+            console.error(`⚠️ [HealthBook Avatar Validation] File ${file.originalname} failed validation:`, validation.error);
+            return sendError(res, 400, {
+              message: `File validation failed: ${validation.error}`,
+              filename: file.originalname,
+              detectedType: validation.detectedType,
+            });
+          }
+
           const fileUrl = await MinioService.uploadFile(file.buffer, file.originalname, file.mimetype, "avatars");
 
           // Get public URL
@@ -610,6 +626,21 @@ class HealthBookController {
       const file = (req as any).file as Express.Multer.File | undefined;
       if (file) {
         try {
+          // Validate image file by magic bytes
+          if (!file.mimetype.startsWith('image/')) {
+            return sendError(res, 400, "File phải là ảnh");
+          }
+
+          const validation = FileValidator.validateImageFile(file.buffer, file.mimetype);
+          if (!validation.isValid) {
+            console.error(`⚠️ [HealthBook Avatar Validation] File ${file.originalname} failed validation:`, validation.error);
+            return sendError(res, 400, {
+              message: `File validation failed: ${validation.error}`,
+              filename: file.originalname,
+              detectedType: validation.detectedType,
+            });
+          }
+
           const fileUrl = await MinioService.uploadFile(file.buffer, file.originalname, file.mimetype, "avatars");
           avatarUrl = MinioService.getPublicUrl(fileUrl.replace(`/${MinioService.getBucketName()}/`, ""));
         } catch (uploadError: any) {

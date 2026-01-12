@@ -10,7 +10,6 @@ export function useBannersApi() {
   const getBanners = async (pageType: 'all-courses' | 'my-courses') => {
     try {
       const url = `${apiUser}/banners?pageType=${pageType}`
-      console.log('🔍 Fetching banner from:', url)
       
       const response = await $fetch<{
         status: boolean;
@@ -26,8 +25,6 @@ export function useBannersApi() {
         };
       }>(url);
 
-      console.log('🔍 Banner API response:', response)
-
       // sendSuccess returns: { message: "", data: { banner: ... } }
       // Check for banner in data.banner
       const responseData = response as any
@@ -40,14 +37,11 @@ export function useBannersApi() {
       }
       
       if (banner && banner.image) {
-        console.log('✅ Found banner:', banner)
         return [banner]
       }
       
-      console.warn('⚠️ No banner found in response. Response structure:', JSON.stringify(response, null, 2))
       return []
     } catch (error) {
-      console.error('❌ Error fetching banners:', error)
       return []
     }
   };
