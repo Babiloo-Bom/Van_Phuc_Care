@@ -170,8 +170,8 @@ function updateDockerCompose(filePath, allocation) {
   let updatedCount = 0;
   
   const updatedLines = lines.map((line, index) => {
-    // Detect service block
-    if (line.match(/^\s+api:/)) {
+    // Detect service block (service name có thể có hoặc không có indent)
+    if (line.match(/^(\s*)api:\s*$/)) {
       inApi = true;
       inAdmin = false;
       inCrm = false;
@@ -179,7 +179,8 @@ function updateDockerCompose(filePath, allocation) {
       inMongodb = false;
       inMinio = false;
       inRedis = false;
-    } else if (line.match(/^\s+admin:/)) {
+      console.log(`   [DEBUG] Detected API service`);
+    } else if (line.match(/^(\s*)admin:\s*$/)) {
       inApi = false;
       inAdmin = true;
       inCrm = false;
@@ -187,7 +188,15 @@ function updateDockerCompose(filePath, allocation) {
       inMongodb = false;
       inMinio = false;
       inRedis = false;
-    } else if (line.match(/^\s+crm:/)) {
+      console.log(`   [DEBUG] Detected Admin service`);
+      inApi = false;
+      inAdmin = true;
+      inCrm = false;
+      inElearning = false;
+      inMongodb = false;
+      inMinio = false;
+      inRedis = false;
+    } else if (line.match(/^(\s*)crm:\s*$/)) {
       inApi = false;
       inAdmin = false;
       inCrm = true;
@@ -195,7 +204,8 @@ function updateDockerCompose(filePath, allocation) {
       inMongodb = false;
       inMinio = false;
       inRedis = false;
-    } else if (line.match(/^\s+elearning:/)) {
+      console.log(`   [DEBUG] Detected CRM service`);
+    } else if (line.match(/^(\s*)elearning:\s*$/)) {
       inApi = false;
       inAdmin = false;
       inCrm = false;
@@ -203,7 +213,15 @@ function updateDockerCompose(filePath, allocation) {
       inMongodb = false;
       inMinio = false;
       inRedis = false;
-    } else if (line.match(/^\s+mongodb:/)) {
+      console.log(`   [DEBUG] Detected E-Learning service`);
+      inApi = false;
+      inAdmin = false;
+      inCrm = false;
+      inElearning = true;
+      inMongodb = false;
+      inMinio = false;
+      inRedis = false;
+    } else if (line.match(/^(\s*)mongodb:\s*$/)) {
       inApi = false;
       inAdmin = false;
       inCrm = false;
@@ -212,7 +230,7 @@ function updateDockerCompose(filePath, allocation) {
       inMinio = false;
       inRedis = false;
       mongodbHasCpus = false; // Reset flag
-    } else if (line.match(/^\s+minio:/)) {
+    } else if (line.match(/^(\s*)minio:\s*$/)) {
       inApi = false;
       inAdmin = false;
       inCrm = false;
@@ -221,7 +239,7 @@ function updateDockerCompose(filePath, allocation) {
       inMinio = true;
       inRedis = false;
       minioHasCpus = false; // Reset flag
-    } else if (line.match(/^\s+redis:/)) {
+    } else if (line.match(/^(\s*)redis:\s*$/)) {
       inApi = false;
       inAdmin = false;
       inCrm = false;
@@ -230,7 +248,7 @@ function updateDockerCompose(filePath, allocation) {
       inMinio = false;
       inRedis = true;
       redisHasCpus = false; // Reset flag
-    } else if (line.match(/^\s+\w+:/) && !line.match(/^\s+(api|admin|crm|elearning|mongodb|minio|redis):/)) {
+    } else if (line.match(/^\s*\w+:\s*$/) && !line.match(/^\s*(api|admin|crm|elearning|mongodb|minio|redis):\s*$/)) {
       // Reset flags when entering a new service
       inApi = false;
       inAdmin = false;
@@ -252,6 +270,11 @@ function updateDockerCompose(filePath, allocation) {
     if (line.match(/cpus:\s*['"][\d.]+['"]/)) {
       const indent = line.match(/^(\s+)/) ? line.match(/^(\s+)/)[1] : '    ';
       const comment = line.match(/#.*$/) ? '  ' + line.match(/#.*$/)[0] : '';
+      
+      // Debug: log khi tìm thấy dòng cpus
+      if (inApi || inAdmin || inCrm || inElearning || inMongodb || inMinio || inRedis) {
+        console.log(`   [DEBUG] Found cpus line: ${line.trim()}, inApi=${inApi}, inAdmin=${inAdmin}, inCrm=${inCrm}, inElearning=${inElearning}`);
+      }
       
       if (inApi) {
         const oldValue = line.match(/cpus:\s*['"]([\d.]+)['"]/)[1];
