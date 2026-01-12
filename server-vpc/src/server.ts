@@ -4,6 +4,7 @@ require('module-alias/register');
 import '@initializers/mongoConnection';
 import '@initializers/r2LifecycleRule';
 import '@jobs/r2LifecycleRuleJob';
+import '@jobs/tempFileCleanupJob'; // Initialize temp file cleanup job
 import '@services/videoQueue'; // Initialize video queue worker
 import express from 'express';
 import session from 'express-session';

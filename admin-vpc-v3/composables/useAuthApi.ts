@@ -52,13 +52,6 @@ export const useAuthApi = () => {
     }
   }
 
-  console.log('🔍 useAuthApi config:', {
-    apiHost,
-    apiBase,
-    fullApiBase,
-    isAbsolute: fullApiBase.startsWith('http')
-  })
-
   /**
    * Exponential backoff delay
    */

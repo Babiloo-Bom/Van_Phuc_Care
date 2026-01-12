@@ -270,6 +270,9 @@ jobs:
             git reset --hard origin/main
             # Remove orphaned nginx container if exists
             docker rm -f vpc-nginx 2>/dev/null || true
-            # Run deploy script (includes nginx config update)
+            # Ensure deploy script is executable
             chmod +x ./deploy.sh
+            # Ensure CPU allocation script is executable
+            chmod +x ./scripts/update-cpu-allocation.js 2>/dev/null || true
+            # Run deploy script (includes CPU allocation update and nginx config update)
             ./deploy.sh production

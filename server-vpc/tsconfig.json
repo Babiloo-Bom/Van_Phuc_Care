@@ -28,6 +28,9 @@
       "@initializers/*": [
           "./initializers/*"
       ],
+      "@jobs/*": [
+          "./jobs/*"
+      ],
       "@models/*": [
           "./models/*"
       ],

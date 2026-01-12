@@ -35,6 +35,7 @@ import TransactionListRouter from "./TransactionList";
 import LeadsRouter from './Leads';
 import BannersRouter from './Banners';
 import R2LifecycleRouter from './R2Lifecycle';
+import TempFileCleanupRouter from './TempFileCleanup';
 import OrderController from '@controllers/api/admin/OrderController';
 
 const router = Router();
@@ -43,7 +44,8 @@ router.use("/dashboard", adminPassport.authenticate("jwt", { session: false }), 
 router.use("/categories", adminPassport.authenticate("jwt", { session: false }), CategoryRouter);
 router.use("/faqs", adminPassport.authenticate("jwt", { session: false }), FaqRouter);
 router.use("/banners", adminPassport.authenticate("jwt", { session: false }), BannersRouter);
-router.use("/r2-lifecycle", R2LifecycleRouter);
+router.use("/r2-lifecycle", adminPassport.authenticate("jwt", { session: false }), R2LifecycleRouter);
+router.use("/temp-file-cleanup", adminPassport.authenticate("jwt", { session: false }), TempFileCleanupRouter);
 router.use("/courses", CoursesRouter);
 router.use("/sessions", SessionRouter);
 router.use("/passwords", PasswordsRouter);

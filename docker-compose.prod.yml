@@ -83,6 +83,9 @@ services:
     restart: unless-stopped
     ports:
       - "3000:3000"
+    # CPU Resource Limits - Medium priority (1 core)
+    cpus: '1.0'  # Maximum CPU cores
+    cpu_shares: 512  # Medium priority
     environment:
       - NODE_ENV=production
       - PORT=3000
@@ -158,6 +161,9 @@ services:
     restart: unless-stopped
     ports:
       - "3100:3000"
+    # CPU Resource Limits - Lower priority (1 core)
+    cpus: '1.0'  # Maximum CPU cores
+    cpu_shares: 512  # Lower priority (default is 1024)
     environment:
       - NODE_ENV=production
       - NUXT_PUBLIC_API_HOST=  # Để trống để dùng relative path
@@ -187,6 +193,9 @@ services:
     restart: unless-stopped
     ports:
       - "3101:3000"
+    # CPU Resource Limits - High priority (3 cores)
+    cpus: '3.0'  # Maximum CPU cores
+    cpu_shares: 1024  # High priority
     environment:
       - NODE_ENV=production
       # Empty apiHost so browser uses relative paths, proxied by Nuxt server
@@ -218,6 +227,9 @@ services:
     restart: unless-stopped
     ports:
       - "3102:3000"
+    # CPU Resource Limits - High priority (3 cores)
+    cpus: '3.0'  # Maximum CPU cores
+    cpu_shares: 1024  # High priority
     environment:
       - NODE_ENV=production
       - NUXT_PUBLIC_API_HOST=  # Phải rỗng hoặc không có dòng này
