@@ -49,18 +49,6 @@ if [ -n "$GITHUB_TOKEN" ]; then
     echo "$GITHUB_TOKEN" | docker login ghcr.io -u "$GITHUB_USERNAME" --password-stdin
 fi
 
-# Update CPU allocation based on server cores
-if [ -f "scripts/update-cpu-allocation.js" ]; then
-    echo "🔄 Updating CPU allocation based on server cores..."
-    if command -v node &> /dev/null; then
-        node scripts/update-cpu-allocation.js || echo "⚠️  Warning: Failed to update CPU allocation, using existing configuration"
-    else
-        echo "⚠️  Warning: Node.js not found, skipping CPU allocation update"
-    fi
-else
-    echo "⚠️  Warning: CPU allocation script not found, using existing configuration"
-fi
-
 # Pull latest images
 echo "⬇️  Pulling latest Docker images..."
 docker compose -f $COMPOSE_FILE $ENV_FILE_FLAG pull
@@ -73,8 +61,8 @@ docker compose -f $COMPOSE_FILE $ENV_FILE_FLAG down
 echo "🧹 Removing orphaned containers..."
 docker rm -f vpc-nginx 2>/dev/null || true
 
-# Start new containers (CPU allocation will be applied from updated compose file)
-echo "▶️  Starting new containers with updated CPU allocation..."
+# Start new containers
+echo "▶️  Starting new containers..."
 docker compose -f $COMPOSE_FILE $ENV_FILE_FLAG up -d --build
 
 # Wait for services to be healthy
