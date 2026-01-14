@@ -17,11 +17,7 @@ services:
     networks:
       - vpc-network
     healthcheck:
-      test:
-        [
-          "CMD-SHELL",
-          "mongosh \"mongodb://admin:vanphuccare2025@localhost:27017/admin\" --eval \"db.runCommand({ ping: 1 })\" || exit 1"
-        ]
+      test: ["CMD-SHELL", "mongosh --eval \"db.adminCommand('ping')\" || exit 1"]
       interval: 10s
       timeout: 10s
       retries: 5
