@@ -49,9 +49,18 @@ class ReviewController {
     try {
       const { courseId } = req.params;
       
+      console.log(`🔍 [Get Reviews] Fetching reviews for courseId: ${courseId}`);
+      
       const reviews = await Review.find({ courseId })
         .sort({ createdAt: -1 })
-        .limit(20);
+        .limit(20)
+        .lean(); // Use lean() to get plain JavaScript objects
+      
+      console.log(`✅ [Get Reviews] Found ${reviews.length} reviews for courseId: ${courseId}`);
+      if (reviews.length > 0) {
+        console.log(`🔍 [Get Reviews] First review:`, reviews[0]);
+        console.log(`🔍 [Get Reviews] First review rating:`, reviews[0]?.rating);
+      }
       
       sendSuccess(res, { reviews });
     } catch (error: any) {
@@ -82,6 +91,57 @@ class ReviewController {
       sendSuccess(res, { review });
     } catch (error: any) {
       console.error('❌ Create review error:', error);
+      sendError(res, 500, error.message, error as Error);
+    }
+  }
+
+  /**
+   * Update a review
+   */
+  public static async updateReview(req: Request, res: Response) {
+    try {
+      const { reviewId } = req.params;
+      const { userName, userAvatar, rating, content, isVerified } = req.body;
+      
+      const review = await Review.findByIdAndUpdate(
+        reviewId,
+        {
+          userName,
+          userAvatar,
+          rating,
+          content,
+          isVerified
+        },
+        { new: true }
+      );
+      
+      if (!review) {
+        return sendError(res, 404, 'Review not found', new Error('Review not found'));
+      }
+      
+      sendSuccess(res, { review });
+    } catch (error: any) {
+      console.error('❌ Update review error:', error);
+      sendError(res, 500, error.message, error as Error);
+    }
+  }
+
+  /**
+   * Delete a review
+   */
+  public static async deleteReview(req: Request, res: Response) {
+    try {
+      const { reviewId } = req.params;
+      
+      const review = await Review.findByIdAndDelete(reviewId);
+      
+      if (!review) {
+        return sendError(res, 404, 'Review not found', new Error('Review not found'));
+      }
+      
+      sendSuccess(res, { message: 'Review deleted successfully' });
+    } catch (error: any) {
+      console.error('❌ Delete review error:', error);
       sendError(res, 500, error.message, error as Error);
     }
   }

@@ -19,6 +19,7 @@ export interface Course {
     name: string
     avatar?: string
     bio?: string
+    specialization?: string
   }
   category?: string
   level?: string
@@ -419,8 +420,19 @@ export const useCoursesStore = defineStore('courses', {
       try {
         const { apiAdmin } = useApiBase()
         const response: any = await $fetch(`${apiAdmin}/reviews/course/${courseId}`)
-        this.reviews = response.data?.reviews || response.reviews || []
+        const reviews = response.data?.reviews || response.reviews || []
+        // Debug: Log reviews data (only on client side)
+        if (import.meta.client) {
+          console.log('🔍 [Fetch Reviews] Response:', response);
+          console.log('🔍 [Fetch Reviews] Reviews:', reviews);
+          if (reviews.length > 0) {
+            console.log('🔍 [Fetch Reviews] First review:', reviews[0]);
+            console.log('🔍 [Fetch Reviews] First review rating:', reviews[0]?.rating);
+          }
+        }
+        this.reviews = reviews
       } catch (error) {
+        console.error('❌ [Fetch Reviews] Error:', error);
         throw error
       }
     },

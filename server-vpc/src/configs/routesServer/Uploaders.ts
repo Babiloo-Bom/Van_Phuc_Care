@@ -1,5 +1,6 @@
 import UploaderController from '@controllers/api/UploadersController';
 import { withoutSavingUploader } from '@middlewares/uploaders';
+import { adminPassport } from '@middlewares/passport';
 import { Router } from 'express';
 
 const router = Router();
@@ -95,7 +96,12 @@ router.post('/minio', withoutSavingUploader.any(), UploaderController.uploadMini
  *     security:
  *      - Bearer: []
  */
-router.post('/video', withoutSavingUploader.single('file'), UploaderController.uploadVideoToR2);
+// Video upload route - authentication must come BEFORE multer
+router.post('/video', 
+  adminPassport.authenticate('jwt', { session: false }),
+  withoutSavingUploader.single('file'), 
+  UploaderController.uploadVideoToR2
+);
 
 /**
  * @openapi
@@ -118,7 +124,7 @@ router.post('/video', withoutSavingUploader.single('file'), UploaderController.u
  *       500:
  *         description: Server error
  */
-router.get('/video/status/:jobId', UploaderController.getVideoJobStatus);
+router.get('/video/status/:jobId', adminPassport.authenticate('jwt', { session: false }), UploaderController.getVideoJobStatus);
 
 /**
  * @openapi
@@ -141,6 +147,6 @@ router.get('/video/status/:jobId', UploaderController.getVideoJobStatus);
  *       500:
  *         description: Server error
  */
-router.delete('/video/:jobId', UploaderController.cancelVideoUpload);
+router.delete('/video/:jobId', adminPassport.authenticate('jwt', { session: false }), UploaderController.cancelVideoUpload);
 
 export default router;

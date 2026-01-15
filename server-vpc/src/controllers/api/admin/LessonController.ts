@@ -436,9 +436,10 @@ class LessonController {
         }
       }
 
-      // Bước 2: Xóa videos và folder HLS từ R2
+      // Bước 2: Xóa videos, folder HLS và thumbnails từ R2
       if (lessonData.videos && lessonData.videos.length > 0) {
         const hlsFoldersToDelete = new Set<string>();
+        const thumbnailFoldersToDelete = new Set<string>();
         
         for (const video of lessonData.videos) {
           try {
@@ -449,6 +450,12 @@ class LessonController {
               const hlsFolder = CloudflareService.extractHlsFolderFromUrl(videoUrl);
               if (hlsFolder) {
                 hlsFoldersToDelete.add(hlsFolder);
+                
+                // Extract thumbnail folder from HLS folder
+                // HLS folder: "courses/lessons/{timestamp}/hls"
+                // Thumbnail folder: "courses/lessons/{timestamp}/thumbnails"
+                const thumbnailFolder = hlsFolder.replace('/hls', '/thumbnails');
+                thumbnailFoldersToDelete.add(thumbnailFolder);
               } else {
                 // Fallback: try to delete single file
                 let objectName = videoUrl;
@@ -466,8 +473,27 @@ class LessonController {
                 }
               }
             }
+            
+            // Also try to extract thumbnail folder from thumbnail URL if exists
+            if (video.thumbnail) {
+              try {
+                let thumbnailPath = video.thumbnail;
+                if (thumbnailPath.includes(process.env.CLOUDFLARE_R2_PUBLIC_URL || '')) {
+                  thumbnailPath = thumbnailPath.replace(process.env.CLOUDFLARE_R2_PUBLIC_URL || '', '').replace(/^\//, '');
+                }
+                
+                // Extract folder path (remove filename)
+                const lastSlash = thumbnailPath.lastIndexOf('/');
+                if (lastSlash > 0) {
+                  const thumbnailFolder = thumbnailPath.substring(0, lastSlash);
+                  thumbnailFoldersToDelete.add(thumbnailFolder);
+                }
+              } catch (err) {
+                console.warn('⚠️ [Delete Lesson] Error extracting thumbnail folder from URL:', err);
+              }
+            }
           } catch (err) {
-            console.error('Error deleting video from R2:', err);
+            console.error('❌ [Delete Lesson] Error deleting video from R2:', err);
           }
         }
 
@@ -475,9 +501,19 @@ class LessonController {
         for (const hlsFolder of hlsFoldersToDelete) {
           try {
             await CloudflareService.deleteFilesByPrefix(hlsFolder);
-            console.log(`✅ Deleted HLS folder: ${hlsFolder}`);
+            console.log(`✅ [Delete Lesson] Deleted HLS folder: ${hlsFolder}`);
           } catch (err) {
-            console.error(`Error deleting HLS folder ${hlsFolder}:`, err);
+            console.error(`❌ [Delete Lesson] Error deleting HLS folder ${hlsFolder}:`, err);
+          }
+        }
+        
+        // Xóa toàn bộ folder thumbnails
+        for (const thumbnailFolder of thumbnailFoldersToDelete) {
+          try {
+            await CloudflareService.deleteFilesByPrefix(thumbnailFolder);
+            console.log(`✅ [Delete Lesson] Deleted thumbnail folder: ${thumbnailFolder}`);
+          } catch (err) {
+            console.error(`❌ [Delete Lesson] Error deleting thumbnail folder ${thumbnailFolder}:`, err);
           }
         }
       }

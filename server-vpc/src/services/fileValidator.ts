@@ -210,8 +210,13 @@ export function validateVideoFile(
 
   const result = validateFileByMagicBytes(buffer, expectedMimeType);
   
-  // Nếu validation thất bại nhưng detected type là video container format tương thích, cho phép
-  if (!result.isValid && result.detectedType) {
+  // Nếu validation thành công, trả về kết quả
+  if (result.isValid) {
+    return result;
+  }
+  
+  // Nếu validation thất bại, kiểm tra xem có phải là video container format tương thích không
+  if (result.detectedType) {
     const compatibleVideoTypes = [
       ['video/mp4', 'video/quicktime'],
       ['video/quicktime', 'video/mp4'],
@@ -221,11 +226,41 @@ export function validateVideoFile(
       if ((expectedMimeType === type1 && result.detectedType === type2) ||
           (expectedMimeType === type2 && result.detectedType === type1)) {
         // Cho phép vì chúng là container formats tương thích
+        console.log(`✅ [Video Validation] Allowing compatible video types: ${expectedMimeType} <-> ${result.detectedType}`);
         return { isValid: true, detectedType: expectedMimeType };
       }
     }
   }
   
+  // Nếu không detect được type nhưng file có vẻ là video (có magic bytes của video nhưng không match chính xác)
+  // Kiểm tra xem có phải là MP4/MOV không bằng cách tìm ftyp box
+  if (buffer.length >= 12) {
+    // MP4/MOV files thường bắt đầu với ftyp box
+    // Check for ftyp at various offsets
+    const ftypPatterns = [
+      [0x00, 0x00, 0x00, 0x18, 0x66, 0x74, 0x79, 0x70], // Common MP4/MOV pattern
+      [0x00, 0x00, 0x00, 0x20, 0x66, 0x74, 0x79, 0x70], // Another common pattern
+      [0x00, 0x00, 0x00, 0x1C, 0x66, 0x74, 0x79, 0x70], // Another variant
+    ];
+    
+    for (const pattern of ftypPatterns) {
+      let matches = true;
+      for (let i = 0; i < pattern.length; i++) {
+        if (buffer[i] !== pattern[i]) {
+          matches = false;
+          break;
+        }
+      }
+      
+      if (matches && (expectedMimeType === 'video/mp4' || expectedMimeType === 'video/quicktime')) {
+        console.log(`✅ [Video Validation] Detected MP4/MOV format by ftyp box, allowing ${expectedMimeType}`);
+        return { isValid: true, detectedType: expectedMimeType };
+      }
+    }
+  }
+  
+  // Nếu vẫn không match, trả về lỗi
+  console.warn(`⚠️ [Video Validation] Failed to validate video file. Expected: ${expectedMimeType}, Detected: ${result.detectedType || 'unknown'}`);
   return result;
 }
 

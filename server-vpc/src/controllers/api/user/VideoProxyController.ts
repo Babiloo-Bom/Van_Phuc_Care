@@ -17,10 +17,11 @@ const VIDEO_TOKEN_SECRET = process.env.VIDEO_TOKEN_SECRET || 'vanphuccare-video-
 const TOKEN_EXPIRY_SECONDS = 300; // 5 phút - token hết hạn sau 5 phút
 
 interface VideoToken {
-  lessonId: string;
+  lessonId?: string; // Optional for intro video
   courseId: string;
   userId: string;
   exp: number;
+  isIntroVideo?: boolean; // Flag to indicate intro video
 }
 
 export default class VideoProxyController {
@@ -50,15 +51,17 @@ export default class VideoProxyController {
    * Token chỉ có hiệu lực 5 phút
    */
   public static generateVideoToken(
-    lessonId: string,
     courseId: string,
-    userId: string
+    userId: string,
+    lessonId?: string,
+    isIntroVideo?: boolean
   ): string {
     const payload: VideoToken = {
-      lessonId,
       courseId,
       userId,
       exp: Math.floor(Date.now() / 1000) + TOKEN_EXPIRY_SECONDS,
+      ...(lessonId ? { lessonId } : {}),
+      ...(isIntroVideo ? { isIntroVideo: true } : {}),
     };
 
     const data = JSON.stringify(payload);
@@ -121,20 +124,31 @@ export default class VideoProxyController {
       }
 
       const userId = currentUser._id?.toString() || currentUser.id?.toString();
-      const { lessonId, courseId } = req.body;
+      const { lessonId, courseId, isIntroVideo } = req.body;
 
-      if (!lessonId || !courseId) {
-        return sendError(res, 400, 'Missing lessonId or courseId');
+      if (!courseId) {
+        return sendError(res, 400, 'Missing courseId');
+      }
+
+      // For intro video, only need courseId
+      // For lesson video, need both lessonId and courseId
+      if (!isIntroVideo && !lessonId) {
+        return sendError(res, 400, 'Missing lessonId for lesson video');
       }
 
       // Verify user has access to this course
-      const hasAccess = await VideoProxyController.verifyUserAccess(userId, courseId, lessonId);
-      if (!hasAccess) {
-        return sendError(res, 403, 'Bạn không có quyền truy cập video này');
+      if (isIntroVideo) {
+        // For intro video, just verify course access (intro video is usually public/preview)
+        // You can add course access check here if needed
+      } else {
+        const hasAccess = await VideoProxyController.verifyUserAccess(userId, courseId, lessonId);
+        if (!hasAccess) {
+          return sendError(res, 403, 'Bạn không có quyền truy cập video này');
+        }
       }
 
       // Generate token
-      const token = VideoProxyController.generateVideoToken(lessonId, courseId, userId);
+      const token = VideoProxyController.generateVideoToken(courseId, userId, lessonId, isIntroVideo);
 
       res.json({
         success: true,
@@ -167,8 +181,289 @@ export default class VideoProxyController {
         return sendError(res, 401, 'Invalid or expired video token');
       }
 
-      console.log('📦 [Video Stream] Token verified, lessonId:', payload.lessonId);
+      console.log('📦 [Video Stream] Token verified, lessonId:', payload.lessonId, 'isIntroVideo:', payload.isIntroVideo);
 
+      // Check if this is intro video
+      if (payload.isIntroVideo) {
+        // Get course to find intro video URL
+        const CoursesModel = (await import('@mongodb/courses')).default;
+        const course = await CoursesModel.model.findById(payload.courseId);
+
+        if (!course) {
+          console.error('❌ [Video Stream] Course not found:', payload.courseId);
+          return sendError(res, 404, 'Course not found');
+        }
+
+        const courseData: any = course.toObject();
+        console.log('📦 [Video Stream] Course found, checking for segment request...');
+
+        // Get intro video URL
+        const introVideoUrl = courseData.introVideoHlsUrl || courseData.introVideo;
+        if (!introVideoUrl) {
+          console.error('❌ [Video Stream] Intro video not found for course:', payload.courseId);
+          return sendError(res, 404, 'Intro video not found');
+        }
+
+        console.log('📦 [Video Stream] Intro video URL:', introVideoUrl);
+
+        // Check if this is a segment request (from HLS manifest)
+        const segmentPath = req.query.segment as string | undefined;
+        console.log('📦 [Video Stream] Is segment request:', !!segmentPath);
+
+        if (segmentPath) {
+          // This is a segment request for intro video
+          let decodedSegmentPath: string;
+          try {
+            decodedSegmentPath = decodeURIComponent(segmentPath);
+          } catch (decodeError: any) {
+            console.error('❌ Error decoding segment path:', decodeError);
+            return sendError(res, 400, 'Invalid segment path');
+          }
+
+          if (!decodedSegmentPath || decodedSegmentPath.trim() === '') {
+            console.error('❌ Empty segment path');
+            return sendError(res, 400, 'Segment path is required');
+          }
+
+          console.log('📦 [Video Stream] Intro video segment request:', decodedSegmentPath);
+
+          // Extract segment filename
+          let segmentFileName: string;
+          try {
+            if (decodedSegmentPath.startsWith('http://') || decodedSegmentPath.startsWith('https://')) {
+              const urlModule = await import('url');
+              const parsedUrl = new urlModule.URL(decodedSegmentPath);
+              segmentFileName = parsedUrl.pathname.split('/').pop() || '';
+            } else {
+              segmentFileName = decodedSegmentPath.split('/').pop() || '';
+            }
+
+            if (!segmentFileName || segmentFileName.trim() === '') {
+              console.error('❌ Cannot extract segment filename from path:', decodedSegmentPath);
+              return sendError(res, 400, 'Invalid segment path format');
+            }
+
+            console.log('📦 [Video Stream] Intro video segment filename:', segmentFileName);
+          } catch (extractError: any) {
+            console.error('❌ Error extracting segment filename:', extractError);
+            return sendError(res, 400, `Failed to extract segment filename: ${extractError.message}`);
+          }
+
+          // Extract base path from intro video URL
+          // URL format: https://...r2.dev/courses/intro-videos/hls/{timestamp}-video.m3u8
+          // Segment format: courses/intro-videos/hls/{timestamp}-segment_000.ts
+          let extractedBasePath: string | null = null;
+          let timestamp: string | null = null;
+          
+          try {
+            if (introVideoUrl.startsWith('http://') || introVideoUrl.startsWith('https://')) {
+              const urlModule = await import('url');
+              const parsedVideoUrl = new urlModule.URL(introVideoUrl);
+              let videoPathname = parsedVideoUrl.pathname;
+              
+              // Remove leading slash
+              if (videoPathname.startsWith('/')) {
+                videoPathname = videoPathname.substring(1);
+              }
+
+              // Extract base path: courses/intro-videos/hls/
+              const lastSlash = videoPathname.lastIndexOf('/');
+              if (lastSlash > 0) {
+                extractedBasePath = videoPathname.substring(0, lastSlash);
+                console.log('📦 [Video Stream] Extracted base path from intro video URL:', extractedBasePath);
+                
+                // Extract timestamp from manifest filename (e.g., {timestamp}-video.m3u8)
+                const manifestFileName = videoPathname.substring(lastSlash + 1);
+                const timestampMatch = manifestFileName.match(/^(\d{10,})-/);
+                if (timestampMatch) {
+                  timestamp = timestampMatch[1];
+                  console.log('📦 [Video Stream] Extracted timestamp from intro video URL:', timestamp);
+                }
+              } else {
+                // Fallback: use courses/intro-videos/hls
+                extractedBasePath = 'courses/intro-videos/hls';
+              }
+            } else {
+              // If not a full URL, assume it's already a path
+              const pathParts = introVideoUrl.split('/');
+              const hlsIndex = pathParts.findIndex((part: string) => part === 'hls');
+              if (hlsIndex !== -1) {
+                extractedBasePath = pathParts.slice(0, hlsIndex + 1).join('/');
+                // Try to extract timestamp from last part
+                if (pathParts.length > hlsIndex + 1) {
+                  const lastPart = pathParts[pathParts.length - 1];
+                  const timestampMatch = lastPart.match(/^(\d{10,})-/);
+                  if (timestampMatch) {
+                    timestamp = timestampMatch[1];
+                  }
+                }
+              } else {
+                extractedBasePath = 'courses/intro-videos/hls';
+              }
+            }
+          } catch (extractError: any) {
+            console.error('❌ Error extracting base path from intro video URL:', extractError);
+            // Fallback to default path
+            extractedBasePath = 'courses/intro-videos/hls';
+          }
+
+          // Try multiple folder patterns, prioritizing extracted path
+          const folderPatterns: string[] = [];
+          if (extractedBasePath) {
+            folderPatterns.push(extractedBasePath);
+          }
+          if (timestamp) {
+            folderPatterns.push(`courses/intro-videos/hls`);
+          }
+          // Fallback
+          folderPatterns.push('courses/intro-videos/hls');
+
+          console.log('📦 [Video Stream] Will try folder patterns:', folderPatterns);
+          console.log('📦 [Video Stream] Looking for segment ending with:', segmentFileName);
+
+          // List objects in folder to find segment with matching filename
+          // Segment format: {timestamp}-segment_000.ts
+          // We need to find segment that ends with segmentFileName
+          let segmentObject: any = null;
+          let foundFolder: string | null = null;
+
+          try {
+            // Dynamic import to avoid TypeScript errors
+            // @ts-ignore - @aws-sdk/client-s3 is installed but TypeScript may not recognize it
+            const { ListObjectsV2Command, S3Client } = await import('@aws-sdk/client-s3');
+            
+            const bucketName = process.env.CLOUDFLARE_R2_BUCKET_NAME!;
+            console.log('📦 [Video Stream] Bucket name:', bucketName);
+            
+            // Create a temporary client instance
+            const tempClient = new S3Client({
+              region: "auto",
+              endpoint: `https://${process.env.CLOUDFLARE_R2_ACCOUNT_ID}.r2.cloudflarestorage.com`,
+              credentials: {
+                accessKeyId: process.env.CLOUDFLARE_R2_ACCESS_KEY_ID!,
+                secretAccessKey: process.env.CLOUDFLARE_R2_SECRET_ACCESS_KEY!,
+              },
+              forcePathStyle: true,
+            });
+
+            // Try each folder pattern
+            for (const folderPattern of folderPatterns) {
+              try {
+                console.log(`📦 [Video Stream] Listing objects in folder: ${folderPattern}`);
+                const listCommand = new ListObjectsV2Command({
+                  Bucket: bucketName,
+                  Prefix: folderPattern.endsWith('/') ? folderPattern : `${folderPattern}/`,
+                });
+
+                const listResponse = await tempClient.send(listCommand);
+                
+                if (listResponse.Contents && listResponse.Contents.length > 0) {
+                  // Find segment that ends with segmentFileName
+                  segmentObject = listResponse.Contents.find((obj: any) => {
+                    const objKey = obj.Key || '';
+                    return objKey.endsWith(segmentFileName);
+                  });
+
+                  if (segmentObject) {
+                    foundFolder = folderPattern;
+                    console.log(`✅ [Video Stream] Found intro video segment: ${segmentObject.Key}`);
+                    break;
+                  }
+                }
+              } catch (listError: any) {
+                console.warn(`⚠️ [Video Stream] Error listing objects in ${folderPattern}:`, listError.message);
+                // Continue to next pattern
+              }
+            }
+
+            if (!segmentObject || !foundFolder) {
+              console.error('❌ [Video Stream] Intro video segment not found in any folder pattern');
+              return sendError(res, 404, 'Segment not found');
+            }
+
+            // Get segment from R2 using the found object key
+            const segmentKey = segmentObject.Key;
+            console.log('📦 [Video Stream] Getting intro video segment from R2:', segmentKey);
+
+            const segmentBuffer = await CloudflareService.getFile(segmentKey);
+            if (!segmentBuffer) {
+              console.error('❌ [Video Stream] Intro video segment not found in R2:', segmentKey);
+              return sendError(res, 404, 'Segment not found');
+            }
+
+            // Set headers for video segment
+            res.setHeader('Content-Type', 'video/mp2t');
+            res.setHeader('Content-Length', segmentBuffer.length);
+            res.setHeader('Cache-Control', 'public, max-age=3600');
+            res.setHeader('Accept-Ranges', 'bytes');
+
+            // Send segment
+            res.send(segmentBuffer);
+            return;
+          } catch (segmentError: any) {
+            console.error('❌ [Video Stream] Error getting intro video segment from R2:', segmentError);
+            return sendError(res, 500, 'Failed to get video segment');
+          }
+        } else {
+          // This is a manifest request (.m3u8) for intro video
+          console.log('📦 [Video Stream] Intro video manifest request');
+
+          // Get manifest from R2
+          try {
+            // Extract manifest path from intro video URL
+            let manifestPath: string;
+            if (introVideoUrl.startsWith('http://') || introVideoUrl.startsWith('https://')) {
+              const urlModule = await import('url');
+              const parsedUrl = new urlModule.URL(introVideoUrl);
+              manifestPath = parsedUrl.pathname;
+              if (manifestPath.startsWith('/')) {
+                manifestPath = manifestPath.substring(1);
+              }
+            } else {
+              manifestPath = introVideoUrl;
+            }
+
+            console.log('📦 [Video Stream] Intro video manifest path:', manifestPath);
+
+            const manifestBuffer = await CloudflareService.getFile(manifestPath);
+            if (!manifestBuffer) {
+              console.error('❌ [Video Stream] Intro video manifest not found in R2:', manifestPath);
+              return sendError(res, 404, 'Manifest not found');
+            }
+
+            let manifestContent = manifestBuffer.toString('utf8');
+
+            // Rewrite segment URLs to use proxy
+            // Replace segment URLs with proxy URLs
+            const protocol = VideoProxyController.getProtocol(req);
+            const host = VideoProxyController.getHost(req);
+            const baseUrl = `${protocol}://${host}`;
+
+            // Replace segment paths with proxy URLs
+            manifestContent = manifestContent.replace(
+              /^([^#\n]+\.ts)$/gm,
+              (match: string) => {
+                const segmentUrl = `${baseUrl}/api/u/video/stream/${token}?segment=${encodeURIComponent(match)}`;
+                return segmentUrl;
+              }
+            );
+
+            // Set headers for HLS manifest
+            res.setHeader('Content-Type', 'application/vnd.apple.mpegurl');
+            res.setHeader('Content-Length', Buffer.byteLength(manifestContent));
+            res.setHeader('Cache-Control', 'public, max-age=60');
+
+            // Send manifest
+            res.send(manifestContent);
+            return;
+          } catch (manifestError: any) {
+            console.error('❌ [Video Stream] Error getting intro video manifest from R2:', manifestError);
+            return sendError(res, 500, 'Failed to get video manifest');
+          }
+        }
+      }
+
+      // Original lesson video logic
       // Get lesson to find video URL
       const LessonsModel = (await import('@mongodb/lessons')).default;
       const lesson = await LessonsModel.model.findById(payload.lessonId);

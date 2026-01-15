@@ -50,24 +50,64 @@
             <div>
               <!-- Video or Thumbnail -->
               <div class="py-4 sm:py-6 md:py-8">
-                <div class="p-2 sm:p-4 rounded-md overflow-hidden shadow-md">
+                <div class="p-2 sm:p-4 rounded-md overflow-hidden shadow-md relative">
+                  <!-- Loading indicator khi đang lấy video token -->
+                  <div
+                    v-if="introVideoTokenLoading"
+                    class="absolute inset-0 flex items-center justify-center bg-gray-900 z-10 rounded-[8px] sm:rounded-[12px]"
+                  >
+                    <div class="flex flex-col items-center gap-3">
+                      <div class="w-10 h-10 border-4 border-blue-500 border-t-transparent rounded-full animate-spin"></div>
+                      <span class="text-white text-sm">Đang xác thực video...</span>
+                    </div>
+                  </div>
+
+                  <!-- Video Element với chặn tải xuống và context menu -->
+                  <!-- Stream qua HLS (hls.js) để stream theo chunks - chống download tốt hơn -->
+                  <!-- CHỈ render khi video ready và component đã mounted để tránh hydration mismatch -->
                   <video
-                    v-if="currentVideoUrl"
-                    :ref="videoRef"
-                    :src="currentVideoUrl"
-                    :poster="course?.thumbnail"
-                    class="w-full h-auto min-h-[200px] sm:min-h-[300px] md:min-h-[400px] lg:min-h-[500px] object-cover rounded-[8px] sm:rounded-[12px]"
+                    v-if="isMounted && currentVideoUrl && !introVideoTokenLoading && introVideoReady"
+                    ref="videoRef"
+                    :poster="(course as any)?.introVideoThumbnail || course?.thumbnail"
+                    class="w-full h-auto min-h-[200px] sm:min-h-[300px] md:min-h-[400px] lg:min-h-[500px] object-cover rounded-[8px] sm:rounded-[12px] video-element"
+                    preload="none"
+                    playsinline
+                    controlslist="nodownload noplaybackrate"
+                    disablePictureInPicture
                     controls
-                    preload="metadata"
-                    crossorigin="anonymous"
-                  />
+                    @contextmenu.prevent
+                    @dragstart.prevent
+                    @selectstart.prevent
+                    @copy.prevent
+                  ></video>
+                  
+                  <!-- Thumbnail với nút Play (nếu có video nhưng chưa click play) -->
+                  <div
+                    v-else-if="course?.introVideo || (course as any)?.introVideoHlsUrl"
+                    class="relative w-full h-[200px] sm:h-[300px] md:h-[400px] lg:h-[500px] rounded-[8px] sm:rounded-[12px] overflow-hidden cursor-pointer group"
+                    @click="playIntroVideo"
+                  >
+                    <img
+                      class="w-full h-full object-cover"
+                      :src="(course as any)?.introVideoThumbnail || course?.thumbnail || '/images/courses/python-course.jpg'"
+                      alt="Course thumbnail"
+                    />
+                    <!-- Play button overlay -->
+                    <div class="absolute inset-0 flex items-center justify-center bg-black bg-opacity-30 group-hover:bg-opacity-40 transition-all">
+                      <div class="w-16 h-16 sm:w-20 sm:h-20 bg-white bg-opacity-90 rounded-full flex items-center justify-center group-hover:bg-opacity-100 transition-all">
+                        <svg class="w-8 h-8 sm:w-10 sm:h-10 text-primary-100 ml-1" fill="currentColor" viewBox="0 0 24 24">
+                          <path d="M8 5v14l11-7z"/>
+                        </svg>
+                      </div>
+                    </div>
+                  </div>
+                  
+                  <!-- Fallback: Demo video hoặc thumbnail nếu không có intro video -->
                   <img
                     v-else
                     class="h-[200px] sm:h-[300px] md:h-[400px] lg:h-[500px] w-full object-cover rounded-[8px] sm:rounded-md"
-                    :src="
-                      course?.thumbnail || '/images/courses/python-course.jpg'
-                    "
-                    alt="/"
+                    :src="course?.thumbnail || '/images/courses/python-course.jpg'"
+                    alt="Course thumbnail"
                   />
                 </div>
               </div>
@@ -267,16 +307,17 @@
                             </h2>
 
                             <div class="mb-6">
-                              <h3
-                                class="text-xl font-semibold text-gray-800 mb-2"
-                              >
-                                Chuyên môn
-                              </h3>
-                              <p class="text-gray-600 text-lg leading-relaxed">
+                              <p class="text-gray-600 text-lg leading-relaxed font-semibold">
                                 {{
-                                  course?.instructor?.bio ||
+                                  course?.instructor?.specialization ||
                                   "Thông tin chuyên môn đang được cập nhật..."
                                 }}
+                              </p>
+                            </div>
+
+                            <div class="mb-6">
+                              <p class="text-gray-600 text-lg leading-relaxed">
+                                <span v-html="course?.instructor?.bio || 'Thông tin tiểu sử đang được cập nhật...'"></span>
                               </p>
                             </div>
 
@@ -344,15 +385,16 @@
                               <div
                                 class="text-4xl font-bold text-primary-100 mb-1"
                               >
-                                {{ (course?.rating?.average || 0).toFixed(1) }}
+                                {{ calculatedRating.average.toFixed(1) }}
                               </div>
                               <a-rate
-                                style="fontsize: 20px; color: #ffd74b"
-                                :value="course?.rating?.average || 0"
+                                :value="calculatedRating.average"
+                                :count="5"
                                 disabled
+                                style="font-size: 20px;"
                               />
                               <p class="text-sm text-gray-600 mt-1">
-                                {{ course?.rating?.count || 0 }} đánh giá
+                                {{ calculatedRating.count }} đánh giá
                               </p>
                             </div>
                             <div class="flex-1">
@@ -368,11 +410,17 @@
                                   class="flex-1 bg-gray-200 rounded-full h-2"
                                 >
                                   <div
-                                    class="bg-prim-100 h-2 rounded-full"
-                                    :style="{ width: '0%' }"
+                                    class="bg-prim-100 h-2 rounded-full transition-all duration-300"
+                                    :style="{ 
+                                      width: calculatedRating.count > 0 
+                                        ? `${(calculatedRating.breakdown[6 - i as keyof typeof calculatedRating.breakdown] / calculatedRating.count) * 100}%` 
+                                        : '0%' 
+                                    }"
                                   ></div>
                                 </div>
-                                <span class="text-sm text-gray-600 w-8">0</span>
+                                <span class="text-sm text-gray-600 w-8">
+                                  {{ calculatedRating.breakdown[6 - i as keyof typeof calculatedRating.breakdown] }}
+                                </span>
                               </div>
                             </div>
                           </div>
@@ -407,18 +455,28 @@
                                     {{ review.userName }}
                                   </h4>
                                   <span
+                                    v-if="review.isVerified"
                                     class="px-2 py-1 bg-green-100 text-green-800 text-xs rounded-full font-medium"
                                   >
                                     Đã xác thực
                                   </span>
                                 </div>
                                 <div class="flex items-center gap-2 mb-3">
-                                  <a-rate
-                                    style="fontsize: 16px; color: #ffd74b"
-                                    :value="review.rating || 5"
-                                    disabled
-                                  />
-                                  <span class="text-sm text-gray-500">
+                                  <!-- Star Rating Display -->
+                                  <div class="flex items-center gap-1 review-stars">
+                                    <span
+                                      v-for="star in 5"
+                                      :key="star"
+                                      class="star-icon"
+                                      :class="{
+                                        'star-filled': star <= Number(review.rating || 0),
+                                        'star-empty': star > Number(review.rating || 0)
+                                      }"
+                                    >
+                                      ★
+                                    </span>
+                                  </div>
+                                  <span class="text-sm text-gray-500 ml-2">
                                     {{
                                       new Date(
                                         review.createdAt
@@ -885,7 +943,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, onMounted, watch, nextTick } from "vue";
+import { ref, computed, onMounted, onUnmounted, watch, nextTick } from "vue";
 import { useRoute, useRouter } from "vue-router";
 import { useCoursesStore } from "~/stores/courses";
 import { useCartStore } from "~/stores/cart";
@@ -895,12 +953,16 @@ import ContentCourse from "~/components/courses/ContentCourse.vue";
 import RecomentCourse from "~/components/courses/RecomentCourse.vue";
 import CartToast from "~/components/cart/Toast.vue";
 import type { AddToCartData } from "~/types/cart";
+import { useApiBase } from "~/composables/useApiBase";
+// @ts-ignore - hls.js types
+import Hls from 'hls.js';
 
 const route = useRoute();
 const router = useRouter();
 const coursesStore = useCoursesStore();
 const cartStore = useCartStore();
 const authStore = useAuthStore();
+const { apiUser } = useApiBase();
 
 const activeTab = ref("1");
 const loadingReview = ref(false);
@@ -1135,27 +1197,233 @@ useHead({
 //     ]
 //   }
 // ])
-const reviews = computed(() => coursesStore.reviews);
+const reviews = computed(() => {
+  const reviewsData = coursesStore.reviews;
+  // Debug: Log reviews data to check structure (only on client side)
+  if (import.meta.client && reviewsData && reviewsData.length > 0) {
+    console.log('🔍 [Reviews Debug] Reviews data:', reviewsData);
+    console.log('🔍 [Reviews Debug] First review:', reviewsData[0]);
+    console.log('🔍 [Reviews Debug] First review rating:', reviewsData[0]?.rating);
+  }
+  return reviewsData;
+});
+
+// Calculate rating from reviews
+const calculatedRating = computed(() => {
+  if (!reviews.value || reviews.value.length === 0) {
+    return {
+      average: 0,
+      count: 0,
+      breakdown: {
+        5: 0,
+        4: 0,
+        3: 0,
+        2: 0,
+        1: 0,
+      }
+    }
+  }
+  
+  const total = reviews.value.length
+  const sum = reviews.value.reduce((acc: number, review: any) => {
+    const rating = Number(review.rating) || 0;
+    console.log('🔍 [Rating Debug] Review rating:', review.rating, 'Parsed:', rating);
+    return acc + rating;
+  }, 0)
+  const average = total > 0 ? sum / total : 0
+  
+  // Calculate breakdown by star rating
+  const breakdown = {
+    5: reviews.value.filter((r: any) => Number(r.rating) === 5).length,
+    4: reviews.value.filter((r: any) => Number(r.rating) === 4).length,
+    3: reviews.value.filter((r: any) => Number(r.rating) === 3).length,
+    2: reviews.value.filter((r: any) => Number(r.rating) === 2).length,
+    1: reviews.value.filter((r: any) => Number(r.rating) === 1).length,
+  }
+  
+  return {
+    average,
+    count: total,
+    breakdown
+  }
+})
 
 const isInCart = computed(() => {
   return cartStore.isInCart(course.value?._id || "");
 });
 
-const currentVideoUrl = ref<string | null>(null);
+// State for intro video proxy
+const introVideoToken = ref<string | null>(null);
+const introVideoTokenLoading = ref(false);
+const userClickedPlay = ref(false);
+const introVideoReady = ref(false);
+let introHlsInstance: Hls | null = null;
+const isMounted = ref(false);
 
-// Initialize with introVideo (nếu có), nếu không có thì hiện luôn video demo
+// Computed: Get intro video URL - Stream qua proxy (token ẩn URL gốc)
+const currentVideoUrl = computed(() => {
+  // CHỈ tạo video URL khi user đã click play VÀ video ready - ẩn URL khỏi Cốc Cốc
+  if (!userClickedPlay.value || !introVideoReady.value) {
+    return null; // Không có URL cho đến khi user click play và video ready
+  }
+
+  if (!course.value?.introVideo && !(course.value as any)?.introVideoHlsUrl) {
+    // Fallback to demo video (no token needed)
+    return "/videos/demo-intro.mp4";
+  }
+
+  // Tất cả video (HLS và MP4) đều stream qua proxy để tránh CORS và ẩn URL gốc
+  if (introVideoToken.value) {
+    return `${apiUser}/video/stream/${introVideoToken.value}`;
+  }
+
+  return null; // Chưa có token, sẽ hiển thị loading
+});
+
+// Get intro video token for proxy streaming
+const getIntroVideoToken = async () => {
+  // CHỈ lấy token khi user đã click play - ẩn URL khỏi Cốc Cốc
+  if (!userClickedPlay.value) {
+    introVideoToken.value = null;
+    return;
+  }
+
+  if (!course.value?._id) {
+    introVideoToken.value = null;
+    return;
+  }
+
+  try {
+    introVideoTokenLoading.value = true;
+    const response = await fetch(`${apiUser}/video/token`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${authStore.token}`,
+      },
+      body: JSON.stringify({
+        courseId: course.value._id,
+        isIntroVideo: true,
+      }),
+    });
+
+    if (!response.ok) {
+      throw new Error(`Failed to get intro video token: ${response.status}`);
+    }
+
+    const data = await response.json();
+    introVideoToken.value = data.data?.token || null;
+  } catch (error) {
+    console.error('❌ Error getting intro video token:', error);
+    introVideoToken.value = null;
+  } finally {
+    introVideoTokenLoading.value = false;
+  }
+};
+
+// Load intro video with HLS
+const loadIntroVideoWithHls = async () => {
+  if (!videoRef.value || !currentVideoUrl.value) return;
+
+  // Cleanup previous HLS instance
+  if (introHlsInstance) {
+    introHlsInstance.destroy();
+    introHlsInstance = null;
+  }
+
+  // Check if video is HLS format
+  const isHls = (course.value as any)?.introVideoHlsUrl || currentVideoUrl.value.endsWith('.m3u8') || false;
+
+  if (isHls) {
+    // HLS: Use hls.js to load HLS manifest (.m3u8)
+    if (Hls.isSupported()) {
+      introHlsInstance = new Hls({
+        enableWorker: true,
+        lowLatencyMode: false,
+        backBufferLength: 90,
+        xhrSetup: (xhr: XMLHttpRequest, url: string) => {
+          xhr.withCredentials = false;
+        },
+        fragLoadingTimeOut: 20000,
+        manifestLoadingTimeOut: 10000,
+      });
+
+      // Load HLS manifest
+      introHlsInstance.loadSource(currentVideoUrl.value);
+      introHlsInstance.attachMedia(videoRef.value);
+
+      introHlsInstance.on(Hls.Events.MANIFEST_PARSED, () => {
+        // Video ready to play
+        if (videoRef.value) {
+          videoRef.value.play().catch(console.error);
+        }
+      });
+
+      introHlsInstance.on(Hls.Events.ERROR, (event: string, data: any) => {
+        console.error('HLS error:', data);
+        if (data.fatal) {
+          switch (data.type) {
+            case Hls.ErrorTypes.NETWORK_ERROR:
+              introHlsInstance?.startLoad();
+              break;
+            case Hls.ErrorTypes.MEDIA_ERROR:
+              introHlsInstance?.recoverMediaError();
+              break;
+            default:
+              introHlsInstance?.destroy();
+              introHlsInstance = null;
+              break;
+          }
+        }
+      });
+    } else if (videoRef.value.canPlayType('application/vnd.apple.mpegurl')) {
+      // Safari native HLS support
+      videoRef.value.src = currentVideoUrl.value;
+      videoRef.value.play().catch(console.error);
+    } else {
+      console.error('HLS is not supported in this browser');
+    }
+  } else {
+    // MP4: Use native video element (streamed via proxy)
+    videoRef.value.src = currentVideoUrl.value;
+    videoRef.value.play().catch(console.error);
+  }
+};
+
+// Play intro video
+const playIntroVideo = async () => {
+  // Set flag để cho phép lấy token
+  userClickedPlay.value = true;
+  introVideoReady.value = false; // Reset video ready state
+  
+  // Lấy token ngay khi user click play
+  await getIntroVideoToken();
+  
+  // Đợi token được set
+  await nextTick();
+  
+  // Delay một chút trước khi set video src để tránh Cốc Cốc bắt được
+  await new Promise(resolve => setTimeout(resolve, 500)); // 500ms delay
+  
+  // Sau delay, set video ready để video URL được tạo và video element được render
+  introVideoReady.value = true;
+  
+  // Đợi video element được render
+  await nextTick();
+  
+  // Load video qua HLS (stream theo chunks - chống download tốt hơn)
+  await loadIntroVideoWithHls();
+};
+
+// Initialize with introVideo (nếu có), nhưng không set URL ngay
 watch(
   () => course.value,
   (newCourse) => {
-    if (!newCourse || currentVideoUrl.value) return;
-
-    // 1. Ưu tiên video giới thiệu riêng của course
-    if (newCourse.introVideo) {
-      currentVideoUrl.value = newCourse.introVideo;
-    } else {
-      // 2. Nếu không có introVideo, hiện luôn video demo
-      currentVideoUrl.value = "/videos/demo-intro.mp4";
-    }
+    if (!newCourse) return;
+    // Reset play state when course changes
+    userClickedPlay.value = false;
+    introVideoReady.value = false;
+    introVideoToken.value = null;
   },
   { immediate: true }
 );
@@ -1389,12 +1657,12 @@ const toggleChapter = (chapterIndex: number) => {
 
 // Handle preview lesson
 const handlePreviewLesson = (lesson: any) => {
-  if (lesson.videoUrl) {
-    currentVideoUrl.value = lesson.videoUrl;
-  } else if (lesson.videos && lesson.videos.length > 0) {
-    currentVideoUrl.value = lesson.videos[0].videoUrl;
+  // Note: currentVideoUrl is now computed, so we can't set it directly
+  // Preview lessons will use their own video URL logic if needed
+  // For now, just play the video if it exists
+  if (videoRef.value) {
+    videoRef.value.play();
   }
-  videoRef.value?.play()
   // Scroll to video section
   nextTick(() => {
     const videoElement = document.querySelector('video');
@@ -1414,6 +1682,23 @@ const fetchData = async () => {
     const slug = route.params.slug as string;
     await coursesStore.fetchDetail(slug);
     convertToObjectArray();
+    
+    // Fetch reviews to calculate rating
+    if (course.value?._id) {
+      try {
+        console.log('🔍 [Fetch Data] Fetching reviews for course:', course.value._id);
+        await coursesStore.fetchReviews(course.value._id);
+        console.log('✅ [Fetch Data] Reviews fetched:', coursesStore.reviews);
+        console.log('✅ [Fetch Data] Reviews count:', coursesStore.reviews.length);
+        if (coursesStore.reviews.length > 0) {
+          console.log('✅ [Fetch Data] First review rating:', coursesStore.reviews[0]?.rating);
+        }
+      } catch (error) {
+        console.error("❌ [Fetch Data] Error fetching reviews:", error);
+      }
+    } else {
+      console.warn('⚠️ [Fetch Data] Course ID not found, cannot fetch reviews');
+    }
   } catch (error) {
     console.error("❌ Error fetching course detail:", error);
     // Redirect to home if course not found
@@ -1423,10 +1708,19 @@ const fetchData = async () => {
 
 // Lifecycle
 onMounted(async () => {
+  isMounted.value = true;
   await fetchData();
   // Load cart if user is logged in
   if (authStore.isLoggedIn) {
     await cartStore.fetchCart();
+  }
+});
+
+// Cleanup HLS instance on unmount
+onUnmounted(() => {
+  if (introHlsInstance) {
+    introHlsInstance.destroy();
+    introHlsInstance = null;
   }
 });
 
@@ -1927,5 +2221,153 @@ watch(
 
 .bg-gray-80 {
   background-color: #999999;
+}
+
+/* Rate component styles - Global */
+:deep(.ant-rate) {
+  font-size: 16px !important;
+  line-height: 1 !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  vertical-align: middle !important;
+  color: #ffd74b !important;
+}
+
+:deep(.ant-rate-star) {
+  margin-right: 4px !important;
+  font-size: 16px !important;
+  display: inline-block !important;
+  position: relative !important;
+  cursor: default !important;
+  transition: all 0.3s !important;
+  color: inherit !important;
+}
+
+:deep(.ant-rate-star:last-child) {
+  margin-right: 0 !important;
+}
+
+/* Star icon styles - Ensure icons are visible */
+:deep(.ant-rate-star .anticon),
+:deep(.ant-rate-star .anticon-star) {
+  font-size: 16px !important;
+  line-height: 16px !important;
+  display: inline-block !important;
+  width: 16px !important;
+  height: 16px !important;
+  color: inherit !important;
+  fill: currentColor !important;
+}
+
+/* Full star - yellow/gold */
+:deep(.ant-rate-star-full) {
+  color: #ffd74b !important;
+}
+
+:deep(.ant-rate-star-full .anticon),
+:deep(.ant-rate-star-full .anticon-star) {
+  color: #ffd74b !important;
+  fill: #ffd74b !important;
+}
+
+/* Zero/empty star - gray */
+:deep(.ant-rate-star-zero) {
+  color: #d9d9d9 !important;
+}
+
+:deep(.ant-rate-star-zero .anticon),
+:deep(.ant-rate-star-zero .anticon-star) {
+  color: #d9d9d9 !important;
+  fill: #d9d9d9 !important;
+}
+
+/* Half star */
+:deep(.ant-rate-star-half) {
+  color: #ffd74b !important;
+}
+
+:deep(.ant-rate-star-half .ant-rate-star-first .anticon),
+:deep(.ant-rate-star-half .ant-rate-star-first .anticon-star) {
+  color: #ffd74b !important;
+  fill: #ffd74b !important;
+}
+
+:deep(.ant-rate-star-half .ant-rate-star-second .anticon),
+:deep(.ant-rate-star-half .ant-rate-star-second .anticon-star) {
+  color: #d9d9d9 !important;
+  fill: #d9d9d9 !important;
+}
+
+:deep(.ant-rate-disabled) {
+  cursor: default !important;
+}
+
+:deep(.ant-rate-disabled .ant-rate-star) {
+  cursor: default !important;
+}
+
+/* Specific styles for review rating cards */
+.review-rating {
+  display: inline-flex !important;
+  align-items: center !important;
+}
+
+.review-rating :deep(.ant-rate) {
+  font-size: 16px !important;
+  line-height: 1 !important;
+  color: #ffd74b !important;
+}
+
+.review-rating :deep(.ant-rate-star) {
+  font-size: 16px !important;
+  margin-right: 4px !important;
+  color: inherit !important;
+}
+
+.review-rating :deep(.ant-rate-star .anticon),
+.review-rating :deep(.ant-rate-star .anticon-star) {
+  font-size: 16px !important;
+  width: 16px !important;
+  height: 16px !important;
+  line-height: 16px !important;
+  display: inline-block !important;
+  color: inherit !important;
+  fill: currentColor !important;
+}
+
+.review-rating :deep(.ant-rate-star-full .anticon),
+.review-rating :deep(.ant-rate-star-full .anticon-star) {
+  color: #ffd74b !important;
+  fill: #ffd74b !important;
+}
+
+.review-rating :deep(.ant-rate-star-zero .anticon),
+.review-rating :deep(.ant-rate-star-zero .anticon-star) {
+  color: #d9d9d9 !important;
+  fill: #d9d9d9 !important;
+}
+
+/* Custom Star Rating for Reviews */
+.review-stars {
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+}
+
+.star-icon {
+  font-size: 16px;
+  line-height: 1;
+  display: inline-block;
+  user-select: none;
+  transition: all 0.2s;
+}
+
+.star-filled {
+  color: #ffd74b;
+  text-shadow: 0 0 2px rgba(255, 215, 75, 0.3);
+}
+
+.star-empty {
+  color: #d9d9d9;
 }
 </style>

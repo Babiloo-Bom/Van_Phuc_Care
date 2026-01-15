@@ -5,6 +5,7 @@ import FileValidator from './fileValidator';
 import * as fs from 'fs';
 import * as path from 'path';
 import * as os from 'os';
+import mongoose from 'mongoose';
 
 // Get TEMP_DIR from HlsConverter (if accessible) or use os.tmpdir
 const getTempDir = () => {
@@ -490,6 +491,39 @@ videoQueue.on('completed', async (job, result) => {
     } else {
       console.log(`⚠️ [Video Queue] No lesson found - jobId: ${jobId}, lessonId: ${lessonId || 'none'}`);
       console.log(`⚠️ [Video Queue] This might be an intro video or lesson not saved to database yet`);
+      
+      // Check if this is an intro video (folder is 'courses/intro-videos')
+      const { folder } = job.data;
+      if (folder === 'courses/intro-videos') {
+        console.log(`🔍 [Video Queue] This is an intro video, looking for course with introVideoJobId: ${jobId}`);
+        
+        try {
+          // Find course by introVideoJobId
+          const Course = mongoose.models.Course || mongoose.model('Course', new mongoose.Schema({}, { strict: false }));
+          const course = await Course.findOne({ introVideoJobId: jobId });
+          
+          if (course) {
+            console.log(`✅ [Video Queue] Found course ${course._id} by introVideoJobId`);
+            
+            // Update course intro video with thumbnail
+            await Course.findByIdAndUpdate(course._id, {
+              introVideo: result.url || course.introVideo,
+              introVideoHlsUrl: result.hlsUrl || course.introVideoHlsUrl,
+              introVideoThumbnail: result.thumbnail || course.introVideoThumbnail || '', // Auto-update thumbnail
+              introVideoStatus: 'ready',
+              introVideoQualityMetadata: result.qualityMetadata || course.introVideoQualityMetadata,
+            });
+            
+            console.log(`✅ [Video Queue] Auto-updated course ${course._id} intro video with thumbnail: ${result.thumbnail}`);
+          } else {
+            console.log(`⚠️ [Video Queue] Course with introVideoJobId ${jobId} not found - course may not be saved yet`);
+            console.log(`⚠️ [Video Queue] Thumbnail will be available when course is saved: ${result.thumbnail}`);
+          }
+        } catch (courseError: any) {
+          console.error(`⚠️ [Video Queue] Error updating course intro video:`, courseError.message);
+          // Don't throw - this is a background update
+        }
+      }
     }
   } catch (error: any) {
     console.error(`⚠️ [Video Queue] Error auto-updating lesson video:`, error.message);

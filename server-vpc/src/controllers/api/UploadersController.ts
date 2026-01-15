@@ -117,11 +117,19 @@ class UploadController {
    * POST /uploads/video
    */
   public async uploadVideoToR2(req: Request, res: Response) {
+    console.log('📤 [Video Upload] uploadVideoToR2 called');
+    console.log('📤 [Video Upload] Request method:', req.method);
+    console.log('📤 [Video Upload] Request URL:', req.url);
+    console.log('📤 [Video Upload] Has file:', !!req.file);
+    console.log('📤 [Video Upload] Has currentAdmin:', !!(req as any).currentAdmin);
+    
     const tempHlsDir = path.join(os.tmpdir(), 'hls-uploads', Date.now().toString());
     try {
       // Route dùng .single('file') nên dùng req.file thay vì req.files
       const file = req.file as Express.Multer.File;
       const folder = (req.query.folder as string) || 'courses/intro-videos';
+      
+      console.log('📤 [Video Upload] Folder:', folder);
 
       if (!file) {
         return sendError(res, 400, 'No video file uploaded');

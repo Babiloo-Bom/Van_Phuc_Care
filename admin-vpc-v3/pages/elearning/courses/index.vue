@@ -387,18 +387,21 @@
               </a-col>
               <a-col :span="24">
                 <a-form-item label="Video giới thiệu">
-                  <a-upload
-                    v-model:file-list="introVideoFileList"
-                    :before-upload="() => false"
-                    @change="handleIntroVideoChange"
-                    @remove="handleRemoveIntroVideo"
-                    accept="video/*"
-                    :max-count="1"
-                  >
-                    <a-button :loading="uploadingIntroVideo">
-                      <UploadOutlined /> Chọn video
-                    </a-button>
-                  </a-upload>
+                  <div style="display: flex; gap: 16px; align-items: flex-start;">
+                    <!-- Upload Section -->
+                    <div style="flex: 1;">
+                      <a-upload
+                        v-model:file-list="introVideoFileList"
+                        :before-upload="() => false"
+                        @change="handleIntroVideoChange"
+                        @remove="handleRemoveIntroVideo"
+                        accept="video/mp4,video/quicktime,.mp4,.mov"
+                        :max-count="1"
+                      >
+                        <a-button :loading="uploadingIntroVideo">
+                          <UploadOutlined /> Chọn video
+                        </a-button>
+                      </a-upload>
                   
                   <!-- Video Status -->
                   <div v-if="formData.introVideoStatus" style="margin-top: 8px;" :key="`intro-video-status-${formData.introVideoStatus}-${uploadingIntroVideo}`">
@@ -498,64 +501,62 @@
                     </div>
                   </div>
                   
-                  <!-- Video Preview -->
-                  <div v-if="formData.introVideo && introVideoFileList.length === 0" style="margin-top: 8px">
-                    <video :src="formData.introVideoHlsUrl || formData.introVideo" controls style="max-width: 100%; max-height: 300px;" />
-                  </div>
-                  
-                  <!-- HLS URL -->
-                  <div v-if="formData.introVideoHlsUrl" style="margin-top: 8px; font-size: 12px; color: #666;">
-                    <strong>HLS URL:</strong> 
-                    <a :href="formData.introVideoHlsUrl" target="_blank" style="margin-left: 4px; word-break: break-all;">
-                      {{ formData.introVideoHlsUrl }}
-                    </a>
-                  </div>
-                  
-                  <!-- Quality Metadata -->
-                  <div v-if="formData.introVideoQualityMetadata && (formData.introVideoQualityMetadata.resolution || formData.introVideoQualityMetadata.codec)" style="margin-top: 8px; font-size: 12px; color: #666;">
-                    <strong>Chất lượng:</strong>
-                    <span v-if="formData.introVideoQualityMetadata.resolution" style="margin-left: 4px;">
-                      {{ formData.introVideoQualityMetadata.resolution }}
-                    </span>
-                    <span v-if="formData.introVideoQualityMetadata.codec" style="margin-left: 4px;">
-                      {{ formData.introVideoQualityMetadata.codec }}
-                    </span>
-                    <span v-if="formData.introVideoQualityMetadata.fps" style="margin-left: 4px;">
-                      {{ formData.introVideoQualityMetadata.fps }}fps
-                    </span>
-                    <span v-if="formData.introVideoQualityMetadata.bitrate" style="margin-left: 4px;">
-                      {{ formData.introVideoQualityMetadata.bitrate }}
-                    </span>
-                    <span v-if="formData.introVideoQualityMetadata.segments" style="margin-left: 4px;">
-                      ({{ formData.introVideoQualityMetadata.segments }} segments)
-                    </span>
-                  </div>
-                  
-                  <!-- Thumbnail Upload (Manual) -->
-                  <div style="margin-top: 12px;">
-                    <a-form-item label="Thumbnail video (tùy chọn)">
-                      <a-upload
-                        v-model:file-list="introVideoThumbnailFileList"
-                        :before-upload="() => false"
-                        @change="handleIntroVideoThumbnailChange"
-                        @remove="handleRemoveIntroVideoThumbnail"
-                        accept="image/*"
-                        :max-count="1"
-                        list-type="picture-card"
-                      >
-                        <div v-if="introVideoThumbnailFileList.length < 1">
-                          <PlusOutlined />
-                          <div style="margin-top: 8px">Upload</div>
-                        </div>
-                      </a-upload>
-                      <div v-if="formData.introVideoThumbnail && introVideoThumbnailFileList.length === 0" style="margin-top: 8px">
-                        <img :src="formData.introVideoThumbnail" alt="Video thumbnail" style="max-width: 200px; max-height: 150px; object-fit: cover;" />
+                      <!-- Video Preview -->
+                      <div v-if="formData.introVideo && introVideoFileList.length === 0" style="margin-top: 8px">
+                        <video :src="formData.introVideoHlsUrl || formData.introVideo" controls style="max-width: 100%; max-height: 300px;" />
                       </div>
-                    </a-form-item>
-                  </div>
-                  
-                  <div v-if="introVideoFileList.length > 0 && introVideoFileList[0] && !introVideoFileList[0].url && !uploadingIntroVideo" style="margin-top: 8px; color: #8c8c8c; font-size: 12px;">
-                    Video sẽ được upload khi bạn nhấn "Tạo mới" hoặc "Cập nhật"
+                      
+                      <!-- Video Info Section -->
+                      <div v-if="formData.introVideoHlsUrl || (formData.introVideoQualityMetadata && (formData.introVideoQualityMetadata.resolution || formData.introVideoQualityMetadata.codec))" style="margin-top: 12px; padding: 12px; background: #f5f5f5; border-radius: 4px; border: 1px solid #d9d9d9;">
+                        <!-- HLS URL -->
+                        <div v-if="formData.introVideoHlsUrl" style="margin-bottom: 8px;">
+                          <div style="font-size: 12px; color: #666; margin-bottom: 4px;">
+                            <strong>HLS URL:</strong>
+                          </div>
+                          <a :href="formData.introVideoHlsUrl" target="_blank" style="font-size: 12px; word-break: break-all; color: #1890ff;">
+                            {{ formData.introVideoHlsUrl }}
+                          </a>
+                        </div>
+                        
+                        <!-- Quality Metadata -->
+                        <div v-if="formData.introVideoQualityMetadata && (formData.introVideoQualityMetadata.resolution || formData.introVideoQualityMetadata.codec)">
+                          <div style="font-size: 12px; color: #666;">
+                            <strong>Chất lượng:</strong>
+                            <span v-if="formData.introVideoQualityMetadata.resolution" style="margin-left: 4px;">
+                              {{ formData.introVideoQualityMetadata.resolution }}
+                            </span>
+                            <span v-if="formData.introVideoQualityMetadata.codec" style="margin-left: 4px;">
+                              {{ formData.introVideoQualityMetadata.codec }}
+                            </span>
+                            <span v-if="formData.introVideoQualityMetadata.fps" style="margin-left: 4px;">
+                              {{ formData.introVideoQualityMetadata.fps }}fps
+                            </span>
+                            <span v-if="formData.introVideoQualityMetadata.bitrate" style="margin-left: 4px;">
+                              {{ formData.introVideoQualityMetadata.bitrate }}
+                            </span>
+                            <span v-if="formData.introVideoQualityMetadata.segments" style="margin-left: 4px;">
+                              ({{ formData.introVideoQualityMetadata.segments }} segments)
+                            </span>
+                          </div>
+                        </div>
+                      </div>
+                    
+                      <div v-if="introVideoFileList.length > 0 && introVideoFileList[0] && !introVideoFileList[0].url && !uploadingIntroVideo" style="margin-top: 8px; color: #8c8c8c; font-size: 12px;">
+                        Video sẽ được upload khi bạn nhấn "Tạo mới" hoặc "Cập nhật"
+                      </div>
+                    </div>
+                    
+                    <!-- Thumbnail Display (Auto-generated from video) - Side by side -->
+                    <div v-if="formData.introVideoThumbnail" style="flex-shrink: 0;">
+                      <div style="text-align: center;">
+                        <img 
+                          :src="formData.introVideoThumbnail" 
+                          alt="Video thumbnail" 
+                          style="max-width: 200px; max-height: 150px; object-fit: cover; border: 1px solid #d9d9d9; border-radius: 4px; display: block; margin: 0 auto;" 
+                        />
+                        <a-tag color="green" style="margin-top: 8px; display: block;">Tự động tạo từ video</a-tag>
+                      </div>
+                    </div>
                   </div>
                 </a-form-item>
               </a-col>
@@ -591,52 +592,7 @@
             </a-row>
           </a-tab-pane>
 
-          <!-- Tab 2: Thông tin giảng viên -->
-          <a-tab-pane key="instructor" tab="Giảng viên">
-            <a-row :gutter="16">
-              <a-col :span="24">
-                <a-form-item label="Tên giảng viên" name="instructor.name">
-                  <a-input
-                    v-model:value="formData.instructor.name"
-                    placeholder="Nhập tên giảng viên"
-                    @blur="() => formRef?.clearValidate('instructor.name')"
-                    @input="() => formRef?.clearValidate('instructor.name')"
-                  />
-                </a-form-item>
-              </a-col>
-              <a-col :span="24">
-                <a-form-item label="Ảnh đại diện giảng viên">
-                  <a-upload
-                    v-model:file-list="instructorAvatarFileList"
-                    list-type="picture-card"
-                    :max-count="1"
-                    :before-upload="() => false"
-                    @remove="handleRemoveInstructorAvatar"
-                    accept="image/*"
-                  >
-                    <div v-if="instructorAvatarFileList.length < 1">
-                      <PlusOutlined />
-                      <div style="margin-top: 8px">Upload</div>
-                    </div>
-                  </a-upload>
-                  <div v-if="formData.instructor.avatar && instructorAvatarFileList.length === 0" style="margin-top: 8px">
-                    <img :src="formData.instructor.avatar" alt="Avatar" style="max-width: 200px; max-height: 200px; border-radius: 4px;" />
-                  </div>
-                </a-form-item>
-              </a-col>
-              <a-col :span="24">
-                <a-form-item label="Tiểu sử">
-                  <a-textarea
-                    v-model:value="formData.instructor.bio"
-                    placeholder="Nhập tiểu sử giảng viên"
-                    :rows="5"
-                  />
-                </a-form-item>
-              </a-col>
-            </a-row>
-          </a-tab-pane>
-
-          <!-- Tab 3: Nội dung khóa học -->
+          <!-- Tab 2: Nội dung khóa học -->
           <a-tab-pane key="chapters" tab="Nội dung khóa học">
             <div class="chapters-section">
               <div v-for="(chapter, chapterIndex) in formData.chapters" :key="chapterIndex" class="chapter-item" style="margin-bottom: 24px; padding: 16px; border: 1px solid #d9d9d9; border-radius: 4px;">
@@ -691,304 +647,128 @@
                             checked-children="Có"
                             un-checked-children="Không"
                           />
-                          <span style="margin-left: 8px; color: #8c8c8c; font-size: 12px;">
-                            {{ lesson.isPreview ? 'Bài học này có thể học thử' : 'Bài học này không được học thử' }}
-                          </span>
                         </a-form-item>
                       </a-col>
-
-                      <!-- Video Type -->
+                      <!-- Video Content -->
                       <template v-if="lesson.type === 'video'">
                         <a-col :span="24">
-                          <a-row :gutter="16">
-                            <!-- Upload Video Section -->
-                            <a-col :span="lesson.videos && lesson.videos.length > 0 && lesson.videos[0].thumbnail ? 16 : 24">
-                              <a-form-item label="Upload Video">
+                          <a-form-item label="Video bài học">
+                            <div style="display: flex; gap: 16px; align-items: flex-start;">
+                              <!-- Upload Section -->
+                              <div style="flex: 1;">
                                 <a-upload
                                   v-model:file-list="lesson.videoFileList"
                                   :before-upload="() => false"
-                                  @change="(info) => handleLessonVideoChange(chapterIndex, lessonIndex, info)"
-                                  accept="video/*"
-                                  :max-count="1"
+                                  accept="video/mp4,video/quicktime,.mp4,.mov"
+                                  @change="(info: any) => handleLessonVideoChange(chapterIndex, lessonIndex, info)"
+                                  @remove="() => { lesson.videoFileList = []; lesson.videoUrl = ''; lesson.videoHlsUrl = ''; lesson.videoStatus = 'ready'; }"
                                 >
-                                  <a-button :loading="lesson.uploadingVideo">
+                                  <a-button>
                                     <UploadOutlined /> Chọn video
                                   </a-button>
                                 </a-upload>
-                            
-                            <!-- Video Status -->
-                            <div v-if="lesson.videos && lesson.videos.length > 0 && lesson.videos[0].status" style="margin-top: 8px;">
-                              <a-tag :color="getStatusColor(
-                                (lesson.uploadingVideo && lessonVideoUploadProgress[`chapter-${chapterIndex}-lesson-${lessonIndex}`]?.stage && 
-                                 lessonVideoUploadProgress[`chapter-${chapterIndex}-lesson-${lessonIndex}`].stage !== 'ready')
-                                  ? lessonVideoUploadProgress[`chapter-${chapterIndex}-lesson-${lessonIndex}`].stage === 'uploading-r2'
-                                    ? 'processing'
-                                    : lessonVideoUploadProgress[`chapter-${chapterIndex}-lesson-${lessonIndex}`].stage
-                                  : (lesson.videos[0]?.status === 'uploading' || lesson.videos[0]?.status === 'queueing' || lesson.videos[0]?.status === 'processing')
-                                    && (lesson.videos[0]?.videoUrl || lesson.videos[0]?.hlsUrl)
-                                    ? 'ready'
-                                    : lesson.videos[0]?.status || 'ready'
-                              )">
-                                <template v-if="lesson.uploadingVideo && lessonVideoUploadProgress[`chapter-${chapterIndex}-lesson-${lessonIndex}`]?.stage && 
-                                               lessonVideoUploadProgress[`chapter-${chapterIndex}-lesson-${lessonIndex}`].stage !== 'ready'">
-                                  <a-spin size="small" style="margin-right: 4px;" />
-                                  {{ getStatusText(
-                                    lessonVideoUploadProgress[`chapter-${chapterIndex}-lesson-${lessonIndex}`].stage === 'uploading-r2'
-                                      ? 'processing'
-                                      : lessonVideoUploadProgress[`chapter-${chapterIndex}-lesson-${lessonIndex}`].stage
-                                  ) }}
-                                </template>
-                                <template v-else>
-                                  {{ getStatusText(
-                                    (lesson.videos[0]?.status === 'uploading' || lesson.videos[0]?.status === 'queueing' || lesson.videos[0]?.status === 'processing')
-                                    && (lesson.videos[0]?.videoUrl || lesson.videos[0]?.hlsUrl)
-                                      ? 'ready'
-                                      : lesson.videos[0]?.status || 'ready'
-                                  ) }}
-                                </template>
-                              </a-tag>
-                              
-                              <!-- Upload Progress for Lesson Video -->
-                              <div v-if="lesson.uploadingVideo && lessonVideoUploadProgress[`chapter-${chapterIndex}-lesson-${lessonIndex}`]" style="margin-top: 12px;">
-                                <a-progress 
-                                  :percent="lessonVideoUploadProgress[`chapter-${chapterIndex}-lesson-${lessonIndex}`]?.percent || 0" 
-                                  :status="lessonVideoUploadProgress[`chapter-${chapterIndex}-lesson-${lessonIndex}`]?.percent === 100 ? 'success' : 'active'"
-                                  :stroke-color="{
-                                    '0%': '#108ee9',
-                                    '100%': '#87d068',
-                                  }"
-                                  :show-info="true"
-                                />
-                                <div style="margin-top: 8px; font-size: 12px; color: #666;">
-                                  <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px;">
-                                    <span>
-                                      <strong>{{ lessonVideoUploadProgress[`chapter-${chapterIndex}-lesson-${lessonIndex}`]?.percent || 0 }}%</strong>
-                                      <span style="margin-left: 8px; color: #1890ff; font-weight: 500;">
-                                        {{ getStatusText(lessonVideoUploadProgress[`chapter-${chapterIndex}-lesson-${lessonIndex}`]?.stage || 'uploading') }}
-                                      </span>
+                            <!-- Progress bar for lesson video upload -->
+                            <div v-if="lesson.uploadingVideo && lessonVideoUploadProgress[`chapter-${chapterIndex}-lesson-${lessonIndex}`]" style="margin-top: 12px;">
+                              <a-progress 
+                                :percent="lessonVideoUploadProgress[`chapter-${chapterIndex}-lesson-${lessonIndex}`].percent" 
+                                :status="lessonVideoUploadProgress[`chapter-${chapterIndex}-lesson-${lessonIndex}`].percent === 100 ? 'success' : 'active'"
+                                :stroke-color="{
+                                  '0%': '#108ee9',
+                                  '100%': '#87d068',
+                                }"
+                                :show-info="true"
+                              />
+                              <div style="margin-top: 8px; font-size: 12px; color: #666;">
+                                <div style="display: flex; justify-content: space-between; align-items: center;">
+                                  <span>
+                                    <span v-if="lessonVideoUploadProgress[`chapter-${chapterIndex}-lesson-${lessonIndex}`].stage === 'uploading'">
+                                      {{ formatFileSize(lessonVideoUploadProgress[`chapter-${chapterIndex}-lesson-${lessonIndex}`].uploaded) }} / {{ formatFileSize(lessonVideoUploadProgress[`chapter-${chapterIndex}-lesson-${lessonIndex}`].total) }}
                                     </span>
-                                    <span v-if="lessonVideoUploadProgress[`chapter-${chapterIndex}-lesson-${lessonIndex}`]?.timeRemaining > 0 && lessonVideoUploadProgress[`chapter-${chapterIndex}-lesson-${lessonIndex}`]?.percent < 100" style="color: #1890ff; font-weight: 500;">
-                                      ⏱️ Còn lại: {{ formatTimeRemaining(lessonVideoUploadProgress[`chapter-${chapterIndex}-lesson-${lessonIndex}`]?.timeRemaining || 0) }}
+                                    <span v-else-if="lessonVideoUploadProgress[`chapter-${chapterIndex}-lesson-${lessonIndex}`].stage === 'queueing'">
+                                      Đang chờ xử lý...
                                     </span>
-                                    <span v-else-if="lessonVideoUploadProgress[`chapter-${chapterIndex}-lesson-${lessonIndex}`]?.percent === 100" style="color: #52c41a; font-weight: 500;">
-                                      ✅ Hoàn thành
+                                    <span v-else-if="lessonVideoUploadProgress[`chapter-${chapterIndex}-lesson-${lessonIndex}`].stage === 'processing'">
+                                      Đang convert video sang HLS...
                                     </span>
-                                  </div>
-                                  <div style="display: flex; justify-content: space-between; align-items: center;">
-                                    <span>
-                                      <span v-if="lessonVideoUploadProgress[`chapter-${chapterIndex}-lesson-${lessonIndex}`]?.stage === 'uploading'">
-                                        {{ formatFileSize(lessonVideoUploadProgress[`chapter-${chapterIndex}-lesson-${lessonIndex}`]?.uploaded || 0) }} / {{ formatFileSize(lessonVideoUploadProgress[`chapter-${chapterIndex}-lesson-${lessonIndex}`]?.total || 0) }}
-                                      </span>
-                                      <span v-else-if="lessonVideoUploadProgress[`chapter-${chapterIndex}-lesson-${lessonIndex}`]?.stage === 'queueing'">
-                                        Đang chờ xử lý...
-                                      </span>
-                                      <span v-else-if="lessonVideoUploadProgress[`chapter-${chapterIndex}-lesson-${lessonIndex}`]?.stage === 'processing'">
-                                        Đang convert video sang HLS...
-                                      </span>
-                                      <span v-else-if="lessonVideoUploadProgress[`chapter-${chapterIndex}-lesson-${lessonIndex}`]?.stage === 'uploading-r2'">
-                                        Đang upload lên R2/CDN...
-                                      </span>
-                                      <span v-if="lessonVideoUploadProgress[`chapter-${chapterIndex}-lesson-${lessonIndex}`]?.speed > 0 && lessonVideoUploadProgress[`chapter-${chapterIndex}-lesson-${lessonIndex}`]?.stage === 'uploading'" style="margin-left: 8px; color: #52c41a;">
-                                        ({{ formatFileSize(lessonVideoUploadProgress[`chapter-${chapterIndex}-lesson-${lessonIndex}`]?.speed || 0) }}/s)
-                                      </span>
+                                    <span v-else-if="lessonVideoUploadProgress[`chapter-${chapterIndex}-lesson-${lessonIndex}`].stage === 'uploading-r2'">
+                                      Đang upload lên R2/CDN...
                                     </span>
-                                  </div>
+                                    <span v-if="lessonVideoUploadProgress[`chapter-${chapterIndex}-lesson-${lessonIndex}`].speed > 0 && lessonVideoUploadProgress[`chapter-${chapterIndex}-lesson-${lessonIndex}`].stage === 'uploading'" style="margin-left: 8px; color: #52c41a;">
+                                      ({{ formatFileSize(lessonVideoUploadProgress[`chapter-${chapterIndex}-lesson-${lessonIndex}`].speed) }}/s)
+                                    </span>
+                                  </span>
+                                  <span v-if="lessonVideoUploadProgress[`chapter-${chapterIndex}-lesson-${lessonIndex}`].timeRemaining > 0 && lessonVideoUploadProgress[`chapter-${chapterIndex}-lesson-${lessonIndex}`].percent < 100" style="color: #1890ff; font-weight: 500;">
+                                    ⏱️ Còn lại: {{ formatTimeRemaining(lessonVideoUploadProgress[`chapter-${chapterIndex}-lesson-${lessonIndex}`].timeRemaining) }}
+                                  </span>
                                 </div>
-                                <!-- Cancel button when uploading -->
-                                <div v-if="lessonVideoUploadProgress[`chapter-${chapterIndex}-lesson-${lessonIndex}`]?.percent < 100" style="margin-top: 8px;">
-                                  <a-button size="small" danger @click="async () => {
-                                    // Cancel upload if in progress
-                                    if (lesson.videos[0]?.jobId && 
-                                        (lesson.videos[0].status === 'uploading' || 
-                                         lesson.videos[0].status === 'queueing' || 
-                                         lesson.videos[0].status === 'processing')) {
-                                      try {
-                                        const uploadsApi = useUploadsApi()
-                                        await uploadsApi.cancelVideoUpload(lesson.videos[0].jobId)
-                                        message.success('Đã hủy upload video và xóa các file đã tạo')
-                                      } catch (error: any) {
-                                        console.error('Cancel video upload error:', error)
-                                        message.warning('Không thể hủy upload, nhưng đã xóa khỏi form')
-                                      }
-                                    }
-                                    lesson.videos = []
-                                    lesson.videoFileList = []
-                                    lesson.uploadingVideo = false
-                                    delete lessonVideoUploadProgress[`chapter-${chapterIndex}-lesson-${lessonIndex}`]
-                                  }">
-                                    <DeleteOutlined /> Hủy upload
-                                  </a-button>
-                                </div>
-                              </div>
-                              
-                              <!-- Error Message & Actions -->
-                              <div v-if="lesson.videos[0].status === 'error'" style="margin-top: 8px;">
-                                <a-alert
-                                  :message="lesson.videos[0].errorMessage || 'Lỗi upload video'"
-                                  type="error"
-                                  show-icon
-                                  style="margin-bottom: 8px;"
-                                />
-                                <a-space>
-                                  <a-button size="small" type="primary" @click="() => handleLessonVideoChange(chapterIndex, lessonIndex, { fileList: lesson.videoFileList })">
-                                    <ReloadOutlined /> Thử lại
-                                  </a-button>
-                                  <a-button size="small" danger @click="async () => {
-                                    // Cancel upload if in progress
-                                    if (lesson.videos[0]?.jobId && 
-                                        (lesson.videos[0].status === 'uploading' || 
-                                         lesson.videos[0].status === 'queueing' || 
-                                         lesson.videos[0].status === 'processing')) {
-                                      try {
-                                        const uploadsApi = useUploadsApi()
-                                        await uploadsApi.cancelVideoUpload(lesson.videos[0].jobId)
-                                        message.success('Đã hủy upload video và xóa các file đã tạo')
-                                      } catch (error: any) {
-                                        console.error('Cancel video upload error:', error)
-                                        message.warning('Không thể hủy upload, nhưng đã xóa khỏi form')
-                                      }
-                                    }
-                                    lesson.videos = []
-                                    lesson.videoFileList = []
-                                  }">
-                                    <DeleteOutlined /> Xóa
-                                  </a-button>
-                                </a-space>
                               </div>
                             </div>
-                            
-                                <!-- Video Info -->
-                                <div v-if="lesson.videos && lesson.videos.length > 0 && lesson.videos[0].status !== 'error'" style="margin-top: 8px;">
-                                  <a-tag color="success">Đã upload: {{ lesson.videos[0].title }}</a-tag>
+                                <div v-else-if="lesson.videoUrl && !lesson.videoFileList?.length" style="margin-top: 8px;">
+                                  <a-tag color="green" v-if="lesson.videoStatus === 'ready'">Video đã tải lên</a-tag>
+                                  <a-tag color="orange" v-else-if="lesson.videoStatus === 'processing'">Đang xử lý...</a-tag>
+                                  <a-tag color="blue" v-else-if="lesson.videoStatus === 'queueing'">Đang chờ xử lý...</a-tag>
+                                  <a-tag color="red" v-else-if="lesson.videoStatus === 'error'">Lỗi xử lý</a-tag>
+                                  <a-tag color="default" v-else>Đang tải lên...</a-tag>
                                 </div>
                                 
-                                <!-- HLS URL -->
-                                <div v-if="lesson.videos && lesson.videos.length > 0 && lesson.videos[0].hlsUrl" style="margin-top: 8px; font-size: 12px; color: #666;">
-                                  <strong>HLS URL:</strong> 
-                                  <a :href="lesson.videos[0].hlsUrl" target="_blank" style="margin-left: 4px; word-break: break-all;">
-                                    {{ lesson.videos[0].hlsUrl }}
-                                  </a>
+                                <!-- Video Info Section -->
+                                <div v-if="lesson.videos && lesson.videos.length > 0 && (lesson.videos[0].hlsUrl || (lesson.videos[0].qualityMetadata && (lesson.videos[0].qualityMetadata.resolution || lesson.videos[0].qualityMetadata.codec)))" style="margin-top: 12px; padding: 12px; background: #f5f5f5; border-radius: 4px; border: 1px solid #d9d9d9;">
+                                  <!-- HLS URL -->
+                                  <div v-if="lesson.videos[0].hlsUrl" style="margin-bottom: 8px;">
+                                    <div style="font-size: 12px; color: #666; margin-bottom: 4px;">
+                                      <strong>HLS URL:</strong>
+                                    </div>
+                                    <a :href="lesson.videos[0].hlsUrl" target="_blank" style="font-size: 12px; word-break: break-all; color: #1890ff;">
+                                      {{ lesson.videos[0].hlsUrl }}
+                                    </a>
+                                  </div>
+                                  
+                                  <!-- Quality Metadata -->
+                                  <div v-if="lesson.videos[0].qualityMetadata && (lesson.videos[0].qualityMetadata.resolution || lesson.videos[0].qualityMetadata.codec)">
+                                    <div style="font-size: 12px; color: #666;">
+                                      <strong>Chất lượng:</strong>
+                                      <span v-if="lesson.videos[0].qualityMetadata.resolution" style="margin-left: 4px;">
+                                        {{ lesson.videos[0].qualityMetadata.resolution }}
+                                      </span>
+                                      <span v-if="lesson.videos[0].qualityMetadata.codec" style="margin-left: 4px;">
+                                        {{ lesson.videos[0].qualityMetadata.codec }}
+                                      </span>
+                                      <span v-if="lesson.videos[0].qualityMetadata.fps" style="margin-left: 4px;">
+                                        {{ lesson.videos[0].qualityMetadata.fps }}fps
+                                      </span>
+                                      <span v-if="lesson.videos[0].qualityMetadata.bitrate" style="margin-left: 4px;">
+                                        {{ lesson.videos[0].qualityMetadata.bitrate }}
+                                      </span>
+                                      <span v-if="lesson.videos[0].qualityMetadata.segments" style="margin-left: 4px;">
+                                        ({{ lesson.videos[0].qualityMetadata.segments }} segments)
+                                      </span>
+                                    </div>
+                                  </div>
                                 </div>
-                                
-                                <!-- Quality Metadata -->
-                                <div v-if="lesson.videos && lesson.videos.length > 0 && lesson.videos[0].qualityMetadata && (lesson.videos[0].qualityMetadata.resolution || lesson.videos[0].qualityMetadata.codec)" style="margin-top: 8px; font-size: 12px; color: #666;">
-                                  <strong>Chất lượng:</strong>
-                                  <span v-if="lesson.videos[0].qualityMetadata.resolution" style="margin-left: 4px;">
-                                    {{ lesson.videos[0].qualityMetadata.resolution }}
-                                  </span>
-                                  <span v-if="lesson.videos[0].qualityMetadata.codec" style="margin-left: 4px;">
-                                    {{ lesson.videos[0].qualityMetadata.codec }}
-                                  </span>
-                                  <span v-if="lesson.videos[0].qualityMetadata.fps" style="margin-left: 4px;">
-                                    {{ lesson.videos[0].qualityMetadata.fps }}fps
-                                  </span>
-                                  <span v-if="lesson.videos[0].qualityMetadata.bitrate" style="margin-left: 4px;">
-                                    {{ lesson.videos[0].qualityMetadata.bitrate }}
-                                  </span>
-                                  <span v-if="lesson.videos[0].qualityMetadata.segments" style="margin-left: 4px;">
-                                    ({{ lesson.videos[0].qualityMetadata.segments }} segments)
-                                  </span>
-                                </div>
-                              </a-form-item>
-                            </a-col>
-                            
-                            <!-- Video Thumbnail Section -->
-                            <a-col v-if="lesson.videos && lesson.videos.length > 0 && lesson.videos[0].thumbnail" :span="8">
-                              <a-form-item label="Thumbnail Video">
-                                <div style="position: relative; display: inline-block;">
+                              </div>
+                              
+                              <!-- Thumbnail Display (Auto-generated from video) - Side by side -->
+                              <div v-if="lesson.videos && lesson.videos.length > 0 && lesson.videos[0].thumbnail" style="flex-shrink: 0;">
+                                <div style="text-align: center;">
                                   <img 
                                     :src="lesson.videos[0].thumbnail" 
                                     alt="Video thumbnail" 
-                                    style="max-width: 100%; max-height: 200px; border-radius: 4px; border: 1px solid #d9d9d9; object-fit: cover;"
+                                    style="max-width: 200px; max-height: 150px; object-fit: cover; border-radius: 4px; border: 1px solid #d9d9d9; display: block; margin: 0 auto;" 
                                   />
-                                  <a-button 
-                                    type="text" 
-                                    danger 
-                                    size="small" 
-                                    style="position: absolute; top: 4px; right: 4px; background: rgba(0, 0, 0, 0.5); color: white;"
-                                    @click="lesson.videos[0].thumbnail = ''"
-                                    title="Xóa thumbnail"
-                                  >
-                                    <DeleteOutlined />
-                                  </a-button>
+                                  <a-tag color="blue" style="margin-top: 8px; display: block;">Tự động tạo từ video</a-tag>
                                 </div>
-                                <div style="margin-top: 8px; font-size: 12px; color: #666;">
-                                  Thumbnail được tự động tạo từ video
+                              </div>
+                              <!-- Legacy: Support old videoThumbnail field -->
+                              <div v-else-if="lesson.videoThumbnail" style="flex-shrink: 0;">
+                                <div style="text-align: center;">
+                                  <img :src="lesson.videoThumbnail" alt="Thumbnail" style="max-width: 200px; max-height: 150px; border-radius: 4px; border: 1px solid #d9d9d9; display: block; margin: 0 auto;" />
                                 </div>
-                              </a-form-item>
-                            </a-col>
-                          </a-row>
-                        </a-col>
-                      </template>
-
-                      <!-- Document Type -->
-                      <template v-if="lesson.type === 'document'">
-                        <a-col :span="24">
-                          <a-form-item label="Upload Tài liệu">
-                            <a-upload
-                              v-model:file-list="lesson.documentFileList"
-                              :before-upload="() => false"
-                              @change="(info) => handleLessonDocumentChange(chapterIndex, lessonIndex, info)"
-                              accept=".pdf,.doc,.docx,.xls,.xlsx,.ppt,.pptx"
-                              :max-count="1"
-                            >
-                              <a-button :loading="lesson.uploadingDocument">
-                                <UploadOutlined /> Chọn tài liệu
-                              </a-button>
-                            </a-upload>
-                            <div v-if="lesson.documents && lesson.documents.length > 0" style="margin-top: 8px;">
-                              <a-tag color="success">Đã upload: {{ lesson.documents[0].title }}</a-tag>
+                              </div>
                             </div>
                           </a-form-item>
                         </a-col>
                       </template>
-
-                      <!-- Quiz Type -->
-                      <template v-if="lesson.type === 'quiz'">
-                        <a-col :span="24">
-                          <div style="margin-bottom: 16px;">
-                            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
-                              <strong>Câu hỏi:</strong>
-                            </div>
-                            <div v-for="(question, questionIndex) in (lesson.quiz.questions || [])" :key="questionIndex" style="margin-bottom: 16px; padding: 12px; background: white; border-radius: 4px; border: 1px solid #e8e8e8;">
-                              <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
-                                <strong>Câu {{ questionIndex + 1 }}:</strong>
-                                <a-button type="text" danger size="small" @click="removeQuestion(chapterIndex, lessonIndex, questionIndex)">
-                                  <DeleteOutlined /> Xóa
-                                </a-button>
-                              </div>
-                              <a-form-item label="Câu hỏi">
-                                <a-input
-                                  v-model:value="question.question"
-                                  placeholder="Nhập câu hỏi"
-                                />
-                              </a-form-item>
-                              <div style="margin-bottom: 12px;">
-                                <strong>Đáp án:</strong>
-                                <div v-for="(option, optionIndex) in (question.options || [])" :key="optionIndex" style="display: flex; gap: 8px; margin-top: 8px; align-items: center;">
-                                  <a-checkbox v-model:checked="option.isCorrect" />
-                                  <a-input
-                                    v-model:value="option.text"
-                                    :placeholder="`Đáp án ${optionIndex + 1}`"
-                                    style="flex: 1"
-                                  />
-                                  <a-button type="text" danger size="small" @click="removeOption(chapterIndex, lessonIndex, questionIndex, optionIndex)">
-                                    <DeleteOutlined />
-                                  </a-button>
-                                </div>
-                                <a-button type="dashed" size="small" style="width: 100%; margin-top: 8px;" @click="addOption(chapterIndex, lessonIndex, questionIndex)">
-                                  <PlusOutlined /> Thêm đáp án
-                                </a-button>
-                              </div>
-                            </div>
-                            <a-button type="primary" size="small" @click="addQuestion(chapterIndex, lessonIndex)" style="width: 100%; margin-top: 8px;">
-                              <PlusOutlined /> Thêm câu hỏi
-                            </a-button>
-                          </div>
-                        </a-col>
-                      </template>
-
-                      <!-- Text Type -->
+                      <!-- Text Content -->
                       <template v-if="lesson.type === 'text'">
                         <a-col :span="24">
                           <a-form-item label="Nội dung bài học">
@@ -999,16 +779,180 @@
                           </a-form-item>
                         </a-col>
                       </template>
+                      <!-- Document Content -->
+                      <template v-if="lesson.type === 'document'">
+                        <a-col :span="24">
+                          <a-form-item label="Tài liệu bài học">
+                            <a-upload
+                              v-model:file-list="lesson.documentFileList"
+                              :before-upload="() => false"
+                              accept=".pdf,.doc,.docx,.xls,.xlsx,.ppt,.pptx"
+                              @remove="() => { lesson.documentFileList = []; lesson.documentUrl = ''; }"
+                            >
+                              <a-button>
+                                <UploadOutlined /> Chọn tài liệu
+                              </a-button>
+                            </a-upload>
+                            <div v-if="lesson.documentUrl && !lesson.documentFileList?.length" style="margin-top: 8px;">
+                              <a-tag color="green">Tài liệu đã tải lên</a-tag>
+                            </div>
+                          </a-form-item>
+                        </a-col>
+                      </template>
+                      <!-- Quiz Content -->
+                      <template v-if="lesson.type === 'quiz'">
+                        <a-col :span="24">
+                          <div style="margin-top: 16px; padding: 16px; background: #fff; border: 1px solid #e8e8e8; border-radius: 4px;">
+                            <div v-for="(question, questionIndex) in (lesson.quiz?.questions || [])" :key="questionIndex" style="margin-bottom: 16px; padding: 12px; background: #fafafa; border-radius: 4px;">
+                              <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
+                                <strong>Câu hỏi {{ questionIndex + 1 }}:</strong>
+                                <a-button type="text" danger size="small" @click="removeQuestion(chapterIndex, lessonIndex, questionIndex)">
+                                  <DeleteOutlined /> Xóa
+                                </a-button>
+                              </div>
+                              <a-input
+                                v-model:value="question.text"
+                                placeholder="Nhập câu hỏi"
+                                style="margin-bottom: 12px;"
+                              />
+                              <div style="margin-left: 16px;">
+                                <div v-for="(option, optionIndex) in (question.options || [])" :key="optionIndex" style="margin-bottom: 8px; display: flex; align-items: center; gap: 8px;">
+                                  <a-radio-group v-model:value="question.correctAnswer" style="flex: 1;">
+                                    <a-radio :value="optionIndex">{{ option.text || `Lựa chọn ${optionIndex + 1}` }}</a-radio>
+                                  </a-radio-group>
+                                  <a-input
+                                    v-model:value="option.text"
+                                    placeholder="Nhập lựa chọn"
+                                    style="flex: 2;"
+                                  />
+                                  <a-button type="text" danger size="small" @click="removeOption(chapterIndex, lessonIndex, questionIndex, optionIndex)">
+                                    <DeleteOutlined />
+                                  </a-button>
+                                </div>
+                                <a-button type="dashed" size="small" @click="addOption(chapterIndex, lessonIndex, questionIndex)" style="margin-top: 8px;">
+                                  <PlusOutlined /> Thêm lựa chọn
+                                </a-button>
+                              </div>
+                            </div>
+                            <a-button type="primary" size="small" @click="addQuestion(chapterIndex, lessonIndex)" style="margin-top: 16px;">
+                              <PlusOutlined /> Thêm câu hỏi
+                            </a-button>
+                          </div>
+                        </a-col>
+                      </template>
                     </a-row>
                   </div>
-                  <a-button type="dashed" style="width: 100%; margin-top: 8px;" @click="addLesson(chapterIndex)">
-                    <PlusOutlined /> Thêm bài học
+                  <a-button type="dashed" @click="addLesson(chapterIndex)" style="width: 100%; margin-top: 16px;">
+                    <PlusOutlined /> Thêm bài học mới
                   </a-button>
                 </div>
               </div>
-              <a-button type="dashed" style="width: 100%;" @click="addChapter">
+              <a-button type="dashed" @click="addChapter" style="width: 100%; margin-top: 16px;">
                 <PlusOutlined /> Thêm phần mới
               </a-button>
+            </div>
+          </a-tab-pane>
+
+          <!-- Tab 3: Thông tin giảng viên -->
+          <a-tab-pane key="instructor" tab="Giảng viên">
+            <a-row :gutter="16">
+              <a-col :span="24">
+                <a-form-item label="Tên giảng viên" name="instructor.name">
+                  <a-input
+                    v-model:value="formData.instructor.name"
+                    placeholder="Nhập tên giảng viên"
+                    @blur="() => formRef?.clearValidate('instructor.name')"
+                    @input="() => formRef?.clearValidate('instructor.name')"
+                  />
+                </a-form-item>
+              </a-col>
+              <a-col :span="24">
+                <a-form-item label="Ảnh đại diện giảng viên">
+                  <a-upload
+                    v-model:file-list="instructorAvatarFileList"
+                    list-type="picture-card"
+                    :max-count="1"
+                    :before-upload="() => false"
+                    @remove="handleRemoveInstructorAvatar"
+                    accept="image/*"
+                  >
+                    <div v-if="instructorAvatarFileList.length < 1">
+                      <PlusOutlined />
+                      <div style="margin-top: 8px">Upload</div>
+                    </div>
+                  </a-upload>
+                  <div v-if="formData.instructor.avatar && instructorAvatarFileList.length === 0" style="margin-top: 8px">
+                    <img :src="formData.instructor.avatar" alt="Avatar" style="max-width: 200px; max-height: 200px; border-radius: 4px;" />
+                  </div>
+                </a-form-item>
+              </a-col>
+              <a-col :span="24">
+                <a-form-item label="Chuyên môn">
+                  <a-input
+                    v-model:value="formData.instructor.specialization"
+                    placeholder="Nhập chuyên môn giảng viên"
+                  />
+                </a-form-item>
+              </a-col>
+              <a-col :span="24">
+                <a-form-item label="Tiểu sử">
+                  <RichTextEditor
+                    v-model="formData.instructor.bio"
+                    placeholder="Nhập tiểu sử giảng viên"
+                  />
+                </a-form-item>
+              </a-col>
+            </a-row>
+          </a-tab-pane>
+
+          <!-- Tab 4: Đánh giá -->
+          <a-tab-pane key="reviews" tab="Đánh giá">
+            <div class="reviews-section">
+              <a-button type="primary" @click="showAddReviewModal" style="margin-bottom: 16px;">
+                <PlusOutlined /> Thêm đánh giá mới
+              </a-button>
+              
+              <a-list
+                v-if="courseReviews.length > 0"
+                :data-source="courseReviews"
+                item-layout="vertical"
+                style="margin-top: 16px;"
+              >
+                <template #renderItem="{ item, index }">
+                  <a-list-item>
+                    <a-list-item-meta>
+                      <template #avatar>
+                        <a-avatar :src="item.userAvatar || '/images/avatar-demo.png'" />
+                      </template>
+                      <template #title>
+                        <div style="display: flex; justify-content: space-between; align-items: center;">
+                          <div>
+                            <strong>{{ item.userName }}</strong>
+                            <a-rate :value="item.rating" disabled style="margin-left: 8px; font-size: 14px;" />
+                            <a-tag v-if="item.isVerified" color="green" style="margin-left: 8px;">Đã xác thực</a-tag>
+                          </div>
+                          <a-space>
+                            <a-button type="link" size="small" @click="editReview(item, index)">
+                              <EditOutlined /> Chỉnh sửa
+                            </a-button>
+                            <a-button type="link" danger size="small" @click="deleteReview(item._id, index)">
+                              <DeleteOutlined /> Xóa
+                            </a-button>
+                          </a-space>
+                        </div>
+                      </template>
+                      <template #description>
+                        <p style="margin: 8px 0 0 0; color: #666;">{{ item.content }}</p>
+                        <span style="font-size: 12px; color: #999; margin-top: 8px; display: block;">
+                          {{ new Date(item.createdAt).toLocaleDateString('vi-VN') }}
+                        </span>
+                      </template>
+                    </a-list-item-meta>
+                  </a-list-item>
+                </template>
+              </a-list>
+              
+              <a-empty v-else description="Chưa có đánh giá nào" style="margin-top: 24px;" />
             </div>
           </a-tab-pane>
         </a-tabs>
@@ -1146,6 +1090,97 @@
         </a-descriptions>
       </div>
     </a-modal>
+
+    <!-- Review Modal -->
+    <a-modal
+      v-model:open="reviewModalVisible"
+      :title="editingReview ? 'Chỉnh sửa đánh giá' : 'Thêm đánh giá mới'"
+      :width="600"
+      :confirm-loading="reviewModalLoading"
+      @ok="saveReview"
+      @cancel="() => { reviewModalVisible = false; editingReview = null }"
+    >
+      <a-form
+        ref="reviewFormRef"
+        :model="reviewFormData"
+        layout="vertical"
+      >
+        <a-form-item
+          label="Chọn người dùng"
+          name="selectedUserId"
+          :rules="[{ required: true, message: 'Vui lòng chọn người dùng' }]"
+        >
+          <a-select
+            v-model:value="reviewFormData.selectedUserId"
+            placeholder="Chọn người dùng từ hệ thống"
+            show-search
+            :filter-option="filterUserOption"
+            :loading="usersLoading"
+            @change="handleUserSelect"
+            @focus="() => { if (usersList.value.length === 0) fetchUsersList() }"
+          >
+            <a-select-option
+              v-for="user in usersList"
+              :key="user._id || user.id"
+              :value="user._id || user.id"
+            >
+              <div style="display: flex; align-items: center; gap: 8px;">
+                <a-avatar
+                  :src="user.avatar || '/images/avatar-demo.png'"
+                  :size="24"
+                />
+                <span>{{ user.fullname || user.name || user.email }}</span>
+                <span v-if="user.email && (user.fullname || user.name)" style="color: #999; font-size: 12px;">
+                  ({{ user.email }})
+                </span>
+              </div>
+            </a-select-option>
+          </a-select>
+        </a-form-item>
+        
+        <a-form-item
+          v-if="reviewFormData.selectedUserId"
+          label="Thông tin người dùng"
+        >
+          <div style="display: flex; align-items: center; gap: 12px; padding: 8px; background: #f5f5f5; border-radius: 4px;">
+            <a-avatar
+              :src="reviewFormData.userAvatar || '/images/avatar-demo.png'"
+              :size="40"
+            />
+            <div>
+              <div style="font-weight: 500;">{{ reviewFormData.userName }}</div>
+              <div style="font-size: 12px; color: #999;">Ảnh đại diện và tên đã được tự động lấy từ hệ thống</div>
+            </div>
+          </div>
+        </a-form-item>
+        
+        <a-form-item
+          label="Đánh giá"
+          name="rating"
+          :rules="[{ required: true, message: 'Vui lòng chọn đánh giá' }]"
+        >
+          <a-rate v-model:value="reviewFormData.rating" />
+        </a-form-item>
+        
+        <a-form-item
+          label="Nội dung đánh giá"
+          name="content"
+          :rules="[{ required: true, message: 'Vui lòng nhập nội dung đánh giá' }]"
+        >
+          <a-textarea
+            v-model:value="reviewFormData.content"
+            placeholder="Nhập nội dung đánh giá"
+            :rows="4"
+          />
+        </a-form-item>
+        
+        <a-form-item name="isVerified">
+          <a-checkbox v-model:checked="reviewFormData.isVerified">
+            Đánh giá đã được xác thực
+          </a-checkbox>
+        </a-form-item>
+      </a-form>
+    </a-modal>
   </div>
 </template>
 
@@ -1168,7 +1203,8 @@ import {
   TagsOutlined,
 } from '@ant-design/icons-vue'
 import { useUploadsApi } from '~/composables/api/useUploadsApi'
-import { message } from 'ant-design-vue'
+import { useUsersApi } from '~/composables/api/useUsersApi'
+import { message, Modal } from 'ant-design-vue'
 import type { Course } from '~/types/api'
 import { useCoursesApi } from '~/composables/api/useCoursesApi'
 import type { UploadFile } from 'ant-design-vue'
@@ -1185,6 +1221,7 @@ useHead({
 })
 
 const coursesApi = useCoursesApi()
+const usersApi = useUsersApi()
 
 // State
 const loading = ref(false)
@@ -1224,6 +1261,23 @@ const introVideoThumbnailFileList = ref<UploadFile[]>([]) // Thumbnail riêng ch
 const instructorAvatarFileList = ref<UploadFile[]>([])
 const uploadingIntroVideo = ref(false)
 const activeTab = ref('basic')
+
+// State for reviews
+const courseReviews = ref<any[]>([])
+const reviewModalVisible = ref(false)
+const reviewModalLoading = ref(false)
+const editingReview = ref<any>(null)
+const reviewFormRef = ref()
+const reviewFormData = reactive({
+  selectedUserId: null as string | null,
+  userName: '',
+  userAvatar: '',
+  rating: 5,
+  content: '',
+  isVerified: true,
+})
+const usersList = ref<any[]>([])
+const usersLoading = ref(false)
 
 // Store polling interval references to clear them when needed
 const introVideoPollInterval = ref<NodeJS.Timeout | null>(null)
@@ -1284,11 +1338,12 @@ const formData = reactive({
   price: 0,
   originalPrice: 0,
   discount: 0,
-  instructor: {
-    name: '',
-    avatar: '',
-    bio: '',
-  },
+    instructor: {
+      name: '',
+      avatar: '',
+      bio: '',
+      specialization: '',
+    },
   category: '',
   level: 'beginner' as 'beginner' | 'intermediate' | 'advanced',
   tags: [] as string[],
@@ -1465,6 +1520,10 @@ const handleIntroVideoChange = async (info: any) => {
       formData.introVideoStatus = videoData.status || 'ready'
       formData.introVideoErrorMessage = videoData.errorMessage || ''
       formData.introVideoJobId = videoData.jobId || ''
+      // Auto-save thumbnail from video if available
+      if (videoData.thumbnail) {
+        formData.introVideoThumbnail = videoData.thumbnail
+      }
       formData.introVideoQualityMetadata = videoData.qualityMetadata || {
         resolution: '',
         bitrate: '',
@@ -1717,7 +1776,10 @@ const uploadVideoToR2 = async (
     console.log('⚠️ [Video Upload] No lessonId provided - lesson may not be saved to database yet')
     console.log('⚠️ [Video Upload] Worker will try to find lesson by jobId after course is saved')
   }
-  console.log('📤 Uploading video to:', url)
+  console.log('📤 [Video Upload] Uploading video to:', url)
+  console.log('📤 [Video Upload] Has token:', !!authStore.token)
+  console.log('📤 [Video Upload] File name:', file.name)
+  console.log('📤 [Video Upload] File size:', file.size)
   
   // Use XMLHttpRequest for progress tracking
   return new Promise((resolve, reject) => {
@@ -1902,6 +1964,9 @@ const uploadVideoToR2 = async (
     
     // Handle response
     xhr.addEventListener('load', () => {
+      console.log('📤 [Video Upload] Response status:', xhr.status)
+      console.log('📤 [Video Upload] Response headers:', xhr.getAllResponseHeaders())
+      
       if (xhr.status >= 200 && xhr.status < 300) {
         try {
           const response = JSON.parse(xhr.responseText)
@@ -2023,20 +2088,36 @@ const uploadVideoToR2 = async (
         }
       } else {
         // Handle error response
+        console.error('❌ [Video Upload] Error response status:', xhr.status)
+        console.error('❌ [Video Upload] Error response text:', xhr.responseText)
+        
         let errorMessage = 'Upload video thất bại'
         try {
           const errorResponse = JSON.parse(xhr.responseText)
+          console.error('❌ [Video Upload] Parsed error response:', errorResponse)
+          
           if (errorResponse?.error?.errorMessage) {
             errorMessage = errorResponse.error.errorMessage
           } else if (errorResponse?.error) {
             errorMessage = typeof errorResponse.error === 'string' ? errorResponse.error : 'Upload video thất bại'
+          } else if (errorResponse?.message) {
+            errorMessage = errorResponse.message
           }
         } catch (e) {
+          console.error('❌ [Video Upload] Failed to parse error response:', e)
           // If can't parse, use status-based message
-          if (xhr.status === 413) {
+          if (xhr.status === 401) {
+            errorMessage = 'Không có quyền truy cập. Vui lòng đăng nhập lại.'
+          } else if (xhr.status === 403) {
+            errorMessage = 'Bạn không có quyền upload video.'
+          } else if (xhr.status === 413) {
             errorMessage = 'File quá lớn! Kích thước file không được vượt quá 5GB.'
           } else if (xhr.status === 503 || xhr.status === 504) {
             errorMessage = 'Upload video mất quá nhiều thời gian. Vui lòng thử lại sau.'
+          } else if (xhr.status === 400) {
+            errorMessage = 'Dữ liệu không hợp lệ. Vui lòng kiểm tra lại file video.'
+          } else {
+            errorMessage = `Upload video thất bại (Status: ${xhr.status})`
           }
         }
         
@@ -2052,7 +2133,9 @@ const uploadVideoToR2 = async (
     })
     
     // Handle errors
-    xhr.addEventListener('error', () => {
+    xhr.addEventListener('error', (event) => {
+      console.error('❌ [Video Upload] Network error:', event)
+      
       // Clear intervals on error
       if (processingIntervalId) {
         clearInterval(processingIntervalId)
@@ -2070,7 +2153,7 @@ const uploadVideoToR2 = async (
         introVideoUploadProgress.percent = 0
         introVideoUploadProgress.stage = 'uploading'
       }
-      reject(new Error('Lỗi kết nối khi upload video'))
+      reject(new Error('Lỗi kết nối khi upload video. Vui lòng kiểm tra kết nối mạng.'))
     })
     
     xhr.addEventListener('abort', () => {
@@ -2100,8 +2183,12 @@ const uploadVideoToR2 = async (
     // Set headers
     if (authStore.token) {
       xhr.setRequestHeader('Authorization', `Bearer ${authStore.token}`)
+      console.log('📤 [Video Upload] Authorization header set')
+    } else {
+      console.warn('⚠️ [Video Upload] No token available!')
     }
     
+    console.log('📤 [Video Upload] Sending request...')
     xhr.send(uploadFormData)
   })
 }
@@ -2298,6 +2385,7 @@ const resetForm = () => {
       name: '',
       avatar: '',
       bio: '',
+      specialization: '',
     },
     category: '',
     level: 'beginner',
@@ -2373,7 +2461,7 @@ const editCourse = async (course: Course) => {
         price: courseData.price || 0,
         originalPrice: courseData.originalPrice || 0,
         discount: courseData.discount || 0,
-        instructor: courseData.instructor || { name: '', avatar: '', bio: '' },
+        instructor: courseData.instructor || { name: '', avatar: '', bio: '', specialization: '' },
         category: courseData.category || '',
         level: courseData.level || 'beginner',
         tags: courseData.tags || [],
@@ -2576,8 +2664,220 @@ const editCourse = async (course: Course) => {
     message.error('Không thể tải thông tin khóa học')
   }
   
+  // Fetch reviews for this course
+  if (editingCourse.value?._id) {
+    await fetchCourseReviews(editingCourse.value._id)
+  }
+  
   modalVisible.value = true
   activeTab.value = 'basic' // Reset về tab đầu tiên
+}
+
+// Get API base URL
+const getApiBase = () => {
+  const config = useRuntimeConfig()
+  const apiHost = (config.public.apiHost || '').replace(/\/+$/, '')
+  const apiBase = config.public.apiBase || '/api/a'
+  
+  if (apiHost) {
+    return `${apiHost}/api/a`
+  } else if (apiBase.startsWith('http://') || apiBase.startsWith('https://')) {
+    return apiBase.replace(/\/+$/, '')
+  } else {
+    return apiBase.replace(/\/+$/, '')
+  }
+}
+
+// Fetch course reviews
+const fetchCourseReviews = async (courseId: string) => {
+  try {
+    const apiBase = getApiBase()
+    const response: any = await $fetch(`${apiBase}/reviews/course/${courseId}`)
+    courseReviews.value = response.data?.reviews || response.reviews || []
+  } catch (error: any) {
+    console.error('Error fetching reviews:', error)
+    courseReviews.value = []
+  }
+}
+
+// Fetch users list
+const fetchUsersList = async () => {
+  try {
+    usersLoading.value = true
+    const response = await usersApi.getUsers({ limit: 1000 }) // Get all users
+    if (response.status && response.data) {
+      const data = response.data.data || response.data
+      usersList.value = Array.isArray(data) ? data : (data.users || [])
+    }
+  } catch (error: any) {
+    console.error('Error fetching users:', error)
+    message.error('Không thể tải danh sách người dùng')
+  } finally {
+    usersLoading.value = false
+  }
+}
+
+// Filter user option for select
+const filterUserOption = (input: string, option: any) => {
+  const user = usersList.value.find((u: any) => (u._id || u.id) === option.value)
+  if (!user) return false
+  const name = (user.fullname || user.name || user.email || '').toLowerCase()
+  return name.includes(input.toLowerCase())
+}
+
+// Handle user selection
+const handleUserSelect = (userId: string) => {
+  const selectedUser = usersList.value.find((u: any) => (u._id || u.id) === userId)
+  if (selectedUser) {
+    reviewFormData.userName = selectedUser.fullname || selectedUser.name || selectedUser.email || ''
+    reviewFormData.userAvatar = selectedUser.avatar || '/images/avatar-demo.png'
+    reviewFormData.selectedUserId = userId
+  }
+}
+
+// Show add review modal
+const showAddReviewModal = async () => {
+  editingReview.value = null
+  reviewFormData.selectedUserId = null
+  reviewFormData.userName = ''
+  reviewFormData.userAvatar = '/images/avatar-demo.png'
+  reviewFormData.rating = 5
+  reviewFormData.content = ''
+  reviewFormData.isVerified = true
+  
+  // Fetch users if not already loaded
+  if (usersList.value.length === 0) {
+    await fetchUsersList()
+  }
+  
+  reviewModalVisible.value = true
+}
+
+// Edit review
+const editReview = async (review: any, index: number) => {
+  editingReview.value = review
+  reviewFormData.userName = review.userName || ''
+  reviewFormData.userAvatar = review.userAvatar || '/images/avatar-demo.png'
+  reviewFormData.rating = review.rating || 5
+  reviewFormData.content = review.content || ''
+  reviewFormData.isVerified = review.isVerified !== undefined ? review.isVerified : true
+  
+  // Try to find user by userId or match by name/avatar
+  if (review.userId) {
+    reviewFormData.selectedUserId = review.userId
+  } else {
+    // Try to find user by name
+    const matchedUser = usersList.value.find((u: any) => 
+      (u.fullname || u.name || u.email) === review.userName
+    )
+    if (matchedUser) {
+      reviewFormData.selectedUserId = matchedUser._id || matchedUser.id
+    } else {
+      reviewFormData.selectedUserId = null
+    }
+  }
+  
+  // Fetch users if not already loaded
+  if (usersList.value.length === 0) {
+    await fetchUsersList()
+  }
+  
+  reviewModalVisible.value = true
+}
+
+// Delete review
+const deleteReview = async (reviewId: string, index: number) => {
+  try {
+    Modal.confirm({
+      title: 'Xác nhận xóa',
+      content: 'Bạn có chắc chắn muốn xóa đánh giá này?',
+      okText: 'Xóa',
+      okType: 'danger',
+      cancelText: 'Hủy',
+      async onOk() {
+        try {
+          const apiBase = getApiBase()
+          await $fetch(`${apiBase}/reviews/${reviewId}`, {
+            method: 'DELETE'
+          })
+          courseReviews.value.splice(index, 1)
+          message.success('Xóa đánh giá thành công')
+        } catch (error: any) {
+          console.error('Error deleting review:', error)
+          message.error('Xóa đánh giá thất bại')
+        }
+      }
+    })
+  } catch (error) {
+    // User cancelled
+  }
+}
+
+// Save review (create or update)
+const saveReview = async () => {
+  try {
+    await reviewFormRef.value?.validate()
+    reviewModalLoading.value = true
+    
+    const apiBase = getApiBase()
+    const courseId = editingCourse.value?._id || formData._id
+    
+    if (!courseId) {
+      message.error('Không tìm thấy ID khóa học')
+      return
+    }
+    
+    if (editingReview.value) {
+      // Update review
+      const response: any = await $fetch(`${apiBase}/reviews/${editingReview.value._id}`, {
+        method: 'PUT',
+        body: {
+          userName: reviewFormData.userName,
+          userAvatar: reviewFormData.userAvatar,
+          rating: reviewFormData.rating,
+          content: reviewFormData.content,
+          isVerified: reviewFormData.isVerified,
+        }
+      })
+      
+      // Update in local array
+      const index = courseReviews.value.findIndex((r: any) => r._id === editingReview.value._id)
+      if (index !== -1) {
+        courseReviews.value[index] = response.data?.review || response.review || { ...editingReview.value, ...reviewFormData }
+      }
+      
+      message.success('Cập nhật đánh giá thành công')
+    } else {
+      // Create new review
+      const response: any = await $fetch(`${apiBase}/reviews`, {
+        method: 'POST',
+        body: {
+          courseId,
+          userId: reviewFormData.selectedUserId || 'admin',
+          userName: reviewFormData.userName,
+          userAvatar: reviewFormData.userAvatar,
+          rating: reviewFormData.rating,
+          content: reviewFormData.content,
+          isVerified: reviewFormData.isVerified,
+        }
+      })
+      
+      // Add to local array
+      const newReview = response.data?.review || response.review
+      if (newReview) {
+        courseReviews.value.unshift(newReview)
+      }
+      
+      message.success('Tạo đánh giá thành công')
+    }
+    
+    reviewModalVisible.value = false
+  } catch (error: any) {
+    console.error('Error saving review:', error)
+    message.error(error.message || 'Lưu đánh giá thất bại')
+  } finally {
+    reviewModalLoading.value = false
+  }
 }
 
 // Updated handleModalOk
@@ -3004,11 +3304,16 @@ const refreshData = () => {
 // New handlers for lesson file uploads
 // Upload lesson video to R2/CDN
 const handleLessonVideoChange = async (chapterIndex: number, lessonIndex: number, info: any) => {
+  console.log('📤 [Lesson Video Upload] handleLessonVideoChange called', { chapterIndex, lessonIndex })
+  
   const lesson = formData.chapters[chapterIndex].lessons[lessonIndex]
   const { fileList } = info
   
+  console.log('📤 [Lesson Video Upload] File list:', fileList)
+  
   if (fileList.length > 0 && fileList[0].originFileObj) {
     const file = fileList[0].originFileObj as File
+    console.log('📤 [Lesson Video Upload] File selected:', file.name, file.size)
     
     // Set uploading state
     lesson.uploadingVideo = true
@@ -3187,11 +3492,17 @@ const pollIntroVideoJobStatus = async (jobId: string) => {
   introVideoPollInterval.value = setInterval(async () => {
     try {
       pollCount++
+      console.log(`🔍 [Intro Video Polling] Polling job ${jobId}, attempt ${pollCount}`)
       const response = await uploadsApi.getVideoJobStatus(jobId)
-      const jobStatus = response?.data?.status || response?.status
-      const jobResult = response?.data?.result || response?.result
-      const errorMessage = response?.data?.errorMessage || response?.errorMessage
-      const state = response?.data?.state || response?.state
+      const jobData = response?.data || response
+      // jobData.status is the real job status; response.status is only success boolean
+      const jobStatus = jobData?.status ?? jobData?.data?.status ?? ''
+      const jobResult = jobData?.result ?? jobData?.data?.result ?? null
+      const errorMessage = jobData?.errorMessage ?? jobData?.data?.errorMessage ?? null
+      const state = jobData?.state ?? jobData?.data?.state ?? ''
+      const progress = jobData?.progress ?? jobData?.data?.progress ?? 0
+      
+      console.log(`🔍 [Intro Video Polling] Job ${jobId} status: ${jobStatus}, state: ${state}, progress: ${progress}%`)
       
       // If job not found but video URL exists, consider it ready
       if (state === 'not_found' || jobStatus === 'unknown') {
@@ -3201,14 +3512,20 @@ const pollIntroVideoJobStatus = async (jobId: string) => {
             introVideoPollInterval.value = null
           }
           formData.introVideoStatus = 'ready'
-          introVideoUploadProgress.percent = 0
-          introVideoUploadProgress.stage = ''
-          introVideoUploadProgress.uploaded = 0
-          introVideoUploadProgress.total = 0
-          introVideoUploadProgress.speed = 0
-          introVideoUploadProgress.timeRemaining = 0
-          introVideoUploadProgress.fileUploadPercent = 0
-          uploadingIntroVideo.value = false
+          // Update progress to 100% before hiding
+          introVideoUploadProgress.percent = 100
+          introVideoUploadProgress.stage = 'ready'
+          // Wait 2 seconds for final progress animation, then hide
+          setTimeout(() => {
+            introVideoUploadProgress.percent = 0
+            introVideoUploadProgress.stage = ''
+            introVideoUploadProgress.uploaded = 0
+            introVideoUploadProgress.total = 0
+            introVideoUploadProgress.speed = 0
+            introVideoUploadProgress.timeRemaining = 0
+            introVideoUploadProgress.fileUploadPercent = 0
+            uploadingIntroVideo.value = false
+          }, 2000)
           message.success('Video đã xử lý xong')
           return
         }
@@ -3225,20 +3542,30 @@ const pollIntroVideoJobStatus = async (jobId: string) => {
           formData.introVideo = jobResult.hlsUrl || jobResult.url || formData.introVideo
           formData.introVideoHlsUrl = jobResult.hlsUrl || formData.introVideoHlsUrl
           formData.introVideoStatus = 'ready'
+          // Auto-update thumbnail from video processing result
+          if (jobResult.thumbnail) {
+            formData.introVideoThumbnail = jobResult.thumbnail
+          }
           formData.introVideoQualityMetadata = jobResult.qualityMetadata || formData.introVideoQualityMetadata
         } else {
           formData.introVideoStatus = 'ready'
         }
         
-        // Clear progress tracker
-        introVideoUploadProgress.percent = 0
-        introVideoUploadProgress.stage = ''
-        introVideoUploadProgress.uploaded = 0
-        introVideoUploadProgress.total = 0
-        introVideoUploadProgress.speed = 0
-        introVideoUploadProgress.timeRemaining = 0
-        introVideoUploadProgress.fileUploadPercent = 0
-        uploadingIntroVideo.value = false
+        // Update progress to 100% before hiding
+        introVideoUploadProgress.percent = 100
+        introVideoUploadProgress.stage = 'ready'
+        
+        // Wait 2 seconds for final progress animation, then hide
+        setTimeout(() => {
+          introVideoUploadProgress.percent = 0
+          introVideoUploadProgress.stage = ''
+          introVideoUploadProgress.uploaded = 0
+          introVideoUploadProgress.total = 0
+          introVideoUploadProgress.speed = 0
+          introVideoUploadProgress.timeRemaining = 0
+          introVideoUploadProgress.fileUploadPercent = 0
+          uploadingIntroVideo.value = false
+        }, 2000)
         
         message.success('Video đã xử lý xong')
       } else if (jobStatus === 'error') {
@@ -3249,17 +3576,33 @@ const pollIntroVideoJobStatus = async (jobId: string) => {
         formData.introVideoStatus = 'error'
         formData.introVideoErrorMessage = errorMessage || 'Lỗi xử lý video'
         uploadingIntroVideo.value = false
+        // Clear progress on error
+        introVideoUploadProgress.percent = 0
+        introVideoUploadProgress.stage = ''
+        introVideoUploadProgress.uploaded = 0
+        introVideoUploadProgress.total = 0
+        introVideoUploadProgress.speed = 0
+        introVideoUploadProgress.timeRemaining = 0
+        introVideoUploadProgress.fileUploadPercent = 0
         message.error('Lỗi xử lý video: ' + (errorMessage || 'Unknown error'))
       } else if (jobStatus === 'processing') {
-        // Only update status if we're actually uploading (not loading from database)
-        if (uploadingIntroVideo.value) {
-          formData.introVideoStatus = 'processing'
-        }
+        // Update status
+        formData.introVideoStatus = 'processing'
+        // CRITICAL: Sync frontend progress with backend job progress
+        // Backend progress: 50% (reading file), 70% (converting HLS), 85% (uploading), 100% (done)
+        // Use actual backend progress instead of simulated
+        introVideoUploadProgress.percent = progress || 70
+        introVideoUploadProgress.stage = progress >= 85 ? 'uploading-r2' : progress >= 70 ? 'processing' : 'queueing'
+        // Keep progress tracker visible while backend is processing
+        uploadingIntroVideo.value = true
+        console.log(`🔄 [Intro Video Polling] Job ${jobId} is processing, progress: ${progress}% (synced with backend)`)
       } else if (jobStatus === 'queueing') {
-        // Only update status if we're actually uploading (not loading from database)
-        if (uploadingIntroVideo.value) {
-          formData.introVideoStatus = 'queueing'
-        }
+        formData.introVideoStatus = 'queueing'
+        // Update progress to 40% (after file upload, before processing)
+        introVideoUploadProgress.percent = 40
+        introVideoUploadProgress.stage = 'queueing'
+        uploadingIntroVideo.value = true
+        console.log(`⏳ [Intro Video Polling] Job ${jobId} is queueing`)
       }
       
       // Stop polling after max attempts
@@ -3272,15 +3615,38 @@ const pollIntroVideoJobStatus = async (jobId: string) => {
           formData.introVideoStatus = 'error'
           formData.introVideoErrorMessage = 'Timeout: Video processing took too long'
           uploadingIntroVideo.value = false
+          // Clear progress on timeout
+          introVideoUploadProgress.percent = 0
+          introVideoUploadProgress.stage = ''
+          introVideoUploadProgress.uploaded = 0
+          introVideoUploadProgress.total = 0
+          introVideoUploadProgress.speed = 0
+          introVideoUploadProgress.timeRemaining = 0
+          introVideoUploadProgress.fileUploadPercent = 0
         }
       }
     } catch (error: any) {
-      console.error('Error polling intro video job status:', error)
-      // Continue polling on error (might be temporary)
+      console.error(`❌ [Intro Video Polling] Error polling job ${jobId}:`, error)
+      // Continue polling on error (might be temporary network issue)
+      // But stop after max attempts
       if (pollCount >= maxPolls) {
         if (introVideoPollInterval.value) {
           clearInterval(introVideoPollInterval.value)
           introVideoPollInterval.value = null
+        }
+        if (formData.introVideoStatus !== 'ready' && formData.introVideoStatus !== 'error') {
+          formData.introVideoStatus = 'error'
+          formData.introVideoErrorMessage = 'Timeout: Video processing took too long or server error'
+          uploadingIntroVideo.value = false
+          // Clear progress on error
+          introVideoUploadProgress.percent = 0
+          introVideoUploadProgress.stage = ''
+          introVideoUploadProgress.uploaded = 0
+          introVideoUploadProgress.total = 0
+          introVideoUploadProgress.speed = 0
+          introVideoUploadProgress.timeRemaining = 0
+          introVideoUploadProgress.fileUploadPercent = 0
+          message.error('Lỗi xử lý video: Timeout hoặc lỗi server')
         }
       }
     }

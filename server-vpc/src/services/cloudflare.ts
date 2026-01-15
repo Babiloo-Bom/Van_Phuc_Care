@@ -178,6 +178,37 @@ class CloudflareR2Service {
     }
   }
 
+  /** Lấy file buffer từ R2 */
+  public async getFile(objectName: string): Promise<Buffer | null> {
+    try {
+      const command = new GetObjectCommand({
+        Bucket: this.bucketName,
+        Key: objectName,
+      });
+
+      const response = await this.client.send(command);
+      
+      if (!response.Body) {
+        return null;
+      }
+
+      // Convert stream to buffer
+      const chunks: Uint8Array[] = [];
+      // @ts-ignore - Body is a Readable stream
+      for await (const chunk of response.Body) {
+        chunks.push(chunk);
+      }
+
+      return Buffer.concat(chunks);
+    } catch (error: any) {
+      console.error("❌ Get file error:", error);
+      if (error.name === 'NoSuchKey') {
+        return null;
+      }
+      throw error;
+    }
+  }
+
   /**
    * Xóa tất cả files trong folder (prefix)
    * @param prefix Folder prefix (e.g., "courses/intro-videos/hls" or "lessons/123/videos/hls")
