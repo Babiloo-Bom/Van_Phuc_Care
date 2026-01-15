@@ -459,10 +459,22 @@ export default class VideoProxyController {
       // Get video URL (external URL hoặc presigned R2 URL)
       let videoUrl: string;
       if (videoPath.startsWith('http://') || videoPath.startsWith('https://')) {
-        // External URL (Pexels, etc.) - stream trực tiếp
-        videoUrl = videoPath;
+        // Check if this is an R2 public URL (need to convert to presigned URL)
+        const r2PublicUrl = process.env.CLOUDFLARE_R2_PUBLIC_URL;
+        if (r2PublicUrl && videoPath.startsWith(r2PublicUrl)) {
+          // This is an R2 public URL - extract object name and create presigned URL
+          // URL format: https://xxx.r2.dev/object/name/path
+          const objectName = videoPath.replace(r2PublicUrl, '').replace(/^\//, '');
+          console.log('📦 R2 public URL detected, extracting object name:', objectName);
+          console.log('📦 Getting presigned URL for object:', objectName);
+          videoUrl = await CloudflareService.getFileUrl(objectName, 300); // 5 minutes
+          console.log('📦 Presigned URL created:', videoUrl.substring(0, 100) + '...');
+        } else {
+          // External URL (Pexels, etc.) - stream trực tiếp
+          videoUrl = videoPath;
+        }
       } else {
-        // R2 path - get presigned URL
+        // R2 path (object name) - get presigned URL
         // Remove leading slash and /vanphuccare-video-edu/ prefix if present
         const objectName = videoPath.replace(/^\/vanphuccare-video-edu\//, '').replace(/^\//, '');
         console.log('📦 Getting presigned URL for object:', objectName);

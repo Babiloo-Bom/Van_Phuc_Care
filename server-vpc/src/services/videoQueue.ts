@@ -149,35 +149,43 @@ export async function processVideoJob(job: Queue.Job<VideoJobData>) {
     const playlistBuffer = fs.readFileSync(playlistPath);
     const playlistName = originalName.replace(/\.(mp4|mov|avi|mkv)$/i, '.m3u8');
     const hlsFolder = `${folder}/hls`;
+    console.log(`📤 [Video Queue] Uploading HLS playlist: ${playlistName} to folder: ${hlsFolder}`);
+    console.log(`📤 [Video Queue] Playlist buffer size: ${playlistBuffer.length} bytes`);
     const playlistObjectName = await CloudflareService.uploadFile(
       playlistBuffer,
       playlistName,
       'application/vnd.apple.mpegurl',
       hlsFolder
     );
+    console.log(`✅ [Video Queue] Playlist uploaded successfully: ${playlistObjectName}`);
     const playlistUrl = CloudflareService.getPublicUrl(playlistObjectName);
+    console.log(`✅ [Video Queue] Playlist public URL: ${playlistUrl}`);
 
     // Get video metadata before conversion
     const qualityMetadata = await HlsConverter.getVideoMetadataFromBuffer(fileBuffer, originalName);
 
     // Upload all HLS segments (.ts) to R2
     const segmentUrls: string[] = [];
+    console.log(`📤 [Video Queue] Uploading ${segmentPaths.length} HLS segments to folder: ${hlsFolder}`);
     for (let i = 0; i < segmentPaths.length; i++) {
       const segmentPath = segmentPaths[i];
       const segmentBuffer = fs.readFileSync(segmentPath);
       const segmentFileName = path.basename(segmentPath);
+      console.log(`📤 [Video Queue] Uploading segment ${i + 1}/${segmentPaths.length}: ${segmentFileName} (${segmentBuffer.length} bytes)`);
       const segmentObjectName = await CloudflareService.uploadFile(
         segmentBuffer,
         segmentFileName,
         'video/mp2t',
         hlsFolder
       );
+      console.log(`✅ [Video Queue] Segment ${i + 1}/${segmentPaths.length} uploaded: ${segmentObjectName}`);
       segmentUrls.push(CloudflareService.getPublicUrl(segmentObjectName));
       
       // Update progress for each segment
       const segmentProgress = 85 + Math.floor((i + 1) / segmentPaths.length * 10);
       await job.progress(segmentProgress);
     }
+    console.log(`✅ [Video Queue] All ${segmentPaths.length} segments uploaded successfully`);
 
     // Update job progress to 100% before cleanup
     await job.progress(100);
@@ -193,6 +201,37 @@ export async function processVideoJob(job: Queue.Job<VideoJobData>) {
 
     console.log(`✅ [Video Queue] Job ${job.id} completed: ${originalName}`);
     console.log(`✅ [Video Queue] Job ${job.id} result hlsUrl: ${playlistUrl}`);
+
+    // Verify upload by listing objects in folder
+    try {
+      // @ts-ignore - @aws-sdk/client-s3 is installed but TypeScript may not recognize it
+      const { S3Client, ListObjectsV2Command } = await import('@aws-sdk/client-s3');
+      const bucketName = process.env.CLOUDFLARE_R2_BUCKET_NAME!;
+      const listCommand = new ListObjectsV2Command({
+        Bucket: bucketName,
+        Prefix: hlsFolder + '/',
+      });
+      const tempClient = new S3Client({
+        region: "auto",
+        endpoint: `https://${process.env.CLOUDFLARE_R2_ACCOUNT_ID}.r2.cloudflarestorage.com`,
+        credentials: {
+          accessKeyId: process.env.CLOUDFLARE_R2_ACCESS_KEY_ID!,
+          secretAccessKey: process.env.CLOUDFLARE_R2_SECRET_ACCESS_KEY!,
+        },
+        forcePathStyle: true,
+      });
+      const listResponse = await tempClient.send(listCommand);
+      const uploadedObjects = listResponse.Contents || [];
+      console.log(`✅ [Video Queue] Verification: Found ${uploadedObjects.length} objects in folder ${hlsFolder}/`);
+      console.log(`✅ [Video Queue] Expected: 1 playlist + ${segmentPaths.length} segments = ${1 + segmentPaths.length} objects`);
+      if (uploadedObjects.length > 0) {
+        console.log(`✅ [Video Queue] Uploaded objects:`, uploadedObjects.map((obj: any) => obj.Key).join(', '));
+      } else {
+        console.error(`❌ [Video Queue] WARNING: No objects found in folder ${hlsFolder}/ after upload!`);
+      }
+    } catch (verifyError: any) {
+      console.warn(`⚠️ [Video Queue] Could not verify upload:`, verifyError.message);
+    }
 
     return {
       filename: originalName,

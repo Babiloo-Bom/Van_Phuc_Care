@@ -46,18 +46,49 @@ class CloudflareR2Service {
       const cleanFileName = fileName.replace(/[^\x20-\x7E]/g, "").replace(/\s+/g, "-");
       const objectName = `${folder}/${Date.now()}-${cleanFileName}`;
 
-      await this.client.send(
-        new PutObjectCommand({
+      console.log(`📤 [R2 Upload] Uploading file: ${fileName}`);
+      console.log(`📤 [R2 Upload] Object name: ${objectName}`);
+      console.log(`📤 [R2 Upload] Bucket: ${this.bucketName}`);
+      console.log(`📤 [R2 Upload] File size: ${fileBuffer.length} bytes`);
+      console.log(`📤 [R2 Upload] Content type: ${contentType}`);
+
+      const command = new PutObjectCommand({
+        Bucket: this.bucketName,
+        Key: objectName,
+        Body: fileBuffer,
+        ContentType: contentType,
+      });
+
+      const response = await this.client.send(command);
+      
+      console.log(`✅ [R2 Upload] Upload successful: ${objectName}`);
+      console.log(`✅ [R2 Upload] Response ETag: ${response.ETag || 'N/A'}`);
+
+      // Verify upload by checking if object exists
+      try {
+        const headCommand = new HeadObjectCommand({
           Bucket: this.bucketName,
           Key: objectName,
-          Body: fileBuffer,
-          ContentType: contentType,
-        })
-      );
+        });
+        const headResponse = await this.client.send(headCommand);
+        console.log(`✅ [R2 Upload] Verified object exists: ${objectName}`);
+        console.log(`✅ [R2 Upload] Object size: ${headResponse.ContentLength || 'N/A'} bytes`);
+      } catch (verifyError: any) {
+        console.error(`⚠️ [R2 Upload] Warning: Could not verify upload for ${objectName}:`, verifyError.message);
+        // Don't throw - upload might have succeeded but verification failed
+      }
 
       return objectName;
-    } catch (error) {
-      console.error("❌ Upload to R2 error:", error);
+    } catch (error: any) {
+      console.error("❌ [R2 Upload] Upload to R2 error:", error);
+      console.error("❌ [R2 Upload] Error details:", {
+        message: error.message,
+        name: error.name,
+        code: error.Code || error.code,
+        bucket: this.bucketName,
+        fileName,
+        folder,
+      });
       throw error;
     }
   }
