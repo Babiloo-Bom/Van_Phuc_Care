@@ -467,13 +467,35 @@ class CourseController {
 
       const transformedChapters = await Promise.all(
         chapters.map(async (chapter: any, chapterIndex: number) => {
-          const lessons = await LessonsModel.model
+          // Get all lessons for this chapter, then deduplicate by _id
+          // This prevents duplicate lessons from appearing (in case of data inconsistency)
+          const allLessons = await LessonsModel.model
             .find({
               chapterId: chapter._id,
               status: "active",
             })
             .populate("quiz")
             .sort({ createdAt: 1 });
+          
+          // Deduplicate lessons by _id (keep the most recent one if duplicates exist)
+          const lessonMap = new Map();
+          for (const lesson of allLessons) {
+            const lessonId = lesson._id.toString();
+            const lessonData = lesson as any;
+            if (!lessonMap.has(lessonId)) {
+              lessonMap.set(lessonId, lesson);
+            } else {
+              // If duplicate exists, keep the one with later createdAt
+              const existing = lessonMap.get(lessonId) as any;
+              const existingCreatedAt = existing?.createdAt || new Date(0);
+              const lessonCreatedAt = lessonData?.createdAt || new Date(0);
+              if (lessonCreatedAt > existingCreatedAt) {
+                lessonMap.set(lessonId, lesson);
+              }
+            }
+          }
+          
+          const lessons = Array.from(lessonMap.values());
 
           const transformedLessons = await Promise.all(
             lessons.map(async (lesson: any, lessonIndex: number) => {
@@ -689,12 +711,33 @@ class CourseController {
 
       const chaptersWithLessons = await Promise.all(
         chapters.map(async (chapter: any) => {
-          const lessons = await LessonsModel.model
+          // Get all lessons for this chapter, then deduplicate by _id
+          const allLessons = await LessonsModel.model
             .find({
               chapterId: chapter._id,
               status: "active",
             })
             .sort({ index: 1 });
+          
+          // Deduplicate lessons by _id (keep the most recent one if duplicates exist)
+          const lessonMap = new Map();
+          for (const lesson of allLessons) {
+            const lessonId = lesson._id.toString();
+            const lessonData = lesson as any;
+            if (!lessonMap.has(lessonId)) {
+              lessonMap.set(lessonId, lesson);
+            } else {
+              // If duplicate exists, keep the one with later createdAt
+              const existing = lessonMap.get(lessonId) as any;
+              const existingCreatedAt = existing?.createdAt || new Date(0);
+              const lessonCreatedAt = lessonData?.createdAt || new Date(0);
+              if (lessonCreatedAt > existingCreatedAt) {
+                lessonMap.set(lessonId, lesson);
+              }
+            }
+          }
+          
+          const lessons = Array.from(lessonMap.values());
 
           const lessonsWithQuiz = await Promise.all(
             lessons.map(async (lesson: any) => {

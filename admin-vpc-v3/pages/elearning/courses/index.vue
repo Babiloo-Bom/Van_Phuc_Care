@@ -2647,6 +2647,8 @@ const handleModalOk = async () => {
         index: idx,
         lessons: ch.lessons?.map((lesson: any) => {
           const lessonData: any = {
+            // CRITICAL: Include _id if lesson exists (for update, not create)
+            ...(lesson._id ? { _id: lesson._id } : {}),
             title: lesson.title,
             description: lesson.description,
             content: lesson.content || '',
