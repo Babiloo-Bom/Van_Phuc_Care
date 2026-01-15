@@ -143,10 +143,12 @@ const isCompleted = (course: any) => {
     (c: any) => c._id?.toString() === course._id?.toString()
   );
 
-  const progressPct =
+  const progressPct = Math.min(
     myCourse?.progress?.progressPercentage ??
     course?.progress?.progressPercentage ??
-    0;
+    0,
+    100
+  );
 
   const completedByUser =
     authStore.user?.courseCompleted?.includes(course._id.toString()) || false;
@@ -161,7 +163,7 @@ const isCompleted = (course: any) => {
 const getProgress = (courseId: string) => {
   const course = courseStore.myCourses.find((c: any) => c._id === courseId);
   if (course && course.progress) {
-    return course.progress.progressPercentage || 0;
+    return Math.min(course.progress.progressPercentage || 0, 100);
   }
   return 0;
 };

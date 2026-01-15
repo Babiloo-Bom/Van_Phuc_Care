@@ -211,8 +211,13 @@ export const useCoursesStore = defineStore('courses', {
       
       if (totalLessons === 0) return 0;
       
-      const completedLessons = state.processing.complete?.length || 0;
-      return Math.round((completedLessons / totalLessons) * 100);
+      // Count unique completed lessons (use Set to avoid duplicates)
+      const completedLessonIds = new Set(state.processing.complete || []);
+      const completedLessons = completedLessonIds.size;
+      
+      // Ensure progress never exceeds 100%
+      const actualCompletedLessons = Math.min(completedLessons, totalLessons);
+      return Math.min(Math.round((actualCompletedLessons / totalLessons) * 100), 100);
     },
     
     // Tổng số bài học

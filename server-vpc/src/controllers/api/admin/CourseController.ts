@@ -949,14 +949,19 @@ class CourseController {
           if (updatedChapter && Array.isArray(chapter.lessons)) {
             // Collect lesson IDs from request to keep existing lessons
             const lessonIdsToKeep = new Set<string>();
+            let hasLessonsWithoutId = false;
             for (const lessonData of chapter.lessons) {
               if (lessonData._id) {
                 lessonIdsToKeep.add(lessonData._id.toString());
+              } else {
+                hasLessonsWithoutId = true;
               }
             }
             
-            // Chỉ xóa lessons thực sự bị xóa (không còn trong request)
-            if (chapter._id) {
+            // CHỈ xóa lessons nếu request đầy đủ (tất cả lessons đều có _id)
+            // Điều này đảm bảo không xóa nhầm khi request không đầy đủ
+            // Nếu có lesson không có _id, có nghĩa là request có thể không đầy đủ, không xóa gì cả
+            if (chapter._id && !hasLessonsWithoutId && lessonIdsToKeep.size > 0) {
               const oldLessons = await LessonsModel.model.find({ chapterId: updatedChapter._id });
               for (const oldLesson of oldLessons) {
                 const oldLessonId = oldLesson._id.toString();
@@ -1004,6 +1009,8 @@ class CourseController {
                 // Xóa lesson từ database
                 await LessonsModel.model.findByIdAndDelete(oldLesson._id);
               }
+            } else if (chapter._id && hasLessonsWithoutId) {
+              console.log(`⚠️ [Course Update] Skipping lesson deletion - request contains lessons without _id (may be incomplete)`);
             }
 
             // Tạo lessons mới hoặc update lessons đã có

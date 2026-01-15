@@ -268,12 +268,14 @@ export default class ProgressController {
    */
   public static async updateCourseProgress(userId: string, courseId: string) {
     try {
-      // Count completed lessons for this course
-      const completedLessons = await LessonProgress.countDocuments({
+      // Count UNIQUE completed lessons for this course (use distinct to avoid duplicates)
+      // This ensures we only count each lesson once, even if there are duplicate records
+      const completedLessonIds = await LessonProgress.distinct('lessonId', {
         userId,
         courseId,
         completed: true
       });
+      const completedLessons = completedLessonIds.length;
 
       // Get course details to calculate total lessons
       const Course = mongoose.model('Course');
@@ -299,7 +301,12 @@ export default class ProgressController {
         totalLessons += lessonCount;
       }
 
-      const progressPercentage = totalLessons > 0 ? Math.round((completedLessons / totalLessons) * 100) : 0;
+      // Calculate progress percentage, ensuring it never exceeds 100%
+      // Also ensure completedLessons doesn't exceed totalLessons (in case of data inconsistency)
+      const actualCompletedLessons = Math.min(completedLessons, totalLessons);
+      const progressPercentage = totalLessons > 0 
+        ? Math.min(Math.round((actualCompletedLessons / totalLessons) * 100), 100) 
+        : 0;
 
       // Check if course progress already exists to preserve completedAt
       const existingProgress = await CourseProgress.findOne({
@@ -314,12 +321,13 @@ export default class ProgressController {
       console.log(`[updateCourseProgress] userId=${userId}, courseId=${courseId}, progress=${progressPercentage}%, existingCompletedAt=${existingProgress?.completedAt}, shouldSetCompletedAt=${shouldSetCompletedAt}`);
 
       // Update course progress
+      // Use actualCompletedLessons instead of completedLessons to ensure consistency
       const updateData: any = {
         userId,
         courseId,
         totalLessons,
-        completedLessons,
-        progressPercentage,
+        completedLessons: actualCompletedLessons, // Use capped value
+        progressPercentage, // Already capped at 100%
         lastAccessedAt: new Date()
       };
 

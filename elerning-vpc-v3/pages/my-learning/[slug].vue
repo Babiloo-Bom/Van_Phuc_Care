@@ -582,10 +582,11 @@ const currentThumbnail = computed(() => {
   return null;
 });
 
-// Course progress percentage from backend
+// Course progress percentage from backend (capped at 100%)
 const courseProgress = computed(() => {
   if (!course.value || !course.value.progress) return 0;
-  return course.value.progress.progressPercentage || 0;
+  const progress = course.value.progress.progressPercentage || 0;
+  return Math.min(progress, 100); // Ensure never exceeds 100%
 });
 
 // SEO - Must be after all computed properties are defined

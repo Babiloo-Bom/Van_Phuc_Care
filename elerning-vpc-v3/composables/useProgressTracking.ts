@@ -155,13 +155,22 @@ export const useProgressTracking = () => {
           0
         ) || 0;
 
-      const completedLessons = lessonProgress.value.filter(
-        (progress) => progress.courseId === courseId && progress.completed
-      ).length;
+      // Count UNIQUE completed lessons (use Set to avoid duplicates)
+      const completedLessonIds = new Set(
+        lessonProgress.value
+          .filter(
+            (progress) => progress.courseId === courseId && progress.completed
+          )
+          .map((progress) => progress.lessonId)
+      );
+      const completedLessons = completedLessonIds.size;
 
+      // Calculate progress percentage, ensuring it never exceeds 100%
+      // Also ensure completedLessons doesn't exceed totalLessons
+      const actualCompletedLessons = Math.min(completedLessons, totalLessons);
       const progressPercentage =
         totalLessons > 0
-          ? Math.round((completedLessons / totalLessons) * 100)
+          ? Math.min(Math.round((actualCompletedLessons / totalLessons) * 100), 100)
           : 0;
 
       // Update course progress
@@ -172,8 +181,8 @@ export const useProgressTracking = () => {
       const newCourseProgress: CourseProgress = {
         courseId,
         totalLessons,
-        completedLessons,
-        progressPercentage,
+        completedLessons: actualCompletedLessons, // Use capped value
+        progressPercentage, // Already capped at 100%
         lastAccessedAt: new Date(),
         completedAt: progressPercentage === 100 ? new Date() : undefined,
       };

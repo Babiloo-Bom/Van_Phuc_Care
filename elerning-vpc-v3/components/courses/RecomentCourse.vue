@@ -105,7 +105,7 @@ const handleViewDetail = (course: any) => {
 const getProgress = (courseId: string) => {
   const course = coursesStore.myCourses.find((c: any) => c._id === courseId);
   if (course && course.progress) {
-    return course.progress.progressPercentage || 0;
+    return Math.min(course.progress.progressPercentage || 0, 100);
   }
   return 0;
 };

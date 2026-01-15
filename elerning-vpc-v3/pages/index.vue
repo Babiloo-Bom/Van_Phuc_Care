@@ -502,7 +502,10 @@ const filteredCourses = computed(() => {
   return sourceCourses.map((c: any) => {
     const id = c._id?.toString()
     const myCourse = id ? myCoursesMap.get(id) : null
-    const progressPct = myCourse?.progress?.progressPercentage ?? c?.progress?.progressPercentage ?? getProgress(id || '')
+    const progressPct = Math.min(
+      myCourse?.progress?.progressPercentage ?? c?.progress?.progressPercentage ?? getProgress(id || ''),
+      100
+    )
     const isCompleted = myCourse?.progress?.isCompleted || c?.progress?.isCompleted || progressPct === 100
     const isPurchasedFlag = (c?.isPurchased === true) || purchasedSet.has(id || '')
     return {
@@ -540,7 +543,7 @@ const isPurchased = (courseId: string) => {
 const getProgress = (courseId: string) => {
   const course = coursesStore.myCourses.find((c: any) => c._id === courseId);
   if (course && course.progress) {
-    return course.progress.progressPercentage || 0;
+    return Math.min(course.progress.progressPercentage || 0, 100);
   }
   return 0;
   };
