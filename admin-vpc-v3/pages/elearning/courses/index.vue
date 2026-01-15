@@ -641,35 +641,26 @@
             <div class="chapters-section">
               <div v-for="(chapter, chapterIndex) in formData.chapters" :key="chapterIndex" class="chapter-item" style="margin-bottom: 24px; padding: 16px; border: 1px solid #d9d9d9; border-radius: 4px;">
                 <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px;">
-                  <h4>Chương {{ chapterIndex + 1 }}: {{ chapter.title || 'Chưa có tiêu đề' }}</h4>
+                  <h4>Phần {{ chapterIndex + 1 }}: {{ chapter.title || 'Chưa có tiêu đề' }}</h4>
                   <a-button type="text" danger @click="removeChapter(chapterIndex)">
-                    <DeleteOutlined /> Xóa chương
+                    <DeleteOutlined /> Xóa phần
                   </a-button>
                 </div>
                 <a-row :gutter="16">
                   <a-col :span="24">
-                    <a-form-item :label="`Tiêu đề chương ${chapterIndex + 1}`">
+                    <a-form-item :label="`Tiêu đề phần ${chapterIndex + 1}`">
                       <a-input
                         v-model:value="chapter.title"
-                        placeholder="Nhập tiêu đề chương"
-                      />
-                    </a-form-item>
-                  </a-col>
-                  <a-col :span="24">
-                    <a-form-item :label="`Mô tả chương ${chapterIndex + 1}`">
-                      <a-textarea
-                        v-model:value="chapter.description"
-                        placeholder="Nhập mô tả chương"
-                        :rows="2"
+                        placeholder="Nhập tiêu đề phần"
                       />
                     </a-form-item>
                   </a-col>
                 </a-row>
                 <div style="margin-top: 16px;">
-                  <h5>Bài học trong chương này:</h5>
+                  <h5>Bài học trong phần này:</h5>
                   <div v-for="(lesson, lessonIndex) in chapter.lessons" :key="lessonIndex" style="margin-top: 12px; padding: 16px; background: #f5f5f5; border-radius: 4px; border: 1px solid #d9d9d9;">
                     <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px;">
-                      <strong>Bài {{ lessonIndex + 1 }}: {{ lesson.title || 'Chưa có tiêu đề' }}</strong>
+                      <strong>B{{ lessonIndex + 1 }}: {{ lesson.title || 'Chưa có tiêu đề' }}</strong>
                       <a-button type="text" danger size="small" @click="removeLesson(chapterIndex, lessonIndex)">
                         <DeleteOutlined /> Xóa
                       </a-button>
@@ -1016,7 +1007,7 @@
                 </div>
               </div>
               <a-button type="dashed" style="width: 100%;" @click="addChapter">
-                <PlusOutlined /> Thêm chương mới
+                <PlusOutlined /> Thêm phần mới
               </a-button>
             </div>
           </a-tab-pane>

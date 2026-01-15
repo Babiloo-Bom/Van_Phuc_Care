@@ -35,7 +35,7 @@
         <template #header>
           <div class="chapter-header border-b border-[#ACD7F9] pb-2" @click.stop="handlePanelClick(chapterIndex, $event)">
             <div class="chapter-title">
-             Bài {{ chapterIndex + 1 }}: {{ chapter.title }}
+             P{{ chapterIndex + 1 }}: {{ chapter.title }}
             </div>
             <div class="chapter-lesson-count">
               {{ getTotalLessons(chapter) }} Lesson
