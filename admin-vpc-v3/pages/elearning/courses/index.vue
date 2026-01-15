@@ -636,8 +636,8 @@
             </a-row>
           </a-tab-pane>
 
-          <!-- Tab 3: Chương và bài học -->
-          <a-tab-pane key="chapters" tab="Chương & Bài học">
+          <!-- Tab 3: Nội dung khóa học -->
+          <a-tab-pane key="chapters" tab="Nội dung khóa học">
             <div class="chapters-section">
               <div v-for="(chapter, chapterIndex) in formData.chapters" :key="chapterIndex" class="chapter-item" style="margin-bottom: 24px; padding: 16px; border: 1px solid #d9d9d9; border-radius: 4px;">
                 <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px;">
@@ -683,22 +683,13 @@
                           />
                         </a-form-item>
                       </a-col>
-                      <a-col :span="24">
-                        <a-form-item label="Mô tả bài học">
-                          <a-textarea
-                            v-model:value="lesson.description"
-                            placeholder="Nhập mô tả bài học"
-                            :rows="2"
-                          />
-                        </a-form-item>
-                      </a-col>
                       <a-col :span="12">
-                        <a-form-item label="Loại bài học">
+                        <a-form-item label="Nội dung bài học">
                           <a-select v-model:value="lesson.type" style="width: 100%">
                             <a-select-option value="video">Video</a-select-option>
-                            <a-select-option value="document">Tài liệu</a-select-option>
-                            <a-select-option value="quiz">Quiz</a-select-option>
                             <a-select-option value="text">Văn bản</a-select-option>
+                            <a-select-option value="document">Tài liệu</a-select-option>
+                            <a-select-option value="quiz">Trắc Nghiệm</a-select-option>
                           </a-select>
                         </a-form-item>
                       </a-col>
@@ -964,29 +955,9 @@
                       <!-- Quiz Type -->
                       <template v-if="lesson.type === 'quiz'">
                         <a-col :span="24">
-                          <a-form-item label="Tiêu đề Quiz">
-                            <a-input
-                              v-model:value="lesson.quiz.title"
-                              placeholder="Nhập tiêu đề quiz"
-                            />
-                          </a-form-item>
-                        </a-col>
-                        <a-col :span="24">
-                          <a-form-item label="Mô tả Quiz">
-                            <a-textarea
-                              v-model:value="lesson.quiz.description"
-                              placeholder="Nhập mô tả quiz"
-                              :rows="2"
-                            />
-                          </a-form-item>
-                        </a-col>
-                        <a-col :span="24">
                           <div style="margin-bottom: 16px;">
                             <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
                               <strong>Câu hỏi:</strong>
-                              <a-button type="primary" size="small" @click="addQuestion(chapterIndex, lessonIndex)">
-                                <PlusOutlined /> Thêm câu hỏi
-                              </a-button>
                             </div>
                             <div v-for="(question, questionIndex) in (lesson.quiz.questions || [])" :key="questionIndex" style="margin-bottom: 16px; padding: 12px; background: white; border-radius: 4px; border: 1px solid #e8e8e8;">
                               <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
@@ -1018,14 +989,10 @@
                                   <PlusOutlined /> Thêm đáp án
                                 </a-button>
                               </div>
-                              <a-form-item label="Giải thích (tùy chọn)">
-                                <a-textarea
-                                  v-model:value="question.explanation"
-                                  placeholder="Nhập giải thích cho câu trả lời đúng"
-                                  :rows="2"
-                                />
-                              </a-form-item>
                             </div>
+                            <a-button type="primary" size="small" @click="addQuestion(chapterIndex, lessonIndex)" style="width: 100%; margin-top: 8px;">
+                              <PlusOutlined /> Thêm câu hỏi
+                            </a-button>
                           </div>
                         </a-col>
                       </template>
@@ -1033,11 +1000,10 @@
                       <!-- Text Type -->
                       <template v-if="lesson.type === 'text'">
                         <a-col :span="24">
-                          <a-form-item label="Nội dung văn bản">
-                            <a-textarea
-                              v-model:value="lesson.content"
-                              placeholder="Nhập nội dung văn bản"
-                              :rows="10"
+                          <a-form-item label="Nội dung bài học">
+                            <RichTextEditor
+                              v-model="lesson.content"
+                              placeholder="Nhập nội dung bài học"
                             />
                           </a-form-item>
                         </a-col>
@@ -2252,7 +2218,6 @@ const addQuestion = (chapterIndex: number, lessonIndex: number) => {
       { id: `opt-${Date.now()}-2`, text: '', isCorrect: false },
     ],
     correctAnswer: '',
-    explanation: '',
     points: 1,
   })
 }
@@ -2469,19 +2434,18 @@ const editCourse = async (course: Course) => {
               quiz: lesson.quiz ? {
               title: lesson.quiz.title || '',
               description: lesson.quiz.description || '',
-              questions: (lesson.quiz.questions || []).map((q: any) => ({
-                id: q.id || `q-${Date.now()}`,
+              questions: Array.isArray(lesson.quiz.questions) ? lesson.quiz.questions.map((q: any) => ({
+                id: q.id || q._id?.toString() || `q-${Date.now()}-${Math.random()}`,
                 question: q.question || '',
                 type: q.type || 'multiple-choice',
-                options: (q.options || []).map((opt: any) => ({
-                  id: opt.id || `opt-${Date.now()}`,
+                options: Array.isArray(q.options) ? q.options.map((opt: any) => ({
+                  id: opt.id || opt._id?.toString() || `opt-${Date.now()}-${Math.random()}`,
                   text: opt.text || '',
                   isCorrect: opt.isCorrect || false,
-                })),
+                })) : [],
                 correctAnswer: q.correctAnswer || '',
-                explanation: q.explanation || '',
                 points: q.points || 1,
-              })),
+              })) : [],
               passingScore: lesson.quiz.passingScore || 80,
               timeLimit: lesson.quiz.timeLimit || 0,
               attempts: lesson.quiz.attempts || 3,
@@ -2712,21 +2676,22 @@ const handleModalOk = async () => {
             documents: lesson.documents || [],
           }
 
-          // Handle quiz
-          if (lesson.type === 'quiz' && lesson.quiz) {
+          // Handle quiz - Always send quiz data if it exists, regardless of type
+          // This ensures quiz data is preserved even if user changes lesson type
+          if (lesson.quiz && lesson.quiz.questions && lesson.quiz.questions.length > 0) {
             lessonData.quizData = {
-              title: lesson.quiz.title,
-              description: lesson.quiz.description,
-              questions: lesson.quiz.questions.map((q: any) => ({
+              title: lesson.quiz.title || '',
+              description: lesson.quiz.description || '',
+              questions: (lesson.quiz.questions || []).map((q: any) => ({
                 id: q.id || `q-${Date.now()}`,
-                question: q.question,
-                type: q.type,
-                options: q.options.map((opt: any) => ({
+                question: q.question || '',
+                type: q.type || 'multiple-choice',
+                options: (q.options || []).map((opt: any) => ({
                   id: opt.id || `opt-${Date.now()}`,
-                  text: opt.text,
-                  isCorrect: opt.isCorrect,
+                  text: opt.text || '',
+                  isCorrect: opt.isCorrect || false,
                 })),
-                correctAnswer: q.options.find((opt: any) => opt.isCorrect)?.id || '',
+                correctAnswer: q.options?.find((opt: any) => opt.isCorrect)?.id || q.correctAnswer || '',
                 explanation: q.explanation || '',
                 points: q.points || 1,
               })),

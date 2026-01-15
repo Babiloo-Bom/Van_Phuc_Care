@@ -1361,4 +1361,158 @@ onUnmounted(() => {
   background: #12b863;
   transform: scale(1.1);
 }
+
+/* Quill Editor Content Styles */
+.prose :deep(p) {
+  margin-bottom: 1em;
+  line-height: 1.75;
+}
+
+.prose :deep(strong),
+.prose :deep(b) {
+  font-weight: 700;
+}
+
+.prose :deep(em),
+.prose :deep(i) {
+  font-style: italic;
+}
+
+.prose :deep(u) {
+  text-decoration: underline;
+}
+
+.prose :deep(s),
+.prose :deep(strike) {
+  text-decoration: line-through;
+}
+
+.prose :deep(h1) {
+  font-size: 2em;
+  font-weight: 700;
+  margin-top: 0.67em;
+  margin-bottom: 0.67em;
+  line-height: 1.2;
+}
+
+.prose :deep(h2) {
+  font-size: 1.5em;
+  font-weight: 700;
+  margin-top: 0.83em;
+  margin-bottom: 0.83em;
+  line-height: 1.3;
+}
+
+.prose :deep(h3) {
+  font-size: 1.17em;
+  font-weight: 700;
+  margin-top: 1em;
+  margin-bottom: 1em;
+  line-height: 1.4;
+}
+
+.prose :deep(h4) {
+  font-size: 1em;
+  font-weight: 700;
+  margin-top: 1.33em;
+  margin-bottom: 1.33em;
+  line-height: 1.5;
+}
+
+.prose :deep(h5) {
+  font-size: 0.83em;
+  font-weight: 700;
+  margin-top: 1.67em;
+  margin-bottom: 1.67em;
+  line-height: 1.6;
+}
+
+.prose :deep(h6) {
+  font-size: 0.67em;
+  font-weight: 700;
+  margin-top: 2.33em;
+  margin-bottom: 2.33em;
+  line-height: 1.7;
+}
+
+.prose :deep(ul),
+.prose :deep(ol) {
+  margin: 1em 0;
+  padding-left: 2em;
+}
+
+.prose :deep(ul) {
+  list-style-type: disc;
+}
+
+.prose :deep(ol) {
+  list-style-type: decimal;
+}
+
+.prose :deep(li) {
+  margin: 0.5em 0;
+  line-height: 1.75;
+}
+
+.prose :deep(blockquote) {
+  border-left: 4px solid #e5e7eb;
+  padding-left: 1em;
+  margin: 1em 0;
+  font-style: italic;
+  color: #6b7280;
+}
+
+.prose :deep(code) {
+  background-color: #f3f4f6;
+  padding: 0.2em 0.4em;
+  border-radius: 0.25rem;
+  font-family: 'Courier New', monospace;
+  font-size: 0.9em;
+}
+
+.prose :deep(pre) {
+  background-color: #f3f4f6;
+  padding: 1em;
+  border-radius: 0.5rem;
+  overflow-x: auto;
+  margin: 1em 0;
+}
+
+.prose :deep(pre code) {
+  background-color: transparent;
+  padding: 0;
+}
+
+.prose :deep(a) {
+  color: #1a75bb;
+  text-decoration: underline;
+}
+
+.prose :deep(a:hover) {
+  color: #155a8f;
+}
+
+.prose :deep(img) {
+  max-width: 100%;
+  height: auto;
+  border-radius: 0.5rem;
+  margin: 1em 0;
+}
+
+.prose :deep(video) {
+  max-width: 100%;
+  height: auto;
+  border-radius: 0.5rem;
+  margin: 1em 0;
+}
+
+.prose :deep(sub) {
+  vertical-align: sub;
+  font-size: 0.8em;
+}
+
+.prose :deep(sup) {
+  vertical-align: super;
+  font-size: 0.8em;
+}
 </style>
