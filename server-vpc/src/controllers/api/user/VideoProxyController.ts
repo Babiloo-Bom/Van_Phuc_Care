@@ -163,11 +163,15 @@ export default class VideoProxyController {
         console.log('📦 Segment request:', decodedSegmentPath);
         
         // Get video URL from lesson to understand the storage structure
+        // Priority: hlsUrl (for HLS videos) > videoUrl (for MP4 videos)
         let lessonVideoUrl: string | null = null;
-        if (lessonData.videoUrl) {
+        if (lessonData.videos && lessonData.videos.length > 0) {
+          const firstVideo = lessonData.videos[0];
+          lessonVideoUrl = firstVideo.hlsUrl || firstVideo.videoUrl || null;
+        } else if (lessonData.hlsUrl) {
+          lessonVideoUrl = lessonData.hlsUrl;
+        } else if (lessonData.videoUrl) {
           lessonVideoUrl = lessonData.videoUrl;
-        } else if (lessonData.videos && lessonData.videos.length > 0) {
-          lessonVideoUrl = lessonData.videos[0].videoUrl;
         }
         console.log('📦 Lesson video URL from DB:', lessonVideoUrl);
         
@@ -433,10 +437,15 @@ export default class VideoProxyController {
         }
       } else {
         // This is a manifest or MP4 request - get video path from lesson
-        if (lessonData.videoUrl) {
+        // Priority: hlsUrl (for HLS videos) > videoUrl (for MP4 videos)
+        if (lessonData.videos && lessonData.videos.length > 0) {
+          const firstVideo = lessonData.videos[0];
+          // Prefer hlsUrl if available (for HLS videos)
+          videoPath = firstVideo.hlsUrl || firstVideo.videoUrl || null;
+        } else if (lessonData.hlsUrl) {
+          videoPath = lessonData.hlsUrl;
+        } else if (lessonData.videoUrl) {
           videoPath = lessonData.videoUrl;
-        } else if (lessonData.videos && lessonData.videos.length > 0) {
-          videoPath = lessonData.videos[0].videoUrl;
         }
       }
 
