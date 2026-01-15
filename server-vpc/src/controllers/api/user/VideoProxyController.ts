@@ -25,6 +25,27 @@ interface VideoToken {
 
 export default class VideoProxyController {
   /**
+   * Helper: Detect protocol (http/https) correctly when behind proxy
+   */
+  private static getProtocol(req: Request): string {
+    // Check X-Forwarded-Proto header first (set by proxy/load balancer)
+    const forwardedProto = req.get('x-forwarded-proto');
+    const isHttps = forwardedProto === 'https' || 
+                   req.secure || 
+                   (req.headers['x-forwarded-ssl'] === 'on');
+    return isHttps ? 'https' : 'http';
+  }
+
+  /**
+   * Helper: Get host correctly when behind proxy
+   */
+  private static getHost(req: Request): string {
+    // Prefer X-Forwarded-Host if available (set by proxy/load balancer)
+    const forwardedHost = req.get('x-forwarded-host');
+    return forwardedHost || req.get('host') || 'localhost';
+  }
+
+  /**
    * Tạo signed token cho video
    * Token chỉ có hiệu lực 5 phút
    */
@@ -626,9 +647,11 @@ export default class VideoProxyController {
             
             console.log('📦 Manifest base URL:', manifestBaseUrl);
             
-            const protocol = req.protocol;
-            const host = req.get('host');
+            // Detect protocol and host correctly when behind proxy/load balancer
+            const protocol = VideoProxyController.getProtocol(req);
+            const host = VideoProxyController.getHost(req);
             const baseProxyUrl = `${protocol}://${host}/api/u/video/stream/${token}`;
+            console.log('📦 [Manifest] Base proxy URL:', baseProxyUrl);
             
             const modifiedManifest = manifestLines.map((line: string) => {
               // Skip comments and empty lines
