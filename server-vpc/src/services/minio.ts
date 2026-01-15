@@ -140,8 +140,30 @@ class MinioService {
     
     // Use MINIO_PUBLIC_URL for external access (important for Docker environments)
     // This should be set to the externally accessible URL (e.g., http://localhost:9000)
-    const publicBaseUrl = process.env.MINIO_PUBLIC_URL || 
+    let publicBaseUrl = process.env.MINIO_PUBLIC_URL || 
       `${process.env.MINIO_USE_SSL === 'true' ? 'https' : 'http'}://${process.env.MINIO_ENDPOINT || 'localhost'}:${process.env.MINIO_PORT || '9000'}`;
+    
+    // In production, use HTTPS domain instead of HTTP IP to avoid Mixed Content errors
+    const isProduction = process.env.NODE_ENV === 'production';
+    const isLocalhost = publicBaseUrl.includes('localhost') || publicBaseUrl.includes('127.0.0.1');
+    const isIpAddress = /^\d+\.\d+\.\d+\.\d+/.test(publicBaseUrl.replace(/^https?:\/\//, '').split(':')[0]);
+    
+    if (isProduction && !isLocalhost) {
+      // Check if MINIO_PUBLIC_URL_HTTPS is set (preferred)
+      if (process.env.MINIO_PUBLIC_URL_HTTPS) {
+        publicBaseUrl = process.env.MINIO_PUBLIC_URL_HTTPS;
+      } else if (publicBaseUrl.startsWith('http://') || isIpAddress) {
+        // Use HTTPS domain (files.vanphuccare.vn) if available, otherwise convert HTTP to HTTPS
+        // This assumes nginx is proxying MinIO with SSL
+        if (publicBaseUrl.includes('103.216.119.104') || publicBaseUrl.includes('vanphuccare')) {
+          // Use domain with HTTPS
+          publicBaseUrl = 'https://files.vanphuccare.vn';
+        } else {
+          // Convert HTTP to HTTPS
+          publicBaseUrl = publicBaseUrl.replace('http://', 'https://');
+        }
+      }
+    }
     
     return `${publicBaseUrl}/${this.bucketName}/${finalObjectName}`;
   }
