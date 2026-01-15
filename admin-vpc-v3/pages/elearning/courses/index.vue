@@ -305,10 +305,10 @@
                 </a-form-item>
               </a-col>
               <a-col :span="24">
-                <a-form-item label="Mô tả chi tiết" name="description">
+                <a-form-item label="Tổng quan" name="description">
                   <RichTextEditor
                     v-model="formData.description"
-                    placeholder="Nhập mô tả chi tiết về khóa học"
+                    placeholder="Nhập tổng quan về khóa học"
                   />
                 </a-form-item>
               </a-col>
@@ -327,18 +327,6 @@
                     <a-select-option value="intermediate">Trung bình</a-select-option>
                     <a-select-option value="advanced">Nâng cao</a-select-option>
                   </a-select>
-                </a-form-item>
-              </a-col>
-              <a-col :span="8">
-                <a-form-item label="Giá (VND)" name="price">
-                  <a-input-number
-                    v-model:value="formData.price"
-                    :min="0"
-                    :formatter="value => `${value}`.replace(/\B(?=(\d{3})+(?!\d))/g, ',')"
-                    :parser="value => value!.replace(/\$\s?|(,*)/g, '')"
-                    style="width: 100%"
-                    placeholder="0"
-                  />
                 </a-form-item>
               </a-col>
               <a-col :span="8">
@@ -362,6 +350,25 @@
                     style="width: 100%"
                     placeholder="0"
                   />
+                  <div style="color: #8c8c8c; font-size: 12px; margin-top: 4px;">
+                    Giá = Giá gốc × (100 - Giảm giá) / 100
+                  </div>
+                </a-form-item>
+              </a-col>
+              <a-col :span="8">
+                <a-form-item label="Giá bán (VND)" name="price">
+                  <a-input-number
+                    v-model:value="formData.price"
+                    :min="0"
+                    :formatter="value => `${value}`.replace(/\B(?=(\d{3})+(?!\d))/g, ',')"
+                    :parser="value => value!.replace(/\$\s?|(,*)/g, '')"
+                    style="width: 100%"
+                    placeholder="0"
+                    disabled
+                  />
+                  <div style="color: #52c41a; font-size: 12px; margin-top: 4px;">
+                    Tự động tính từ giá gốc và giảm giá
+                  </div>
                 </a-form-item>
               </a-col>
               <a-col :span="24">
@@ -382,6 +389,30 @@
                   </a-upload>
                   <div v-if="formData.thumbnail && thumbnailFileList.length === 0" style="margin-top: 8px">
                     <img :src="formData.thumbnail" alt="Thumbnail" style="max-width: 200px; max-height: 200px; border-radius: 4px;" />
+                  </div>
+                </a-form-item>
+              </a-col>
+              <a-col :span="24">
+                <a-form-item label="Ảnh banner" name="banner">
+                  <a-upload
+                    v-model:file-list="bannerFileList"
+                    list-type="picture-card"
+                    :max-count="1"
+                    :before-upload="() => false"
+                    @change="handleBannerChange"
+                    @remove="handleRemoveBanner"
+                    accept="image/*"
+                  >
+                    <div v-if="bannerFileList.length < 1">
+                      <PlusOutlined />
+                      <div style="margin-top: 8px">Upload</div>
+                    </div>
+                  </a-upload>
+                  <div v-if="formData.banner && bannerFileList.length === 0" style="margin-top: 8px">
+                    <img :src="formData.banner" alt="Banner" style="max-width: 400px; max-height: 150px; border-radius: 4px; object-fit: cover;" />
+                  </div>
+                  <div style="color: #8c8c8c; font-size: 12px; margin-top: 4px;">
+                    Ảnh banner hiển thị ở trang chi tiết khóa học (khuyến nghị: 1200x400px)
                   </div>
                 </a-form-item>
               </a-col>
@@ -1256,6 +1287,7 @@ const viewingCourse = ref<Course | null>(null)
 
 // State for file uploads
 const thumbnailFileList = ref<UploadFile[]>([])
+const bannerFileList = ref<UploadFile[]>([])
 const introVideoFileList = ref<UploadFile[]>([])
 const introVideoThumbnailFileList = ref<UploadFile[]>([]) // Thumbnail riêng cho video
 const instructorAvatarFileList = ref<UploadFile[]>([])
@@ -1321,6 +1353,7 @@ const formData = reactive({
   description: '',
   shortDescription: '',
   thumbnail: '',
+  banner: '',
   introVideo: '',
   // Video metadata fields
   introVideoStatus: 'ready' as 'uploading' | 'queueing' | 'processing' | 'ready' | 'error',
@@ -1497,6 +1530,36 @@ const handleRemoveThumbnail = () => {
   formData.thumbnail = ''
   thumbnailFileList.value = []
   formRef.value?.clearValidate('thumbnail')
+}
+
+const handleBannerChange = (info: any) => {
+  console.log('📷 [Banner] handleBannerChange called:', info)
+  const { fileList } = info
+  console.log('📷 [Banner] fileList:', fileList)
+  if (fileList.length > 0) {
+    const file = fileList[0]
+    console.log('📷 [Banner] file:', file)
+    console.log('📷 [Banner] originFileObj:', file.originFileObj)
+    // Tạo preview URL từ file local
+    if (file.originFileObj) {
+      const reader = new FileReader()
+      reader.onload = (e) => {
+        formData.banner = e.target?.result as string
+        console.log('📷 [Banner] formData.banner set to base64 preview')
+      }
+      reader.readAsDataURL(file.originFileObj)
+    } else if (file.url) {
+      // Nếu đã có URL (khi edit)
+      formData.banner = file.url
+    }
+  } else {
+    formData.banner = ''
+  }
+}
+
+const handleRemoveBanner = () => {
+  formData.banner = ''
+  bannerFileList.value = []
 }
 
 const handleIntroVideoChange = async (info: any) => {
@@ -2366,6 +2429,7 @@ const resetForm = () => {
     description: '',
     shortDescription: '',
     thumbnail: '',
+    banner: '',
     introVideo: '',
     introVideoStatus: 'ready',
     introVideoHlsUrl: '',
@@ -2396,6 +2460,7 @@ const resetForm = () => {
     chapters: [],
   })
   thumbnailFileList.value = []
+  bannerFileList.value = []
   introVideoFileList.value = []
   introVideoThumbnailFileList.value = []
   instructorAvatarFileList.value = []
@@ -2444,6 +2509,7 @@ const editCourse = async (course: Course) => {
         description: courseData.description || '',
         shortDescription: courseData.shortDescription || '',
         thumbnail: courseData.thumbnail || '',
+        banner: courseData.banner || '',
         introVideo: courseData.introVideo || '',
         // Auto-fix status: if video has URL, it should be 'ready' (regardless of stored status)
         introVideoStatus: introVideoStatusValue,
@@ -2551,6 +2617,18 @@ const editCourse = async (course: Course) => {
         }]
       } else {
         thumbnailFileList.value = []
+      }
+
+      // Set banner file list if exists
+      if (courseData.banner) {
+        bannerFileList.value = [{
+          uid: '-1',
+          name: 'banner',
+          status: 'done',
+          url: courseData.banner,
+        }]
+      } else {
+        bannerFileList.value = []
       }
 
       // Set intro video file list if exists
@@ -2887,12 +2965,25 @@ const handleModalOk = async () => {
     modalLoading.value = true
     
     // Upload thumbnail to MinIO - CHỈ KHI CÓ FILE MỚI
+    console.log('📤 [Upload] thumbnailFileList:', thumbnailFileList.value.length, thumbnailFileList.value[0]?.originFileObj ? 'has originFileObj' : 'no originFileObj')
     if (thumbnailFileList.value.length > 0 && thumbnailFileList.value[0].originFileObj) {
       formData.thumbnail = await uploadFileToMinIO(thumbnailFileList.value[0].originFileObj as File, 'courses/thumbnails')
     }
     // Nếu không có file mới nhưng có URL (khi edit), giữ nguyên URL
     else if (thumbnailFileList.value.length > 0 && thumbnailFileList.value[0].url) {
       formData.thumbnail = thumbnailFileList.value[0].url
+    }
+    
+    // Upload banner to MinIO - CHỈ KHI CÓ FILE MỚI
+    console.log('📤 [Upload] bannerFileList:', bannerFileList.value.length, bannerFileList.value[0]?.originFileObj ? 'has originFileObj' : 'no originFileObj')
+    if (bannerFileList.value.length > 0 && bannerFileList.value[0]?.originFileObj) {
+      console.log('📤 [Upload] Uploading banner to MinIO...')
+      formData.banner = await uploadFileToMinIO(bannerFileList.value[0].originFileObj as File, 'courses/banners')
+      console.log('📤 [Upload] Banner uploaded:', formData.banner)
+    }
+    // Nếu không có file mới nhưng có URL (khi edit), giữ nguyên URL
+    else if (bannerFileList.value.length > 0 && bannerFileList.value[0]?.url) {
+      formData.banner = bannerFileList.value[0].url
     }
     
     // Upload intro video to R2/CDN - CHỈ KHI CÓ FILE MỚI VÀ CHƯA CÓ URL
@@ -3172,6 +3263,17 @@ const ensureLessonProperties = (lesson: any) => {
 }
 
 // Thêm vào script setup, sau phần khai báo reactive
+// Watch originalPrice và discount để tự động tính giá
+watch(
+  () => [formData.originalPrice, formData.discount],
+  ([originalPrice, discount]) => {
+    const price = originalPrice || 0
+    const discountPercent = discount || 0
+    formData.price = Math.round(price * (100 - discountPercent) / 100)
+  },
+  { immediate: false }
+)
+
 // Watch instructor.name để clear validation khi thay đổi
 watch(() => formData.instructor.name, (newVal) => {
   if (newVal && newVal.trim()) {

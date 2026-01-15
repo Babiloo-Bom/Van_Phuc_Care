@@ -243,11 +243,11 @@ useHead({
 }
 
 /* Privacy Sections */
-.privacy-section {
+.terms-section {
   margin-bottom: 2rem;
 }
 
-.privacy-section:last-of-type {
+.terms-section:last-of-type {
   margin-bottom: 3rem;
 }
 
@@ -409,7 +409,7 @@ useHead({
     margin-left: 1.25rem;
   }
 
-  .privacy-section {
+  .terms-section {
     margin-bottom: 1.5rem;
   }
 

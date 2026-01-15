@@ -11,37 +11,42 @@ export function useBannersApi() {
     try {
       const url = `${apiUser}/banners?pageType=${pageType}`
       
-      const response = await $fetch<{
-        status: boolean;
-        data: {
-          banner: {
-            _id: string;
-            page: string;
-            title: string;
-            image: string;
-            url?: string;
-            status: string;
-          } | null;
-        };
-      }>(url);
+      console.log('[BannersApi] Fetching banner from:', url)
+      
+      const response = await $fetch<any>(url);
+      
+      console.log('[BannersApi] Raw response:', JSON.stringify(response))
 
       // sendSuccess returns: { message: "", data: { banner: ... } }
-      // Check for banner in data.banner
-      const responseData = response as any
+      // Handle multiple response formats
       let banner = null
       
-      if (responseData.data?.banner) {
-        banner = responseData.data.banner
-      } else if (responseData.banner) {
-        banner = responseData.banner
+      // Format 1: { data: { banner: {...} } }
+      if (response?.data?.banner) {
+        banner = response.data.banner
+        console.log('[BannersApi] Found banner in response.data.banner')
+      } 
+      // Format 2: { banner: {...} } (direct)
+      else if (response?.banner) {
+        banner = response.banner
+        console.log('[BannersApi] Found banner in response.banner')
+      }
+      // Format 3: response is the banner itself
+      else if (response?._id && response?.image) {
+        banner = response
+        console.log('[BannersApi] Response is banner itself')
       }
       
-      if (banner && banner.image) {
+      console.log('[BannersApi] Extracted banner:', banner ? { _id: banner._id, image: banner.image?.substring(0, 50) } : null)
+      
+      if (banner && banner.image && banner.status === 'active') {
         return [banner]
       }
       
+      console.log('[BannersApi] No valid banner found, returning empty array')
       return []
     } catch (error) {
+      console.error('[BannersApi] Error fetching banner:', error)
       return []
     }
   };

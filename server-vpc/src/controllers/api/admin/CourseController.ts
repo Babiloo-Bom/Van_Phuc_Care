@@ -31,6 +31,10 @@ const courseSchema = new mongoose.Schema(
       type: String,
       required: true,
     },
+    banner: {
+      type: String,
+      default: '',
+    },
     introVideo: {
       type: String,
       default: null,
@@ -291,6 +295,7 @@ class CourseController {
             description: courseData.description,
             shortDescription: courseData.shortDescription,
             thumbnail: courseData.thumbnail,
+            banner: courseData.banner || '',
             price: courseData.price,
             originalPrice: courseData.originalPrice || courseData.price,
             discount: courseData.discount || 0,

@@ -2,8 +2,8 @@
   <div>
     <!-- Hero Section -->
     <div
-      class="min-h-[300px] lg:h-[450px] bg-cover bg-[#0e1d29db] bg-center bg-no-repeat relative z-[0] after:absolute after:content-[''] after:top-0 after:left-0 after:w-full after:h-full after:opacity-60 after:bg-prim-100"
-      :style="`background: url(${course?.thumbnail}) center center/cover no-repeat`"
+      class="min-h-[300px] lg:h-[450px] bg-cover bg-center bg-no-repeat relative z-[0] after:absolute after:content-[''] after:top-0 after:left-0 after:w-full after:h-full after:opacity-60 after:bg-prim-100"
+      :style="{ background: heroBackgroundStyle }"
     >
       <div
         class="absolute top-0 left-0 w-full h-full bg-[#1A75BBB2] opacity-80"
@@ -33,7 +33,7 @@
 
               <!-- Short Description -->
               <div class="mt-3 sm:mt-4 max-lg:hidden">
-                <div class="mb-0 text-sm sm:text-base md:max-w-[90%] line-clamp-3 sm:line-clamp-none" v-html="course?.description || course?.shortDescription"></div>
+                <div class="mb-0 text-sm sm:text-base md:max-w-[90%] line-clamp-3 sm:line-clamp-none" v-html="course?.shortDescription"></div>
               </div>
             </div>
           </div>
@@ -771,7 +771,7 @@
 
                 <!-- HOTLINE TƯ VẤN Button -->
                 <a
-                  href="tel:0908093198"
+                  href="tel:0376246673"
                   class="!w-full !h-[40px] sm:!h-[45px] !rounded-full !mb-2 sm:!mb-3 !border !font-bold !text-xs sm:!text-base flex items-center justify-center"
                   style="
                     background-color: white !important;
@@ -987,6 +987,24 @@ watch(
 const expandedChapters = ref<Record<number, boolean>>({ 0: true }); // B1 expanded by default
 const videoRef = ref<any>(null)
 const course = computed(() => coursesStore.course);
+
+// Computed property cho hero background style - giải quyết vấn đề SSR/CSR hydration
+// Wrap URL trong quotes để handle special characters như () và spaces
+const heroBackgroundStyle = computed(() => {
+  const bannerUrl = course.value?.banner;
+  const thumbnailUrl = course.value?.thumbnail;
+  
+  // Escape quotes trong URL nếu có
+  const escapeUrl = (url: string) => url.replace(/"/g, '%22');
+  
+  if (bannerUrl) {
+    return `url("${escapeUrl(bannerUrl)}") center center/cover no-repeat`;
+  }
+  if (thumbnailUrl) {
+    return `url("${escapeUrl(thumbnailUrl)}") center center/cover no-repeat`;
+  }
+  return '#0e1d29db';
+});
 
 // SEO Configuration
 useHead({

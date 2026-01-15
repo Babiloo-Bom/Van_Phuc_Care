@@ -9,6 +9,7 @@ export interface Course {
   description: string
   shortDescription: string
   thumbnail: string
+  banner: string
   // Video giới thiệu khóa học (intro), độc lập với lessons
   introVideo?: string | null  // Hidden for security
   hasIntroVideo?: boolean  // Flag indicating course has intro video
