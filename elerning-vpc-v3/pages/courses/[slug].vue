@@ -2,8 +2,8 @@
   <div>
     <!-- Hero Section -->
     <div
-      class="min-h-[300px] lg:h-[450px] bg-cover bg-[#0e1d29db] bg-center bg-no-repeat relative z-[0] after:absolute after:content-[''] after:top-0 after:left-0 after:w-full after:h-full after:opacity-60 after:bg-prim-100"
-      :style="`background: url(${course?.banner}) center center/cover no-repeat`"
+      class="min-h-[300px] lg:h-[450px] bg-cover bg-center bg-no-repeat relative z-[0] after:absolute after:content-[''] after:top-0 after:left-0 after:w-full after:h-full after:opacity-60 after:bg-prim-100"
+      :style="{ background: heroBackgroundStyle }"
     >
       <div
         class="absolute top-0 left-0 w-full h-full bg-[#1A75BBB2] opacity-80"
@@ -925,6 +925,20 @@ watch(
 const expandedChapters = ref<Record<number, boolean>>({ 0: true }); // B1 expanded by default
 const videoRef = ref<any>(null)
 const course = computed(() => coursesStore.course);
+
+// Computed property cho hero background style - giải quyết vấn đề SSR/CSR hydration
+const heroBackgroundStyle = computed(() => {
+  const bannerUrl = course.value?.banner;
+  const thumbnailUrl = course.value?.thumbnail;
+  
+  if (bannerUrl) {
+    return `url(${bannerUrl}) center center/cover no-repeat`;
+  }
+  if (thumbnailUrl) {
+    return `url(${thumbnailUrl}) center center/cover no-repeat`;
+  }
+  return '#0e1d29db';
+});
 
 // SEO Configuration
 useHead({

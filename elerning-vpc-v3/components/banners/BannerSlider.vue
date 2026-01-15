@@ -2,7 +2,8 @@
   <div class="banner-slider-wrapper relative">
     <!-- Swiper Container -->
     <swiper
-      v-if="banners.length > 0"
+      v-if="hasBanners"
+      :modules="modules"
       :slides-per-view="1"
       :loop="banners.length > 1"
       :autoplay="banners.length > 1 ? {
@@ -28,12 +29,7 @@
         >
           <div
             class="banner-item md:mb-[5rem] h-[480px] min-h-[480px] max-h-[480px] w-full py-10 sm:pt-20 sm:pb-20 md:pb-60 bg-cover bg-center bg-no-repeat relative z-[1] after:absolute after:content-[''] after:top-0 after:left-0 after:w-full after:h-full after:opacity-60 after:bg-prim-100"
-            :style="{
-              backgroundImage: `url(${banner.image})`,
-              backgroundSize: 'cover',
-              backgroundPosition: 'center',
-              backgroundRepeat: 'no-repeat',
-            }"
+            :style="getBannerStyle(banner.image)"
           >
             <div class="absolute inset-0 bg-[#1A75BBB2]"></div>
             <div class="container h-full" :class="props.pageType === 'all-courses' ? 'mx-auto !px-0 md:!px-auto' : props.pageType === 'my-courses' ? 'mx-auto' : ''">
@@ -160,12 +156,16 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted } from 'vue'
+import { ref, computed, onMounted } from 'vue'
 import { Swiper, SwiperSlide } from 'swiper/vue'
+import { Autoplay, Pagination, Navigation } from 'swiper'
 import 'swiper/css'
 import 'swiper/css/pagination'
 import 'swiper/css/navigation'
 import { useBannersApi } from '~/composables/api/useBannersApi'
+
+// Register Swiper modules
+const modules = [Autoplay, Pagination, Navigation]
 
 interface Banner {
   _id: string
@@ -198,6 +198,20 @@ const loading = ref(false)
 const swiperInstance = ref<any>(null)
 const { getBanners } = useBannersApi()
 
+// Computed để kiểm tra có banners hay không - đảm bảo reactivity
+const hasBanners = computed(() => banners.value && banners.value.length > 0)
+
+// Helper function để tạo background style - giải quyết SSR/CSR hydration issue
+const getBannerStyle = (imageUrl: string) => {
+  if (!imageUrl) return {}
+  return {
+    backgroundImage: `url(${imageUrl})`,
+    backgroundSize: 'cover',
+    backgroundPosition: 'center',
+    backgroundRepeat: 'no-repeat',
+  }
+}
+
 const onSwiper = (swiper: any) => {
   swiperInstance.value = swiper
 }
@@ -210,10 +224,21 @@ const handleBannerClick = (banner: Banner) => {
 
 const fetchBanners = async () => {
   loading.value = true
+  console.log('[BannerSlider] Fetching banners for pageType:', props.pageType)
   try {
     const data = await getBanners(props.pageType)
-    banners.value = data || []
+    console.log('[BannerSlider] Received banners:', data)
+    if (Array.isArray(data) && data.length > 0) {
+      banners.value = data
+      console.log('[BannerSlider] banners.value set to:', banners.value.length, 'items')
+      // Log first banner image for debugging
+      console.log('[BannerSlider] First banner image URL:', banners.value[0]?.image)
+    } else {
+      banners.value = []
+      console.log('[BannerSlider] No banners received, using fallback')
+    }
   } catch (error) {
+    console.error('[BannerSlider] Error:', error)
     banners.value = []
   } finally {
     loading.value = false
