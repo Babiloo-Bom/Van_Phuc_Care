@@ -208,19 +208,31 @@
 
                   <!-- Progress / Seek bar -->
                   <div class="flex-1 flex items-center gap-3">
-                    <span class="text-xs text-gray-200 whitespace-nowrap">
+                    <span class="text-xs text-gray-200 whitespace-nowrap min-w-[45px] text-right">
                       {{ formatTime(playerState.currentTime) }}
                     </span>
-                    <input
-                      type="range"
-                      min="0"
-                      :max="playerState.duration || 0"
-                      step="0.1"
-                      v-model.number="playerState.currentTime"
-                      @input.stop="onSeek"
-                      class="flex-1 h-1 bg-gray-500 rounded-lg appearance-none cursor-pointer custom-range"
-                    />
-                    <span class="text-xs text-gray-200 whitespace-nowrap">
+                    <div class="flex-1 relative">
+                      <!-- Progress bar background -->
+                      <div class="w-full h-2 bg-gray-600 rounded-full overflow-hidden">
+                        <!-- Progress fill (phần đã xem) -->
+                        <div 
+                          class="h-full bg-[#15CF74] rounded-full transition-all duration-150"
+                          :style="{ width: playerState.duration > 0 ? `${(playerState.currentTime / playerState.duration) * 100}%` : '0%' }"
+                        ></div>
+                      </div>
+                      <!-- Seek input (invisible, chỉ để handle click) -->
+                      <input
+                        type="range"
+                        min="0"
+                        :max="playerState.duration || 0"
+                        step="0.1"
+                        v-model.number="playerState.currentTime"
+                        @input.stop="onSeek"
+                        class="absolute inset-0 w-full h-2 opacity-0 cursor-pointer z-10"
+                        style="-webkit-appearance: none; appearance: none;"
+                      />
+                    </div>
+                    <span class="text-xs text-gray-200 whitespace-nowrap min-w-[45px]">
                       {{ formatTime(playerState.duration) }}
                     </span>
                   </div>
@@ -1313,12 +1325,19 @@ onUnmounted(() => {
 .custom-range::-webkit-slider-thumb {
   -webkit-appearance: none;
   appearance: none;
-  background: #1a75bb;
-  height: 14px;
-  width: 14px;
+  background: #15CF74;
+  height: 16px;
+  width: 16px;
   border-radius: 50%;
   cursor: pointer;
-  margin-top: -5px;
+  margin-top: -6px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
+  transition: all 0.2s ease;
+}
+
+.custom-range::-webkit-slider-thumb:hover {
+  background: #12b863;
+  transform: scale(1.1);
 }
 
 .custom-range::-moz-range-track {
@@ -1328,11 +1347,18 @@ onUnmounted(() => {
 }
 
 .custom-range::-moz-range-thumb {
-  background: #1a75bb;
-  height: 14px;
-  width: 14px;
+  background: #15CF74;
+  height: 16px;
+  width: 16px;
   border-radius: 50%;
   cursor: pointer;
   border: none;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
+  transition: all 0.2s ease;
+}
+
+.custom-range::-moz-range-thumb:hover {
+  background: #12b863;
+  transform: scale(1.1);
 }
 </style>

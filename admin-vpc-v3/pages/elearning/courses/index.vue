@@ -2152,11 +2152,23 @@ const addChapter = () => {
 }
 
 const removeChapter = (index: number) => {
+  console.log('🗑️ [Frontend] Removing chapter at index:', index)
+  console.log('🗑️ [Frontend] Chapters before remove:', formData.chapters.length)
+  console.log('🗑️ [Frontend] Chapter to remove:', formData.chapters[index]?._id, formData.chapters[index]?.title)
+  
   formData.chapters.splice(index, 1)
+  
   // Re-index
   formData.chapters.forEach((ch, idx) => {
     ch.index = idx
   })
+  
+  console.log('🗑️ [Frontend] Chapters after remove:', formData.chapters.length)
+  console.log('🗑️ [Frontend] Remaining chapters:', formData.chapters.map((ch: any) => ({
+    _id: ch._id,
+    title: ch.title,
+    index: ch.index
+  })))
 }
 
 const addLesson = (chapterIndex: number) => {
@@ -2640,6 +2652,13 @@ const handleModalOk = async () => {
     }
 
     // Prepare payload
+    console.log('🔍 [Frontend Submit] formData.chapters count:', formData.chapters.length)
+    console.log('🔍 [Frontend Submit] formData.chapters:', formData.chapters.map((ch: any) => ({
+      _id: ch._id,
+      title: ch.title,
+      index: ch.index
+    })))
+    
     const payload: any = {
       ...formData,
       chapters: formData.chapters.map((ch, idx) => ({
@@ -2688,8 +2707,16 @@ const handleModalOk = async () => {
         }) || [],
       })),
     }
+    
+    console.log('🔍 [Frontend Submit] Final payload chapters count:', payload.chapters.length)
+    console.log('🔍 [Frontend Submit] Final payload chapters:', payload.chapters.map((ch: any) => ({
+      _id: ch._id,
+      title: ch.title,
+      index: ch.index
+    })))
 
     if (editingCourse.value) {
+      console.log('🔍 [Frontend Submit] Updating course:', editingCourse.value._id)
       const response = await coursesApi.updateCourse(editingCourse.value._id, payload)
       if (response.status) {
         message.success('Cập nhật khóa học thành công')

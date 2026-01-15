@@ -884,6 +884,9 @@ class CourseController {
     try {
       const { id } = req.params;
       const updateData = req.body;
+      
+      console.log(`🔍 [Update Course] ========== START UPDATE COURSE ==========`);
+      console.log(`🔍 [Update Course] Request body chapters:`, req.body.chapters ? `${req.body.chapters.length} chapters` : 'NO CHAPTERS');
 
       const course = await Course.findByIdAndUpdate(id, updateData, {
         new: true,
@@ -900,66 +903,147 @@ class CourseController {
       const existingChapters = await ChaptersModel.model.find({ courseId: id });
       const existingChapterIds = new Set(existingChapters.map((ch: any) => ch._id.toString()));
       
+      console.log(`🔍 [Update Course] Course ID: ${id}`);
+      console.log(`🔍 [Update Course] Existing chapters count: ${existingChapters.length}`);
+      console.log(`🔍 [Update Course] Existing chapter IDs:`, Array.from(existingChapterIds));
+      
       // Tập hợp các chapter IDs được gửi lên (có _id)
       const requestedChapterIds = new Set<string>();
+      let hasChaptersWithId = false;
       if (Array.isArray(req.body.chapters)) {
+        console.log(`🔍 [Update Course] Request chapters count: ${req.body.chapters.length}`);
         for (const chapter of req.body.chapters) {
+          // Convert _id to string (có thể là ObjectId hoặc string)
+          let chapterIdStr = null;
           if (chapter._id) {
-            requestedChapterIds.add(chapter._id.toString());
+            if (typeof chapter._id === 'object' && chapter._id.toString) {
+              chapterIdStr = chapter._id.toString();
+            } else if (typeof chapter._id === 'string') {
+              chapterIdStr = chapter._id;
+            }
+          }
+          
+          console.log(`🔍 [Update Course] Chapter in request:`, {
+            _id: chapter._id,
+            _idType: typeof chapter._id,
+            _idString: chapterIdStr,
+            title: chapter.title,
+            hasId: !!chapter._id
+          });
+          
+          if (chapterIdStr) {
+            requestedChapterIds.add(chapterIdStr);
+            hasChaptersWithId = true;
           }
         }
+        console.log(`🔍 [Update Course] Requested chapter IDs:`, Array.from(requestedChapterIds));
+        console.log(`🔍 [Update Course] Has chapters with ID: ${hasChaptersWithId}`);
+      } else {
+        console.log(`⚠️ [Update Course] req.body.chapters is not an array:`, typeof req.body.chapters, req.body.chapters);
       }
 
-      // DISABLED: Không tự động xóa chapters và lessons khi update course
-      // Chỉ update/create chapters và lessons, không xóa để tránh xóa nhầm khi server khởi động
-      // Nếu cần xóa chapters/lessons, phải gọi API delete riêng hoặc xóa thủ công
       // Xóa những chapters không có trong request
-      // for (const existingChapter of existingChapters) {
-      //   const chapterId = existingChapter._id.toString();
-      //   if (!requestedChapterIds.has(chapterId)) {
-      //     // Xóa tất cả lessons của chapter này
-      //     const lessonsToDelete = await LessonsModel.model.find({ chapterId: existingChapter._id });
-      //     for (const lesson of lessonsToDelete) {
-      //       const lessonData = lesson as any;
-      //       
-      //       // Xóa folder HLS của videos trong lesson
-      //       if (lessonData.videos && Array.isArray(lessonData.videos)) {
-      //         const hlsFoldersToDelete = new Set<string>();
-      //         
-      //         for (const video of lessonData.videos) {
-      //           if (video.videoUrl || video.hlsUrl) {
-      //             const videoUrl = video.hlsUrl || video.videoUrl;
-      //             const hlsFolder = CloudflareService.extractHlsFolderFromUrl(videoUrl);
-      //             if (hlsFolder) {
-      //               hlsFoldersToDelete.add(hlsFolder);
-      //             }
-      //           }
-      //         }
-      //         
-      //         // Xóa toàn bộ folder HLS
-      //         for (const hlsFolder of hlsFoldersToDelete) {
-      //           try {
-      //             await CloudflareService.deleteFilesByPrefix(hlsFolder);
-      //           } catch (err) {
-      //             console.error(`Error deleting HLS folder ${hlsFolder}:`, err);
-      //           }
-      //         }
-      //       }
-      //       
-      //       // Xóa quiz nếu có
-      //       if (lessonData.quizId) {
-      //         await QuizzesModel.findByIdAndDelete(lessonData.quizId);
-      //       }
-      //       
-      //       // Xóa lesson từ database
-      //       await LessonsModel.model.findByIdAndDelete(lesson._id);
-      //     }
-      //     
-      //     // Xóa chapter
-      //     await ChaptersModel.model.findByIdAndDelete(existingChapter._id);
-      //     console.log(`✅ Deleted chapter: ${existingChapter._id}`);
-      //   }
-      // }
+      // Logic: 
+      // - Nếu request có chapters với _id: Xóa các chapters không có trong request
+      // - Nếu request có chapters nhưng không có _id (tạo mới): Không xóa (tránh xóa nhầm)
+      // - Nếu request không có chapters (mảng rỗng): Xóa tất cả chapters cũ (user đã xóa hết)
+      const shouldDeleteChapters = 
+        (hasChaptersWithId && existingChapters.length > 0) || // Có chapters với _id, xóa những cái không có trong request
+        (Array.isArray(req.body.chapters) && req.body.chapters.length === 0 && existingChapters.length > 0); // Request rỗng = user xóa hết
+      
+      console.log(`🔍 [Update Course] Will delete chapters? shouldDeleteChapters=${shouldDeleteChapters}, hasChaptersWithId=${hasChaptersWithId}, requestChaptersLength=${Array.isArray(req.body.chapters) ? req.body.chapters.length : 'N/A'}, existingChapters.length=${existingChapters.length}`);
+      if (shouldDeleteChapters) {
+        console.log(`✅ [Update Course] Starting to delete chapters...`);
+        for (const existingChapter of existingChapters) {
+          const chapterData = existingChapter as any;
+          const chapterId = chapterData._id.toString();
+          if (!requestedChapterIds.has(chapterId)) {
+            console.log(`🗑️ [Update Course] Chapter to delete: ${chapterId} (${chapterData.title || 'No title'})`);
+            // Xóa tất cả lessons của chapter này
+            const lessonsToDelete = await LessonsModel.model.find({ chapterId: chapterData._id });
+            for (const lesson of lessonsToDelete) {
+              const lessonData = lesson as any;
+              
+              // Xóa folder HLS của videos trong lesson
+              if (lessonData.videos && Array.isArray(lessonData.videos)) {
+                const hlsFoldersToDelete = new Set<string>();
+                
+                for (const video of lessonData.videos) {
+                  if (video.videoUrl || video.hlsUrl) {
+                    const videoUrl = video.hlsUrl || video.videoUrl;
+                    const hlsFolder = CloudflareService.extractHlsFolderFromUrl(videoUrl);
+                    if (hlsFolder) {
+                      hlsFoldersToDelete.add(hlsFolder);
+                    }
+                  }
+                }
+                
+                // Xóa toàn bộ folder HLS
+                for (const hlsFolder of hlsFoldersToDelete) {
+                  try {
+                    await CloudflareService.deleteFilesByPrefix(hlsFolder);
+                    console.log(`✅ Deleted HLS folder: ${hlsFolder}`);
+                  } catch (err) {
+                    console.error(`❌ Error deleting HLS folder ${hlsFolder}:`, err);
+                  }
+                }
+              }
+              
+              // Xóa documents từ R2
+              if (lessonData.documents && Array.isArray(lessonData.documents)) {
+                for (const doc of lessonData.documents) {
+                  if (doc.fileUrl) {
+                    try {
+                      const url = doc.fileUrl;
+                      let objectName = '';
+                      
+                      if (url.includes(process.env.CLOUDFLARE_R2_PUBLIC_URL || '')) {
+                        objectName = url.replace(process.env.CLOUDFLARE_R2_PUBLIC_URL || '', '').replace(/^\//, '');
+                      } else if (url.includes('/')) {
+                        const urlParts = url.split('/');
+                        const coursesIndex = urlParts.findIndex((part: string) => part === 'courses' || part === 'lessons');
+                        if (coursesIndex !== -1) {
+                          objectName = urlParts.slice(coursesIndex).join('/');
+                        }
+                      }
+                      
+                      if (objectName) {
+                        await CloudflareService.deleteFile(objectName);
+                        console.log(`✅ Deleted document: ${objectName}`);
+                      }
+                    } catch (err) {
+                      console.error('❌ Error deleting document from R2:', err);
+                    }
+                  }
+                }
+              }
+              
+              // Xóa quiz nếu có
+              if (lessonData.quizId) {
+                try {
+                  await QuizzesModel.findByIdAndDelete(lessonData.quizId);
+                  console.log(`✅ Deleted quiz: ${lessonData.quizId}`);
+                } catch (err) {
+                  console.error(`❌ Error deleting quiz ${lessonData.quizId}:`, err);
+                }
+              }
+              
+              // Xóa lesson từ database
+              await LessonsModel.model.findByIdAndDelete(lesson._id);
+              console.log(`✅ Deleted lesson: ${lesson._id}`);
+            }
+            
+            // Xóa chapter
+            await ChaptersModel.model.findByIdAndDelete(chapterData._id);
+            console.log(`✅ [Update Course] Deleted chapter: ${chapterData._id} (${chapterData.title || 'No title'})`);
+          } else {
+            console.log(`⏭️ [Update Course] Keeping chapter: ${chapterId} (${chapterData.title || 'No title'})`);
+          }
+        }
+        console.log(`✅ [Update Course] Finished deleting chapters`);
+      } else {
+        console.log(`⏭️ [Update Course] Skipping chapter deletion - hasChaptersWithId=${hasChaptersWithId}, existingChapters.length=${existingChapters.length}`);
+      }
 
       if (Array.isArray(req.body.chapters)) {
         for (const [idx, chapter] of req.body.chapters.entries()) {
