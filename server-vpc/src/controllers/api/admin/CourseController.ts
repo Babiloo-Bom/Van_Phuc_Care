@@ -910,54 +910,56 @@ class CourseController {
         }
       }
 
+      // DISABLED: Không tự động xóa chapters và lessons khi update course
+      // Chỉ update/create chapters và lessons, không xóa để tránh xóa nhầm khi server khởi động
+      // Nếu cần xóa chapters/lessons, phải gọi API delete riêng hoặc xóa thủ công
       // Xóa những chapters không có trong request
-      for (const existingChapter of existingChapters) {
-        const chapterId = existingChapter._id.toString();
-        if (!requestedChapterIds.has(chapterId)) {
-          // Xóa tất cả lessons của chapter này
-          const lessonsToDelete = await LessonsModel.model.find({ chapterId: existingChapter._id });
-          for (const lesson of lessonsToDelete) {
-            const lessonData = lesson as any;
-            
-            // Xóa folder HLS của videos trong lesson
-            if (lessonData.videos && Array.isArray(lessonData.videos)) {
-              const hlsFoldersToDelete = new Set<string>();
-              
-              for (const video of lessonData.videos) {
-                if (video.videoUrl || video.hlsUrl) {
-                  const videoUrl = video.hlsUrl || video.videoUrl;
-                  const hlsFolder = CloudflareService.extractHlsFolderFromUrl(videoUrl);
-                  if (hlsFolder) {
-                    hlsFoldersToDelete.add(hlsFolder);
-                  }
-                }
-              }
-              
-              // Xóa toàn bộ folder HLS
-              for (const hlsFolder of hlsFoldersToDelete) {
-                try {
-                  await CloudflareService.deleteFilesByPrefix(hlsFolder);
-                  console.log(`✅ Deleted HLS folder for deleted chapter's lesson: ${hlsFolder}`);
-                } catch (err) {
-                  console.error(`Error deleting HLS folder ${hlsFolder}:`, err);
-                }
-              }
-            }
-            
-            // Xóa quiz nếu có
-            if (lessonData.quizId) {
-              await QuizzesModel.findByIdAndDelete(lessonData.quizId);
-            }
-            
-            // Xóa lesson từ database
-            await LessonsModel.model.findByIdAndDelete(lesson._id);
-          }
-          
-          // Xóa chapter
-          await ChaptersModel.model.findByIdAndDelete(existingChapter._id);
-          console.log(`✅ Deleted chapter: ${existingChapter._id}`);
-        }
-      }
+      // for (const existingChapter of existingChapters) {
+      //   const chapterId = existingChapter._id.toString();
+      //   if (!requestedChapterIds.has(chapterId)) {
+      //     // Xóa tất cả lessons của chapter này
+      //     const lessonsToDelete = await LessonsModel.model.find({ chapterId: existingChapter._id });
+      //     for (const lesson of lessonsToDelete) {
+      //       const lessonData = lesson as any;
+      //       
+      //       // Xóa folder HLS của videos trong lesson
+      //       if (lessonData.videos && Array.isArray(lessonData.videos)) {
+      //         const hlsFoldersToDelete = new Set<string>();
+      //         
+      //         for (const video of lessonData.videos) {
+      //           if (video.videoUrl || video.hlsUrl) {
+      //             const videoUrl = video.hlsUrl || video.videoUrl;
+      //             const hlsFolder = CloudflareService.extractHlsFolderFromUrl(videoUrl);
+      //             if (hlsFolder) {
+      //               hlsFoldersToDelete.add(hlsFolder);
+      //             }
+      //           }
+      //         }
+      //         
+      //         // Xóa toàn bộ folder HLS
+      //         for (const hlsFolder of hlsFoldersToDelete) {
+      //           try {
+      //             await CloudflareService.deleteFilesByPrefix(hlsFolder);
+      //           } catch (err) {
+      //             console.error(`Error deleting HLS folder ${hlsFolder}:`, err);
+      //           }
+      //         }
+      //       }
+      //       
+      //       // Xóa quiz nếu có
+      //       if (lessonData.quizId) {
+      //         await QuizzesModel.findByIdAndDelete(lessonData.quizId);
+      //       }
+      //       
+      //       // Xóa lesson từ database
+      //       await LessonsModel.model.findByIdAndDelete(lesson._id);
+      //     }
+      //     
+      //     // Xóa chapter
+      //     await ChaptersModel.model.findByIdAndDelete(existingChapter._id);
+      //     console.log(`✅ Deleted chapter: ${existingChapter._id}`);
+      //   }
+      // }
 
       if (Array.isArray(req.body.chapters)) {
         for (const [idx, chapter] of req.body.chapters.entries()) {
@@ -1001,60 +1003,55 @@ class CourseController {
               }
             }
             
-            // CHỈ xóa lessons nếu request đầy đủ (tất cả lessons đều có _id)
-            // Điều này đảm bảo không xóa nhầm khi request không đầy đủ
-            // Nếu có lesson không có _id, có nghĩa là request có thể không đầy đủ, không xóa gì cả
-            if (chapter._id && !hasLessonsWithoutId && lessonIdsToKeep.size > 0) {
-              const oldLessons = await LessonsModel.model.find({ chapterId: updatedChapter._id });
-              for (const oldLesson of oldLessons) {
-                const oldLessonId = oldLesson._id.toString();
-                
-                // Nếu lesson vẫn còn trong request, skip (sẽ được update sau)
-                if (lessonIdsToKeep.has(oldLessonId)) {
-                  console.log(`📦 [Course Update] Keeping existing lesson: ${oldLessonId}`);
-                  continue;
-                }
-                
-                // Lesson bị xóa - xóa HLS folders và lesson
-                const lessonData = oldLesson as any;
-                console.log(`🗑️ [Course Update] Deleting removed lesson: ${oldLessonId}`);
-                
-                // Xóa folder HLS của videos trong lesson bị xóa
-                if (lessonData.videos && Array.isArray(lessonData.videos)) {
-                  const hlsFoldersToDelete = new Set<string>();
-                  
-                  for (const video of lessonData.videos) {
-                    if (video.videoUrl || video.hlsUrl) {
-                      const videoUrl = video.hlsUrl || video.videoUrl;
-                      const hlsFolder = CloudflareService.extractHlsFolderFromUrl(videoUrl);
-                      if (hlsFolder) {
-                        hlsFoldersToDelete.add(hlsFolder);
-                      }
-                    }
-                  }
-                  
-                  // Xóa toàn bộ folder HLS của lesson bị xóa
-                  for (const hlsFolder of hlsFoldersToDelete) {
-                    try {
-                      await CloudflareService.deleteFilesByPrefix(hlsFolder);
-                      console.log(`✅ Deleted HLS folder for removed lesson: ${hlsFolder}`);
-                    } catch (err) {
-                      console.error(`Error deleting HLS folder ${hlsFolder}:`, err);
-                    }
-                  }
-                }
-                
-                // Xóa quiz nếu có
-                if (lessonData.quizId) {
-                  await QuizzesModel.findByIdAndDelete(lessonData.quizId);
-                }
-                
-                // Xóa lesson từ database
-                await LessonsModel.model.findByIdAndDelete(oldLesson._id);
-              }
-            } else if (chapter._id && hasLessonsWithoutId) {
-              console.log(`⚠️ [Course Update] Skipping lesson deletion - request contains lessons without _id (may be incomplete)`);
-            }
+            // DISABLED: Không tự động xóa lessons khi update course
+            // Chỉ update/create lessons, không xóa để tránh xóa nhầm khi server khởi động hoặc request không đầy đủ
+            // Nếu cần xóa lessons, phải gọi API delete riêng hoặc xóa thủ công
+            // if (chapter._id && !hasLessonsWithoutId && lessonIdsToKeep.size > 0) {
+            //   const oldLessons = await LessonsModel.model.find({ chapterId: updatedChapter._id });
+            //   for (const oldLesson of oldLessons) {
+            //     const oldLessonId = oldLesson._id.toString();
+            //     
+            //     // Nếu lesson vẫn còn trong request, skip (sẽ được update sau)
+            //     if (lessonIdsToKeep.has(oldLessonId)) {
+            //       continue;
+            //     }
+            //     
+            //     // Lesson bị xóa - xóa HLS folders và lesson
+            //     const lessonData = oldLesson as any;
+            //     
+            //     // Xóa folder HLS của videos trong lesson bị xóa
+            //     if (lessonData.videos && Array.isArray(lessonData.videos)) {
+            //       const hlsFoldersToDelete = new Set<string>();
+            //       
+            //       for (const video of lessonData.videos) {
+            //         if (video.videoUrl || video.hlsUrl) {
+            //           const videoUrl = video.hlsUrl || video.videoUrl;
+            //           const hlsFolder = CloudflareService.extractHlsFolderFromUrl(videoUrl);
+            //           if (hlsFolder) {
+            //             hlsFoldersToDelete.add(hlsFolder);
+            //           }
+            //         }
+            //       }
+            //       
+            //       // Xóa toàn bộ folder HLS của lesson bị xóa
+            //       for (const hlsFolder of hlsFoldersToDelete) {
+            //         try {
+            //           await CloudflareService.deleteFilesByPrefix(hlsFolder);
+            //         } catch (err) {
+            //           console.error(`Error deleting HLS folder ${hlsFolder}:`, err);
+            //         }
+            //       }
+            //     }
+            //     
+            //     // Xóa quiz nếu có
+            //     if (lessonData.quizId) {
+            //       await QuizzesModel.findByIdAndDelete(lessonData.quizId);
+            //     }
+            //     
+            //     // Xóa lesson từ database
+            //     await LessonsModel.model.findByIdAndDelete(oldLesson._id);
+            //   }
+            // }
 
             // Tạo lessons mới hoặc update lessons đã có
             for (const lessonData of chapter.lessons) {
@@ -1098,7 +1095,6 @@ class CourseController {
               
               // Nếu lesson đã có _id, update thay vì tạo mới
               if (lessonData._id) {
-                console.log(`📦 [Course Update] Updating existing lesson: ${lessonData._id}`);
                 
                 // Get existing lesson để so sánh videos
                 const existingLesson = await LessonsModel.model.findById(lessonData._id);
@@ -1129,7 +1125,6 @@ class CourseController {
                     for (const hlsFolder of hlsFoldersToDelete) {
                       try {
                         await CloudflareService.deleteFilesByPrefix(hlsFolder);
-                        console.log(`✅ Deleted HLS folder for replaced video: ${hlsFolder}`);
                       } catch (err) {
                         console.error(`Error deleting HLS folder ${hlsFolder}:`, err);
                       }
@@ -1174,7 +1169,6 @@ class CourseController {
                 }
               } else {
                 // Tạo lesson mới
-                console.log(`📦 [Course Update] Creating new lesson`);
                 lesson = await LessonsModel.model.create({
                   chapterId: updatedChapter._id,
                   quizId: null,
