@@ -364,5 +364,84 @@ export default class HlsConverter {
       }
     }
   }
+
+  /**
+   * Extract thumbnail from video at specific time (default: 1 second)
+   * @param videoPath Path to video file
+   * @param outputPath Path to save thumbnail image
+   * @param timeInSeconds Time in seconds to extract frame (default: 1)
+   * @returns Path to thumbnail image
+   */
+  public static async extractThumbnail(
+    videoPath: string,
+    outputPath: string,
+    timeInSeconds: number = 1
+  ): Promise<string> {
+    try {
+      // Ensure output directory exists
+      const outputDir = path.dirname(outputPath);
+      if (!fs.existsSync(outputDir)) {
+        fs.mkdirSync(outputDir, { recursive: true });
+      }
+
+      // Extract frame at specified time using FFmpeg
+      // -ss: seek to time
+      // -i: input file
+      // -vframes 1: extract only 1 frame
+      // -q:v 2: high quality JPEG (scale 2-31, lower is better)
+      // -vf scale=1280:-1: scale to max width 1280px, maintain aspect ratio
+      const ffmpegCommand = `ffmpeg -ss ${timeInSeconds} -i "${videoPath}" -vframes 1 -q:v 2 -vf "scale=1280:-1" "${outputPath}"`;
+
+      await execAsync(ffmpegCommand);
+      
+      // Verify thumbnail was created
+      if (!fs.existsSync(outputPath)) {
+        throw new Error('Thumbnail file was not created');
+      }
+
+      console.log(`✅ [HLS Converter] Thumbnail extracted: ${outputPath}`);
+      return outputPath;
+    } catch (error: any) {
+      console.error('❌ [HLS Converter] Error extracting thumbnail:', error);
+      throw new Error(`Failed to extract thumbnail: ${error.message}`);
+    }
+  }
+
+  /**
+   * Extract thumbnail from video buffer
+   * @param videoBuffer Video file buffer
+   * @param outputPath Path to save thumbnail image
+   * @param originalFilename Optional original filename to extract extension
+   * @param timeInSeconds Time in seconds to extract frame (default: 1)
+   * @returns Path to thumbnail image
+   */
+  public static async extractThumbnailFromBuffer(
+    videoBuffer: Buffer,
+    outputPath: string,
+    originalFilename?: string,
+    timeInSeconds: number = 1
+  ): Promise<string> {
+    // Get extension from original filename or default to .mp4
+    let extension = '.mp4';
+    if (originalFilename) {
+      const extMatch = originalFilename.match(/\.(mp4|mov|avi|mkv|webm|flv)$/i);
+      if (extMatch) {
+        extension = extMatch[0].toLowerCase();
+      }
+    }
+
+    const tempInputPath = path.join(this.TEMP_DIR, `thumbnail_input_${Date.now()}${extension}`);
+    try {
+      // @ts-ignore - Buffer is compatible with fs.writeFileSync
+      fs.writeFileSync(tempInputPath, videoBuffer);
+      const thumbnailPath = await this.extractThumbnail(tempInputPath, outputPath, timeInSeconds);
+      return thumbnailPath;
+    } finally {
+      // Cleanup temp file
+      if (fs.existsSync(tempInputPath)) {
+        fs.unlinkSync(tempInputPath);
+      }
+    }
+  }
 }
 

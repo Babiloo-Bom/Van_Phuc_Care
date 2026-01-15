@@ -243,6 +243,7 @@ class UploadController {
           filename: file.originalname,
           url: '', // Will be available after processing
           hlsUrl: '', // Will be available after processing
+          thumbnail: '', // Will be available after processing
           objectName: '',
           segments: 0,
           size: file.size,

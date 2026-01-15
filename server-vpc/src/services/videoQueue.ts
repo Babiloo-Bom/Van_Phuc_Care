@@ -6,6 +6,16 @@ import * as fs from 'fs';
 import * as path from 'path';
 import * as os from 'os';
 
+// Get TEMP_DIR from HlsConverter (if accessible) or use os.tmpdir
+const getTempDir = () => {
+  try {
+    // @ts-ignore - accessing private static property
+    return HlsConverter.TEMP_DIR || path.join(os.tmpdir(), 'hls-conversions');
+  } catch {
+    return path.join(os.tmpdir(), 'hls-conversions');
+  }
+};
+
 // Redis connection for Bull queue
 const redisConfig = {
   host: process.env.REDIS_HOST || 'localhost',
@@ -97,6 +107,53 @@ export async function processVideoJob(job: Queue.Job<VideoJobData>) {
         console.warn('⚠️ Could not get video metadata:', error);
       }
 
+      // Extract thumbnail for fallback case (no HLS conversion)
+      let thumbnailUrl = '';
+      try {
+        console.log(`🖼️ [Video Queue] Extracting thumbnail from video (fallback): ${originalName}`);
+        const tempThumbnailPath = path.join(os.tmpdir(), `thumb_${Date.now()}.jpg`);
+        const tempVideoPath = path.join(getTempDir(), `thumb_${Date.now()}_${originalName}`);
+        
+        try {
+          // @ts-ignore - Buffer is compatible with fs.writeFileSync
+          fs.writeFileSync(tempVideoPath, fileBuffer);
+          await HlsConverter.extractThumbnail(tempVideoPath, tempThumbnailPath, 1);
+          
+          if (fs.existsSync(tempThumbnailPath)) {
+            const thumbnailBuffer = fs.readFileSync(tempThumbnailPath);
+            const thumbnailFolder = `${folder}/thumbnails`;
+            const thumbnailFileName = originalName.replace(/\.(mp4|mov|avi|mkv|webm|flv)$/i, '.jpg');
+            const thumbnailObjectName = await CloudflareService.uploadFile(
+              thumbnailBuffer,
+              thumbnailFileName,
+              'image/jpeg',
+              thumbnailFolder
+            );
+            thumbnailUrl = CloudflareService.getPublicUrl(thumbnailObjectName);
+            console.log(`✅ [Video Queue] Thumbnail uploaded (fallback): ${thumbnailUrl}`);
+            
+            // Cleanup
+            if (fs.existsSync(tempThumbnailPath)) {
+              fs.unlinkSync(tempThumbnailPath);
+            }
+          }
+          
+          if (fs.existsSync(tempVideoPath)) {
+            fs.unlinkSync(tempVideoPath);
+          }
+        } catch (thumbError: any) {
+          console.warn(`⚠️ [Video Queue] Failed to extract thumbnail (fallback):`, thumbError.message);
+          if (fs.existsSync(tempThumbnailPath)) {
+            try { fs.unlinkSync(tempThumbnailPath); } catch (e) {}
+          }
+          if (fs.existsSync(tempVideoPath)) {
+            try { fs.unlinkSync(tempVideoPath); } catch (e) {}
+          }
+        }
+      } catch (thumbError: any) {
+        console.warn(`⚠️ [Video Queue] Thumbnail extraction error (fallback, non-fatal):`, thumbError.message);
+      }
+
       // Cleanup temp file
       if (fs.existsSync(filePath)) {
         fs.unlinkSync(filePath);
@@ -106,6 +163,7 @@ export async function processVideoJob(job: Queue.Job<VideoJobData>) {
         filename: originalName,
         url: publicUrl,
         hlsUrl: '',
+        thumbnail: thumbnailUrl, // Add thumbnail URL
         objectName: objectName,
         size: fileSize,
         type: mimetype,
@@ -163,6 +221,69 @@ export async function processVideoJob(job: Queue.Job<VideoJobData>) {
 
     // Get video metadata before conversion
     const qualityMetadata = await HlsConverter.getVideoMetadataFromBuffer(fileBuffer, originalName);
+
+    // Extract and upload thumbnail
+    let thumbnailUrl = '';
+    try {
+      console.log(`🖼️ [Video Queue] Extracting thumbnail from video: ${originalName}`);
+      const tempThumbnailPath = path.join(tempHlsDir, 'thumbnail.jpg');
+      
+      // Extract thumbnail at 1 second (or 10% of video duration if available)
+      // First, get video duration if possible
+      let thumbnailTime = 1;
+      try {
+        const metadata = await HlsConverter.getVideoMetadataFromBuffer(fileBuffer, originalName);
+        // Try to get duration from temp file (if we can read it)
+        // For now, use 1 second or 10% of estimated duration
+        // We'll extract at 1 second as default
+      } catch (e) {
+        // Ignore, use default 1 second
+      }
+      
+      // Extract thumbnail from temp file (before cleanup)
+      const tempVideoPath = path.join(getTempDir(), `thumb_${Date.now()}_${originalName}`);
+      try {
+        // @ts-ignore - Buffer is compatible with fs.writeFileSync
+        fs.writeFileSync(tempVideoPath, fileBuffer);
+        await HlsConverter.extractThumbnail(tempVideoPath, tempThumbnailPath, thumbnailTime);
+        
+        // Upload thumbnail to R2
+        if (fs.existsSync(tempThumbnailPath)) {
+          const thumbnailBuffer = fs.readFileSync(tempThumbnailPath);
+          const thumbnailFolder = `${folder}/thumbnails`;
+          const thumbnailFileName = originalName.replace(/\.(mp4|mov|avi|mkv|webm|flv)$/i, '.jpg');
+          const thumbnailObjectName = await CloudflareService.uploadFile(
+            thumbnailBuffer,
+            thumbnailFileName,
+            'image/jpeg',
+            thumbnailFolder
+          );
+          thumbnailUrl = CloudflareService.getPublicUrl(thumbnailObjectName);
+          console.log(`✅ [Video Queue] Thumbnail uploaded: ${thumbnailUrl}`);
+          
+          // Cleanup thumbnail temp file
+          if (fs.existsSync(tempThumbnailPath)) {
+            fs.unlinkSync(tempThumbnailPath);
+          }
+        }
+        
+        // Cleanup temp video file
+        if (fs.existsSync(tempVideoPath)) {
+          fs.unlinkSync(tempVideoPath);
+        }
+      } catch (thumbError: any) {
+        console.warn(`⚠️ [Video Queue] Failed to extract thumbnail:`, thumbError.message);
+        // Don't fail the job if thumbnail extraction fails
+        if (fs.existsSync(tempThumbnailPath)) {
+          try { fs.unlinkSync(tempThumbnailPath); } catch (e) {}
+        }
+        if (fs.existsSync(tempVideoPath)) {
+          try { fs.unlinkSync(tempVideoPath); } catch (e) {}
+        }
+      }
+    } catch (thumbError: any) {
+      console.warn(`⚠️ [Video Queue] Thumbnail extraction error (non-fatal):`, thumbError.message);
+    }
 
     // Upload all HLS segments (.ts) to R2
     const segmentUrls: string[] = [];
@@ -237,6 +358,7 @@ export async function processVideoJob(job: Queue.Job<VideoJobData>) {
       filename: originalName,
       url: playlistUrl,
       hlsUrl: playlistUrl,
+      thumbnail: thumbnailUrl, // Add thumbnail URL
       objectName: playlistObjectName,
       segments: segmentUrls.length,
       size: fileSize,
@@ -333,6 +455,7 @@ videoQueue.on('completed', async (job, result) => {
           ...videos[videoIndex],
           videoUrl: result.url || videos[videoIndex].videoUrl,
           hlsUrl: result.hlsUrl || videos[videoIndex].hlsUrl,
+          thumbnail: result.thumbnail || videos[videoIndex].thumbnail || '', // Add thumbnail
           status: 'ready',
           qualityMetadata: result.qualityMetadata || videos[videoIndex].qualityMetadata,
           errorMessage: '',
@@ -349,6 +472,7 @@ videoQueue.on('completed', async (job, result) => {
           ...videos[0],
           videoUrl: result.url || videos[0].videoUrl,
           hlsUrl: result.hlsUrl || videos[0].hlsUrl,
+          thumbnail: result.thumbnail || videos[0].thumbnail || '', // Add thumbnail
           status: 'ready',
           jobId: jobId, // Ensure jobId is saved
           qualityMetadata: result.qualityMetadata || videos[0].qualityMetadata,

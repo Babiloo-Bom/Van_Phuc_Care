@@ -718,18 +718,21 @@
                       <!-- Video Type -->
                       <template v-if="lesson.type === 'video'">
                         <a-col :span="24">
-                          <a-form-item label="Upload Video">
-                            <a-upload
-                              v-model:file-list="lesson.videoFileList"
-                              :before-upload="() => false"
-                              @change="(info) => handleLessonVideoChange(chapterIndex, lessonIndex, info)"
-                              accept="video/*"
-                              :max-count="1"
-                            >
-                              <a-button :loading="lesson.uploadingVideo">
-                                <UploadOutlined /> Chọn video
-                              </a-button>
-                            </a-upload>
+                          <a-row :gutter="16">
+                            <!-- Upload Video Section -->
+                            <a-col :span="lesson.videos && lesson.videos.length > 0 && lesson.videos[0].thumbnail ? 16 : 24">
+                              <a-form-item label="Upload Video">
+                                <a-upload
+                                  v-model:file-list="lesson.videoFileList"
+                                  :before-upload="() => false"
+                                  @change="(info) => handleLessonVideoChange(chapterIndex, lessonIndex, info)"
+                                  accept="video/*"
+                                  :max-count="1"
+                                >
+                                  <a-button :loading="lesson.uploadingVideo">
+                                    <UploadOutlined /> Chọn video
+                                  </a-button>
+                                </a-upload>
                             
                             <!-- Video Status -->
                             <div v-if="lesson.videos && lesson.videos.length > 0 && lesson.videos[0].status" style="margin-top: 8px;">
@@ -872,39 +875,67 @@
                               </div>
                             </div>
                             
-                            <!-- Video Info -->
-                            <div v-if="lesson.videos && lesson.videos.length > 0 && lesson.videos[0].status !== 'error'" style="margin-top: 8px;">
-                              <a-tag color="success">Đã upload: {{ lesson.videos[0].title }}</a-tag>
-                            </div>
+                                <!-- Video Info -->
+                                <div v-if="lesson.videos && lesson.videos.length > 0 && lesson.videos[0].status !== 'error'" style="margin-top: 8px;">
+                                  <a-tag color="success">Đã upload: {{ lesson.videos[0].title }}</a-tag>
+                                </div>
+                                
+                                <!-- HLS URL -->
+                                <div v-if="lesson.videos && lesson.videos.length > 0 && lesson.videos[0].hlsUrl" style="margin-top: 8px; font-size: 12px; color: #666;">
+                                  <strong>HLS URL:</strong> 
+                                  <a :href="lesson.videos[0].hlsUrl" target="_blank" style="margin-left: 4px; word-break: break-all;">
+                                    {{ lesson.videos[0].hlsUrl }}
+                                  </a>
+                                </div>
+                                
+                                <!-- Quality Metadata -->
+                                <div v-if="lesson.videos && lesson.videos.length > 0 && lesson.videos[0].qualityMetadata && (lesson.videos[0].qualityMetadata.resolution || lesson.videos[0].qualityMetadata.codec)" style="margin-top: 8px; font-size: 12px; color: #666;">
+                                  <strong>Chất lượng:</strong>
+                                  <span v-if="lesson.videos[0].qualityMetadata.resolution" style="margin-left: 4px;">
+                                    {{ lesson.videos[0].qualityMetadata.resolution }}
+                                  </span>
+                                  <span v-if="lesson.videos[0].qualityMetadata.codec" style="margin-left: 4px;">
+                                    {{ lesson.videos[0].qualityMetadata.codec }}
+                                  </span>
+                                  <span v-if="lesson.videos[0].qualityMetadata.fps" style="margin-left: 4px;">
+                                    {{ lesson.videos[0].qualityMetadata.fps }}fps
+                                  </span>
+                                  <span v-if="lesson.videos[0].qualityMetadata.bitrate" style="margin-left: 4px;">
+                                    {{ lesson.videos[0].qualityMetadata.bitrate }}
+                                  </span>
+                                  <span v-if="lesson.videos[0].qualityMetadata.segments" style="margin-left: 4px;">
+                                    ({{ lesson.videos[0].qualityMetadata.segments }} segments)
+                                  </span>
+                                </div>
+                              </a-form-item>
+                            </a-col>
                             
-                            <!-- HLS URL -->
-                            <div v-if="lesson.videos && lesson.videos.length > 0 && lesson.videos[0].hlsUrl" style="margin-top: 8px; font-size: 12px; color: #666;">
-                              <strong>HLS URL:</strong> 
-                              <a :href="lesson.videos[0].hlsUrl" target="_blank" style="margin-left: 4px; word-break: break-all;">
-                                {{ lesson.videos[0].hlsUrl }}
-                              </a>
-                            </div>
-                            
-                            <!-- Quality Metadata -->
-                            <div v-if="lesson.videos && lesson.videos.length > 0 && lesson.videos[0].qualityMetadata && (lesson.videos[0].qualityMetadata.resolution || lesson.videos[0].qualityMetadata.codec)" style="margin-top: 8px; font-size: 12px; color: #666;">
-                              <strong>Chất lượng:</strong>
-                              <span v-if="lesson.videos[0].qualityMetadata.resolution" style="margin-left: 4px;">
-                                {{ lesson.videos[0].qualityMetadata.resolution }}
-                              </span>
-                              <span v-if="lesson.videos[0].qualityMetadata.codec" style="margin-left: 4px;">
-                                {{ lesson.videos[0].qualityMetadata.codec }}
-                              </span>
-                              <span v-if="lesson.videos[0].qualityMetadata.fps" style="margin-left: 4px;">
-                                {{ lesson.videos[0].qualityMetadata.fps }}fps
-                              </span>
-                              <span v-if="lesson.videos[0].qualityMetadata.bitrate" style="margin-left: 4px;">
-                                {{ lesson.videos[0].qualityMetadata.bitrate }}
-                              </span>
-                              <span v-if="lesson.videos[0].qualityMetadata.segments" style="margin-left: 4px;">
-                                ({{ lesson.videos[0].qualityMetadata.segments }} segments)
-                              </span>
-                            </div>
-                          </a-form-item>
+                            <!-- Video Thumbnail Section -->
+                            <a-col v-if="lesson.videos && lesson.videos.length > 0 && lesson.videos[0].thumbnail" :span="8">
+                              <a-form-item label="Thumbnail Video">
+                                <div style="position: relative; display: inline-block;">
+                                  <img 
+                                    :src="lesson.videos[0].thumbnail" 
+                                    alt="Video thumbnail" 
+                                    style="max-width: 100%; max-height: 200px; border-radius: 4px; border: 1px solid #d9d9d9; object-fit: cover;"
+                                  />
+                                  <a-button 
+                                    type="text" 
+                                    danger 
+                                    size="small" 
+                                    style="position: absolute; top: 4px; right: 4px; background: rgba(0, 0, 0, 0.5); color: white;"
+                                    @click="lesson.videos[0].thumbnail = ''"
+                                    title="Xóa thumbnail"
+                                  >
+                                    <DeleteOutlined />
+                                  </a-button>
+                                </div>
+                                <div style="margin-top: 8px; font-size: 12px; color: #666;">
+                                  Thumbnail được tự động tạo từ video
+                                </div>
+                              </a-form-item>
+                            </a-col>
+                          </a-row>
                         </a-col>
                       </template>
 
@@ -1689,6 +1720,7 @@ const uploadVideoToR2 = async (
 ): Promise<{
   url: string
   hlsUrl: string
+  thumbnail?: string // Thumbnail URL from video
   status: 'uploading' | 'queueing' | 'processing' | 'ready' | 'error'
   errorMessage?: string
   jobId?: string
@@ -1955,6 +1987,7 @@ const uploadVideoToR2 = async (
             const videoData = {
               url: video.url || video.hlsUrl || '',
               hlsUrl: video.hlsUrl || video.url || '',
+              thumbnail: video.thumbnail || '', // Include thumbnail from response
               status: video.status || 'ready',
               errorMessage: video.errorMessage || '',
               jobId: jobId || video.jobId || '',
@@ -3065,12 +3098,12 @@ const handleLessonVideoChange = async (chapterIndex: number, lessonIndex: number
       console.log('🔍 [Lesson Video Upload] lesson._id:', lesson._id, 'lessonId:', lessonId)
       const videoData = await uploadVideoToR2(file, `courses/lessons/${Date.now()}`, progressKey, lessonId)
       
-      // Cập nhật video với đầy đủ thông tin (bao gồm jobId)
+      // Cập nhật video với đầy đủ thông tin (bao gồm jobId và thumbnail)
       if (lesson.videos.length === 0) {
         lesson.videos = [{
           title: file.name,
           videoUrl: videoData.url || videoData.hlsUrl || '',
-          thumbnail: '',
+          thumbnail: videoData.thumbnail || '', // Get thumbnail from response
           duration: 0,
           fileSize: file.size,
           quality: '720',
@@ -3092,6 +3125,7 @@ const handleLessonVideoChange = async (chapterIndex: number, lessonIndex: number
           ...lesson.videos[0],
           title: file.name,
           videoUrl: videoData.url || videoData.hlsUrl || '',
+          thumbnail: videoData.thumbnail || lesson.videos[0].thumbnail || '', // Get thumbnail from response or keep existing
           fileSize: file.size,
           status: videoData.status || 'ready',
           hlsUrl: videoData.hlsUrl || '',
@@ -3355,11 +3389,12 @@ const pollLessonVideoJobStatus = async (chapterIndex: number, lessonIndex: numbe
             ...lesson.videos[0],
             videoUrl: jobResult.hlsUrl || jobResult.url || lesson.videos[0].videoUrl,
             hlsUrl: jobResult.hlsUrl || lesson.videos[0].hlsUrl,
+            thumbnail: jobResult.thumbnail || lesson.videos[0].thumbnail || '', // Update thumbnail from result
             status: 'ready',
             qualityMetadata: jobResult.qualityMetadata || lesson.videos[0].qualityMetadata,
             errorMessage: '',
           }
-          console.log('✅ [Lesson Video Polling] Updated lesson video with hlsUrl:', jobResult.hlsUrl)
+          console.log('✅ [Lesson Video Polling] Updated lesson video with hlsUrl:', jobResult.hlsUrl, 'thumbnail:', jobResult.thumbnail)
         } else if (lesson.videos.length > 0) {
           lesson.videos[0].status = 'ready'
           lesson.videos[0].errorMessage = ''
