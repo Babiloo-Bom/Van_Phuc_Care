@@ -11,14 +11,17 @@ class BannerController {
       const existingBanner = await MongoDbBanners.model.findOne({ page: params.page });
       
       if (existingBanner) {
-        // Update existing banner
-        await existingBanner.update({
-          title: params.title,
-          image: params.image,
-          url: params.url || '',
-          status: params.status || 'active',
-        });
-        const updatedBanner = await MongoDbBanners.model.findById(existingBanner._id);
+        // Update existing banner using findByIdAndUpdate
+        const updatedBanner = await MongoDbBanners.model.findByIdAndUpdate(
+          existingBanner._id,
+          {
+            title: params.title,
+            image: params.image,
+            url: params.url || '',
+            status: params.status || 'active',
+          },
+          { new: true }
+        );
         sendSuccess(res, { banner: updatedBanner });
       } else {
         // Create new banner
@@ -84,16 +87,19 @@ class BannerController {
         return sendError(res, 404, 'Banner not found');
       }
       const params = req.body;
-      await banner.update({
-        page: params?.page !== undefined ? params.page : banner.get('page'),
-        title: params?.title !== undefined ? params.title : banner.get('title'),
-        image: params?.image !== undefined ? params.image : banner.get('image'),
-        url: params?.url !== undefined ? params.url : banner.get('url'),
-        order: params?.order !== undefined ? params.order : banner.get('order'),
-        status: params?.status !== undefined ? params.status : banner.get('status'),
-      });
-      const record = await MongoDbBanners.model.findById(req.params.bannerId);
-      sendSuccess(res, { banner: record });
+      const updatedBanner = await MongoDbBanners.model.findByIdAndUpdate(
+        req.params.bannerId,
+        {
+          page: params?.page !== undefined ? params.page : (banner as any).page,
+          title: params?.title !== undefined ? params.title : (banner as any).title,
+          image: params?.image !== undefined ? params.image : (banner as any).image,
+          url: params?.url !== undefined ? params.url : (banner as any).url,
+          order: params?.order !== undefined ? params.order : (banner as any).order,
+          status: params?.status !== undefined ? params.status : (banner as any).status,
+        },
+        { new: true }
+      );
+      sendSuccess(res, { banner: updatedBanner });
     } catch (error: any) {
       sendError(res, 500, error.message, error as Error);
     }
@@ -105,7 +111,7 @@ class BannerController {
       if (!banner) {
         return sendError(res, 404, 'Banner not found');
       }
-      await banner.delete();
+      await MongoDbBanners.model.findByIdAndDelete(req.params.bannerId);
       sendSuccess(res, { });
     } catch (error: any) {
       sendError(res, 500, error.message, error as Error);

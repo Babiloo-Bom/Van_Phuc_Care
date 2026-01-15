@@ -3,7 +3,7 @@
     <div class="container mx-auto px-4 lg:px-0 xl:px-4">
       <div class="flex items-center justify-between h-16">
         <!-- Logo -->
-        <div class="flex items-center gap-3">
+        <a href="/courses" class="flex items-center gap-3">
           <img
             src="/images/logo-small.png"
             alt="Van Phuc Care"
@@ -14,7 +14,7 @@
             alt="Van Phuc Care"
             class="h-8 w-auto hidden md:block"
           />
-        </div>
+        </a>
 
         <div class="flex justify-end">
           <!-- Navigation -->
@@ -294,7 +294,7 @@
                 </defs>
               </svg>
               <span
-                class="absolute -top-1 -right-1 bg-red-500 text-white text-xs rounded-full h-5 w-5 flex items-center justify-center font-bold"
+                class="absolute -top-1 -right-1 bg-red-500 text-white text-xs leading-3 rounded-full h-5 w-5 flex items-center justify-center font-bold"
               >
                 {{ cartCount }}
               </span>

@@ -164,14 +164,42 @@ export interface Address {
 
 export interface Course {
   _id: string
-  code: string
-  name: string
+  code?: string
+  name?: string
+  title?: string
+  slug?: string
   thumbnail?: string
+  banner?: string
   shortDescription?: string
   description?: string
   order?: number
-  status: 'active' | 'inactive'
+  status: 'active' | 'inactive' | 'draft'
   notes?: string
+  price?: number
+  originalPrice?: number
+  discount?: number
+  introVideo?: string
+  introVideoStatus?: 'uploading' | 'queueing' | 'processing' | 'ready' | 'error'
+  introVideoHlsUrl?: string
+  introVideoThumbnail?: string
+  introVideoQualityMetadata?: {
+    resolution?: string
+    bitrate?: string
+    codec?: string
+    fps?: number
+    segments?: number
+  }
+  instructor?: {
+    name?: string
+    avatar?: string
+    bio?: string
+  }
+  category?: string
+  level?: 'beginner' | 'intermediate' | 'advanced'
+  tags?: string[]
+  isPublished?: boolean
+  isFeatured?: boolean
+  chapters?: any[]
   createdAt: string
 }
 

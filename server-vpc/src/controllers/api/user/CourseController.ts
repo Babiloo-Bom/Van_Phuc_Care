@@ -1,10 +1,10 @@
-import { sendError, sendSuccess } from '@libs/response';
-import { Request, Response } from 'express';
-import { NoData } from '@libs/errors';
-import CloudflareService from '@services/cloudflare';
-import ChaptersModel from '@mongodb/chapters';
-import mongoose from 'mongoose';
-import QuizzesModel from '@mongodb/quizzes';
+import { sendError, sendSuccess } from "@libs/response";
+import { Request, Response } from "express";
+import { NoData } from "@libs/errors";
+import CloudflareService from "@services/cloudflare";
+import ChaptersModel from "@mongodb/chapters";
+import mongoose from "mongoose";
+import QuizzesModel from "@mongodb/quizzes";
 
 const courseSchema = new mongoose.Schema(
   {
@@ -29,6 +29,10 @@ const courseSchema = new mongoose.Schema(
       type: String,
       required: true,
     },
+    banner: {
+      type: String,
+      default: "",
+    },
     introVideo: {
       type: String,
       default: null,
@@ -36,25 +40,25 @@ const courseSchema = new mongoose.Schema(
     // Video metadata fields
     introVideoStatus: {
       type: String,
-      enum: ['uploading', 'queueing', 'processing', 'ready', 'error'],
-      default: 'ready',
+      enum: ["uploading", "queueing", "processing", "ready", "error"],
+      default: "ready",
     },
     introVideoHlsUrl: {
       type: String,
-      default: '',
+      default: "",
     },
     introVideoQualityMetadata: {
       resolution: {
         type: String,
-        default: '',
+        default: "",
       },
       bitrate: {
         type: String,
-        default: '',
+        default: "",
       },
       codec: {
         type: String,
-        default: '',
+        default: "",
       },
       fps: {
         type: Number,
@@ -67,7 +71,7 @@ const courseSchema = new mongoose.Schema(
     },
     introVideoThumbnail: {
       type: String,
-      default: '',
+      default: "",
     },
     price: {
       type: Number,
@@ -155,7 +159,6 @@ const courseSchema = new mongoose.Schema(
 const Course = mongoose.models.Course || mongoose.model("Course", courseSchema);
 
 class CourseController {
-
   /**
    * Get all courses with full statistics
    * Includes isPurchased field if user is authenticated
@@ -190,7 +193,7 @@ class CourseController {
         courses.map(async (course: any) => {
           const courseData = course.toObject();
           const courseIdStr = course._id.toString();
-          
+
           // Check if user has purchased this course
           const isPurchased = userCourseRegister.some(
             (id: string) => String(id) === courseIdStr || id === courseIdStr
@@ -240,7 +243,10 @@ class CourseController {
 
           // Convert introVideo (15 phút expiry)
           const convertedIntroVideo = courseData.introVideo
-            ? await CourseController.convertMinioPathToUrl(courseData.introVideo, true)
+            ? await CourseController.convertMinioPathToUrl(
+                courseData.introVideo,
+                true
+              )
             : null;
 
           return {
@@ -342,12 +348,12 @@ class CourseController {
       // Check if user has purchased this course
       let userHasPurchased = false;
       if (userId) {
-        console.log('userIdsssss', userId)
+        console.log("userIdsssss", userId);
         try {
           const user = await MongoDbUsers.model.findById(userId.toString());
           if (user) {
             const courseRegister = (user as any).courseRegister || [];
-            console.log('courseRegistersssss', courseRegister)
+            console.log("courseRegistersssss", courseRegister);
             const courseIdStr = course._id.toString();
             userHasPurchased = courseRegister.some(
               (id: string) => String(id) == courseIdStr || id == courseIdStr
@@ -515,7 +521,7 @@ class CourseController {
               // 3. Bảo mật tốt hơn
               const rawVideoUrl = firstVideo?.videoUrl || null;
               const hasVideo = !!rawVideoUrl;
-              
+
               // Không trả về videoUrl trực tiếp - phải stream qua proxy
               const convertedVideoUrl: string | null = null;
               const needsProxy = hasVideo;
@@ -539,13 +545,18 @@ class CourseController {
                 (lessonData.videos || []).map(async (video: any) => {
                   const rawUrl = video.videoUrl;
                   const hasVideo = !!rawUrl;
-                  
+
                   // Check if video is HLS format (.m3u8)
-                  const isHls = rawUrl && (rawUrl.endsWith('.m3u8') || rawUrl.includes('.m3u8'));
-                  
+                  const isHls =
+                    rawUrl &&
+                    (rawUrl.endsWith(".m3u8") || rawUrl.includes(".m3u8"));
+
                   if (isHls) {
                     // HLS: Return HLS URL (will be streamed via proxy)
-                    const hlsUrl = await CourseController.convertMinioPathToUrl(rawUrl, true);
+                    const hlsUrl = await CourseController.convertMinioPathToUrl(
+                      rawUrl,
+                      true
+                    );
                     return {
                       ...video,
                       videoUrl: hlsUrl, // HLS URL - frontend will use hls.js
@@ -693,7 +704,7 @@ class CourseController {
       courseData.quizCount = totalQuizCount;
       courseData.examCount = totalQuizCount; // Alias for consistency
       courseData.isPurchased = userHasPurchased; // Add purchase status
-      
+
       // Convert introVideo (15 phút expiry)
       if (courseData.introVideo) {
         courseData.introVideo = await CourseController.convertMinioPathToUrl(
@@ -701,81 +712,108 @@ class CourseController {
           true // isVideo = true -> 15 min expiry
         );
       }
-      
+
       sendSuccess(res, { course: courseData });
     } catch (error: any) {
       sendError(res, 500, error.message, error as Error);
     }
   }
 
-    /**
+  /**
    * Convert MinIO path to full URL (presigned or public)
    * Video URLs có thời gian hết hạn ngắn (15 phút) để bảo mật
    */
-    private static async convertMinioPathToUrl(
-      path: string | null | undefined,
-      isVideo: boolean = false
-    ): Promise<string | null> {
-      if (!path) return null;
-  
-      if (path.startsWith("http://") || path.startsWith("https://")) {
-        return path;
-      }
-      
-      // Normalize path: remove leading /vanphuccare-video-edu/ and fix double slashes
-      let objectName = path.replace(/^\/vanphuccare-video-edu\//, "");
-      // Fix double slashes (e.g., //images/ -> /images/)
-      objectName = objectName.replace(/\/+/g, '/');
-      // Remove leading slash if present
-      objectName = objectName.replace(/^\//, '');
-      
-      try {
-        // Video: 15 phút, Các file khác: 24 giờ
-        const expirySeconds = isVideo ? 15 * 60 : 24 * 60 * 60;
-        const fileUrl = await CloudflareService.getFileUrlWithFallback(
-          objectName,
-          false,
-          expirySeconds
-        );
-        return fileUrl; 
-      } catch (error) {
-        console.error("❌ Error converting MinIO path to URL:", path, error);
-        return CloudflareService.getPublicUrl(objectName);
-      }
+  private static async convertMinioPathToUrl(
+    path: string | null | undefined,
+    isVideo: boolean = false
+  ): Promise<string | null> {
+    if (!path) return null;
+
+    if (path.startsWith("http://") || path.startsWith("https://")) {
+      return path;
     }
+
+    // Normalize path: remove leading /vanphuccare-video-edu/ and fix double slashes
+    let objectName = path.replace(/^\/vanphuccare-video-edu\//, "");
+    // Fix double slashes (e.g., //images/ -> /images/)
+    objectName = objectName.replace(/\/+/g, "/");
+    // Remove leading slash if present
+    objectName = objectName.replace(/^\//, "");
+
+    try {
+      // Video: 15 phút, Các file khác: 24 giờ
+      const expirySeconds = isVideo ? 15 * 60 : 24 * 60 * 60;
+      const fileUrl = await CloudflareService.getFileUrlWithFallback(
+        objectName,
+        false,
+        expirySeconds
+      );
+      return fileUrl;
+    } catch (error) {
+      console.error("❌ Error converting MinIO path to URL:", path, error);
+      return CloudflareService.getPublicUrl(objectName);
+    }
+  }
 
   /**
    * Get purchased course IDs for a user
    * Returns array of courseIds from completed orders
    */
-  private static async getPurchasedCourseIds(userId: string): Promise<string[]> {
+  private static async getPurchasedCourseIds(
+    userId: string
+  ): Promise<string[]> {
     try {
-      const orderSchema = new mongoose.Schema({
-        orderId: { type: String, required: true, unique: true },
-        userId: { type: String, required: true },
-        items: [{
-          courseId: { type: mongoose.Schema.Types.ObjectId, ref: 'courses', required: true },
-          course: { type: Object, required: true },
-          price: { type: Number, required: true }
-        }],
-        status: { type: String, enum: ['pending', 'processing', 'completed', 'cancelled', 'refunded'], default: 'pending' },
-        paymentStatus: { type: String, enum: ['pending', 'completed', 'failed', 'cancelled'], default: 'pending' }
-      }, { timestamps: true });
+      const orderSchema = new mongoose.Schema(
+        {
+          orderId: { type: String, required: true, unique: true },
+          userId: { type: String, required: true },
+          items: [
+            {
+              courseId: {
+                type: mongoose.Schema.Types.ObjectId,
+                ref: "courses",
+                required: true,
+              },
+              course: { type: Object, required: true },
+              price: { type: Number, required: true },
+            },
+          ],
+          status: {
+            type: String,
+            enum: [
+              "pending",
+              "processing",
+              "completed",
+              "cancelled",
+              "refunded",
+            ],
+            default: "pending",
+          },
+          paymentStatus: {
+            type: String,
+            enum: ["pending", "completed", "failed", "cancelled"],
+            default: "pending",
+          },
+        },
+        { timestamps: true }
+      );
 
-      const OrderModel = mongoose.models.Order || mongoose.model('Order', orderSchema);
+      const OrderModel =
+        mongoose.models.Order || mongoose.model("Order", orderSchema);
 
       const completedOrders = await OrderModel.find({
         userId: userId.toString(),
-        status: 'completed',
-        paymentStatus: 'completed'
+        status: "completed",
+        paymentStatus: "completed",
       });
 
       const purchasedCourseIds = new Set<string>();
-      
+
       completedOrders.forEach((order: any) => {
         if (order.items && Array.isArray(order.items)) {
           order.items.forEach((item: any) => {
-            const courseId = item.courseId?.toString() || item.course?._id?.toString();
+            const courseId =
+              item.courseId?.toString() || item.course?._id?.toString();
             if (courseId) {
               purchasedCourseIds.add(courseId);
             }
@@ -785,7 +823,7 @@ class CourseController {
 
       return Array.from(purchasedCourseIds);
     } catch (error: any) {
-      console.error('❌ Error getting purchased course IDs:', error);
+      console.error("❌ Error getting purchased course IDs:", error);
       return [];
     }
   }
@@ -797,72 +835,167 @@ class CourseController {
   public async getMyCourses(req: Request, res: Response) {
     try {
       const currentUser = (req as any).currentUser;
-      
+
       if (!currentUser) {
-        return sendError(res, 400, 'Unauthorized - User not authenticated');
+        return sendError(res, 400, "Unauthorized - User not authenticated");
       }
 
       const userId = currentUser._id?.toString() || currentUser.id?.toString();
-      
+
       if (!userId) {
-        return sendError(res, 400, 'User ID not found');
+        return sendError(res, 400, "User ID not found");
       }
 
-      const purchasedCourseIds = await CourseController.getPurchasedCourseIds(userId);
+      const purchasedCourseIds = await CourseController.getPurchasedCourseIds(
+        userId
+      );
 
       if (purchasedCourseIds.length === 0) {
         return sendSuccess(res, { courses: [] });
       }
 
       // Aggregation: compute per-course progress (totalLessons, completedLessons, percentage, isCompleted) for the current user
-      const purchasedObjectIds = purchasedCourseIds.map(id => new mongoose.Types.ObjectId(id));
+      const purchasedObjectIds = purchasedCourseIds.map(
+        (id) => new mongoose.Types.ObjectId(id)
+      );
       const userIdStr = userId.toString();
 
       const agg = await Course.aggregate([
-        { $match: { _id: { $in: purchasedObjectIds }, status: 'active' } },
-        { $lookup: { from: 'chapters', localField: '_id', foreignField: 'courseId', as: 'chapters' } },
-        { $lookup: {
-            from: 'lessons',
-            let: { chapterIds: '$chapters._id' },
+        { $match: { _id: { $in: purchasedObjectIds }, status: "active" } },
+        {
+          $lookup: {
+            from: "chapters",
+            localField: "_id",
+            foreignField: "courseId",
+            as: "chapters",
+          },
+        },
+        {
+          $lookup: {
+            from: "lessons",
+            let: { chapterIds: "$chapters._id" },
             pipeline: [
-              { $match: { $expr: { $and: [ { $in: ['$chapterId', '$$chapterIds'] }, { $eq: ['$status', 'active'] } ] } } },
-              { $project: { _id: 1 } }
+              {
+                $match: {
+                  $expr: {
+                    $and: [
+                      { $in: ["$chapterId", "$$chapterIds"] },
+                      { $eq: ["$status", "active"] },
+                    ],
+                  },
+                },
+              },
+              { $project: { _id: 1 } },
             ],
-            as: 'lessons'
-        } },
-        { $lookup: {
-            from: 'lessonprogresses',
-            let: { courseId: '$_id' },
+            as: "lessons",
+          },
+        },
+        {
+          $lookup: {
+            from: "lessonprogresses",
+            let: { courseId: "$_id" },
             pipeline: [
-              { $match: { $expr: { $and: [ { $eq: ['$userId', userIdStr] }, { $eq: ['$courseId', { $toString: '$$courseId' }] }, { $eq: ['$completed', true] } ] } } },
-              { $project: { lessonId: 1, _id: 0 } }
+              {
+                $match: {
+                  $expr: {
+                    $and: [
+                      { $eq: ["$userId", userIdStr] },
+                      { $eq: ["$courseId", { $toString: "$$courseId" }] },
+                      { $eq: ["$completed", true] },
+                    ],
+                  },
+                },
+              },
+              { $project: { lessonId: 1, _id: 0 } },
             ],
-            as: 'lessonProgresses'
-        } },
-        { $lookup: {
-            from: 'quiz_attempts',
-            let: { courseId: '$_id' },
+            as: "lessonProgresses",
+          },
+        },
+        {
+          $lookup: {
+            from: "quiz_attempts",
+            let: { courseId: "$_id" },
             pipeline: [
-              { $match: { $expr: { $and: [ { $eq: ['$userId', userIdStr] }, { $eq: ['$courseId', { $toString: '$$courseId' }] }, { $eq: ['$status', 'completed'] }, { $eq: ['$passed', true] } ] } } },
-              { $project: { lessonId: 1, _id: 0 } }
+              {
+                $match: {
+                  $expr: {
+                    $and: [
+                      { $eq: ["$userId", userIdStr] },
+                      { $eq: ["$courseId", { $toString: "$$courseId" }] },
+                      { $eq: ["$status", "completed"] },
+                      { $eq: ["$passed", true] },
+                    ],
+                  },
+                },
+              },
+              { $project: { lessonId: 1, _id: 0 } },
             ],
-            as: 'quizAttempts'
-        } },
-        { $addFields: {
-            totalLessons: { $size: '$lessons' },
-            completedLessonIds: { $setUnion: [ { $map: { input: '$lessonProgresses', as: 'p', in: '$$p.lessonId' } }, { $map: { input: '$quizAttempts', as: 'q', in: '$$q.lessonId' } } ] }
-        } },
-        { $addFields: {
-            completedLessons: { $size: '$completedLessonIds' }
-        } },
-        { $addFields: {
-            progressPercentage: { $cond: [ { $gt: ['$totalLessons', 0] }, { $round: [ { $multiply: [ { $divide: ['$completedLessons', '$totalLessons'] }, 100 ] }, 0 ] }, 0 ] }
-        } },
-        { $addFields: {
-            isCompleted: { $cond: [ { $gte: ['$progressPercentage', 100] }, true, false ] }
-        } },
-        { $project: { _id: 1, isCompleted: 1, progressPercentage: 1, completedLessons: 1, totalLessons: 1, createdAt: 1 } },
-        { $sort: { isCompleted: 1, createdAt: -1 } }
+            as: "quizAttempts",
+          },
+        },
+        {
+          $addFields: {
+            totalLessons: { $size: "$lessons" },
+            completedLessonIds: {
+              $setUnion: [
+                {
+                  $map: {
+                    input: "$lessonProgresses",
+                    as: "p",
+                    in: "$$p.lessonId",
+                  },
+                },
+                {
+                  $map: { input: "$quizAttempts", as: "q", in: "$$q.lessonId" },
+                },
+              ],
+            },
+          },
+        },
+        {
+          $addFields: {
+            completedLessons: { $size: "$completedLessonIds" },
+          },
+        },
+        {
+          $addFields: {
+            progressPercentage: {
+              $cond: [
+                { $gt: ["$totalLessons", 0] },
+                {
+                  $round: [
+                    {
+                      $multiply: [
+                        { $divide: ["$completedLessons", "$totalLessons"] },
+                        100,
+                      ],
+                    },
+                    0,
+                  ],
+                },
+                0,
+              ],
+            },
+          },
+        },
+        {
+          $addFields: {
+            isCompleted: {
+              $cond: [{ $gte: ["$progressPercentage", 100] }, true, false],
+            },
+          },
+        },
+        {
+          $project: {
+            _id: 1,
+            isCompleted: 1,
+            progressPercentage: 1,
+            completedLessons: 1,
+            totalLessons: 1,
+            createdAt: 1,
+          },
+        },
+        { $sort: { isCompleted: 1, createdAt: -1 } },
       ]);
 
       const orderedCourseIds = agg.map((c: any) => c._id);
@@ -873,7 +1006,9 @@ class CourseController {
 
       // Fetch course docs (unordered) and preserve order using orderedCourseIds
       const courseDocs = await Course.find({ _id: { $in: orderedCourseIds } });
-      const courseDocsById = new Map(courseDocs.map((c: any) => [String(c._id), c]));
+      const courseDocsById = new Map(
+        courseDocs.map((c: any) => [String(c._id), c])
+      );
 
       const coursesWithStats = await Promise.all(
         orderedCourseIds.map(async (orderedCourseId: any) => {
@@ -932,7 +1067,10 @@ class CourseController {
 
           // Convert introVideo (15 phút expiry)
           const convertedIntroVideo = courseData.introVideo
-            ? await CourseController.convertMinioPathToUrl(courseData.introVideo, true)
+            ? await CourseController.convertMinioPathToUrl(
+                courseData.introVideo,
+                true
+              )
             : null;
 
           return {
@@ -942,6 +1080,7 @@ class CourseController {
             description: courseData.description,
             shortDescription: courseData.shortDescription,
             thumbnail: courseData.thumbnail,
+            banner: courseData.banner || '',
             introVideo: convertedIntroVideo,
             price: courseData.price,
             originalPrice: courseData.originalPrice || courseData.price,
@@ -965,9 +1104,14 @@ class CourseController {
             quizCount: totalQuizCount,
             progress: {
               totalLessons: aggMap.get(courseId)?.totalLessons ?? totalLessons,
-              completedLessons: aggMap.get(courseId)?.completedLessons ?? completedLessons,
-              progressPercentage: aggMap.get(courseId)?.progressPercentage ?? progressPercentage,
-              isCompleted: (aggMap.get(courseId)?.isCompleted ?? ((aggMap.get(courseId)?.progressPercentage ?? progressPercentage) === 100)),
+              completedLessons:
+                aggMap.get(courseId)?.completedLessons ?? completedLessons,
+              progressPercentage:
+                aggMap.get(courseId)?.progressPercentage ?? progressPercentage,
+              isCompleted:
+                aggMap.get(courseId)?.isCompleted ??
+                (aggMap.get(courseId)?.progressPercentage ??
+                  progressPercentage) === 100,
             },
 
             createdAt: courseData.createdAt,
@@ -979,7 +1123,7 @@ class CourseController {
       // courses are already ordered by aggregation (incomplete first, then completed; ties by createdAt desc)
       sendSuccess(res, { courses: coursesWithStats });
     } catch (error: any) {
-      console.error('❌ Get my courses error:', error);
+      console.error("❌ Get my courses error:", error);
       sendError(res, 500, error.message, error as Error);
     }
   }
@@ -994,13 +1138,13 @@ class CourseController {
       const currentUser = (req as any).currentUser;
 
       if (!currentUser) {
-        return sendError(res, 401, 'Unauthorized - User not authenticated');
+        return sendError(res, 401, "Unauthorized - User not authenticated");
       }
 
       const userId = currentUser._id?.toString() || currentUser.id?.toString();
 
       if (!userId) {
-        return sendError(res, 400, 'User ID not found');
+        return sendError(res, 400, "User ID not found");
       }
 
       // Get course by slug
@@ -1011,7 +1155,9 @@ class CourseController {
       }
 
       // Check if user has purchased this course
-      const purchasedCourseIds = await CourseController.getPurchasedCourseIds(userId);
+      const purchasedCourseIds = await CourseController.getPurchasedCourseIds(
+        userId
+      );
       const courseId = course._id.toString();
 
       if (!purchasedCourseIds.includes(courseId)) {
@@ -1178,7 +1324,7 @@ class CourseController {
               // 3. Bảo mật tốt hơn
               const rawVideoUrl = firstVideo?.videoUrl || null;
               const hasVideo = !!rawVideoUrl;
-              
+
               // Không trả về videoUrl trực tiếp - phải stream qua proxy
               const convertedVideoUrl: string | null = null;
               const needsProxy = hasVideo;
@@ -1202,13 +1348,18 @@ class CourseController {
                 (lessonData.videos || []).map(async (video: any) => {
                   const rawUrl = video.videoUrl;
                   const hasVideo = !!rawUrl;
-                  
+
                   // Check if video is HLS format (.m3u8)
-                  const isHls = rawUrl && (rawUrl.endsWith('.m3u8') || rawUrl.includes('.m3u8'));
-                  
+                  const isHls =
+                    rawUrl &&
+                    (rawUrl.endsWith(".m3u8") || rawUrl.includes(".m3u8"));
+
                   if (isHls) {
                     // HLS: Return HLS URL (will be streamed via proxy)
-                    const hlsUrl = await CourseController.convertMinioPathToUrl(rawUrl, true);
+                    const hlsUrl = await CourseController.convertMinioPathToUrl(
+                      rawUrl,
+                      true
+                    );
                     return {
                       ...video,
                       videoUrl: hlsUrl, // HLS URL - frontend will use hls.js
@@ -1363,7 +1514,7 @@ class CourseController {
 
       sendSuccess(res, { course: courseData });
     } catch (error: any) {
-      console.error('❌ Get my course by slug error:', error);
+      console.error("❌ Get my course by slug error:", error);
       sendError(res, 500, error.message, error as Error);
     }
   }

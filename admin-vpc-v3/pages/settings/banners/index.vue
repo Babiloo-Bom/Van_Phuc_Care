@@ -30,7 +30,7 @@
             <a-upload
               v-model:file-list="allCoursesFileList"
               list-type="picture-card"
-              :before-upload="(file: any) => { (currentUploadPageType as any).value = 'all-courses'; return beforeUpload(file); }"
+              :before-upload="beforeUploadAllCourses"
               @preview="handlePreview"
               @remove="() => handleRemove('all-courses')"
               accept="image/*"
@@ -77,7 +77,7 @@
             <a-upload
               v-model:file-list="myCoursesFileList"
               list-type="picture-card"
-              :before-upload="(file: any) => { (currentUploadPageType as any).value = 'my-courses'; return beforeUpload(file); }"
+              :before-upload="beforeUploadMyCourses"
               @preview="handlePreview"
               @remove="() => handleRemove('my-courses')"
               accept="image/*"
@@ -137,7 +137,6 @@ const allCoursesFileList = ref<UploadFile[]>([])
 const myCoursesFileList = ref<UploadFile[]>([])
 const previewVisible = ref(false)
 const previewImage = ref('')
-const currentUploadPageType = ref<'all-courses' | 'my-courses'>('all-courses')
 
 const allCoursesForm = reactive<{
   page: string
@@ -210,47 +209,55 @@ const fetchBanners = async () => {
   }
 }
 
-// Handle upload
-const beforeUpload = async (file: any) => {
-  const pageType = currentUploadPageType.value
-  const fileObj = file as File
-  const isImage = fileObj.type.startsWith('image/')
+// Handle upload - separate functions for each page type
+const handleUpload = async (file: File, pageType: 'all-courses' | 'my-courses') => {
+  console.log('=== Starting upload for', pageType, '===')
+  console.log('File:', file.name, file.type, file.size)
+  
+  const isImage = file.type.startsWith('image/')
   if (!isImage) {
     message.error('Chỉ được upload file ảnh!')
-    return false
+    return
   }
-  const isLt10M = fileObj.size / 1024 / 1024 < 10
+  const isLt10M = file.size / 1024 / 1024 < 10
   if (!isLt10M) {
     message.error('Ảnh phải nhỏ hơn 10MB!')
-    return false
+    return
   }
   
   // Upload to server
   uploading.value = true
   try {
-    const uploadResponse = await uploadsApi.uploadImage(fileObj)
+    const uploadResponse = await uploadsApi.uploadImage(file)
+    console.log('Upload response:', JSON.stringify(uploadResponse, null, 2))
     
     if (uploadResponse.status) {
-      const responseData = (uploadResponse as any).data?.data || (uploadResponse as any).data || uploadResponse
+      // Response structure: { status: true, data: { message: '', data: { fileAttributes: [{ source: 'url' }] } } }
+      const responseData = uploadResponse.data as any
       let imageUrl = ''
       
       // Try multiple possible paths for the image URL
-      if (responseData.fileAttributes && responseData.fileAttributes[0]?.source) {
-        imageUrl = responseData.fileAttributes[0].source
-      } else if (responseData.data?.fileAttributes?.[0]?.source) {
+      // Path 1: data.data.fileAttributes[0].source (from sendSuccess wrap)
+      if (responseData?.data?.fileAttributes?.[0]?.source) {
         imageUrl = responseData.data.fileAttributes[0].source
-      } else if (responseData.url) {
-        imageUrl = responseData.url
-      } else if (responseData.data?.url) {
-        imageUrl = responseData.data.url
-      } else if (responseData.files && responseData.files[0]?.url) {
-        imageUrl = responseData.files[0].url
       }
+      // Path 2: data.fileAttributes[0].source (direct response)
+      else if (responseData?.fileAttributes?.[0]?.source) {
+        imageUrl = responseData.fileAttributes[0].source
+      }
+      // Path 3: Other formats
+      else if (responseData?.url) {
+        imageUrl = responseData.url
+      } else if (responseData?.data?.url) {
+        imageUrl = responseData.data.url
+      }
+      
+      console.log('Extracted image URL:', imageUrl)
       
       if (imageUrl) {
         const fileItem = {
-          uid: file.uid || Date.now().toString(),
-          name: fileObj.name || 'image.png',
+          uid: Date.now().toString(),
+          name: file.name || 'image.png',
           status: 'done' as const,
           url: imageUrl,
         }
@@ -264,6 +271,7 @@ const beforeUpload = async (file: any) => {
         }
         message.success('Upload ảnh thành công')
       } else {
+        console.error('Could not extract image URL from response:', responseData)
         throw new Error('Không thể lấy URL ảnh từ server')
       }
     } else {
@@ -275,8 +283,19 @@ const beforeUpload = async (file: any) => {
   } finally {
     uploading.value = false
   }
-  
-  return false // Prevent auto upload
+}
+
+// Wrapper functions for beforeUpload - must return false to prevent auto upload
+const beforeUploadAllCourses = (file: File) => {
+  console.log('beforeUploadAllCourses called')
+  handleUpload(file, 'all-courses')
+  return false
+}
+
+const beforeUploadMyCourses = (file: File) => {
+  console.log('beforeUploadMyCourses called')
+  handleUpload(file, 'my-courses')
+  return false
 }
 
 const handlePreview = (file: UploadFile) => {
@@ -299,7 +318,7 @@ const handleSave = async (pageType: 'all-courses' | 'my-courses') => {
   saving.value = true
   try {
     const formData = pageType === 'all-courses' ? allCoursesForm : myCoursesForm
-    
+    console.log('Saving banner for', formData.image)
     if (!formData.image) {
       message.error('Vui lòng upload hình ảnh')
       return
