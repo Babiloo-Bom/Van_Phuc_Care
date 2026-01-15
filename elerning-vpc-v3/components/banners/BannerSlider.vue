@@ -202,10 +202,13 @@ const { getBanners } = useBannersApi()
 const hasBanners = computed(() => banners.value && banners.value.length > 0)
 
 // Helper function để tạo background style - giải quyết SSR/CSR hydration issue
+// Wrap URL trong quotes để handle special characters như () và spaces
 const getBannerStyle = (imageUrl: string) => {
   if (!imageUrl) return {}
+  // Escape quotes trong URL nếu có, và wrap trong double quotes
+  const safeUrl = imageUrl.replace(/"/g, '%22')
   return {
-    backgroundImage: `url(${imageUrl})`,
+    backgroundImage: `url("${safeUrl}")`,
     backgroundSize: 'cover',
     backgroundPosition: 'center',
     backgroundRepeat: 'no-repeat',

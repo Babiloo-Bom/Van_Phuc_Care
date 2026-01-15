@@ -927,15 +927,19 @@ const videoRef = ref<any>(null)
 const course = computed(() => coursesStore.course);
 
 // Computed property cho hero background style - giải quyết vấn đề SSR/CSR hydration
+// Wrap URL trong quotes để handle special characters như () và spaces
 const heroBackgroundStyle = computed(() => {
   const bannerUrl = course.value?.banner;
   const thumbnailUrl = course.value?.thumbnail;
   
+  // Escape quotes trong URL nếu có
+  const escapeUrl = (url: string) => url.replace(/"/g, '%22');
+  
   if (bannerUrl) {
-    return `url(${bannerUrl}) center center/cover no-repeat`;
+    return `url("${escapeUrl(bannerUrl)}") center center/cover no-repeat`;
   }
   if (thumbnailUrl) {
-    return `url(${thumbnailUrl}) center center/cover no-repeat`;
+    return `url("${escapeUrl(thumbnailUrl)}") center center/cover no-repeat`;
   }
   return '#0e1d29db';
 });
