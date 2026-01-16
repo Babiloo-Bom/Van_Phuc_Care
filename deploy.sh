@@ -43,15 +43,99 @@ else
     echo "   Using existing environment variables"
 fi
 
+# Check network connectivity to ghcr.io (optional check)
+echo "🌐 Checking network connectivity to GitHub Container Registry..."
+if command -v curl >/dev/null 2>&1; then
+    if curl -s --max-time 5 https://ghcr.io >/dev/null 2>&1; then
+        echo "✅ Network connectivity to ghcr.io confirmed"
+    else
+        echo "⚠️  Warning: Cannot reach ghcr.io. Network connectivity may be limited."
+        echo "   Proceeding anyway - this may cause pull failures..."
+    fi
+elif command -v wget >/dev/null 2>&1; then
+    if wget -q --spider --timeout=5 https://ghcr.io 2>/dev/null; then
+        echo "✅ Network connectivity to ghcr.io confirmed"
+    else
+        echo "⚠️  Warning: Cannot reach ghcr.io. Network connectivity may be limited."
+        echo "   Proceeding anyway - this may cause pull failures..."
+    fi
+else
+    echo "ℹ️  Skipping connectivity check (curl/wget not available)"
+fi
+
 # Login to GitHub Container Registry (if needed)
 if [ -n "$GITHUB_TOKEN" ]; then
     echo "🔐 Logging in to GitHub Container Registry..."
-    echo "$GITHUB_TOKEN" | docker login ghcr.io -u "$GITHUB_USERNAME" --password-stdin
+    if ! echo "$GITHUB_TOKEN" | docker login ghcr.io -u "$GITHUB_USERNAME" --password-stdin; then
+        echo "❌ Failed to login to GitHub Container Registry"
+        exit 1
+    fi
 fi
 
-# Pull latest images
+# Pull latest images with retry logic
 echo "⬇️  Pulling latest Docker images..."
-docker compose -f $COMPOSE_FILE $ENV_FILE_FLAG pull
+# Increase Docker client timeout for slow network connections
+export DOCKER_CLIENT_TIMEOUT=300
+export COMPOSE_HTTP_TIMEOUT=300
+MAX_RETRIES=3
+RETRY_DELAY=5
+RETRY_COUNT=0
+PULL_SUCCESS=false
+
+# First, try pulling all images at once
+while [ $RETRY_COUNT -lt $MAX_RETRIES ]; do
+    if docker compose -f $COMPOSE_FILE $ENV_FILE_FLAG pull; then
+        echo "✅ Successfully pulled all Docker images"
+        PULL_SUCCESS=true
+        break
+    else
+        RETRY_COUNT=$((RETRY_COUNT + 1))
+        if [ $RETRY_COUNT -lt $MAX_RETRIES ]; then
+            echo "⚠️  Bulk pull failed (attempt $RETRY_COUNT/$MAX_RETRIES). Retrying in ${RETRY_DELAY}s..."
+            sleep $RETRY_DELAY
+            # Re-login in case token expired
+            if [ -n "$GITHUB_TOKEN" ]; then
+                echo "🔐 Re-authenticating with GitHub Container Registry..."
+                echo "$GITHUB_TOKEN" | docker login ghcr.io -u "$GITHUB_USERNAME" --password-stdin
+            fi
+        fi
+    fi
+done
+
+# If bulk pull failed, try pulling images individually
+if [ "$PULL_SUCCESS" = false ]; then
+    echo "⚠️  Bulk pull failed. Attempting to pull images individually..."
+    RETRY_COUNT=0
+    
+    # List of services that need to be pulled from ghcr.io
+    SERVICES="api admin crm elearning"
+    
+    for service in $SERVICES; do
+        RETRY_COUNT=0
+        SERVICE_PULLED=false
+        
+        while [ $RETRY_COUNT -lt $MAX_RETRIES ]; do
+            if docker compose -f $COMPOSE_FILE $ENV_FILE_FLAG pull "$service" 2>/dev/null; then
+                echo "✅ Successfully pulled $service image"
+                SERVICE_PULLED=true
+                break
+            else
+                RETRY_COUNT=$((RETRY_COUNT + 1))
+                if [ $RETRY_COUNT -lt $MAX_RETRIES ]; then
+                    echo "⚠️  Failed to pull $service (attempt $RETRY_COUNT/$MAX_RETRIES). Retrying in ${RETRY_DELAY}s..."
+                    sleep $RETRY_DELAY
+                fi
+            fi
+        done
+        
+        if [ "$SERVICE_PULLED" = false ]; then
+            echo "❌ Failed to pull $service image after $MAX_RETRIES attempts"
+            exit 1
+        fi
+    done
+    
+    echo "✅ Successfully pulled all Docker images individually"
+fi
 
 # Stop and remove old containers
 echo "🛑 Stopping old containers..."
