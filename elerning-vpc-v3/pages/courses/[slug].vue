@@ -129,7 +129,7 @@
                       <div
                         class="border-t-[1px] border-solid border-gray-40 pt-3 sm:pt-4"
                       >
-                        <div class="text-sm sm:text-base" v-html="course?.description" />
+                        <div class="course-description-content text-sm sm:text-base" v-html="normalizedDescription || course?.description" />
                       </div>
                     </div>
                   </a-tab-pane>
@@ -316,7 +316,7 @@
                             </div>
 
                             <div class="mb-6">
-                              <p class="text-gray-600 text-lg leading-relaxed">
+                              <p class="text-gray-600 text-lg leading-relaxed course-description-content">
                                 <span v-html="course?.instructor?.bio || 'Thông tin tiểu sử đang được cập nhật...'"></span>
                               </p>
                             </div>
@@ -479,7 +479,7 @@
                                   <span class="text-sm text-gray-500 ml-2">
                                     {{
                                       new Date(
-                                        review.createdAt
+                                        review.reviewDate || review.createdAt
                                       ).toLocaleDateString("vi-VN")
                                     }}
                                   </span>
@@ -987,6 +987,53 @@ watch(
 const expandedChapters = ref<Record<number, boolean>>({ 0: true }); // B1 expanded by default
 const videoRef = ref<any>(null)
 const course = computed(() => coursesStore.course);
+
+// Normalize description HTML to ensure ul displays as bullets
+// Convert <ol> without type/start attributes to <ul> (likely bullet lists created incorrectly)
+const normalizedDescription = computed(() => {
+  if (!course.value?.description) return '';
+  
+  let html = course.value.description;
+  
+  // If running on client side, use DOM parser for more accurate conversion
+  if (process.client && typeof DOMParser !== 'undefined') {
+    try {
+      const parser = new DOMParser();
+      const doc = parser.parseFromString(html, 'text/html');
+      
+      // Find all <ol> elements without type or start attributes
+      const olElements = doc.querySelectorAll('ol:not([type]):not([start])');
+      olElements.forEach((ol) => {
+        const ul = doc.createElement('ul');
+        // Copy all attributes except type and start
+        Array.from(ol.attributes).forEach((attr) => {
+          if (attr.name !== 'type' && attr.name !== 'start') {
+            ul.setAttribute(attr.name, attr.value);
+          }
+        });
+        // Move all children
+        while (ol.firstChild) {
+          ul.appendChild(ol.firstChild);
+        }
+        // Replace ol with ul
+        ol.parentNode?.replaceChild(ul, ol);
+      });
+      
+      html = doc.body.innerHTML;
+    } catch (e) {
+      // Fallback to regex if DOM parsing fails
+      html = html.replace(/<ol(?![^>]*\s(type|start)=[^>]*)>/gi, '<ul>');
+      html = html.replace(/<\/ol>/gi, '</ul>');
+    }
+  } else {
+    // Server-side or fallback: use regex
+    // Convert <ol> without type/start to <ul> - these are likely bullet lists created incorrectly
+    html = html.replace(/<ol(?![^>]*\s(type|start)=[^>]*)>/gi, '<ul>');
+    html = html.replace(/<\/ol>/gi, '</ul>');
+  }
+  
+  return html;
+});
 
 // Computed property cho hero background style - giải quyết vấn đề SSR/CSR hydration
 // Wrap URL trong quotes để handle special characters như () và spaces
@@ -2387,5 +2434,174 @@ watch(
 
 .star-empty {
   color: #d9d9d9;
+}
+
+/* Course Description Content Styles - Rich Text Editor Output */
+.course-description-content {
+  line-height: 1.8;
+  color: #333;
+  /* Reset any list styling that might interfere */
+  counter-reset: none;
+}
+
+.course-description-content :deep(p) {
+  margin-bottom: 1em;
+  line-height: 1.8;
+}
+
+/* Ensure ul displays as bullet list - HIGH SPECIFICITY */
+.course-description-content :deep(ul),
+.course-description-content :deep(ul[class]),
+.course-description-content :deep(ul[style]),
+div.course-description-content :deep(ul) {
+  margin: 1em 0 !important;
+  padding-left: 2em !important;
+  line-height: 1.8 !important;
+  list-style-position: outside !important;
+  list-style-type: disc !important;
+  counter-reset: none !important;
+}
+
+.course-description-content :deep(ul li),
+.course-description-content :deep(ul > li),
+div.course-description-content :deep(ul li) {
+  margin-bottom: 0.5em !important;
+  padding-left: 0.5em !important;
+  line-height: 1.8 !important;
+  display: list-item !important;
+  list-style-type: disc !important;
+  list-style-position: outside !important;
+  counter-increment: none !important;
+}
+
+/* Remove any ::before pseudo-elements that might be adding numbers */
+.course-description-content :deep(ul li::before),
+.course-description-content :deep(ul li::marker) {
+  content: none !important;
+  display: none !important;
+}
+
+/* Use ::marker for proper bullet display */
+.course-description-content :deep(ul li::marker) {
+  content: '• ' !important;
+  color: #333 !important;
+  font-weight: bold !important;
+}
+
+/* If Quill accidentally created <ol> for bullet lists, convert styling */
+.course-description-content :deep(ol:not([type]):not([start])) {
+  list-style-type: disc !important;
+  counter-reset: none !important;
+}
+
+.course-description-content :deep(ol:not([type]):not([start]) li) {
+  list-style-type: disc !important;
+  counter-increment: none !important;
+}
+
+.course-description-content :deep(ol:not([type]):not([start]) li::marker) {
+  content: '• ' !important;
+  color: #333 !important;
+  font-weight: bold !important;
+}
+
+/* Ensure ol displays as numbered list */
+.course-description-content :deep(ol) {
+  margin: 1em 0 !important;
+  padding-left: 2em !important;
+  line-height: 1.8;
+  list-style-position: outside !important;
+  list-style-type: decimal !important;
+}
+
+.course-description-content :deep(ol li) {
+  margin-bottom: 0.5em;
+  padding-left: 0.5em;
+  line-height: 1.8;
+  display: list-item !important;
+  list-style-type: decimal !important;
+  list-style-position: outside !important;
+}
+
+/* General li styling */
+.course-description-content :deep(li) {
+  margin-bottom: 0.5em;
+  padding-left: 0.5em;
+  line-height: 1.8;
+  display: list-item !important;
+}
+
+.course-description-content :deep(ul ul),
+.course-description-content :deep(ol ol),
+.course-description-content :deep(ul ol),
+.course-description-content :deep(ol ul) {
+  margin-top: 0.5em;
+  margin-bottom: 0.5em;
+}
+
+.course-description-content :deep(ul ul) {
+  list-style-type: circle !important;
+}
+
+.course-description-content :deep(ul ul ul) {
+  list-style-type: square !important;
+}
+
+/* Force ul to show bullets even if it's nested or has classes */
+.course-description-content :deep(ul[class]),
+.course-description-content :deep(ul[style]) {
+  list-style-type: disc !important;
+}
+
+/* Prevent any CSS from converting ul to ol styling */
+.course-description-content :deep(ul) {
+  counter-reset: none !important;
+}
+
+.course-description-content :deep(ul li::before) {
+  content: none !important;
+}
+
+.course-description-content :deep(strong),
+.course-description-content :deep(b) {
+  font-weight: 600;
+}
+
+.course-description-content :deep(em),
+.course-description-content :deep(i) {
+  font-style: italic;
+}
+
+.course-description-content :deep(h1),
+.course-description-content :deep(h2),
+.course-description-content :deep(h3),
+.course-description-content :deep(h4),
+.course-description-content :deep(h5),
+.course-description-content :deep(h6) {
+  margin-top: 1.5em;
+  margin-bottom: 0.75em;
+  font-weight: 600;
+  line-height: 1.4;
+}
+
+.course-description-content :deep(h1) {
+  font-size: 1.75em;
+}
+
+.course-description-content :deep(h2) {
+  font-size: 1.5em;
+}
+
+.course-description-content :deep(h3) {
+  font-size: 1.25em;
+}
+
+.course-description-content :deep(a) {
+  color: #317BC4;
+  text-decoration: underline;
+}
+
+.course-description-content :deep(a:hover) {
+  color: #155a8f;
 }
 </style>

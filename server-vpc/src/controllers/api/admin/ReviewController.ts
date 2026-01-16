@@ -34,6 +34,10 @@ const reviewSchema = new mongoose.Schema({
   isVerified: {
     type: Boolean,
     default: false
+  },
+  reviewDate: {
+    type: Date,
+    default: null
   }
 }, {
   timestamps: true
@@ -74,17 +78,25 @@ class ReviewController {
    */
   public static async createReview(req: Request, res: Response) {
     try {
-      const { courseId, userId, userName, userAvatar, rating, content } = req.body;
+      const { courseId, userId, userName, userAvatar, rating, content, isVerified, reviewDate } = req.body;
       
-      const review = new Review({
+      // Prepare review data
+      const reviewData: any = {
         courseId,
         userId,
         userName,
         userAvatar,
         rating,
         content,
-        isVerified: true
-      });
+        isVerified: isVerified !== undefined ? isVerified : true
+      };
+      
+      // If reviewDate is provided, use it; otherwise createdAt will be set automatically
+      if (reviewDate) {
+        reviewData.reviewDate = new Date(reviewDate);
+      }
+      
+      const review = new Review(reviewData);
       
       await review.save();
       
@@ -101,17 +113,25 @@ class ReviewController {
   public static async updateReview(req: Request, res: Response) {
     try {
       const { reviewId } = req.params;
-      const { userName, userAvatar, rating, content, isVerified } = req.body;
+      const { userName, userAvatar, rating, content, isVerified, reviewDate } = req.body;
+      
+      // Prepare update data
+      const updateData: any = {
+        userName,
+        userAvatar,
+        rating,
+        content,
+        isVerified
+      };
+      
+      // If reviewDate is provided, update it
+      if (reviewDate !== undefined) {
+        updateData.reviewDate = reviewDate ? new Date(reviewDate) : null;
+      }
       
       const review = await Review.findByIdAndUpdate(
         reviewId,
-        {
-          userName,
-          userAvatar,
-          rating,
-          content,
-          isVerified
-        },
+        updateData,
         { new: true }
       );
       

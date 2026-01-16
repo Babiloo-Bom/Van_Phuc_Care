@@ -659,14 +659,42 @@
                   </a-col>
                 </a-row>
                 <div style="margin-top: 16px;">
-                  <h5>Bài học trong phần này:</h5>
-                  <div v-for="(lesson, lessonIndex) in chapter.lessons" :key="lessonIndex" style="margin-top: 12px; padding: 16px; background: #f5f5f5; border-radius: 4px; border: 1px solid #d9d9d9;">
-                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px;">
-                      <strong>B{{ lessonIndex + 1 }}: {{ lesson.title || 'Chưa có tiêu đề' }}</strong>
-                      <a-button type="text" danger size="small" @click="removeLesson(chapterIndex, lessonIndex)">
-                        <DeleteOutlined /> Xóa
-                      </a-button>
-                    </div>
+                  <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
+                    <h5 style="margin: 0;">Bài học trong phần này:</h5>
+                    <a-button 
+                      type="text" 
+                      size="small" 
+                      @click="toggleChapterLessonsCollapse(chapterIndex)"
+                      style="display: flex; align-items: center; gap: 4px;"
+                    >
+                      <UpOutlined v-if="!isChapterLessonsCollapsed(chapterIndex)" />
+                      <DownOutlined v-else />
+                      {{ isChapterLessonsCollapsed(chapterIndex) ? 'Mở rộng' : 'Thu gọn' }}
+                    </a-button>
+                  </div>
+                  <div v-show="!isChapterLessonsCollapsed(chapterIndex)">
+                    <div v-for="(lesson, lessonIndex) in chapter.lessons" :key="lessonIndex" style="margin-top: 12px; padding: 16px; background: #f5f5f5; border-radius: 4px; border: 1px solid #d9d9d9;">
+                      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px;">
+                        <div style="display: flex; align-items: center; gap: 8px; flex: 1;">
+                          <strong>B{{ lessonIndex + 1 }}: {{ lesson.title || 'Chưa có tiêu đề' }}</strong>
+                        </div>
+                        <div style="display: flex; align-items: center; gap: 8px;">
+                          <a-button 
+                            type="text" 
+                            size="small" 
+                            @click="toggleLessonCollapse(chapterIndex, lessonIndex)"
+                            style="display: flex; align-items: center; gap: 4px;"
+                          >
+                            <UpOutlined v-if="!isLessonCollapsed(chapterIndex, lessonIndex)" />
+                            <DownOutlined v-else />
+                            {{ isLessonCollapsed(chapterIndex, lessonIndex) ? 'Mở rộng' : 'Thu gọn' }}
+                          </a-button>
+                          <a-button type="text" danger size="small" @click="removeLesson(chapterIndex, lessonIndex)">
+                            <DeleteOutlined /> Xóa
+                          </a-button>
+                        </div>
+                      </div>
+                      <div v-show="!isLessonCollapsed(chapterIndex, lessonIndex)">
                     <a-row :gutter="16">
                       <a-col :span="24">
                         <a-form-item label="Tiêu đề bài học">
@@ -900,6 +928,8 @@
                         </a-col>
                       </template>
                     </a-row>
+                      </div>
+                    </div>
                   </div>
                   <a-button type="dashed" @click="addLesson(chapterIndex)" style="width: 100%; margin-top: 16px;">
                     <PlusOutlined /> Thêm bài học mới
@@ -1003,7 +1033,7 @@
                       <template #description>
                         <p style="margin: 8px 0 0 0; color: #666;">{{ item.content }}</p>
                         <span style="font-size: 12px; color: #999; margin-top: 8px; display: block;">
-                          {{ new Date(item.createdAt).toLocaleDateString('vi-VN') }}
+                          {{ formatDate(item.reviewDate || item.createdAt) }}
                         </span>
                       </template>
                     </a-list-item-meta>
@@ -1155,7 +1185,8 @@
       v-model:open="reviewModalVisible"
       :title="editingReview ? 'Chỉnh sửa đánh giá' : 'Thêm đánh giá mới'"
       :width="600"
-      :confirm-loading="reviewModalLoading"
+      :confirm-loading="reviewModalLoading || reviewAvatarUploading"
+      :ok-button-props="{ disabled: reviewAvatarUploading }"
       @ok="saveReview"
       @cancel="() => { reviewModalVisible = false; editingReview = null }"
     >
@@ -1165,53 +1196,112 @@
         layout="vertical"
       >
         <a-form-item
-          label="Chọn người dùng"
-          name="selectedUserId"
-          :rules="[{ required: true, message: 'Vui lòng chọn người dùng' }]"
+          label="Cách nhập thông tin người dùng"
+          name="userInputType"
         >
-          <a-select
-            v-model:value="reviewFormData.selectedUserId"
-            placeholder="Chọn người dùng từ hệ thống"
-            show-search
-            :filter-option="filterUserOption"
-            :loading="usersLoading"
-            @change="handleUserSelect"
-            @focus="() => { if (usersList.value.length === 0) fetchUsersList() }"
+          <a-radio-group v-model:value="reviewFormData.userInputType">
+            <a-radio value="select">Chọn người dùng</a-radio>
+            <a-radio value="manual">Tên người dùng</a-radio>
+          </a-radio-group>
+        </a-form-item>
+
+        <!-- Chọn người dùng từ hệ thống -->
+        <template v-if="reviewFormData.userInputType === 'select'">
+          <a-form-item
+            label="Chọn người dùng"
+            name="selectedUserId"
+            :rules="[{ required: reviewFormData.userInputType === 'select', message: 'Vui lòng chọn người dùng' }]"
           >
-            <a-select-option
-              v-for="user in usersList"
-              :key="user._id || user.id"
-              :value="user._id || user.id"
+            <a-select
+              v-model:value="reviewFormData.selectedUserId"
+              placeholder="Chọn người dùng từ hệ thống"
+              show-search
+              :filter-option="filterUserOption"
+              :loading="usersLoading"
+              @change="handleUserSelect"
+              @focus="() => { if (usersList.value.length === 0) fetchUsersList() }"
             >
-              <div style="display: flex; align-items: center; gap: 8px;">
-                <a-avatar
-                  :src="user.avatar || '/images/avatar-demo.png'"
-                  :size="24"
-                />
-                <span>{{ user.fullname || user.name || user.email }}</span>
-                <span v-if="user.email && (user.fullname || user.name)" style="color: #999; font-size: 12px;">
-                  ({{ user.email }})
-                </span>
+              <a-select-option
+                v-for="user in usersList"
+                :key="user._id || user.id"
+                :value="user._id || user.id"
+              >
+                <div style="display: flex; align-items: center; gap: 8px;">
+                  <a-avatar
+                    :src="user.avatar || '/images/avatar-demo.png'"
+                    :size="24"
+                  />
+                  <span>{{ user.fullname || user.name || user.email }}</span>
+                  <span v-if="user.email && (user.fullname || user.name)" style="color: #999; font-size: 12px;">
+                    ({{ user.email }})
+                  </span>
+                </div>
+              </a-select-option>
+            </a-select>
+          </a-form-item>
+          
+          <a-form-item
+            v-if="reviewFormData.selectedUserId"
+            label="Thông tin người dùng"
+          >
+            <div style="display: flex; align-items: center; gap: 12px; padding: 8px; background: #f5f5f5; border-radius: 4px;">
+              <a-avatar
+                :src="reviewFormData.userAvatar || '/images/avatar-demo.png'"
+                :size="40"
+              />
+              <div>
+                <div style="font-weight: 500;">{{ reviewFormData.userName }}</div>
+                <div style="font-size: 12px; color: #999;">Ảnh đại diện và tên đã được tự động lấy từ hệ thống</div>
               </div>
-            </a-select-option>
-          </a-select>
-        </a-form-item>
-        
-        <a-form-item
-          v-if="reviewFormData.selectedUserId"
-          label="Thông tin người dùng"
-        >
-          <div style="display: flex; align-items: center; gap: 12px; padding: 8px; background: #f5f5f5; border-radius: 4px;">
-            <a-avatar
-              :src="reviewFormData.userAvatar || '/images/avatar-demo.png'"
-              :size="40"
-            />
-            <div>
-              <div style="font-weight: 500;">{{ reviewFormData.userName }}</div>
-              <div style="font-size: 12px; color: #999;">Ảnh đại diện và tên đã được tự động lấy từ hệ thống</div>
             </div>
-          </div>
-        </a-form-item>
+          </a-form-item>
+        </template>
+
+        <!-- Nhập tên người dùng thủ công -->
+        <template v-if="reviewFormData.userInputType === 'manual'">
+          <a-form-item
+            label="Tên người dùng"
+            name="userName"
+            :rules="[{ required: reviewFormData.userInputType === 'manual', message: 'Vui lòng nhập tên người dùng' }]"
+          >
+            <a-input
+              v-model:value="reviewFormData.userName"
+              placeholder="Nhập tên người dùng"
+            />
+          </a-form-item>
+          
+          <a-form-item
+            label="Ảnh đại diện"
+            name="userAvatar"
+          >
+            <a-upload
+              v-model:file-list="reviewAvatarFileList"
+              list-type="picture-card"
+              :max-count="1"
+              :before-upload="() => false"
+              accept="image/*"
+              :disabled="reviewAvatarUploading"
+              @change="handleReviewAvatarChange"
+              @remove="handleRemoveReviewAvatar"
+            >
+              <div v-if="reviewAvatarFileList.length < 1">
+                <PlusOutlined />
+                <div style="margin-top: 8px">Upload</div>
+              </div>
+            </a-upload>
+            <div v-if="reviewAvatarUploading" style="margin-top: 8px; color: #1890ff; display: flex; align-items: center; gap: 8px;">
+              <a-spin size="small" />
+              <span>Đang tải ảnh lên...</span>
+            </div>
+            <div v-if="reviewFormData.userAvatar && reviewAvatarFileList.length === 0 && !reviewAvatarUploading" style="margin-top: 8px;">
+              <img 
+                :src="reviewFormData.userAvatar" 
+                alt="Avatar" 
+                style="max-width: 200px; max-height: 200px; border-radius: 4px;" 
+              />
+            </div>
+          </a-form-item>
+        </template>
         
         <a-form-item
           label="Đánh giá"
@@ -1230,6 +1320,19 @@
             v-model:value="reviewFormData.content"
             placeholder="Nhập nội dung đánh giá"
             :rows="4"
+          />
+        </a-form-item>
+        
+        <a-form-item
+          label="Ngày đánh giá"
+          name="reviewDate"
+        >
+          <a-date-picker
+            v-model:value="reviewFormData.reviewDate"
+            placeholder="Chọn ngày đánh giá"
+            style="width: 100%;"
+            format="YYYY-MM-DD"
+            value-format="YYYY-MM-DD"
           />
         </a-form-item>
         
@@ -1258,8 +1361,9 @@ import {
   UserOutlined,
   CalendarOutlined,
   TagOutlined,
-  LevelOutlined,
   TagsOutlined,
+  UpOutlined,
+  DownOutlined,
 } from '@ant-design/icons-vue'
 import { useUploadsApi } from '~/composables/api/useUploadsApi'
 import { useUsersApi } from '~/composables/api/useUsersApi'
@@ -1313,6 +1417,32 @@ const formRef = ref()
 const viewModalVisible = ref(false)
 const viewingCourse = ref<Course | null>(null)
 
+// State để quản lý collapse/expand cho chapters và lessons
+// Key format: `chapter-${chapterIndex}` cho chapter collapse
+// Key format: `chapter-${chapterIndex}-lesson-${lessonIndex}` cho lesson collapse
+const collapseState = reactive<Record<string, boolean>>({})
+
+// Helper functions để toggle collapse
+const toggleChapterLessonsCollapse = (chapterIndex: number) => {
+  const key = `chapter-${chapterIndex}`
+  collapseState[key] = !collapseState[key]
+}
+
+const toggleLessonCollapse = (chapterIndex: number, lessonIndex: number) => {
+  const key = `chapter-${chapterIndex}-lesson-${lessonIndex}`
+  collapseState[key] = !collapseState[key]
+}
+
+const isChapterLessonsCollapsed = (chapterIndex: number): boolean => {
+  const key = `chapter-${chapterIndex}`
+  return collapseState[key] === true
+}
+
+const isLessonCollapsed = (chapterIndex: number, lessonIndex: number): boolean => {
+  const key = `chapter-${chapterIndex}-lesson-${lessonIndex}`
+  return collapseState[key] === true
+}
+
 // Helper function to extract image URL from upload response
 // Handles multiple possible response structures from the API
 const extractImageUrl = (response: any): string => {
@@ -1363,15 +1493,19 @@ const reviewModalLoading = ref(false)
 const editingReview = ref<any>(null)
 const reviewFormRef = ref()
 const reviewFormData = reactive({
+  userInputType: 'select' as 'select' | 'manual', // 'select' = Chọn người dùng, 'manual' = Tên người dùng
   selectedUserId: null as string | null,
   userName: '',
   userAvatar: '',
   rating: 5,
   content: '',
   isVerified: true,
+  reviewDate: null as string | null, // Ngày đánh giá
 })
 const usersList = ref<any[]>([])
 const usersLoading = ref(false)
+const reviewAvatarFileList = ref<any[]>([])
+const reviewAvatarUploading = ref(false) // Track avatar upload status
 
 // Store polling interval references to clear them when needed
 const introVideoPollInterval = ref<NodeJS.Timeout | null>(null)
@@ -3029,15 +3163,73 @@ const handleUserSelect = (userId: string) => {
   }
 }
 
+// Handler for review avatar upload
+const handleReviewAvatarChange = async (info: any) => {
+  const { fileList } = info
+  
+  // Nếu file đã được remove
+  if (fileList.length === 0) {
+    handleRemoveReviewAvatar()
+    return
+  }
+  
+  // Chỉ xử lý khi có file mới được thêm vào
+  if (fileList.length > 0 && fileList[0].originFileObj) {
+    const file = fileList[0].originFileObj as File
+    
+    // Set uploading state
+    reviewAvatarUploading.value = true
+    
+    // Upload file
+    try {
+      const uploadsApi = useUploadsApi()
+      const response = await uploadsApi.uploadImage(file)
+      
+      if (response.status && response.data) {
+        const imageUrl = extractImageUrl(response)
+        if (imageUrl) {
+          reviewFormData.userAvatar = imageUrl
+          message.success('Tải ảnh đại diện thành công')
+        } else {
+          message.error('Không nhận được URL ảnh từ server')
+          // Remove file from list if no URL received
+          reviewAvatarFileList.value = []
+        }
+      } else {
+        message.error('Tải ảnh đại diện thất bại')
+        // Remove file from list if upload failed
+        reviewAvatarFileList.value = []
+      }
+    } catch (error: any) {
+      console.error('Error uploading avatar:', error)
+      message.error(error.message || 'Lỗi khi tải ảnh đại diện')
+      // Remove file from list if upload failed
+      reviewAvatarFileList.value = []
+    } finally {
+      // Reset uploading state
+      reviewAvatarUploading.value = false
+    }
+  }
+}
+
+const handleRemoveReviewAvatar = () => {
+  reviewFormData.userAvatar = '/images/avatar-demo.png'
+  reviewAvatarFileList.value = []
+}
+
 // Show add review modal
 const showAddReviewModal = async () => {
   editingReview.value = null
+  reviewFormData.userInputType = 'select'
   reviewFormData.selectedUserId = null
   reviewFormData.userName = ''
   reviewFormData.userAvatar = '/images/avatar-demo.png'
   reviewFormData.rating = 5
   reviewFormData.content = ''
   reviewFormData.isVerified = true
+  reviewFormData.reviewDate = null
+  reviewAvatarFileList.value = []
+  reviewAvatarUploading.value = false
   
   // Fetch users if not already loaded
   if (usersList.value.length === 0) {
@@ -3055,19 +3247,35 @@ const editReview = async (review: any, index: number) => {
   reviewFormData.rating = review.rating || 5
   reviewFormData.content = review.content || ''
   reviewFormData.isVerified = review.isVerified !== undefined ? review.isVerified : true
+  // Convert reviewDate to dayjs format for DatePicker
+  const reviewDateValue = review.reviewDate || review.createdAt
+  if (reviewDateValue) {
+    // DatePicker expects dayjs object or string in YYYY-MM-DD format
+    reviewFormData.reviewDate = typeof reviewDateValue === 'string' 
+      ? reviewDateValue.split('T')[0] // Extract date part from ISO string
+      : new Date(reviewDateValue).toISOString().split('T')[0]
+  } else {
+    reviewFormData.reviewDate = null
+  }
+  reviewAvatarFileList.value = []
+  reviewAvatarUploading.value = false
   
-  // Try to find user by userId or match by name/avatar
-  if (review.userId) {
+  // Determine userInputType based on whether userId exists
+  if (review.userId && review.userId !== 'admin') {
+    reviewFormData.userInputType = 'select'
     reviewFormData.selectedUserId = review.userId
   } else {
-    // Try to find user by name
+    reviewFormData.userInputType = 'manual'
+    reviewFormData.selectedUserId = null
+    // Try to find user by name to pre-select if exists
     const matchedUser = usersList.value.find((u: any) => 
       (u.fullname || u.name || u.email) === review.userName
     )
     if (matchedUser) {
+      reviewFormData.userInputType = 'select'
       reviewFormData.selectedUserId = matchedUser._id || matchedUser.id
-    } else {
-      reviewFormData.selectedUserId = null
+      reviewFormData.userName = matchedUser.fullname || matchedUser.name || matchedUser.email || review.userName
+      reviewFormData.userAvatar = matchedUser.avatar || review.userAvatar
     }
   }
   
@@ -3110,6 +3318,12 @@ const deleteReview = async (reviewId: string, index: number) => {
 // Save review (create or update)
 const saveReview = async () => {
   try {
+    // Check if avatar is still uploading
+    if (reviewAvatarUploading.value) {
+      message.warning('Vui lòng đợi ảnh đại diện tải lên hoàn tất')
+      return
+    }
+    
     await reviewFormRef.value?.validate()
     reviewModalLoading.value = true
     
@@ -3121,23 +3335,31 @@ const saveReview = async () => {
       return
     }
     
+    // Determine userId based on userInputType
+    const userId = reviewFormData.userInputType === 'select' && reviewFormData.selectedUserId 
+      ? reviewFormData.selectedUserId 
+      : 'admin'
+    
     if (editingReview.value) {
       // Update review
       const response: any = await $fetch(`${apiBase}/reviews/${editingReview.value._id}`, {
         method: 'PUT',
         body: {
+          userId,
           userName: reviewFormData.userName,
           userAvatar: reviewFormData.userAvatar,
           rating: reviewFormData.rating,
           content: reviewFormData.content,
           isVerified: reviewFormData.isVerified,
+          reviewDate: reviewFormData.reviewDate,
         }
       })
       
       // Update in local array
       const index = courseReviews.value.findIndex((r: any) => r._id === editingReview.value._id)
       if (index !== -1) {
-        courseReviews.value[index] = response.data?.review || response.review || { ...editingReview.value, ...reviewFormData }
+        const updatedReview = response.data?.review || response.review || { ...editingReview.value, ...reviewFormData }
+        courseReviews.value[index] = updatedReview
       }
       
       message.success('Cập nhật đánh giá thành công')
@@ -3147,12 +3369,13 @@ const saveReview = async () => {
         method: 'POST',
         body: {
           courseId,
-          userId: reviewFormData.selectedUserId || 'admin',
+          userId,
           userName: reviewFormData.userName,
           userAvatar: reviewFormData.userAvatar,
           rating: reviewFormData.rating,
           content: reviewFormData.content,
           isVerified: reviewFormData.isVerified,
+          reviewDate: reviewFormData.reviewDate,
         }
       })
       
@@ -3163,6 +3386,11 @@ const saveReview = async () => {
       }
       
       message.success('Tạo đánh giá thành công')
+    }
+    
+    // Reload reviews to ensure data consistency
+    if (courseId) {
+      await fetchCourseReviews(courseId)
     }
     
     reviewModalVisible.value = false
