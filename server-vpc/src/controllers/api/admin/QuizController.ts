@@ -12,19 +12,51 @@ export default class QuizController {
     try {
       const { courseId, chapterId, lessonId } = req.params;
       
-      const quiz = await MongoDbQuizzes.findOne({
+      console.log(`🔍 [QuizController.getQuiz] Query params:`, { courseId, chapterId, lessonId });
+      
+      // Find all quizzes for this lesson to check for duplicates
+      const allQuizzes = await MongoDbQuizzes.find({
         courseId,
         chapterId,
         lessonId,
         status: 'active'
-      });
-
-      if (!quiz) {
+      }).sort({ updatedAt: -1 }); // Sort by updatedAt descending to get the latest
+      
+      console.log(`🔍 [QuizController.getQuiz] Found ${allQuizzes.length} quiz(es) for this lesson`);
+      
+      if (allQuizzes.length === 0) {
         return sendSuccess(res, { quiz: null, message: 'No quiz found for this lesson' });
       }
+      
+      // Use the most recently updated quiz
+      const quiz = allQuizzes[0];
+      
+      // Convert to plain object to ensure all fields are included
+      const quizData = quiz.toObject ? quiz.toObject() : quiz;
+      
+      console.log(`🔍 [QuizController.getQuiz] Returning quiz:`, {
+        _id: quizData._id,
+        title: quizData.title,
+        questionsCount: quizData.questions?.length || 0,
+        updatedAt: quizData.updatedAt,
+        questions: quizData.questions?.map((q: any, idx: number) => ({
+          index: idx,
+          id: q.id,
+          question: q.question?.substring(0, 50) || '',
+          optionsCount: q.options?.length || 0,
+          hasCorrectAnswer: !!q.correctAnswer
+        }))
+      });
+      
+      // Ensure questions array is properly included
+      if (!quizData.questions || !Array.isArray(quizData.questions)) {
+        console.warn(`⚠️ [QuizController.getQuiz] Quiz ${quizData._id} has invalid questions array`);
+        quizData.questions = [];
+      }
 
-      sendSuccess(res, { quiz });
+      sendSuccess(res, { quiz: quizData });
     } catch (error: any) {
+      console.error(`❌ [QuizController.getQuiz] Error:`, error);
       sendError(res, 500, error.message, error as Error);
     }
   }

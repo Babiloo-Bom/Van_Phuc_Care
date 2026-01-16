@@ -577,16 +577,31 @@
                       </div>
                     </div>
                     
-                    <!-- Thumbnail Display (Auto-generated from video) - Side by side -->
-                    <div v-if="formData.introVideoThumbnail" style="flex-shrink: 0;">
-                      <div style="text-align: center;">
-                        <img 
-                          :src="formData.introVideoThumbnail" 
-                          alt="Video thumbnail" 
-                          style="max-width: 200px; max-height: 150px; object-fit: cover; border: 1px solid #d9d9d9; border-radius: 4px; display: block; margin: 0 auto;" 
-                        />
-                        <a-tag color="green" style="margin-top: 8px; display: block;">Tự động tạo từ video</a-tag>
-                      </div>
+                    <!-- Thumbnail Upload - Side by side -->
+                    <div style="flex-shrink: 0;">
+                      <a-form-item label="Thumbnail video">
+                        <a-upload
+                          v-model:file-list="introVideoThumbnailFileList"
+                          :before-upload="() => false"
+                          accept="image/*"
+                          list-type="picture-card"
+                          :max-count="1"
+                          @change="handleIntroVideoThumbnailChange"
+                          @remove="handleRemoveIntroVideoThumbnail"
+                        >
+                          <div v-if="introVideoThumbnailFileList.length < 1">
+                            <PlusOutlined />
+                            <div style="margin-top: 8px">Upload</div>
+                          </div>
+                        </a-upload>
+                        <div v-if="formData.introVideoThumbnail && introVideoThumbnailFileList.length === 0" style="margin-top: 8px;">
+                          <img 
+                            :src="formData.introVideoThumbnail" 
+                            alt="Video thumbnail" 
+                            style="max-width: 200px; max-height: 150px; object-fit: cover; border: 1px solid #d9d9d9; border-radius: 4px; display: block;" 
+                          />
+                        </div>
+                      </a-form-item>
                     </div>
                   </div>
                 </a-form-item>
@@ -778,22 +793,31 @@
                                 </div>
                               </div>
                               
-                              <!-- Thumbnail Display (Auto-generated from video) - Side by side -->
-                              <div v-if="lesson.videos && lesson.videos.length > 0 && lesson.videos[0].thumbnail" style="flex-shrink: 0;">
-                                <div style="text-align: center;">
-                                  <img 
-                                    :src="lesson.videos[0].thumbnail" 
-                                    alt="Video thumbnail" 
-                                    style="max-width: 200px; max-height: 150px; object-fit: cover; border-radius: 4px; border: 1px solid #d9d9d9; display: block; margin: 0 auto;" 
-                                  />
-                                  <a-tag color="blue" style="margin-top: 8px; display: block;">Tự động tạo từ video</a-tag>
-                                </div>
-                              </div>
-                              <!-- Legacy: Support old videoThumbnail field -->
-                              <div v-else-if="lesson.videoThumbnail" style="flex-shrink: 0;">
-                                <div style="text-align: center;">
-                                  <img :src="lesson.videoThumbnail" alt="Thumbnail" style="max-width: 200px; max-height: 150px; border-radius: 4px; border: 1px solid #d9d9d9; display: block; margin: 0 auto;" />
-                                </div>
+                              <!-- Thumbnail Upload - Side by side -->
+                              <div style="flex-shrink: 0;">
+                                <a-form-item label="Thumbnail video">
+                                  <a-upload
+                                    v-model:file-list="lesson.videoThumbnailFileList"
+                                    :before-upload="() => false"
+                                    accept="image/*"
+                                    list-type="picture-card"
+                                    :max-count="1"
+                                    @change="(info: any) => handleLessonVideoThumbnailChange(chapterIndex, lessonIndex, info)"
+                                    @remove="() => handleRemoveLessonVideoThumbnail(chapterIndex, lessonIndex)"
+                                  >
+                                    <div v-if="!lesson.videoThumbnailFileList || lesson.videoThumbnailFileList.length < 1">
+                                      <PlusOutlined />
+                                      <div style="margin-top: 8px">Upload</div>
+                                    </div>
+                                  </a-upload>
+                                  <div v-if="lesson.videoThumbnail && (!lesson.videoThumbnailFileList || lesson.videoThumbnailFileList.length === 0)" style="margin-top: 8px;">
+                                    <img 
+                                      :src="lesson.videoThumbnail" 
+                                      alt="Video thumbnail" 
+                                      style="max-width: 200px; max-height: 150px; object-fit: cover; border-radius: 4px; border: 1px solid #d9d9d9; display: block;" 
+                                    />
+                                  </div>
+                                </a-form-item>
                               </div>
                             </div>
                           </a-form-item>
@@ -842,14 +866,18 @@
                                 </a-button>
                               </div>
                               <a-input
-                                v-model:value="question.text"
+                                v-model:value="question.question"
                                 placeholder="Nhập câu hỏi"
                                 style="margin-bottom: 12px;"
                               />
                               <div style="margin-left: 16px;">
-                                <div v-for="(option, optionIndex) in (question.options || [])" :key="optionIndex" style="margin-bottom: 8px; display: flex; align-items: center; gap: 8px;">
-                                  <a-radio-group v-model:value="question.correctAnswer" style="flex: 1;">
-                                    <a-radio :value="optionIndex">{{ option.text || `Lựa chọn ${optionIndex + 1}` }}</a-radio>
+                                <div v-for="(option, optionIndex) in (question.options || [])" :key="option.id || optionIndex" style="margin-bottom: 8px; display: flex; align-items: center; gap: 8px;">
+                                  <a-radio-group 
+                                    v-model:value="question.correctAnswer" 
+                                    @change="updateCorrectAnswer(chapterIndex, lessonIndex, questionIndex, question)"
+                                    style="flex: 1;"
+                                  >
+                                    <a-radio :value="option.id || optionIndex">{{ option.text || `Lựa chọn ${optionIndex + 1}` }}</a-radio>
                                   </a-radio-group>
                                   <a-input
                                     v-model:value="option.text"
@@ -1285,6 +1313,40 @@ const formRef = ref()
 const viewModalVisible = ref(false)
 const viewingCourse = ref<Course | null>(null)
 
+// Helper function to extract image URL from upload response
+// Handles multiple possible response structures from the API
+const extractImageUrl = (response: any): string => {
+  if (!response || !response.status) {
+    return ''
+  }
+  
+  const responseData = response.data as any
+  let imageUrl = ''
+  
+  // Path 1: data.data.fileAttributes[0].source (from sendSuccess wrap)
+  if (responseData?.data?.fileAttributes?.[0]?.source) {
+    imageUrl = responseData.data.fileAttributes[0].source
+  }
+  // Path 2: data.fileAttributes[0].source (direct response)
+  else if (responseData?.fileAttributes?.[0]?.source) {
+    imageUrl = responseData.fileAttributes[0].source
+  }
+  // Path 3: data.files[0].url
+  else if (responseData?.files?.[0]?.url) {
+    imageUrl = responseData.files[0].url
+  }
+  // Path 4: data.url
+  else if (responseData?.url) {
+    imageUrl = responseData.url
+  }
+  // Path 5: data.data.url
+  else if (responseData?.data?.url) {
+    imageUrl = responseData.data.url
+  }
+  
+  return imageUrl
+}
+
 // State for file uploads
 const thumbnailFileList = ref<UploadFile[]>([])
 const bannerFileList = ref<UploadFile[]>([])
@@ -1583,10 +1645,7 @@ const handleIntroVideoChange = async (info: any) => {
       formData.introVideoStatus = videoData.status || 'ready'
       formData.introVideoErrorMessage = videoData.errorMessage || ''
       formData.introVideoJobId = videoData.jobId || ''
-      // Auto-save thumbnail from video if available
-      if (videoData.thumbnail) {
-        formData.introVideoThumbnail = videoData.thumbnail
-      }
+      // Thumbnail sẽ được upload thủ công, không tự động từ video
       formData.introVideoQualityMetadata = videoData.qualityMetadata || {
         resolution: '',
         bitrate: '',
@@ -1709,16 +1768,30 @@ const handleIntroVideoThumbnailChange = async (info: any) => {
     try {
       const uploadsApi = useUploadsApi()
       const response = await uploadsApi.uploadImage(file)
-      const imageUrl = response?.data?.files?.[0]?.url || response?.data?.url || ''
+      console.log('Upload thumbnail response:', JSON.stringify(response, null, 2))
+      
+      if (!response.status) {
+        throw new Error(response.message || 'Upload thất bại')
+      }
+      
+      // Extract image URL using helper function
+      const imageUrl = extractImageUrl(response)
+      console.log('Extracted image URL:', imageUrl)
       
       if (imageUrl) {
         formData.introVideoThumbnail = imageUrl
         introVideoThumbnailFileList.value = [{
-          ...fileList[0],
+          uid: fileList[0].uid || `-${Date.now()}`,
+          name: fileList[0].name || file.name,
+          status: 'done' as const,
           url: imageUrl,
-          status: 'done',
         }]
         message.success('Upload thumbnail video thành công')
+      } else {
+        console.error('No image URL found in response:', response)
+        message.error('Không nhận được URL ảnh từ server. Vui lòng thử lại.')
+        introVideoThumbnailFileList.value = []
+        formData.introVideoThumbnail = ''
       }
     } catch (error: any) {
       console.error('Upload intro video thumbnail error:', error)
@@ -1726,14 +1799,91 @@ const handleIntroVideoThumbnailChange = async (info: any) => {
       introVideoThumbnailFileList.value = []
       formData.introVideoThumbnail = ''
     }
-  } else {
+  } else if (fileList.length === 0) {
+    // File removed
     formData.introVideoThumbnail = ''
+    introVideoThumbnailFileList.value = []
   }
 }
 
 const handleRemoveIntroVideoThumbnail = () => {
   formData.introVideoThumbnail = ''
   introVideoThumbnailFileList.value = []
+}
+
+const handleLessonVideoThumbnailChange = async (chapterIndex: number, lessonIndex: number, info: any) => {
+  const { fileList } = info
+  const lesson = formData.chapters[chapterIndex].lessons[lessonIndex]
+  
+  if (fileList.length > 0 && fileList[0].originFileObj) {
+    const file = fileList[0].originFileObj as File
+    try {
+      const uploadsApi = useUploadsApi()
+      const response = await uploadsApi.uploadImage(file)
+      const imageUrl = extractImageUrl(response)
+      
+      if (imageUrl) {
+        lesson.videoThumbnail = imageUrl
+        // Cập nhật thumbnail trong videos array nếu có
+        if (lesson.videos && lesson.videos.length > 0) {
+          lesson.videos[0].thumbnail = imageUrl
+        }
+        if (!lesson.videoThumbnailFileList) {
+          lesson.videoThumbnailFileList = []
+        }
+        lesson.videoThumbnailFileList = [{
+          uid: fileList[0].uid || `-${Date.now()}`,
+          name: fileList[0].name || file.name,
+          status: 'done' as const,
+          url: imageUrl,
+        }]
+        message.success('Upload thumbnail video thành công')
+      } else {
+        message.error('Không nhận được URL ảnh từ server')
+        if (!lesson.videoThumbnailFileList) {
+          lesson.videoThumbnailFileList = []
+        } else {
+          lesson.videoThumbnailFileList = []
+        }
+        lesson.videoThumbnail = ''
+        if (lesson.videos && lesson.videos.length > 0) {
+          lesson.videos[0].thumbnail = ''
+        }
+      }
+    } catch (error: any) {
+      console.error('Upload lesson video thumbnail error:', error)
+      message.error(error.message || 'Upload thumbnail thất bại')
+      if (!lesson.videoThumbnailFileList) {
+        lesson.videoThumbnailFileList = []
+      } else {
+        lesson.videoThumbnailFileList = []
+      }
+      lesson.videoThumbnail = ''
+      if (lesson.videos && lesson.videos.length > 0) {
+        lesson.videos[0].thumbnail = ''
+      }
+    }
+  } else if (fileList.length === 0) {
+    // File removed
+    lesson.videoThumbnail = ''
+    if (lesson.videoThumbnailFileList) {
+      lesson.videoThumbnailFileList = []
+    }
+    if (lesson.videos && lesson.videos.length > 0) {
+      lesson.videos[0].thumbnail = ''
+    }
+  }
+}
+
+const handleRemoveLessonVideoThumbnail = (chapterIndex: number, lessonIndex: number) => {
+  const lesson = formData.chapters[chapterIndex].lessons[lessonIndex]
+  lesson.videoThumbnail = ''
+  if (lesson.videoThumbnailFileList) {
+    lesson.videoThumbnailFileList = []
+  }
+  if (lesson.videos && lesson.videos.length > 0) {
+    lesson.videos[0].thumbnail = ''
+  }
 }
 
 const handleRemoveInstructorAvatar = () => {
@@ -2327,6 +2477,8 @@ const addLesson = (chapterIndex: number) => {
     documents: [],
     videoFileList: [],
     documentFileList: [],
+    videoThumbnailFileList: [],
+    videoThumbnail: '',
     uploadingVideo: false,
     uploadingDocument: false,
     quiz: {
@@ -2350,13 +2502,14 @@ const addQuestion = (chapterIndex: number, lessonIndex: number) => {
     lesson.quiz.questions = []
   }
   
+  const questionId = `q-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`
   lesson.quiz.questions.push({
-    id: `q-${Date.now()}`,
+    id: questionId,
     question: '',
     type: 'multiple-choice', // Mặc định luôn là Trắc nghiệm
     options: [
-      { id: `opt-${Date.now()}-1`, text: '', isCorrect: false },
-      { id: `opt-${Date.now()}-2`, text: '', isCorrect: false },
+      { id: `opt-${Date.now()}-1-${Math.random().toString(36).substr(2, 9)}`, text: '', isCorrect: false },
+      { id: `opt-${Date.now()}-2-${Math.random().toString(36).substr(2, 9)}`, text: '', isCorrect: false },
     ],
     correctAnswer: '',
     points: 1,
@@ -2373,7 +2526,7 @@ const addOption = (chapterIndex: number, lessonIndex: number, questionIndex: num
     question.options = []
   }
   question.options.push({
-    id: `opt-${Date.now()}`,
+    id: `opt-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
     text: '',
     isCorrect: false,
   })
@@ -2381,6 +2534,38 @@ const addOption = (chapterIndex: number, lessonIndex: number, questionIndex: num
 
 const removeOption = (chapterIndex: number, lessonIndex: number, questionIndex: number, optionIndex: number) => {
   formData.chapters[chapterIndex].lessons[lessonIndex].quiz.questions[questionIndex].options.splice(optionIndex, 1)
+}
+
+const updateCorrectAnswer = (chapterIndex: number, lessonIndex: number, questionIndex: number, question: any) => {
+  // Update isCorrect flag on all options based on correctAnswer
+  if (question.options && question.correctAnswer !== undefined && question.correctAnswer !== null) {
+    question.options.forEach((opt: any, idx: number) => {
+      // Check if correctAnswer matches option id, _id, or index
+      const matches = question.correctAnswer === opt.id || 
+                     question.correctAnswer === opt._id?.toString() ||
+                     question.correctAnswer === idx ||
+                     (typeof question.correctAnswer === 'string' && opt.id && question.correctAnswer.includes(opt.id))
+      
+      if (matches) {
+        opt.isCorrect = true
+        // Also ensure correctAnswer is set to the option id (not index)
+        if (question.correctAnswer !== opt.id && opt.id) {
+          question.correctAnswer = opt.id
+        }
+      } else {
+        opt.isCorrect = false
+      }
+    })
+    
+    console.log(`🔍 [UpdateCorrectAnswer] Question ${questionIndex} updated:`, {
+      correctAnswer: question.correctAnswer,
+      options: question.options.map((opt: any) => ({
+        id: opt.id,
+        text: opt.text,
+        isCorrect: opt.isCorrect
+      }))
+    })
+  }
 }
 
 // Updated form rules - Custom validator cho thumbnail
@@ -2574,23 +2759,51 @@ const editCourse = async (course: Course) => {
               documents: lesson.documents || [],
               videoFileList: [],
               documentFileList: [],
+              videoThumbnailFileList: lesson.videoThumbnail ? [{
+                uid: '-1',
+                name: 'video-thumbnail',
+                status: 'done',
+                url: lesson.videoThumbnail,
+              }] : [],
+              videoThumbnail: lesson.videoThumbnail || (videos.length > 0 && videos[0].thumbnail ? videos[0].thumbnail : ''),
               uploadingVideo: false,
               uploadingDocument: false,
               quiz: lesson.quiz ? {
               title: lesson.quiz.title || '',
               description: lesson.quiz.description || '',
-              questions: Array.isArray(lesson.quiz.questions) ? lesson.quiz.questions.map((q: any) => ({
-                id: q.id || q._id?.toString() || `q-${Date.now()}-${Math.random()}`,
-                question: q.question || '',
-                type: q.type || 'multiple-choice',
-                options: Array.isArray(q.options) ? q.options.map((opt: any) => ({
-                  id: opt.id || opt._id?.toString() || `opt-${Date.now()}-${Math.random()}`,
+              questions: Array.isArray(lesson.quiz.questions) ? lesson.quiz.questions.map((q: any) => {
+                // Map options first
+                const mappedOptions = Array.isArray(q.options) ? q.options.map((opt: any, optIdx: number) => ({
+                  id: opt.id || opt._id?.toString() || `opt-${Date.now()}-${optIdx}-${Math.random()}`,
                   text: opt.text || '',
                   isCorrect: opt.isCorrect || false,
-                })) : [],
-                correctAnswer: q.correctAnswer || '',
-                points: q.points || 1,
-              })) : [],
+                })) : []
+                
+                // Determine correctAnswer - prefer option id if available
+                let correctAnswer = q.correctAnswer || ''
+                if (correctAnswer && mappedOptions.length > 0) {
+                  // If correctAnswer is an id, verify it exists in options
+                  const optionById = mappedOptions.find((opt: any) => opt.id === correctAnswer)
+                  if (!optionById) {
+                    // If not found by id, check if it's an index or find by isCorrect
+                    const correctOption = mappedOptions.find((opt: any) => opt.isCorrect)
+                    correctAnswer = correctOption?.id || ''
+                  }
+                } else if (mappedOptions.length > 0) {
+                  // If no correctAnswer but options exist, find by isCorrect flag
+                  const correctOption = mappedOptions.find((opt: any) => opt.isCorrect)
+                  correctAnswer = correctOption?.id || ''
+                }
+                
+                return {
+                  id: q.id || q._id?.toString() || `q-${Date.now()}-${Math.random()}`,
+                  question: q.question || '',
+                  type: q.type || 'multiple-choice',
+                  options: mappedOptions,
+                  correctAnswer: correctAnswer,
+                  points: q.points || 1,
+                }
+              }) : [],
               passingScore: lesson.quiz.passingScore || 80,
               timeLimit: lesson.quiz.timeLimit || 0,
               attempts: lesson.quiz.attempts || 3,
@@ -2646,13 +2859,16 @@ const editCourse = async (course: Course) => {
       // Set intro video thumbnail file list if exists
       if (courseData.introVideoThumbnail) {
         introVideoThumbnailFileList.value = [{
-          uid: '-1',
+          uid: `intro-video-thumbnail-${Date.now()}`,
           name: 'intro-video-thumbnail',
-          status: 'done',
+          status: 'done' as const,
           url: courseData.introVideoThumbnail,
         }]
+        // Đảm bảo formData cũng có giá trị
+        formData.introVideoThumbnail = courseData.introVideoThumbnail
       } else {
         introVideoThumbnailFileList.value = []
+        formData.introVideoThumbnail = ''
       }
 
       // Set instructor avatar file list if exists
@@ -3009,12 +3225,14 @@ const handleModalOk = async () => {
     if (introVideoThumbnailFileList.value.length > 0 && introVideoThumbnailFileList.value[0].originFileObj) {
       const uploadsApi = useUploadsApi()
       const response = await uploadsApi.uploadImage(introVideoThumbnailFileList.value[0].originFileObj as File)
-      formData.introVideoThumbnail = response?.data?.files?.[0]?.url || response?.data?.url || ''
+      formData.introVideoThumbnail = extractImageUrl(response)
     }
-    // Nếu không có file mới nhưng có URL (khi edit), giữ nguyên URL
+    // Nếu không có file mới nhưng có URL trong fileList (khi edit hoặc đã upload), giữ nguyên URL
     else if (introVideoThumbnailFileList.value.length > 0 && introVideoThumbnailFileList.value[0].url) {
       formData.introVideoThumbnail = introVideoThumbnailFileList.value[0].url
     }
+    // Nếu formData.introVideoThumbnail đã có (đã upload qua handleIntroVideoThumbnailChange), giữ nguyên
+    // Không cần làm gì thêm vì formData.introVideoThumbnail đã có giá trị
     
     // Upload instructor avatar to MinIO - CHỈ KHI CÓ FILE MỚI
     if (instructorAvatarFileList.value.length > 0 && instructorAvatarFileList.value[0].originFileObj) {
@@ -3038,8 +3256,38 @@ const handleModalOk = async () => {
       index: ch.index
     })))
     
+    // Upload lesson video thumbnails first
+    const uploadsApi = useUploadsApi()
+    for (const ch of formData.chapters) {
+      if (ch.lessons) {
+        for (const lesson of ch.lessons) {
+          if (lesson.videoThumbnailFileList && lesson.videoThumbnailFileList.length > 0) {
+            if (lesson.videoThumbnailFileList[0].originFileObj) {
+              // Upload new thumbnail
+              const response = await uploadsApi.uploadImage(lesson.videoThumbnailFileList[0].originFileObj as File)
+              lesson.videoThumbnail = extractImageUrl(response)
+            } else if (lesson.videoThumbnailFileList[0].url) {
+              // Keep existing URL
+              lesson.videoThumbnail = lesson.videoThumbnailFileList[0].url
+            }
+          }
+          
+          // Update thumbnail in videos array if exists
+          if (lesson.videos && lesson.videos.length > 0 && lesson.videoThumbnail) {
+            lesson.videos[0].thumbnail = lesson.videoThumbnail
+          }
+        }
+      }
+    }
+    
+    // Đảm bảo introVideoThumbnail được bao gồm trong payload
+    console.log('🔍 [Frontend Submit] formData.introVideoThumbnail:', formData.introVideoThumbnail)
+    console.log('🔍 [Frontend Submit] introVideoThumbnailFileList:', introVideoThumbnailFileList.value)
+    
     const payload: any = {
       ...formData,
+      // Đảm bảo introVideoThumbnail được bao gồm
+      introVideoThumbnail: formData.introVideoThumbnail || '',
       chapters: formData.chapters.map((ch, idx) => ({
         ...ch,
         index: idx,
@@ -3056,31 +3304,94 @@ const handleModalOk = async () => {
             status: lesson.status || 'active',
             videos: lesson.videos || [],
             documents: lesson.documents || [],
+            videoThumbnail: lesson.videoThumbnail || '',
           }
 
           // Handle quiz - Always send quiz data if it exists, regardless of type
           // This ensures quiz data is preserved even if user changes lesson type
           if (lesson.quiz && lesson.quiz.questions && lesson.quiz.questions.length > 0) {
-            lessonData.quizData = {
-              title: lesson.quiz.title || '',
-              description: lesson.quiz.description || '',
-              questions: (lesson.quiz.questions || []).map((q: any) => ({
-                id: q.id || `q-${Date.now()}`,
-                question: q.question || '',
-                type: q.type || 'multiple-choice',
-                options: (q.options || []).map((opt: any) => ({
-                  id: opt.id || `opt-${Date.now()}`,
+            // Filter out incomplete questions before sending
+            // A question is valid if it has both question text and a correctAnswer
+            const validQuestions = (lesson.quiz.questions || [])
+              .map((q: any) => {
+                // Map options first to ensure all have ids
+                const mappedOptions = (q.options || []).map((opt: any, optIdx: number) => ({
+                  id: opt.id || `opt-${Date.now()}-${optIdx}`,
                   text: opt.text || '',
                   isCorrect: opt.isCorrect || false,
-                })),
-                correctAnswer: q.options?.find((opt: any) => opt.isCorrect)?.id || q.correctAnswer || '',
-                explanation: q.explanation || '',
-                points: q.points || 1,
-              })),
-              passingScore: lesson.quiz.passingScore || 80,
-              timeLimit: lesson.quiz.timeLimit || 0,
-              attempts: lesson.quiz.attempts || 3,
+                }))
+                
+                // Find correct answer - handle multiple cases:
+                // Priority 1: If an option has isCorrect=true, use that option's id
+                // Priority 2: If correctAnswer is an option id (string), use it
+                // Priority 3: If correctAnswer is an index (number), find the option at that index
+                let correctAnswer = ''
+                
+                // First, check for isCorrect flag (highest priority)
+                const correctOption = mappedOptions.find((opt: any) => opt.isCorrect)
+                if (correctOption) {
+                  correctAnswer = correctOption.id
+                } else if (q.correctAnswer !== undefined && q.correctAnswer !== null && q.correctAnswer !== '') {
+                  // Check if correctAnswer is a number (index) or string (id)
+                  if (typeof q.correctAnswer === 'number') {
+                    // It's an index, get the option at that index
+                    const optionAtIndex = mappedOptions[q.correctAnswer]
+                    if (optionAtIndex) {
+                      correctAnswer = optionAtIndex.id
+                    }
+                  } else {
+                    // It's a string, check if it's a valid option id
+                    const optionById = mappedOptions.find((opt: any) => opt.id === q.correctAnswer || opt._id?.toString() === q.correctAnswer)
+                    if (optionById) {
+                      correctAnswer = optionById.id
+                    }
+                  }
+                }
+                
+                return {
+                  id: q.id || q._id?.toString() || `q-${Date.now()}-${Math.random()}`,
+                  question: q.question || q.text || '', // Support both 'question' and 'text' properties
+                  type: q.type || 'multiple-choice',
+                  options: mappedOptions,
+                  correctAnswer: correctAnswer,
+                  explanation: q.explanation || '',
+                  points: q.points || 1,
+                }
+              })
+              .filter((q: any) => {
+                // Only include questions that have both question text and correctAnswer
+                return q.question && q.question.trim() && q.correctAnswer && q.correctAnswer.toString().trim()
+              })
+            
+            // Only send quizData if there are valid questions
+            console.log(`🔍 [Quiz Debug] Lesson "${lesson.title}":`, {
+              hasQuiz: !!lesson.quiz,
+              questionsCount: lesson.quiz?.questions?.length || 0,
+              validQuestionsCount: validQuestions.length,
+              questions: lesson.quiz?.questions?.map((q: any) => ({
+                id: q.id,
+                question: q.question || q.text || '',
+                correctAnswer: q.correctAnswer,
+                optionsCount: q.options?.length || 0,
+                hasCorrectOption: q.options?.some((opt: any) => opt.isCorrect) || false
+              }))
+            })
+            
+            if (validQuestions.length > 0) {
+              lessonData.quizData = {
+                title: lesson.quiz.title || '',
+                description: lesson.quiz.description || '',
+                questions: validQuestions,
+                passingScore: lesson.quiz.passingScore || 80,
+                timeLimit: lesson.quiz.timeLimit || 0,
+                attempts: lesson.quiz.attempts || 3,
+              }
+              console.log(`✅ [Quiz Debug] Added quizData to lesson "${lesson.title}":`, lessonData.quizData)
+            } else {
+              console.warn(`⚠️ [Quiz Debug] No valid questions for lesson "${lesson.title}" - quizData not added`)
             }
+          } else {
+            console.log(`ℹ️ [Quiz Debug] Lesson "${lesson.title}" has no quiz or questions`)
           }
 
           return lessonData
@@ -3092,8 +3403,16 @@ const handleModalOk = async () => {
     console.log('🔍 [Frontend Submit] Final payload chapters:', payload.chapters.map((ch: any) => ({
       _id: ch._id,
       title: ch.title,
-      index: ch.index
+      index: ch.index,
+      lessonsCount: ch.lessons?.length || 0,
+      lessons: ch.lessons?.map((l: any) => ({
+        _id: l._id,
+        title: l.title,
+        hasQuizData: !!l.quizData,
+        quizQuestionsCount: l.quizData?.questions?.length || 0
+      }))
     })))
+    console.log('🔍 [Frontend Submit] Full payload with quizData:', JSON.stringify(payload, null, 2))
 
     if (editingCourse.value) {
       console.log('🔍 [Frontend Submit] Updating course:', editingCourse.value._id)
@@ -3170,6 +3489,22 @@ const handleModalOk = async () => {
           apiMessage = `Lỗi validation: Một số bài học thiếu ${fieldName}. Vui lòng kiểm tra lại các bài học và đảm bảo tất cả các trường bắt buộc đã được điền.`
         } else {
           apiMessage = 'Lỗi validation: Một số bài học thiếu thông tin bắt buộc. Vui lòng kiểm tra lại các bài học.'
+        }
+      } else if (apiMessage.includes('Quiz validation failed') || apiMessage.includes('questions')) {
+        // Handle quiz validation errors
+        const questionMatch = apiMessage.match(/questions\.(\d+)\.(\w+)/i)
+        if (questionMatch) {
+          const questionIndex = parseInt(questionMatch[1]) + 1 // Convert 0-based to 1-based
+          const field = questionMatch[2]
+          const fieldMap: Record<string, string> = {
+            'question': 'câu hỏi',
+            'correctanswer': 'đáp án đúng',
+            'options': 'các lựa chọn',
+          }
+          const fieldName = fieldMap[field.toLowerCase()] || field
+          apiMessage = `Lỗi validation: Câu hỏi ${questionIndex} trong bài kiểm tra thiếu ${fieldName}. Vui lòng kiểm tra lại và đảm bảo tất cả các câu hỏi đã được điền đầy đủ.`
+        } else {
+          apiMessage = 'Lỗi validation: Một số câu hỏi trong bài kiểm tra thiếu thông tin bắt buộc. Vui lòng kiểm tra lại và đảm bảo tất cả các câu hỏi đã có nội dung và đáp án đúng.'
         }
       } else {
         // General validation error - try to extract field name
@@ -3466,7 +3801,7 @@ const handleLessonVideoChange = async (chapterIndex: number, lessonIndex: number
         lesson.videos = [{
           title: file.name,
           videoUrl: videoData.url || videoData.hlsUrl || '',
-          thumbnail: videoData.thumbnail || '', // Get thumbnail from response
+          thumbnail: lesson.videoThumbnail || '', // Giữ thumbnail đã upload thủ công, không tự động từ video
           duration: 0,
           fileSize: file.size,
           quality: '720',
@@ -3488,7 +3823,7 @@ const handleLessonVideoChange = async (chapterIndex: number, lessonIndex: number
           ...lesson.videos[0],
           title: file.name,
           videoUrl: videoData.url || videoData.hlsUrl || '',
-          thumbnail: videoData.thumbnail || lesson.videos[0].thumbnail || '', // Get thumbnail from response or keep existing
+          thumbnail: lesson.videoThumbnail || lesson.videos[0].thumbnail || '', // Giữ thumbnail đã upload thủ công
           fileSize: file.size,
           status: videoData.status || 'ready',
           hlsUrl: videoData.hlsUrl || '',
@@ -3644,10 +3979,7 @@ const pollIntroVideoJobStatus = async (jobId: string) => {
           formData.introVideo = jobResult.hlsUrl || jobResult.url || formData.introVideo
           formData.introVideoHlsUrl = jobResult.hlsUrl || formData.introVideoHlsUrl
           formData.introVideoStatus = 'ready'
-          // Auto-update thumbnail from video processing result
-          if (jobResult.thumbnail) {
-            formData.introVideoThumbnail = jobResult.thumbnail
-          }
+          // Thumbnail sẽ được upload thủ công, không tự động từ video
           formData.introVideoQualityMetadata = jobResult.qualityMetadata || formData.introVideoQualityMetadata
         } else {
           formData.introVideoStatus = 'ready'
@@ -3813,7 +4145,7 @@ const pollLessonVideoJobStatus = async (chapterIndex: number, lessonIndex: numbe
             ...lesson.videos[0],
             videoUrl: jobResult.hlsUrl || jobResult.url || lesson.videos[0].videoUrl,
             hlsUrl: jobResult.hlsUrl || lesson.videos[0].hlsUrl,
-            thumbnail: jobResult.thumbnail || lesson.videos[0].thumbnail || '', // Update thumbnail from result
+            thumbnail: lesson.videoThumbnail || lesson.videos[0].thumbnail || '', // Giữ thumbnail đã upload thủ công, không tự động từ video
             status: 'ready',
             qualityMetadata: jobResult.qualityMetadata || lesson.videos[0].qualityMetadata,
             errorMessage: '',

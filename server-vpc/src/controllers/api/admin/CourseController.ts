@@ -1236,12 +1236,13 @@ class CourseController {
               }
 
               let lesson;
+              let existingLesson: any = null;
               
               // Nếu lesson đã có _id, update thay vì tạo mới
               if (lessonData._id) {
                 
                 // Get existing lesson để so sánh videos
-                const existingLesson = await LessonsModel.model.findById(lessonData._id);
+                existingLesson = await LessonsModel.model.findById(lessonData._id);
                 if (existingLesson) {
                   const existingLessonData = existingLesson as any;
                   
@@ -1330,30 +1331,92 @@ class CourseController {
 
               totalLessons++;
 
-              // Tạo quiz nếu có
+              // Tạo hoặc update quiz nếu có
               if (lessonData.quizData) {
                 const quizData = typeof lessonData.quizData === 'string' 
                   ? JSON.parse(lessonData.quizData) 
                   : lessonData.quizData;
 
-                const quiz = await QuizzesModel.create({
-                  courseId: course._id.toString(),
-                  chapterId: updatedChapter._id.toString(),
-                  lessonId: lesson._id.toString(),
-                  title: quizData.title || 'Quiz',
-                  description: quizData.description || "",
-                  questions: quizData.questions || [],
-                  passingScore: quizData.passingScore || 80,
-                  timeLimit: quizData.timeLimit || 0,
-                  attempts: quizData.attempts || 3,
-                  status: "active",
+                console.log(`🔍 [UpdateCourse] Processing quizData for lesson ${lessonData._id || 'new'}:`, {
+                  hasQuizData: !!quizData,
+                  questionsCount: quizData.questions?.length || 0,
+                  existingLessonQuizId: (existingLesson as any)?.quizId
                 });
 
-                await LessonsModel.model.findByIdAndUpdate(lesson._id, {
-                  quizId: quiz._id,
+                // Kiểm tra xem lesson đã có quizId chưa (từ existingLesson trước khi update)
+                const lessonQuizId = (existingLesson as any)?.quizId;
+                const existingQuiz = lessonQuizId 
+                  ? await QuizzesModel.findById(lessonQuizId)
+                  : null;
+                
+                console.log(`🔍 [UpdateCourse] Quiz lookup:`, {
+                  lessonQuizId,
+                  existingQuizFound: !!existingQuiz,
+                  existingQuizQuestionsCount: existingQuiz ? (existingQuiz as any).questions?.length || 0 : 0
                 });
+
+                let quiz;
+                if (existingQuiz) {
+                  // Update quiz cũ
+                  quiz = await QuizzesModel.findByIdAndUpdate(
+                    lessonQuizId,
+                    {
+                      title: quizData.title || 'Quiz',
+                      description: quizData.description || "",
+                      questions: Array.isArray(quizData.questions) ? quizData.questions : [],
+                      passingScore: quizData.passingScore || 80,
+                      timeLimit: quizData.timeLimit || 0,
+                      attempts: quizData.attempts || 3,
+                      status: "active",
+                    },
+                    { new: true }
+                  );
+                  console.log(`✅ [UpdateCourse] Updated quiz ${quiz._id} for lesson ${lesson._id}, questions count: ${quiz.questions?.length || 0}`, {
+                    quizId: quiz._id.toString(),
+                    questions: quiz.questions?.map((q: any, idx: number) => ({
+                      index: idx,
+                      id: q.id,
+                      question: q.question?.substring(0, 30) || ''
+                    }))
+                  });
+                } else {
+                  // Tạo quiz mới
+                  quiz = await QuizzesModel.create({
+                    courseId: course._id.toString(),
+                    chapterId: updatedChapter._id.toString(),
+                    lessonId: lesson._id.toString(),
+                    title: quizData.title || 'Quiz',
+                    description: quizData.description || "",
+                    questions: Array.isArray(quizData.questions) ? quizData.questions : [],
+                    passingScore: quizData.passingScore || 80,
+                    timeLimit: quizData.timeLimit || 0,
+                    attempts: quizData.attempts || 3,
+                    status: "active",
+                  });
+
+                  await LessonsModel.model.findByIdAndUpdate(lesson._id, {
+                    quizId: quiz._id,
+                  });
+                  console.log(`✅ [UpdateCourse] Created new quiz ${quiz._id} for lesson ${lesson._id}, questions count: ${quiz.questions?.length || 0}`, {
+                    quizId: quiz._id.toString(),
+                    questions: quiz.questions?.map((q: any, idx: number) => ({
+                      index: idx,
+                      id: q.id,
+                      question: q.question?.substring(0, 30) || ''
+                    }))
+                  });
+                }
 
                 totalQuizzes++;
+              } else {
+                // Nếu không có quizData nhưng lesson có quizId, xóa quiz cũ
+                const lessonQuizId = (existingLesson as any)?.quizId;
+                if (lessonQuizId) {
+                  await QuizzesModel.findByIdAndDelete(lessonQuizId);
+                  await LessonsModel.model.findByIdAndUpdate(lesson._id, {
+                    $unset: { quizId: 1 }
+                  });
+                }
               }
             }
           }

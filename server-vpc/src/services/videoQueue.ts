@@ -451,12 +451,12 @@ videoQueue.on('completed', async (job, result) => {
       const videoIndex = videos.findIndex((v: any) => v.jobId === jobId);
       
       if (videoIndex !== -1) {
-        // Found video by jobId - update it
+        // Found video by jobId - update it (thumbnail sẽ được upload thủ công, không tự động từ video)
         videos[videoIndex] = {
           ...videos[videoIndex],
           videoUrl: result.url || videos[videoIndex].videoUrl,
           hlsUrl: result.hlsUrl || videos[videoIndex].hlsUrl,
-          thumbnail: result.thumbnail || videos[videoIndex].thumbnail || '', // Add thumbnail
+          // Không tự động update thumbnail - admin sẽ upload thủ công
           status: 'ready',
           qualityMetadata: result.qualityMetadata || videos[videoIndex].qualityMetadata,
           errorMessage: '',
@@ -468,12 +468,12 @@ videoQueue.on('completed', async (job, result) => {
         
         console.log(`✅ [Video Queue] Auto-updated lesson ${lesson._id} video ${videoIndex} with hlsUrl: ${result.hlsUrl}`);
       } else if (lessonId && videos.length > 0) {
-        // Video not found by jobId but lessonId exists - update first video and add jobId
+        // Video not found by jobId but lessonId exists - update first video and add jobId (thumbnail sẽ được upload thủ công)
         videos[0] = {
           ...videos[0],
           videoUrl: result.url || videos[0].videoUrl,
           hlsUrl: result.hlsUrl || videos[0].hlsUrl,
-          thumbnail: result.thumbnail || videos[0].thumbnail || '', // Add thumbnail
+          // Không tự động update thumbnail - admin sẽ upload thủ công
           status: 'ready',
           jobId: jobId, // Ensure jobId is saved
           qualityMetadata: result.qualityMetadata || videos[0].qualityMetadata,
@@ -505,16 +505,16 @@ videoQueue.on('completed', async (job, result) => {
           if (course) {
             console.log(`✅ [Video Queue] Found course ${course._id} by introVideoJobId`);
             
-            // Update course intro video with thumbnail
+            // Update course intro video (thumbnail sẽ được upload thủ công, không tự động từ video)
             await Course.findByIdAndUpdate(course._id, {
               introVideo: result.url || course.introVideo,
               introVideoHlsUrl: result.hlsUrl || course.introVideoHlsUrl,
-              introVideoThumbnail: result.thumbnail || course.introVideoThumbnail || '', // Auto-update thumbnail
+              // Không tự động update thumbnail - admin sẽ upload thủ công
               introVideoStatus: 'ready',
               introVideoQualityMetadata: result.qualityMetadata || course.introVideoQualityMetadata,
             });
             
-            console.log(`✅ [Video Queue] Auto-updated course ${course._id} intro video with thumbnail: ${result.thumbnail}`);
+            console.log(`✅ [Video Queue] Updated course ${course._id} intro video`);
           } else {
             console.log(`⚠️ [Video Queue] Course with introVideoJobId ${jobId} not found - course may not be saved yet`);
             console.log(`⚠️ [Video Queue] Thumbnail will be available when course is saved: ${result.thumbnail}`);
