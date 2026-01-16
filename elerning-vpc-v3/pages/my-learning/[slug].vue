@@ -265,6 +265,40 @@
                   v-html="normalizedLessonContent || currentLesson?.content || 'Chưa có nội dung'"
                 ></div>
               </div>
+
+              <!-- Navigation Buttons: Bài trước / Bài tiếp theo (Desktop) -->
+              <div class="flex justify-center gap-4 mt-8">
+                <button
+                  :disabled="isFirstLesson"
+                  :class="[
+                    'flex items-center gap-2 px-6 py-3 rounded-lg border-2 font-semibold transition-all',
+                    isFirstLesson 
+                      ? 'border-gray-300 text-gray-400 cursor-not-allowed bg-gray-50' 
+                      : 'border-[#1A75BB] text-[#1A75BB] hover:bg-[#1A75BB] hover:text-white cursor-pointer'
+                  ]"
+                  @click="goToPreviousLesson"
+                >
+                  <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M19 12H5M12 19l-7-7 7-7"/>
+                  </svg>
+                  <span>Bài trước</span>
+                </button>
+                <button
+                  :disabled="isLastLesson"
+                  :class="[
+                    'flex items-center gap-2 px-6 py-3 rounded-lg border-2 font-semibold transition-all',
+                    isLastLesson 
+                      ? 'border-gray-300 text-gray-400 cursor-not-allowed bg-gray-50' 
+                      : 'border-[#1A75BB] text-[#1A75BB] hover:bg-[#1A75BB] hover:text-white cursor-pointer'
+                  ]"
+                  @click="goToNextLesson"
+                >
+                  <span>Bài tiếp theo</span>
+                  <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M5 12h14M12 5l7 7-7 7"/>
+                  </svg>
+                </button>
+              </div>
             </div>
           </div>
 
@@ -326,6 +360,40 @@
                         class="course-description-content prose max-w-none text-gray-700 leading-relaxed text-sm md:text-base"
                         v-html="normalizedLessonContent || currentLesson?.content || 'Chưa có nội dung'"
                       ></div>
+                    </div>
+
+                    <!-- Navigation Buttons: Bài trước / Bài tiếp theo (Mobile) -->
+                    <div class="flex justify-center gap-3 mt-6">
+                      <button
+                        :disabled="isFirstLesson"
+                        :class="[
+                          'flex items-center gap-2 px-4 py-2.5 rounded-lg border-2 font-semibold text-sm transition-all',
+                          isFirstLesson 
+                            ? 'border-gray-300 text-gray-400 cursor-not-allowed bg-gray-50' 
+                            : 'border-[#1A75BB] text-[#1A75BB] hover:bg-[#1A75BB] hover:text-white cursor-pointer'
+                        ]"
+                        @click="goToPreviousLesson"
+                      >
+                        <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                          <path d="M19 12H5M12 19l-7-7 7-7"/>
+                        </svg>
+                        <span>Bài trước</span>
+                      </button>
+                      <button
+                        :disabled="isLastLesson"
+                        :class="[
+                          'flex items-center gap-2 px-4 py-2.5 rounded-lg border-2 font-semibold text-sm transition-all',
+                          isLastLesson 
+                            ? 'border-gray-300 text-gray-400 cursor-not-allowed bg-gray-50' 
+                            : 'border-[#1A75BB] text-[#1A75BB] hover:bg-[#1A75BB] hover:text-white cursor-pointer'
+                        ]"
+                        @click="goToNextLesson"
+                      >
+                        <span>Bài tiếp theo</span>
+                        <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                          <path d="M5 12h14M12 5l7 7-7 7"/>
+                        </svg>
+                      </button>
                     </div>
                   </div>
                 </div>
@@ -524,6 +592,26 @@ const currentLesson = computed<Lesson | null>(() => {
   return lesson || null;
 });
 
+// Kiểm tra xem có phải bài học đầu tiên không (chapter 0, lesson 0)
+const isFirstLesson = computed(() => {
+  return currentChapterIndex.value === 0 && currentLessonIndex.value === 0;
+});
+
+// Kiểm tra xem có phải bài học cuối cùng không
+const isLastLesson = computed(() => {
+  if (!course.value?.chapters || course.value.chapters.length === 0) return true;
+  
+  const chapters = course.value.chapters;
+  const lastChapterIndex = chapters.length - 1;
+  const lastChapter = chapters[lastChapterIndex];
+  
+  if (!lastChapter?.lessons || lastChapter.lessons.length === 0) return true;
+  
+  const lastLessonIndex = lastChapter.lessons.length - 1;
+  
+  return currentChapterIndex.value === lastChapterIndex && currentLessonIndex.value === lastLessonIndex;
+});
+
 // Normalize lesson content HTML to ensure ul displays as bullets
 // Convert <ol> without type/start attributes to <ul> (likely bullet lists created incorrectly)
 const normalizedLessonContent = computed(() => {
@@ -663,6 +751,75 @@ useHead({
 const goToCourseHome = () => {
   // Navigate to course detail page
   navigateTo(`/courses/${slug.value}`);
+};
+
+// Điều hướng đến bài học trước đó
+const goToPreviousLesson = () => {
+  if (isFirstLesson.value || !course.value?.chapters) return;
+  
+  let newChapterIndex = currentChapterIndex.value;
+  let newLessonIndex = currentLessonIndex.value - 1;
+  
+  // Nếu đang ở bài đầu của chapter, chuyển về bài cuối của chapter trước
+  if (newLessonIndex < 0) {
+    newChapterIndex--;
+    if (newChapterIndex >= 0) {
+      const prevChapter = course.value.chapters[newChapterIndex];
+      newLessonIndex = (prevChapter?.lessons?.length || 1) - 1;
+    } else {
+      return; // Đã ở bài đầu tiên
+    }
+  }
+  
+  // Giữ lại query review nếu đang ở chế độ review
+  const query: Record<string, string> = {
+    chapter: String(newChapterIndex),
+    lesson: String(newLessonIndex),
+  };
+  if (isReviewMode.value) {
+    query.review = 'true';
+  }
+  
+  navigateTo({
+    path: `/my-learning/${slug.value}`,
+    query,
+  });
+};
+
+// Điều hướng đến bài học tiếp theo
+const goToNextLesson = () => {
+  if (isLastLesson.value || !course.value?.chapters) return;
+  
+  const currentChapterData = course.value.chapters[currentChapterIndex.value];
+  const currentChapterLessonsCount = currentChapterData?.lessons?.length || 0;
+  
+  let newChapterIndex = currentChapterIndex.value;
+  let newLessonIndex = currentLessonIndex.value + 1;
+  
+  // Nếu đang ở bài cuối của chapter, chuyển sang bài đầu của chapter tiếp theo
+  if (newLessonIndex >= currentChapterLessonsCount) {
+    newChapterIndex++;
+    newLessonIndex = 0;
+    
+    // Kiểm tra xem chapter mới có tồn tại không
+    if (newChapterIndex >= course.value.chapters.length) {
+      return; // Đã ở bài cuối cùng
+    }
+  }
+  
+  // Giữ lại query review nếu đang ở chế độ review
+  const query: Record<string, string> = {
+    chapter: String(newChapterIndex),
+    lesson: String(newLessonIndex),
+  };
+  if (isReviewMode.value) {
+    query.review = 'true';
+  }
+  
+  navigateTo({
+    path: `/my-learning/${slug.value}`,
+    query,
+  });
 };
 
 const downloadDocument = (docType: string) => {
