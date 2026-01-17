@@ -537,10 +537,15 @@ export const useAuthStore = defineStore('auth', {
      */
     async logout() {
       console.log('[Auth] Logout called');
-      console.trace('[Auth] Logout stack trace');
       this.isLoading = true;
 
       try {
+        // Clear SSO cookie FIRST to prevent SSO login immediately after logout
+        if (process.client) {
+          const { clearSSOCookie } = await import('~/utils/sso');
+          clearSSOCookie();
+        }
+        
         // Call logout API to clear server session
         const authApi = useAuthApi();
         await authApi.logout().catch(() => {
@@ -548,9 +553,12 @@ export const useAuthStore = defineStore('auth', {
         });
 
         // Set logout sync cookie to notify Elearning site
+        // Do this BEFORE clearing state to ensure cookie is set while still authenticated
         if (process.client) {
           const { setLogoutSyncCookie } = await import('~/utils/authSync');
           setLogoutSyncCookie();
+          // Add a small delay to ensure cookie is propagated before clearing state
+          await new Promise(resolve => setTimeout(resolve, 100));
         }
 
         // Clear state
@@ -558,12 +566,17 @@ export const useAuthStore = defineStore('auth', {
         this.token = null;
         this.isAuthenticated = false;
         this.rememberAccount = false;
+        this.isSSOLoginInProgress = false;
+        this.justLoggedIn = false;
+        this.loginTimestamp = null;
 
         // Clear localStorage
         if (process.client) {
           localStorage.removeItem('auth_token');
           localStorage.removeItem('user');
           localStorage.removeItem('authData');
+          localStorage.removeItem('token_expire_at');
+          localStorage.removeItem('login_timestamp');
 
           // Keep auth_data if rememberAccount was true
           if (!this.rememberAccount) {
