@@ -618,7 +618,34 @@ export const useAuthStore = defineStore('auth', {
      */
     async initAuth() {
       if (process.client) {
-        // FIRST: Check logout sync cookie - if exists, don't restore auth and clear it
+        // FIRST: Check SSO cookie - if exists, it means user is logging in from another portal
+        // SSO cookie takes priority over logout sync cookie (SSO is newer, means user just logged in)
+        try {
+          const { checkSSOCookie } = await import('~/utils/sso');
+          const hasSSOCookie = checkSSOCookie();
+          
+          if (hasSSOCookie) {
+            console.log('[InitAuth] SSO cookie detected, attempting SSO login first');
+            const { handleSSOLogin } = await import('~/utils/sso');
+            const ssoResult = await handleSSOLogin();
+            if (ssoResult) {
+              console.log('✅ [InitAuth] SSO login successful');
+              // Clear logout sync cookie if it exists (SSO login takes priority)
+              try {
+                const { clearLogoutSyncCookie } = await import('~/utils/authSync');
+                clearLogoutSyncCookie();
+                console.log('[InitAuth] Cleared logout sync cookie after SSO login');
+              } catch (e) {
+                // Ignore errors
+              }
+              return;
+            }
+          }
+        } catch (e) {
+          console.warn('⚠️ [InitAuth] Error checking SSO cookie:', e);
+        }
+        
+        // SECOND: Check logout sync cookie - if exists, don't restore auth and clear it
         // This prevents restoring auth when user was logged out from another portal
         try {
           const { checkLogoutSyncCookie, clearLogoutSyncCookie } = await import('~/utils/authSync');
@@ -633,14 +660,7 @@ export const useAuthStore = defineStore('auth', {
             this.token = null;
             this.isAuthenticated = false;
             // Don't restore from localStorage if logout sync cookie exists
-            // But still check SSO cookie for auto-login from other portal
-            const { handleSSOLogin } = await import('~/utils/sso');
-            const ssoResult = await handleSSOLogin();
-            if (ssoResult) {
-              console.log('✅ [InitAuth] SSO login successful after logout sync');
-              return;
-            }
-            console.log('ℹ️ [InitAuth] No SSO cookie found, staying logged out');
+            console.log('ℹ️ [InitAuth] Staying logged out due to logout sync cookie');
             return;
           }
         } catch (e) {
