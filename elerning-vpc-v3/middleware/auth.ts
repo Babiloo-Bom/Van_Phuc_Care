@@ -12,9 +12,10 @@ export default defineNuxtRouteMiddleware(async (to, from) => {
 
   if (!authStore.isAuthenticated && process.client) {
     
-    const token = localStorage.getItem('auth_token')
-    const userStr = localStorage.getItem('user')
-    const tokenExpireAt = localStorage.getItem('token_expire_at')
+    // Check cookies for auth token (Elearning uses cookies)
+    const token = useCookie('auth_token').value;
+    const userStr = useCookie('user').value;
+    const tokenExpireAt = useCookie('token_expire_at').value;
     
     if (token && userStr && tokenExpireAt) {
       await authStore.initAuth()

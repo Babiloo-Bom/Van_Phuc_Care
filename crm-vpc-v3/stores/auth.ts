@@ -1,5 +1,41 @@
 import { defineStore } from 'pinia';
 
+// Helper functions for cookie-based auth persistence (CRM uses cookies-only)
+function isSecure() {
+  if (!process.client) return false;
+  return window.location.protocol === 'https:';
+}
+function getCookieDomain() {
+  if (!process.client) return null;
+  const hostname = window.location.hostname;
+  // Allow localhost without domain (cookies won't be shared between ports)
+  if (hostname === 'localhost' || hostname === '127.0.0.1') return null;
+  // Support local test domains like my.local.test, edu.local.test
+  const parts = hostname.split('.');
+  if (parts.length >= 2) return '.' + parts.slice(-2).join('.');
+  return null;
+}
+function setCookie(name: string, value: string, expiresIso?: string) {
+  if (!process.client) return;
+  let cookieStr = `${name}=${encodeURIComponent(value)}; path=/; SameSite=Lax`;
+  if (expiresIso) cookieStr += `; expires=${new Date(expiresIso).toUTCString()}`;
+  const domain = getCookieDomain();
+  if (domain) cookieStr += `; domain=${domain}`;
+  if (isSecure()) cookieStr += '; Secure';
+  document.cookie = cookieStr;
+}
+function getCookie(name: string): string | null {
+  if (!process.client) return null;
+  const match = document.cookie.match(new RegExp('(^|;)\\s*' + name + '=([^;]+)'));
+  return match ? decodeURIComponent(match[2]) : null;
+}
+function removeCookie(name: string) {
+  if (!process.client) return;
+  const domain = getCookieDomain();
+  if (domain) document.cookie = `${name}=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/; domain=${domain}; SameSite=Lax`;
+  document.cookie = `${name}=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/; SameSite=Lax`;
+}
+
 export interface User {
   id: string | number;
   email: string;
@@ -121,29 +157,19 @@ export const useAuthStore = defineStore('auth', {
           };
         }
 
-        // Save to localStorage
+        // Persist auth using cookies (CRM uses cookie-only persistence)
         if (process.client) {
-          localStorage.setItem('auth_token', token);
-          localStorage.setItem('token_expire_at', this.tokenExpireAt || '');
-          localStorage.setItem('user', JSON.stringify(this.user));
-          // Also save authData for initAuth compatibility
-          const authData = {
-            user: this.user,
-            token: this.token,
-            tokenExpireAt: this.tokenExpireAt,
-            rememberAccount: this.rememberAccount,
-          };
-          localStorage.setItem('authData', JSON.stringify(authData));
+          // token & expiry
+          setCookie('auth_token', token, this.tokenExpireAt || undefined);
+          setCookie('token_expire_at', this.tokenExpireAt || '');
+          // user
+          setCookie('user', JSON.stringify(this.user), this.tokenExpireAt || undefined);
+          // authData for compatibility
+          const authData = { user: this.user, token: this.token, tokenExpireAt: this.tokenExpireAt, rememberAccount: this.rememberAccount };
+          setCookie('authData', JSON.stringify(authData), this.tokenExpireAt || undefined);
 
           if (remindAccount) {
-            localStorage.setItem(
-              'auth_data',
-              JSON.stringify({
-                username,
-                remindAccount,
-                origin: 'vanphuccare.gensi.vn',
-              }),
-            );
+            setCookie('auth_data', JSON.stringify({ username, remindAccount, origin: 'vanphuccare.gensi.vn' }), this.tokenExpireAt || undefined);
           }
         }
 
@@ -364,13 +390,13 @@ export const useAuthStore = defineStore('auth', {
             console.log('[VerifyEmail] Cleared justLoggedIn flag after 30 seconds');
           }, 30000);
           
-          // Persist to localStorage
+          // Persist using cookies (CRM uses cookie-only persistence)
           if (import.meta.client) {
-            localStorage.setItem('auth_token', responseData.accessToken);
-            localStorage.setItem('token_expire_at', this.tokenExpireAt || '');
-            localStorage.setItem('user', JSON.stringify(this.user));
-            localStorage.setItem('login_timestamp', String(this.loginTimestamp));
-            
+            setCookie('auth_token', responseData.accessToken, this.tokenExpireAt || undefined);
+            setCookie('token_expire_at', this.tokenExpireAt || '');
+            setCookie('user', JSON.stringify(this.user), this.tokenExpireAt || undefined);
+            setCookie('login_timestamp', String(this.loginTimestamp));
+
             // Also save authData for initAuth compatibility
             const authData = {
               user: this.user,
@@ -379,8 +405,8 @@ export const useAuthStore = defineStore('auth', {
               rememberAccount: this.rememberAccount,
               loginTimestamp: this.loginTimestamp,
             };
-            localStorage.setItem('authData', JSON.stringify(authData));
-            
+            setCookie('authData', JSON.stringify(authData), this.tokenExpireAt || undefined);
+
             // Clear logout sync cookie on successful login
             const { clearLogoutSyncCookie } = await import('~/utils/authSync');
             clearLogoutSyncCookie();
@@ -570,17 +596,17 @@ export const useAuthStore = defineStore('auth', {
         this.justLoggedIn = false;
         this.loginTimestamp = null;
 
-        // Clear localStorage
+        // Clear cookies (CRM uses cookie-only persistence)
         if (process.client) {
-          localStorage.removeItem('auth_token');
-          localStorage.removeItem('user');
-          localStorage.removeItem('authData');
-          localStorage.removeItem('token_expire_at');
-          localStorage.removeItem('login_timestamp');
+          removeCookie('auth_token');
+          removeCookie('user');
+          removeCookie('authData');
+          removeCookie('token_expire_at');
+          removeCookie('login_timestamp');
 
           // Keep auth_data if rememberAccount was true
           if (!this.rememberAccount) {
-            localStorage.removeItem('auth_data');
+            removeCookie('auth_data');
           }
         }
 
@@ -594,7 +620,7 @@ export const useAuthStore = defineStore('auth', {
     },
 
     /**
-     * Save current auth state to localStorage
+     * Save current auth state (CRM: using cookies)
      */
     saveAuth() {
       if (process.client && this.user && this.token) {
@@ -605,12 +631,13 @@ export const useAuthStore = defineStore('auth', {
             tokenExpireAt: this.tokenExpireAt,
             rememberAccount: this.rememberAccount,
           };
-          localStorage.setItem('authData', JSON.stringify(authData));
+          setCookie('authData', JSON.stringify(authData), this.tokenExpireAt || undefined);
         } catch (error) {
           console.error('❌ Error saving auth data:', error);
         }
       }
     },
+
 
     /**
      * Check and restore session from localStorage
@@ -667,11 +694,12 @@ export const useAuthStore = defineStore('auth', {
           console.warn('⚠️ [InitAuth] Error checking logout sync cookie:', e);
         }
         
-        const token = localStorage.getItem('auth_token');
-        const tokenExpireAt = localStorage.getItem('token_expire_at');
-        const userStr = localStorage.getItem('user');
+        // Read from cookies (CRM uses cookies for persistence)
+        const token = getCookie('auth_token');
+        const tokenExpireAt = getCookie('token_expire_at');
+        const userStr = getCookie('user');
         // Check both 'authData' (new format) and 'auth_data' (old format) for compatibility
-        const authDataStr = localStorage.getItem('authData') || localStorage.getItem('auth_data');
+        const authDataStr = getCookie('authData') || getCookie('auth_data');
 
         // Try to restore from authData first (new format), then fallback to old format
         let authData = null;
@@ -866,30 +894,37 @@ export const useAuthStore = defineStore('auth', {
      * Complete Google Login
      * Store token and user data from Google OAuth
      * If userData is not provided, will fetch from API
+     * If tokenExpireAt is not provided, defaults to 7 days
      */
     async completeGoogleLogin(
       accessToken: string,
-      tokenExpireAt: number,
-      userData: User,
+      tokenExpireAt?: string | number,
+      userData?: User,
     ) {
       try {
         this.token = accessToken;
 
-        // Save token to localStorage first (needed for API calls)
-        if (process.client) {
-          localStorage.setItem('auth_token', accessToken);
-        }
-
         // Handle tokenExpireAt properly
-        if (typeof tokenExpireAt === 'number') {
-          this.tokenExpireAt = new Date(
-            Date.now() + tokenExpireAt,
-          ).toISOString();
+        if (tokenExpireAt) {
+          if (typeof tokenExpireAt === 'number') {
+            this.tokenExpireAt = new Date(Date.now() + tokenExpireAt).toISOString();
+          } else if (typeof tokenExpireAt === 'string') {
+            // Could be ISO string or duration string like '7d'
+            const parsed = new Date(tokenExpireAt);
+            if (!isNaN(parsed.getTime())) {
+              this.tokenExpireAt = parsed.toISOString();
+            } else {
+              this.tokenExpireAt = this.calculateExpireTime(tokenExpireAt);
+            }
+          }
         } else {
           // Default to 7 days if not provided
-          this.tokenExpireAt = new Date(
-            Date.now() + 7 * 24 * 60 * 60 * 1000,
-          ).toISOString();
+          this.tokenExpireAt = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString();
+        }
+
+        // Persist token via cookie (CRM uses cookie-only persistence)
+        if (process.client) {
+          setCookie('auth_token', accessToken, this.tokenExpireAt || undefined);
         }
 
         // If userData is not provided, fetch from API
@@ -915,10 +950,10 @@ export const useAuthStore = defineStore('auth', {
         this.user = userData;
         this.isAuthenticated = true;
 
-        // Save to localStorage
+        // Save to cookies (CRM uses cookie-based persistence for SSO)
         if (process.client) {
-          localStorage.setItem('token_expire_at', this.tokenExpireAt);
-          localStorage.setItem('user', JSON.stringify(userData));
+          setCookie('token_expire_at', this.tokenExpireAt, this.tokenExpireAt || undefined);
+          setCookie('user', JSON.stringify(userData), this.tokenExpireAt || undefined);
           // Also save authData for initAuth compatibility
           const authData = {
             user: userData,
@@ -926,8 +961,8 @@ export const useAuthStore = defineStore('auth', {
             tokenExpireAt: this.tokenExpireAt,
             rememberAccount: false,
           };
-          localStorage.setItem('authData', JSON.stringify(authData));
-          console.log('[Google Login] Auth data saved to localStorage');
+          setCookie('authData', JSON.stringify(authData), this.tokenExpireAt || undefined);
+          console.log('[Google Login] Auth data saved to cookies');
         }
 
         // Set justLoggedIn flag to prevent auto-logout for 15 seconds
@@ -990,7 +1025,7 @@ export const useAuthStore = defineStore('auth', {
           this.user = { ...this.user, ...response.user };
 
           if (process.client) {
-            localStorage.setItem('user', JSON.stringify(this.user));
+            setCookie('user', JSON.stringify(this.user), this.tokenExpireAt || undefined);
           }
         }
 

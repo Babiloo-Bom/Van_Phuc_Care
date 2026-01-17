@@ -204,18 +204,23 @@ const clearSavedCredentials = () => {
 };
 
 // Handle Google OAuth callback
-const handleGoogleCallback = () => {
+const handleGoogleCallback = async () => {
   const urlParams = new URLSearchParams(window.location.search);
   const googleSuccess = urlParams.get("google_success");
   const googleError = urlParams.get("google_error");
   const errorParam = urlParams.get("error"); // Also check 'error' parameter (from callback page redirect)
   const token = urlParams.get("token");
+  const tokenExpireAt = urlParams.get("tokenExpireAt"); // Backend may return expiry time
 
   if (googleSuccess && token) {
-    // Store token and redirect
-    localStorage.setItem("auth_token", token);
-    message.success("Đăng nhập Google thành công!");
-    navigateTo("/");
+    // Use authStore to handle Google login (proper cookie handling with expiry from backend)
+    const result = await authStore.completeGoogleLogin(token, tokenExpireAt || undefined);
+    if (result.success) {
+      message.success("Đăng nhập Google thành công!");
+      navigateTo("/");
+    } else {
+      message.error(result.error || "Đăng nhập Google thất bại");
+    }
   } else if (googleError || errorParam) {
     // Decode error message from URL parameter
     const errorMessage = decodeURIComponent(
