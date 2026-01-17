@@ -4,6 +4,7 @@
  */
 
 const LOGOUT_SYNC_COOKIE = 'auth_logout_sync';
+const COOKIE_DOMAIN = '.vanphuccare.vn'; // Hardcode domain for production
 
 /**
  * Check if running on localhost
@@ -14,63 +15,15 @@ function isLocalhost(): boolean {
   return hostname === 'localhost' || hostname === '127.0.0.1' || hostname.startsWith('192.168.') || hostname.startsWith('10.');
 }
 
-/**
- * Get cookie domain dynamically from current hostname
- * Returns domain like '.vanphuccare.vn' for subdomains, or null for localhost
- */
-function getCookieDomain(): string | null {
-  if (!process.client) return null;
-  if (isLocalhost()) return null;
-  
-  const hostname = window.location.hostname;
-  
-  // Extract root domain from hostname
-  // Examples:
-  // - edu.vanphuccare.vn -> .vanphuccare.vn
-  // - my.vanphuccare.vn -> .vanphuccare.vn
-  // - admin.vanphuccare.vn -> .vanphuccare.vn
-  // - vanphuccare.vn -> .vanphuccare.vn
-  
-  const parts = hostname.split('.');
-  if (parts.length >= 2) {
-    // Get last 2 parts for domain (e.g., vanphuccare.vn)
-    const rootDomain = parts.slice(-2).join('.');
-    return '.' + rootDomain;
-  }
-  
-  return null;
-}
-
-/**
- * Check if current page is using HTTPS
- */
-function isSecure(): boolean {
-  if (!process.client) return false;
-  return window.location.protocol === 'https:';
-}
-
-/**
- * Build cookie attributes string
- */
-function buildCookieAttributes(domain: string | null, includeSecure: boolean = true): string {
-  let attrs = 'path=/; SameSite=Lax';
-  if (domain) {
-    attrs += `; domain=${domain}`;
-  }
-  if (includeSecure && isSecure()) {
-    attrs += '; Secure';
-  }
-  return attrs;
-}
 
 /**
  * Set logout sync cookie to notify other site
  */
 export function setLogoutSyncCookie() {
   if (process.client) {
-    // Set cookie with expiration in 1 minute (just enough time for sync)
+    // Set cookie with expiration in 3 minutes (enough time for sync across tabs/sites)
     const expires = new Date();
-    expires.setMinutes(expires.getMinutes() + 1);
+    expires.setMinutes(expires.getMinutes() + 3);
     const cookieValue = Date.now().toString();
     
     console.log('[LogoutSync] Setting logout sync cookie, value:', cookieValue);
@@ -96,40 +49,25 @@ export function setLogoutSyncCookie() {
       });
     } else {
       // Production: Use cookie with domain for subdomain sharing
-      const cookieDomain = getCookieDomain();
-      const cookieValueStr = cookieValue.toString();
-      
       try {
-        if (cookieDomain) {
-          // Try with domain first (for subdomain sharing)
-          const attrs = buildCookieAttributes(cookieDomain);
-          const cookieString = `${LOGOUT_SYNC_COOKIE}=${cookieValueStr}; expires=${expires.toUTCString()}; ${attrs}`;
-          document.cookie = cookieString;
-          console.log('[LogoutSync] Set logout sync cookie with domain:', cookieDomain, 'value:', cookieValueStr, 'secure:', isSecure());
-          
-          // Verify cookie was set after a short delay
-          setTimeout(() => {
-            const wasSet = checkLogoutSyncCookie();
-            if (!wasSet) {
-              console.warn('[LogoutSync] Cookie may not have been set with domain, trying without domain');
-              // Fallback: try without domain (for same-origin)
-              const fallbackAttrs = buildCookieAttributes(null);
-              document.cookie = `${LOGOUT_SYNC_COOKIE}=${cookieValueStr}; expires=${expires.toUTCString()}; ${fallbackAttrs}`;
-            } else {
-              console.log('[LogoutSync] Cookie verified successfully');
-            }
-          }, 200);
-        } else {
-          // No domain detected, set without domain (same-origin only)
-          const attrs = buildCookieAttributes(null);
-          document.cookie = `${LOGOUT_SYNC_COOKIE}=${cookieValueStr}; expires=${expires.toUTCString()}; ${attrs}`;
-          console.log('[LogoutSync] Set logout sync cookie without domain (no subdomain detected)');
-        }
+        // Try with domain first
+        const cookieString = `${LOGOUT_SYNC_COOKIE}=${cookieValue}; expires=${expires.toUTCString()}; path=/; domain=${COOKIE_DOMAIN}; SameSite=Lax`;
+        document.cookie = cookieString;
+        console.log('[LogoutSync] Set logout sync cookie with domain:', COOKIE_DOMAIN, 'value:', cookieValue);
+        
+        // Verify cookie was set
+        setTimeout(() => {
+          const wasSet = checkLogoutSyncCookie();
+          if (!wasSet) {
+            console.warn('[LogoutSync] Cookie may not have been set with domain, trying without domain');
+            // Fallback: try without domain
+            document.cookie = `${LOGOUT_SYNC_COOKIE}=${cookieValue}; expires=${expires.toUTCString()}; path=/; SameSite=Lax`;
+          }
+        }, 100);
       } catch (e) {
-        console.error('[LogoutSync] Error setting cookie:', e);
+        console.error('[LogoutSync] Error setting cookie with domain:', e);
         // Fallback if domain setting fails
-        const fallbackAttrs = buildCookieAttributes(null);
-        document.cookie = `${LOGOUT_SYNC_COOKIE}=${cookieValueStr}; expires=${expires.toUTCString()}; ${fallbackAttrs}`;
+        document.cookie = `${LOGOUT_SYNC_COOKIE}=${cookieValue}; expires=${expires.toUTCString()}; path=/; SameSite=Lax`;
         console.log('[LogoutSync] Set logout sync cookie without domain (fallback)');
       }
     }
@@ -149,8 +87,8 @@ export function checkLogoutSyncCookie(): boolean {
       if (key.startsWith('auth_logout_sync_')) {
         const parts = key.split('_');
         const timestamp = parts[3] ? parseInt(parts[3]) : 0;
-        // Check if sync key is recent (within 1 minute)
-        if (timestamp && Date.now() - timestamp < 60000) {
+        // Check if sync key is recent (within 3 minutes)
+        if (timestamp && Date.now() - timestamp < 180000) {
           console.log('[LogoutSync] Found logout sync key in localStorage:', key);
           return true;
         }
@@ -177,8 +115,8 @@ export function checkLogoutSyncCookie(): boolean {
           const timestamp = parseInt(value);
           if (!isNaN(timestamp)) {
             const age = Date.now() - timestamp;
-            // Cookie should be within 1 minute (60000ms)
-            if (age >= 0 && age < 60000) {
+            // Cookie should be within 3 minutes (180000ms)
+            if (age >= 0 && age < 180000) {
               console.log('[LogoutSync] Found valid logout sync cookie, age:', age, 'ms');
               return true;
             } else {
@@ -218,22 +156,15 @@ export function clearLogoutSyncCookie() {
     } else {
       // Production: Clear cookie (try both with and without domain)
       try {
-        const cookieDomain = getCookieDomain();
-        
-        // Clear with domain if available
-        if (cookieDomain) {
-          const attrs = buildCookieAttributes(cookieDomain);
-          document.cookie = `${LOGOUT_SYNC_COOKIE}=; expires=Thu, 01 Jan 1970 00:00:00 UTC; ${attrs}`;
-        }
-        // Also clear without domain (in case it was set without domain or domain setting failed)
-        const fallbackAttrs = buildCookieAttributes(null);
-        document.cookie = `${LOGOUT_SYNC_COOKIE}=; expires=Thu, 01 Jan 1970 00:00:00 UTC; ${fallbackAttrs}`;
-        console.log('[LogoutSync] Cleared logout sync cookie', cookieDomain ? `(domain: ${cookieDomain})` : '(no domain)');
+        // Clear with domain
+        document.cookie = `${LOGOUT_SYNC_COOKIE}=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/; domain=${COOKIE_DOMAIN}; SameSite=Lax`;
+        // Also clear without domain (in case it was set without domain)
+        document.cookie = `${LOGOUT_SYNC_COOKIE}=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/; SameSite=Lax`;
+        console.log('[LogoutSync] Cleared logout sync cookie');
       } catch (e) {
         console.error('[LogoutSync] Error clearing cookie:', e);
         // Fallback
-        const fallbackAttrs = buildCookieAttributes(null);
-        document.cookie = `${LOGOUT_SYNC_COOKIE}=; expires=Thu, 01 Jan 1970 00:00:00 UTC; ${fallbackAttrs}`;
+        document.cookie = `${LOGOUT_SYNC_COOKIE}=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/; SameSite=Lax`;
       }
     }
   }

@@ -5,6 +5,7 @@
  */
 
 const SSO_COOKIE = 'auth_sso_token';
+const COOKIE_DOMAIN = '.vanphuccare.vn'; // Hardcode domain for production
 
 /**
  * Check if running on localhost
@@ -102,18 +103,12 @@ export async function setSSOCookie(token: string): Promise<void> {
     });
   } else {
     // Production: Use cookie with domain for subdomain sharing
-    const cookieDomain = getCookieDomain();
-    
     try {
-      const attrs = buildCookieAttributes(cookieDomain);
-      const cookieString = `${SSO_COOKIE}=${encodedToken}; expires=${expires.toUTCString()}; ${attrs}`;
+      const cookieString = `${SSO_COOKIE}=${encodedToken}; expires=${expires.toUTCString()}; path=/; domain=${COOKIE_DOMAIN}; SameSite=Lax`;
       document.cookie = cookieString;
-      console.log('[SSO] Set SSO cookie', cookieDomain ? `with domain: ${cookieDomain}` : 'without domain (no subdomain detected)', 'secure:', isSecure());
     } catch (e) {
-      console.error('[SSO] Error setting cookie:', e);
       // Fallback if domain setting fails
-      const fallbackAttrs = buildCookieAttributes(null);
-      document.cookie = `${SSO_COOKIE}=${encodedToken}; expires=${expires.toUTCString()}; ${fallbackAttrs}`;
+      document.cookie = `${SSO_COOKIE}=${encodedToken}; expires=${expires.toUTCString()}; path=/; SameSite=Lax`;
     }
   }
 }
@@ -165,24 +160,11 @@ export function clearSSOCookie(): void {
         }
       });
     } else {
-      // Production: Clear cookie (try both with and without domain)
+      // Production: Clear cookie
       try {
-        const cookieDomain = getCookieDomain();
-        
-        // Clear with domain if available
-        if (cookieDomain) {
-          const attrs = buildCookieAttributes(cookieDomain);
-          document.cookie = `${SSO_COOKIE}=; expires=Thu, 01 Jan 1970 00:00:00 UTC; ${attrs}`;
-        }
-        // Also clear without domain (in case it was set without domain or domain setting failed)
-        const fallbackAttrs = buildCookieAttributes(null);
-        document.cookie = `${SSO_COOKIE}=; expires=Thu, 01 Jan 1970 00:00:00 UTC; ${fallbackAttrs}`;
-        console.log('[SSO] Cleared SSO cookie', cookieDomain ? `(domain: ${cookieDomain})` : '(no domain)');
+        document.cookie = `${SSO_COOKIE}=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/; domain=${COOKIE_DOMAIN}; SameSite=Lax`;
       } catch (e) {
-        console.error('[SSO] Error clearing cookie:', e);
-        // Fallback
-        const fallbackAttrs = buildCookieAttributes(null);
-        document.cookie = `${SSO_COOKIE}=; expires=Thu, 01 Jan 1970 00:00:00 UTC; ${fallbackAttrs}`;
+        document.cookie = `${SSO_COOKIE}=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/; SameSite=Lax`;
       }
     }
   }
