@@ -279,7 +279,7 @@
                           >
                             <!-- Chapter Header -->
                             <div
-                              class="flex items-center justify-between py-3 sm:py-4 cursor-pointer hover:bg-gray-50 transition-colors"
+                              class="flex items-center justify-between py-4 sm:py-5 cursor-pointer hover:bg-gray-50 transition-colors"
                               @click="toggleChapter(chapterIndex)"
                             >
                               <div
