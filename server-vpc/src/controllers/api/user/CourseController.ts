@@ -1132,8 +1132,8 @@ class CourseController {
             lessons: courseData.lessons || 0,
             students: courseData.students || 0,
             rating: {
-              average: ratingStats[courseIdStr]?.avg ?? courseData.rating?.average ?? 0,
-              count: ratingStats[courseIdStr]?.count ?? courseData.rating?.count ?? 0,
+              average: ratingStats[courseId]?.avg ?? courseData.rating?.average ?? 0,
+              count: ratingStats[courseId]?.count ?? courseData.rating?.count ?? 0,
             },
             tags: courseData.tags || [],
             isPublished: courseData.isPublished,
