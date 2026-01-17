@@ -546,6 +546,35 @@ export const useAuthStore = defineStore("auth", {
      */
     async initAuth() {
       if (process.client) {
+        // FIRST: Check logout sync cookie - if exists, don't restore auth and clear it
+        // This prevents restoring auth when user was logged out from another portal
+        try {
+          const { checkLogoutSyncCookie, clearLogoutSyncCookie } = await import('~/utils/authSync');
+          const hasLogoutSync = checkLogoutSyncCookie();
+          console.log('[InitAuth] Checking logout sync cookie:', hasLogoutSync);
+          
+          if (hasLogoutSync) {
+            console.log('⚠️ [InitAuth] Logout sync cookie detected, clearing auth state');
+            clearLogoutSyncCookie();
+            // Clear local auth state
+            this.user = null;
+            this.token = null;
+            this.isAuthenticated = false;
+            // Don't restore from localStorage if logout sync cookie exists
+            // But still check SSO cookie for auto-login from other portal
+            const { handleSSOLogin } = await import('~/utils/sso');
+            const ssoResult = await handleSSOLogin();
+            if (ssoResult) {
+              console.log('✅ [InitAuth] SSO login successful after logout sync');
+              return;
+            }
+            console.log('ℹ️ [InitAuth] No SSO cookie found, staying logged out');
+            return;
+          }
+        } catch (e) {
+          console.warn('⚠️ [InitAuth] Error checking logout sync cookie:', e);
+        }
+        
         // Skip if already authenticated (might be from a fresh login)
         // This prevents initAuth from overriding state after a successful login
         // But still restore loginTimestamp if missing
