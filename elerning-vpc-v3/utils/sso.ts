@@ -5,7 +5,6 @@
  */
 
 const SSO_COOKIE = 'auth_sso_token';
-const COOKIE_DOMAIN = '.vanphuccare.vn';
 
 /**
  * Check if running on localhost
@@ -14,6 +13,55 @@ function isLocalhost(): boolean {
   if (!process.client) return false;
   const hostname = window.location.hostname;
   return hostname === 'localhost' || hostname === '127.0.0.1' || hostname.startsWith('192.168.') || hostname.startsWith('10.');
+}
+
+/**
+ * Check if current page is using HTTPS
+ */
+function isSecure(): boolean {
+  if (!process.client) return false;
+  return window.location.protocol === 'https:';
+}
+
+/**
+ * Build cookie attributes string
+ */
+function buildCookieAttributes(domain: string | null): string {
+  let attrs = 'path=/; SameSite=Lax';
+  if (domain) {
+    attrs += `; domain=${domain}`;
+  }
+  if (isSecure()) {
+    attrs += '; Secure';
+  }
+  return attrs;
+}
+
+/**
+ * Get cookie domain dynamically from current hostname
+ * Returns domain like '.vanphuccare.vn' for subdomains, or null for localhost
+ */
+function getCookieDomain(): string | null {
+  if (!process.client) return null;
+  if (isLocalhost()) return null;
+  
+  const hostname = window.location.hostname;
+  
+  // Extract root domain from hostname
+  // Examples:
+  // - edu.vanphuccare.vn -> .vanphuccare.vn
+  // - my.vanphuccare.vn -> .vanphuccare.vn
+  // - admin.vanphuccare.vn -> .vanphuccare.vn
+  // - vanphuccare.vn -> .vanphuccare.vn
+  
+  const parts = hostname.split('.');
+  if (parts.length >= 2) {
+    // Get last 2 parts for domain (e.g., vanphuccare.vn)
+    const rootDomain = parts.slice(-2).join('.');
+    return '.' + rootDomain;
+  }
+  
+  return null;
 }
 
 /**
@@ -54,12 +102,18 @@ export async function setSSOCookie(token: string): Promise<void> {
     });
   } else {
     // Production: Use cookie with domain for subdomain sharing
+    const cookieDomain = getCookieDomain();
+    
     try {
-      const cookieString = `${SSO_COOKIE}=${encodedToken}; expires=${expires.toUTCString()}; path=/; domain=${COOKIE_DOMAIN}; SameSite=Lax`;
+      const attrs = buildCookieAttributes(cookieDomain);
+      const cookieString = `${SSO_COOKIE}=${encodedToken}; expires=${expires.toUTCString()}; ${attrs}`;
       document.cookie = cookieString;
+      console.log('[SSO] Set SSO cookie', cookieDomain ? `with domain: ${cookieDomain}` : 'without domain (no subdomain detected)', 'secure:', isSecure());
     } catch (e) {
+      console.error('[SSO] Error setting cookie:', e);
       // Fallback if domain setting fails
-      document.cookie = `${SSO_COOKIE}=${encodedToken}; expires=${expires.toUTCString()}; path=/; SameSite=Lax`;
+      const fallbackAttrs = buildCookieAttributes(null);
+      document.cookie = `${SSO_COOKIE}=${encodedToken}; expires=${expires.toUTCString()}; ${fallbackAttrs}`;
     }
   }
 }
@@ -111,11 +165,24 @@ export function clearSSOCookie(): void {
         }
       });
     } else {
-      // Production: Clear cookie
+      // Production: Clear cookie (try both with and without domain)
       try {
-        document.cookie = `${SSO_COOKIE}=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/; domain=${COOKIE_DOMAIN}; SameSite=Lax`;
+        const cookieDomain = getCookieDomain();
+        
+        // Clear with domain if available
+        if (cookieDomain) {
+          const attrs = buildCookieAttributes(cookieDomain);
+          document.cookie = `${SSO_COOKIE}=; expires=Thu, 01 Jan 1970 00:00:00 UTC; ${attrs}`;
+        }
+        // Also clear without domain (in case it was set without domain or domain setting failed)
+        const fallbackAttrs = buildCookieAttributes(null);
+        document.cookie = `${SSO_COOKIE}=; expires=Thu, 01 Jan 1970 00:00:00 UTC; ${fallbackAttrs}`;
+        console.log('[SSO] Cleared SSO cookie', cookieDomain ? `(domain: ${cookieDomain})` : '(no domain)');
       } catch (e) {
-        document.cookie = `${SSO_COOKIE}=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/; SameSite=Lax`;
+        console.error('[SSO] Error clearing cookie:', e);
+        // Fallback
+        const fallbackAttrs = buildCookieAttributes(null);
+        document.cookie = `${SSO_COOKIE}=; expires=Thu, 01 Jan 1970 00:00:00 UTC; ${fallbackAttrs}`;
       }
     }
   }
