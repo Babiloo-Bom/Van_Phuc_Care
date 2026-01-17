@@ -65,6 +65,10 @@
               <div
                 class="relative w-full rounded-lg overflow-hidden shadow-lg bg-gray-900"
                 :style="{ aspectRatio: '16/9' }"
+                @mousemove="handleMouseMove"
+                @mouseenter="handleMouseEnter"
+                @mouseleave="handleMouseLeave"
+                @touchstart.passive="handleTouchStart"
               >
                 <!-- Loading indicator khi đang lấy video token -->
                 <div
@@ -92,6 +96,7 @@
                   :controls="false"
                   @timeupdate="onTimeUpdate"
                   @loadedmetadata="onLoadedMetadata"
+                  @ended="handleEnded"
                   @contextmenu.prevent
                   @dragstart.prevent
                   @selectstart.prevent
@@ -176,8 +181,8 @@
 
                 <!-- Custom Controls -->
                 <div
-                  v-if="isMounted && currentVideoUrl && videoReady"
-                  class="absolute inset-x-0 bottom-0 bg-black bg-opacity-60 px-4 py-3 flex items-center gap-3"
+                  v-show="isMounted && currentVideoUrl && videoReady && (showControls || !playerState.playing)"
+                  :class="[ 'absolute inset-x-0 bottom-0 bg-black bg-opacity-60 px-4 py-3 flex items-center gap-3 transition-opacity duration-200', showControls || !playerState.playing ? 'opacity-100 pointer-events-auto' : 'opacity-0 pointer-events-none' ]"
                 >
                   <!-- Play / Pause -->
                   <button
@@ -627,6 +632,11 @@ const playerState = ref({
   currentTime: 0,
   playing: false,
 });
+
+// Controls visibility
+const showControls = ref(true);
+let hideControlsTimer: ReturnType<typeof setTimeout> | null = null;
+const HIDE_DELAY = 3000; // ms
 
 const isFullscreen = ref(false);
 
@@ -1177,11 +1187,118 @@ const togglePlay = () => {
   if (playerState.value.playing) {
     videoRef.value.pause();
     playerState.value.playing = false;
+    // When paused, always show controls
+    showControls.value = true;
+    if (hideControlsTimer) { clearTimeout(hideControlsTimer); hideControlsTimer = null; }
   } else {
     videoRef.value.play();
     playerState.value.playing = true;
+    // When start playing, auto-hide after delay
+    hideControlsAfterDelay();
   }
 };
+
+function clearHideTimer() {
+  if (hideControlsTimer) { clearTimeout(hideControlsTimer); hideControlsTimer = null; }
+}
+
+function hideControlsAfterDelay() {
+  clearHideTimer();
+  // Only hide when playing
+  if (!playerState.value.playing) return;
+  hideControlsTimer = setTimeout(() => {
+    // If still playing, hide controls
+    if (playerState.value.playing) showControls.value = false;
+    hideControlsTimer = null;
+  }, HIDE_DELAY);
+}
+
+function showControlsTemporarily() {
+  showControls.value = true;
+  // If playing, schedule auto-hide
+  if (playerState.value.playing) hideControlsAfterDelay();
+}
+
+function handleMouseMove(e: MouseEvent) {
+  // Only react on desktop devices
+  if (('ontouchstart' in window) && navigator.maxTouchPoints > 0) return;
+  const target = (e.currentTarget as HTMLElement);
+  if (!target) return;
+  const rect = target.getBoundingClientRect();
+  const y = e.clientY;
+  const nearBottom = rect.bottom - y <= 120; // 120px zone at bottom
+  if (nearBottom || !playerState.value.playing) {
+    showControlsTemporarily();
+  } else {
+    // Hide if playing and cursor away from bottom
+    if (playerState.value.playing) {
+      showControls.value = false;
+    }
+  }
+}
+
+function handleMouseEnter() {
+  // show controls on enter
+  showControlsTemporarily();
+}
+
+function handleMouseLeave() {
+  if (playerState.value.playing) {
+    hideControlsAfterDelay();
+  } else {
+    showControls.value = true;
+  }
+}
+
+function handleTouchStart(e: TouchEvent) {
+  // On mobile, toggle controls visible on touch
+  // But don't toggle when tapping on control buttons (they have stopPropagation)
+  showControls.value = !showControls.value;
+  if (showControls.value && playerState.value.playing) {
+    hideControlsAfterDelay();
+  } else {
+    clearHideTimer();
+  }
+}
+
+function handleEnded() {
+  // Called when video playback reaches end
+  // Ensure UI reflects stopped playback and cleanup background work
+  try {
+    if (videoRef.value) {
+      videoRef.value.pause();
+      // set time to duration (should already be at end)
+      videoRef.value.currentTime = videoRef.value.duration || 0;
+    }
+  } catch (e) {
+    // ignore
+  }
+  playerState.value.playing = false;
+  // show controls so user can replay
+  showControls.value = true;
+  // clear any auto-hide timer
+  clearHideTimer();
+  // stop refreshing token when playback finished
+  stopTokenRefresh();
+}
+
+// Ensure controls behavior responds to play/pause state
+watch(
+  () => playerState.value.playing,
+  (playing) => {
+    if (playing) {
+      hideControlsAfterDelay();
+    } else {
+      showControls.value = true;
+      clearHideTimer();
+    }
+  }
+);
+
+// Clean up timer on unmount
+onUnmounted(() => {
+  clearHideTimer();
+});
 
 const formatTime = (seconds: number) => {
   if (!seconds || isNaN(seconds)) return "00:00";
