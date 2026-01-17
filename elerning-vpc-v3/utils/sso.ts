@@ -229,13 +229,15 @@ export async function handleSSOLogin(): Promise<boolean> {
     
     // Set token FIRST before calling API (so API can use it)
     authStore.token = ssoData.token;
+    // Calculate cookie expiration (default 7 days)
+    const tokenExpires = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000);
     if (process.client) {
       const site = getSiteType();
       if (site === 'admin') {
         localStorage.setItem('auth_token', ssoData.token);
       } else {
         const domain = getCookieDomain();
-        let cookieStr = `auth_token=${ssoData.token}; path=/; SameSite=Lax`;
+        let cookieStr = `auth_token=${ssoData.token}; expires=${tokenExpires.toUTCString()}; path=/; SameSite=Lax`;
         if (domain) cookieStr += `; domain=${domain}`;
         if (isSecure()) cookieStr += '; Secure';
         document.cookie = cookieStr;
@@ -323,16 +325,22 @@ export async function handleSSOLogin(): Promise<boolean> {
           } else {
             const domain = getCookieDomain();
             const expires = authStore.tokenExpireAt || new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString();
+            const expiresDate = new Date(expires).toUTCString();
             // user cookie
-            let userCookie = `user=${encodeURIComponent(JSON.stringify(authStore.user))}; path=/; SameSite=Lax`;
+            let userCookie = `user=${encodeURIComponent(JSON.stringify(authStore.user))}; expires=${expiresDate}; path=/; SameSite=Lax`;
             if (domain) userCookie += `; domain=${domain}`;
             if (isSecure()) userCookie += '; Secure';
             document.cookie = userCookie;
             // authData cookie
-            let authCookie = `authData=${encodeURIComponent(JSON.stringify({ user: authStore.user, token: authStore.token, tokenExpireAt: expires }))}; path=/; SameSite=Lax`;
+            let authCookie = `authData=${encodeURIComponent(JSON.stringify({ user: authStore.user, token: authStore.token, tokenExpireAt: expires }))}; expires=${expiresDate}; path=/; SameSite=Lax`;
             if (domain) authCookie += `; domain=${domain}`;
             if (isSecure()) authCookie += '; Secure';
             document.cookie = authCookie;
+            // token_expire_at cookie
+            let expireCookie = `token_expire_at=${encodeURIComponent(expires)}; expires=${expiresDate}; path=/; SameSite=Lax`;
+            if (domain) expireCookie += `; domain=${domain}`;
+            if (isSecure()) expireCookie += '; Secure';
+            document.cookie = expireCookie;
             if (authStore.loginTimestamp) {
               let tsCookie = `login_timestamp=${authStore.loginTimestamp}; path=/; SameSite=Lax`;
               if (domain) tsCookie += `; domain=${domain}`;
@@ -366,14 +374,12 @@ export async function handleSSOLogin(): Promise<boolean> {
       return false;
     }
     
-    // If no userData, clear everything
+    // If no userData, clear SSO state but not main auth
     authStore.token = null;
     authStore.isAuthenticated = false;
     authStore.justLoggedIn = false;
     authStore.loginTimestamp = null;
-    if (process.client) {
-      localStorage.removeItem('auth_token');
-    }
+    // Don't clear main auth cookies - they might still be valid
     clearSSOCookie();
     return false;
   } catch (error) {

@@ -7,11 +7,11 @@
 // Flag to prevent infinite logout loop
 let isLoggingOut = false;
 
-export default defineNuxtPlugin(nuxtApp => {
+export default defineNuxtPlugin(async nuxtApp => {
   const authStore = useAuthStore();
 
-  // Initialize auth state from localStorage
-  authStore.initAuth();
+  // Initialize auth state from cookies - MUST await to ensure auth is ready before app loads
+  await authStore.initAuth();
 
   // Handle navigation after login
   nuxtApp.hook('app:mounted', () => {
@@ -54,6 +54,13 @@ export default defineNuxtPlugin(nuxtApp => {
         
         // Prevent infinite loop: don't logout if already logging out or if this is logout request
         if (isLoggingOut || isLogoutRequest) {
+          return;
+        }
+        
+        // Don't call logout if user was never authenticated
+        // This prevents setting logout sync cookie when user simply opens the site without auth
+        if (!authStore.isAuthenticated && !authStore.token) {
+          console.log('[Auth] 401 but user was never authenticated, skipping logout');
           return;
         }
         

@@ -6,7 +6,7 @@
         <!-- Logo (mobile absolute positioning) -->
         <div class="logo-section">
           <nuxt-img
-            src="/images/logo-vanphuc-new-mobile.png"
+            src="/images/logo-login-mobile.png"
             alt="Van Phuc Care"
             class="lg:hidden logo"
             format="webp"
@@ -16,7 +16,7 @@
             fetchpriority="high"
           />
           <nuxt-img
-            src="/images/logo-vanphuc-new.png"
+            src="/images/logo-login.png"
             alt="Van Phuc Care"
             class="hidden lg:block logo"
             format="webp"

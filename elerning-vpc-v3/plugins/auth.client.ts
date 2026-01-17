@@ -4,14 +4,14 @@
  * Migrated from @nuxtjs/auth-next
  */
 
-export default defineNuxtPlugin(nuxtApp => {
+export default defineNuxtPlugin(async nuxtApp => {
   const authStore = useAuthStore();
 
-  // Initialize auth state from localStorage
+  // Initialize auth state from cookies - MUST await to ensure auth is ready before app loads
   // Only init if not already authenticated (to avoid overriding fresh login)
   // This prevents initAuth from running after a successful login
   if (!authStore.isAuthenticated || !authStore.token) {
-    authStore.initAuth();
+    await authStore.initAuth();
   }
 
   // Handle navigation after login
@@ -51,6 +51,12 @@ export default defineNuxtPlugin(nuxtApp => {
         const isLogoutRequest = requestUrl.includes('/logout') || requestUrl.includes('/auth/logout');
         const isProfileRequest = requestUrl.includes('/users/profile') || requestUrl.includes('/profile');
         const isCoursesRequest = requestUrl.includes('/courses/my-courses');
+        
+        // Don't logout if user is not authenticated (nothing to logout from)
+        if (!authStore.isAuthenticated && !authStore.token) {
+          console.warn('[Auth] 401 but user not authenticated, skipping logout');
+          return;
+        }
         
         // Don't logout immediately after login
         if (authStore.justLoggedIn) {
