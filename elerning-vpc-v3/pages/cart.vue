@@ -119,7 +119,7 @@
                 </div>
 
                 <!-- Desktop: Horizontal Layout -->
-                <div class="hidden md:flex" style="width: 750.94px; height: 185.45px;">
+                <div class="hidden md:flex" style="width: 100%; height: 185.45px;">
                   <!-- Course Thumbnail - Left Section (40%) -->
                   <div class="w-[40%] flex-shrink-0 relative">
                     <img

@@ -8,7 +8,9 @@
       <div
         class="absolute top-0 left-0 w-full h-full bg-[#1A75BBB2] opacity-80"
       ></div>
-      <div class="container h-full mx-auto flex items-center py-8 lg:py-0">
+      <div
+        class="container h-full mx-auto flex items-center py-8 lg:py-0 px-4 sm:px-6"
+      >
         <div class="grid grid-cols-12 gap-4 sm:gap-8 w-full">
           <div
             class="col-span-12 xl:col-span-8 relative z-[1] flex flex-col h-full gap-4 sm:gap-6"
@@ -16,7 +18,10 @@
             <div class="text-white max-lg:w-full w-[66%]">
               <!-- Breadcrumb -->
               <div class="mb-3 sm:mb-6">
-                <NuxtLink to="/" class="m-0 hover:underline text-sm sm:text-base">
+                <NuxtLink
+                  to="/"
+                  class="m-0 hover:underline text-sm sm:text-base"
+                >
                   Tất cả khóa học |
                 </NuxtLink>
                 <span class="m-0 text-sm sm:text-base">
@@ -26,14 +31,19 @@
 
               <!-- Title -->
               <div class="flex items-center gap-4">
-                <h4 class="max-lg:text-[28px] text-4xl font-bold text-white mb-1">
+                <h4
+                  class="max-lg:text-[28px] text-4xl font-bold text-white mb-1"
+                >
                   {{ course?.title }}
                 </h4>
               </div>
 
               <!-- Short Description -->
               <div class="mt-3 sm:mt-4 max-lg:hidden">
-                <div class="mb-0 text-sm sm:text-base md:max-w-[90%] line-clamp-3 sm:line-clamp-none" v-html="course?.shortDescription"></div>
+                <div
+                  class="mb-0 text-sm sm:text-base md:max-w-[90%] line-clamp-3 sm:line-clamp-none"
+                  v-html="course?.shortDescription"
+                ></div>
               </div>
             </div>
           </div>
@@ -46,19 +56,27 @@
       <div class="container mx-auto px-4 sm:px-6 relative">
         <div class="grid grid-cols-12 gap-4 sm:gap-6 lg:gap-8">
           <!-- Left Content -->
-          <div class="col-span-12 lg:col-span-8 max-[639px]:mt-0 max-md:mt-[11rem] max-lg:mt-[12rem]">
+          <div
+            class="col-span-12 lg:col-span-8 max-[639px]:mt-0 max-md:mt-[11rem] max-lg:mt-[12rem]"
+          >
             <div>
               <!-- Video or Thumbnail -->
               <div class="py-4 sm:py-6 md:py-8">
-                <div class="p-2 sm:p-4 rounded-md overflow-hidden shadow-md relative">
+                <div
+                  class="p-2 sm:p-4 rounded-md overflow-hidden shadow-md relative"
+                >
                   <!-- Loading indicator khi đang lấy video token -->
                   <div
                     v-if="introVideoTokenLoading"
                     class="absolute inset-0 flex items-center justify-center bg-gray-900 z-10 rounded-[8px] sm:rounded-[12px]"
                   >
                     <div class="flex flex-col items-center gap-3">
-                      <div class="w-10 h-10 border-4 border-blue-500 border-t-transparent rounded-full animate-spin"></div>
-                      <span class="text-white text-sm">Đang xác thực video...</span>
+                      <div
+                        class="w-10 h-10 border-4 border-blue-500 border-t-transparent rounded-full animate-spin"
+                      ></div>
+                      <span class="text-white text-sm"
+                        >Đang xác thực video...</span
+                      >
                     </div>
                   </div>
 
@@ -66,7 +84,12 @@
                   <!-- Stream qua HLS (hls.js) để stream theo chunks - chống download tốt hơn -->
                   <!-- CHỈ render khi video ready và component đã mounted để tránh hydration mismatch -->
                   <video
-                    v-if="isMounted && currentVideoUrl && !introVideoTokenLoading && introVideoReady"
+                    v-if="
+                      isMounted &&
+                      currentVideoUrl &&
+                      !introVideoTokenLoading &&
+                      introVideoReady
+                    "
                     ref="videoRef"
                     :poster="(course as any)?.introVideoThumbnail || course?.thumbnail"
                     class="w-full h-auto min-h-[200px] sm:min-h-[300px] md:min-h-[400px] lg:min-h-[500px] object-cover rounded-[8px] sm:rounded-[12px] video-element"
@@ -80,7 +103,7 @@
                     @selectstart.prevent
                     @copy.prevent
                   ></video>
-                  
+
                   <!-- Thumbnail với nút Play (nếu có video nhưng chưa click play) -->
                   <div
                     v-else-if="course?.introVideo || (course as any)?.introVideoHlsUrl"
@@ -93,20 +116,30 @@
                       alt="Course thumbnail"
                     />
                     <!-- Play button overlay -->
-                    <div class="absolute inset-0 flex items-center justify-center bg-black bg-opacity-30 group-hover:bg-opacity-40 transition-all">
-                      <div class="w-16 h-16 sm:w-20 sm:h-20 bg-white bg-opacity-90 rounded-full flex items-center justify-center group-hover:bg-opacity-100 transition-all">
-                        <svg class="w-8 h-8 sm:w-10 sm:h-10 text-primary-100 ml-1" fill="currentColor" viewBox="0 0 24 24">
-                          <path d="M8 5v14l11-7z"/>
+                    <div
+                      class="absolute inset-0 flex items-center justify-center bg-black bg-opacity-30 group-hover:bg-opacity-40 transition-all"
+                    >
+                      <div
+                        class="w-16 h-16 sm:w-20 sm:h-20 bg-white bg-opacity-90 rounded-full flex items-center justify-center group-hover:bg-opacity-100 transition-all"
+                      >
+                        <svg
+                          class="w-8 h-8 sm:w-10 sm:h-10 text-primary-100 ml-1"
+                          fill="currentColor"
+                          viewBox="0 0 24 24"
+                        >
+                          <path d="M8 5v14l11-7z" />
                         </svg>
                       </div>
                     </div>
                   </div>
-                  
+
                   <!-- Fallback: Demo video hoặc thumbnail nếu không có intro video -->
                   <img
                     v-else
                     class="h-[200px] sm:h-[300px] md:h-[400px] lg:h-[500px] w-full object-cover rounded-[8px] sm:rounded-md"
-                    :src="course?.thumbnail || '/images/courses/python-course.jpg'"
+                    :src="
+                      course?.thumbnail || '/images/courses/python-course.jpg'
+                    "
                     alt="Course thumbnail"
                   />
                 </div>
@@ -122,14 +155,19 @@
                 >
                   <!-- Tab 1: Tổng quan -->
                   <a-tab-pane key="1" tab="Tổng quan">
-                    <div class="py-4 sm:py-5">
-                      <h4 class="text-xl sm:text-2xl md:text-3xl font-bold text-primary-100 mb-1">
+                    <div class="pb-4 pt-5">
+                      <h4
+                        class="text-xl sm:text-2xl font-bold text-[#1A75BB] mb-4"
+                      >
                         {{ course?.title }}
                       </h4>
                       <div
                         class="border-t-[1px] border-solid border-gray-40 pt-3 sm:pt-4"
                       >
-                        <div class="course-description-content text-sm sm:text-base" v-html="normalizedDescription || course?.description" />
+                        <div
+                          class="course-description-content text-base"
+                          v-html="normalizedDescription || course?.description"
+                        />
                       </div>
                     </div>
                   </a-tab-pane>
@@ -138,30 +176,101 @@
                   <a-tab-pane key="2" tab="Nội dung khóa học">
                     <div class="py-4 sm:py-5">
                       <!-- Course Summary Section -->
-                      <div class="mb-4 sm:mb-6" style="background-color: #F3F9FF; padding: 12px 16px; border-radius: 8px;">
-                        <div class="flex flex-col sm:flex-row sm:items-center gap-3 sm:gap-4 md:gap-6 flex-wrap">
-                          <span class="text-sm sm:text-base font-semibold" style="color: #393939;">Khóa học bao gồm:</span>
+                      <div
+                        class="mb-4 sm:mb-6"
+                        style="
+                          background-color: #f3f9ff;
+                          padding: 12px 16px;
+                          border-radius: 8px;
+                        "
+                      >
+                        <div
+                          class="flex flex-col sm:flex-row sm:items-center gap-3 sm:gap-4 md:gap-6 flex-wrap"
+                        >
+                          <span
+                            class="text-base font-semibold"
+                            style="color: #1a75bb"
+                            >Khóa học bao gồm:</span
+                          >
                           <div class="flex items-center gap-1 sm:gap-2">
-                            <img src="/images/svg/folder.svg" alt="quiz" class="w-3 h-3 sm:w-4 sm:h-4" />
-                            <span class="text-xs sm:text-sm" style="color: #393939;">{{ course?.examCount || 0 }} bài trắc nghiệm</span>
+                            <svg
+                              class="w-3 h-3 sm:w-4 sm:h-4 shrink-0"
+                              width="11"
+                              height="10"
+                              viewBox="0 0 11 10"
+                              fill="none"
+                              xmlns="http://www.w3.org/2000/svg"
+                            >
+                              <path
+                                d="M4.39496 9.34998H1.69838C0.953739 9.34997 0.350093 8.84629 0.350098 8.22497L0.35015 1.47497C0.350155 0.853653 0.953801 0.349976 1.69844 0.349976H7.76587C8.51051 0.349976 9.11416 0.853657 9.11416 1.47498V4.56874M6.4176 7.75625L7.65352 8.7875L10.3501 6.5374M2.70981 2.59998H6.75467M2.70981 4.28749H6.75467M2.70981 5.97499H4.73224"
+                                stroke="#1A75BB"
+                                stroke-width="0.7"
+                                stroke-linecap="round"
+                                stroke-linejoin="round"
+                              />
+                            </svg>
+
+                            <span
+                              class="text-sm text-[#1a75bb]"
+                              >{{ course?.examCount || 0 }} bài trắc
+                              nghiệm</span
+                            >
                           </div>
                           <div class="flex items-center gap-1 sm:gap-2">
-                            <img src="/images/svg/video-icon.svg" alt="video" class="w-3 h-3 sm:w-4 sm:h-4" />
-                            <span class="text-xs sm:text-sm" style="color: #393939;">{{ course?.videoCount || 0 }} video</span>
+                            <svg
+                              class="w-3 h-3 sm:w-4 sm:h-4 shrink-0"
+                              width="10"
+                              height="10"
+                              viewBox="0 0 10 10"
+                              fill="none"
+                              xmlns="http://www.w3.org/2000/svg"
+                            >
+                              <path
+                                d="M6.53728 5.2294L6.34622 4.93591L6.33668 4.94258L6.53728 5.2294ZM6.53728 4.58431L6.32975 4.86615L6.34536 4.87765L6.36215 4.88735L6.53728 4.58431ZM3.95193 2.68058L4.15946 2.39875L4.14958 2.39148L4.13922 2.38491L3.95193 2.68058ZM3.40993 2.96493L3.75998 2.96392L3.75985 2.95779L3.40993 2.96493ZM3.42077 6.70448L3.07077 6.7055L3.0708 6.7154L3.07139 6.72528L3.42077 6.70448ZM3.98264 7.01611L4.15212 7.32234L4.16819 7.31345L4.18324 7.30292L3.98264 7.01611ZM4.8501 9.34998V8.99998C2.55812 8.99998 0.700098 7.14196 0.700098 4.84998H0.350098H9.76622e-05C9.76622e-05 7.52856 2.17152 9.69998 4.8501 9.69998V9.34998ZM9.3501 4.84998H9.0001C9.0001 7.14196 7.14208 8.99998 4.8501 8.99998V9.34998V9.69998C7.52868 9.69998 9.7001 7.52856 9.7001 4.84998H9.3501ZM4.8501 0.349976V0.699976C7.14208 0.699976 9.0001 2.55799 9.0001 4.84998H9.3501H9.7001C9.7001 2.17139 7.52868 -2.44081e-05 4.8501 -2.44081e-05V0.349976ZM4.8501 0.349976V-2.44081e-05C2.17152 -2.44081e-05 9.76622e-05 2.17139 9.76622e-05 4.84998H0.350098H0.700098C0.700098 2.55799 2.55812 0.699976 4.8501 0.699976V0.349976ZM6.53728 5.2294L6.72823 5.52272C6.92214 5.39648 7.13519 5.19115 7.13479 4.89706C7.13438 4.59511 6.91141 4.39629 6.7124 4.28128L6.53728 4.58431L6.36215 4.88735C6.38987 4.90337 6.41009 4.91759 6.42433 4.9292C6.43864 4.94085 6.4453 4.94855 6.44741 4.95124C6.44939 4.95376 6.44606 4.95018 6.44221 4.94009C6.43814 4.92943 6.43481 4.91485 6.43479 4.89801C6.43477 4.88128 6.43801 4.86804 6.44104 4.85982C6.44386 4.85215 6.44566 4.85108 6.44179 4.85631C6.43784 4.86163 6.42925 4.87182 6.41321 4.88607C6.39726 4.90025 6.37542 4.91714 6.34633 4.93607L6.53728 5.2294ZM6.53728 4.58431L6.74481 4.30248L4.15946 2.39875L3.95193 2.68058L3.7444 2.96242L6.32975 4.86615L6.53728 4.58431ZM3.95193 2.68058L4.13922 2.38491C3.94056 2.25907 3.67447 2.19488 3.42965 2.30919C3.16549 2.43253 3.05446 2.70077 3.06 2.97207L3.40993 2.96493L3.75985 2.95779C3.75898 2.91487 3.76735 2.90309 3.76407 2.90937C3.76236 2.91265 3.75835 2.91898 3.75099 2.92611C3.74359 2.93327 3.73486 2.93922 3.7258 2.94346C3.70718 2.95215 3.69743 2.94921 3.70459 2.95022C3.70816 2.95072 3.71528 2.95218 3.72573 2.9562C3.73615 2.96021 3.74931 2.96655 3.76463 2.97625L3.95193 2.68058ZM3.40993 2.96493L3.05993 2.96595L3.07077 6.7055L3.42077 6.70448L3.77077 6.70347L3.75992 2.96392L3.40993 2.96493ZM3.42077 6.70448L3.07139 6.72528C3.08542 6.96098 3.16569 7.24127 3.42503 7.37978C3.68076 7.51636 3.95544 7.43119 4.15212 7.32234L3.98264 7.01611L3.81317 6.70988C3.78654 6.72462 3.76463 6.73438 3.74745 6.74064C3.73021 6.74692 3.71942 6.74906 3.71458 6.74973C3.70989 6.75038 3.71246 6.74943 3.7206 6.75063C3.72923 6.75189 3.74147 6.75521 3.7548 6.76233C3.76819 6.76948 3.77816 6.77805 3.78459 6.78523C3.79068 6.79202 3.79169 6.79539 3.78993 6.79166C3.7881 6.78774 3.78401 6.77765 3.7799 6.75924C3.7758 6.74088 3.77207 6.71603 3.77015 6.68368L3.42077 6.70448ZM3.98264 7.01611L4.18324 7.30292L6.73787 5.51621L6.53728 5.2294L6.33668 4.94258L3.78204 6.7293L3.98264 7.01611Z"
+                                fill="#1A75BB"
+                              />
+                            </svg>
+
+                            <span
+                              class="text-sm text-[#1a75bb]"
+                              >{{ course?.videoCount || 0 }} video</span
+                            >
                           </div>
                           <div class="flex items-center gap-1 sm:gap-2">
-                            <img src="/images/svg/folder.svg" alt="document" class="w-3 h-3 sm:w-4 sm:h-4" />
-                            <span class="text-xs sm:text-sm" style="color: #393939;">{{ course?.documentCount || 0 }} Tài liệu</span>
+                            <svg
+                              class="w-3 h-3 sm:w-4 sm:h-4 shrink-0"
+                              width="11"
+                              height="10"
+                              viewBox="0 0 11 10"
+                              fill="none"
+                              xmlns="http://www.w3.org/2000/svg"
+                            >
+                              <path
+                                d="M9.29747 3.94998V1.54998H5.08694L4.03431 0.349976H0.350098V9.34998H1.92905V8.74998L3.50799 3.94998H10.3501L8.77115 9.34998H1.40273"
+                                stroke="#1A75BB"
+                                stroke-width="0.7"
+                                stroke-linecap="round"
+                                stroke-linejoin="round"
+                              />
+                            </svg>
+
+                            <span
+                              class="text-sm text-[#1a75bb]"
+                              >{{ course?.documentCount || 0 }} Tài liệu</span
+                            >
                           </div>
                         </div>
                       </div>
 
                       <!-- Main Content -->
-                      <div v-if="course?.chapters && course.chapters.length > 0">
-                        <h3 class="text-lg sm:text-xl md:text-2xl font-bold mb-4 sm:mb-6 uppercase" style="color: #1A75BB;">
+                      <div
+                        v-if="course?.chapters && course.chapters.length > 0"
+                      >
+                        <h3
+                          class="text-xl sm:text-2xl font-bold text-[#1A75BB] mb-1 uppercase"                        >
                           NỘI DUNG CHÍNH
                         </h3>
-                        
+
                         <div class="space-y-0">
                           <div
                             v-for="(chapter, chapterIndex) in course.chapters"
@@ -169,99 +278,140 @@
                             class="border-b border-gray-200"
                           >
                             <!-- Chapter Header -->
-                            <div 
+                            <div
                               class="flex items-center justify-between py-3 sm:py-4 cursor-pointer hover:bg-gray-50 transition-colors"
                               @click="toggleChapter(chapterIndex)"
                             >
-                              <div class="flex items-center gap-2 sm:gap-3 flex-1 min-w-0">
-                                <span class="text-sm sm:text-base font-semibold flex-shrink-0" style="color: #1A75BB;">
-                                  B{{ chapterIndex + 1 }}.
-                                </span>
-                                <span class="text-sm sm:text-base font-medium truncate" style="color: #000000;">
-                                  {{ chapter.title }}
+                              <div
+                                class="flex items-center gap-2 sm:gap-3 flex-1 min-w-0"
+                              >
+                                <span
+                                  class="text-base font-semibold truncate"
+                                  :style="{ color: expandedChapters[chapterIndex] ? '#1A75BB' : '#393939' }"
+                                >
+                                  Phần {{ chapterIndex + 1 }}: {{ chapter.title }}
                                 </span>
                               </div>
                               <!-- Plus/Minus Icon -->
-                              <svg 
-                                v-if="expandedChapters[chapterIndex] === true"
-                                xmlns="http://www.w3.org/2000/svg" 
-                                width="16" 
-                                height="16" 
-                                viewBox="0 0 16 16" 
+                              <!-- Minus Icon (expanded) -->
+                              <svg
+                                v-if="expandedChapters[chapterIndex]"
+                                xmlns="http://www.w3.org/2000/svg"
+                                width="16"
+                                height="16"
+                                viewBox="0 0 16 16"
                                 fill="none"
                                 class="flex-shrink-0"
                               >
-                                <path d="M4 8H12" stroke="#1A75BB" stroke-width="1.5" stroke-linecap="round"/>
+                                <path
+                                  d="M4 8H12"
+                                  stroke="#1A75BB"
+                                  stroke-width="1.5"
+                                  stroke-linecap="round"
+                                />
                               </svg>
-                              <svg 
+                              <!-- Plus Icon (collapsed) -->
+                              <svg
                                 v-else
-                                xmlns="http://www.w3.org/2000/svg" 
-                                width="16" 
-                                height="16" 
-                                viewBox="0 0 16 16" 
+                                xmlns="http://www.w3.org/2000/svg"
+                                width="16"
+                                height="16"
+                                viewBox="0 0 16 16"
                                 fill="none"
                                 class="flex-shrink-0"
                               >
-                                <path d="M8 4V12M4 8H12" stroke="#1A75BB" stroke-width="1.5" stroke-linecap="round"/>
+                                <path
+                                  d="M8 4V12M4 8H12"
+                                  stroke="#393939"
+                                  stroke-width="1.5"
+                                  stroke-linecap="round"
+                                />
                               </svg>
                             </div>
-                            
-                            <!-- Chapter Lessons (Expanded) -->
-                            <!-- Cho phép luôn hiển thị danh sách bài học để user có thể click (không phụ thuộc expand) -->
-                            <div class="pl-4 sm:pl-6 md:pl-8 pb-3 sm:pb-4 space-y-2 sm:space-y-3">
+
+                            <!-- Chapter Lessons (chỉ hiển thị khi expanded) -->
+                            <div
+                              v-show="expandedChapters[chapterIndex]"
+                              class="pl-4 sm:pl-6 md:pl-8 pb-3 sm:pb-4 space-y-1 sm:space-y-2"
+                            >
                               <div
                                 v-for="(lesson, lessonIndex) in chapter.lessons"
                                 :key="`lesson-${chapterIndex}-${lessonIndex}`"
-                                class="flex items-center justify-between py-2 gap-2 cursor-pointer"
-                                @click="handleLessonNavigate(chapterIndex, lessonIndex, lesson)"
+                                class="flex items-center justify-between py-2 gap-2 cursor-pointer hover:bg-gray-50 rounded transition-colors"
+                                @click="
+                                  handleLessonNavigate(
+                                    chapterIndex,
+                                    lessonIndex,
+                                    lesson
+                                  )
+                                "
                               >
-                                <div class="flex items-center gap-2 sm:gap-3 flex-1 min-w-0">
+                                <div
+                                  class="flex items-center gap-2 sm:gap-3 flex-1 min-w-0"
+                                >
                                   <!-- Lesson Icon -->
                                   <div class="flex-shrink-0">
-                                    <img 
+                                    <img
                                       v-if="lesson.type === 'video'"
-                                      src="/images/svg/video-icon.svg" 
-                                      alt="video" 
-                                      class="w-3 h-3 sm:w-4 sm:h-4" 
+                                      src="/images/svg/video-icon.svg"
+                                      alt="video"
+                                      class="w-3 h-3 sm:w-4 sm:h-4"
                                     />
-                                    <img 
+                                    <img
                                       v-else-if="lesson.type === 'document'"
-                                      src="/images/svg/folder.svg" 
-                                      alt="document" 
-                                      class="w-3 h-3 sm:w-4 sm:h-4" 
+                                      src="/images/svg/folder.svg"
+                                      alt="document"
+                                      class="w-3 h-3 sm:w-4 sm:h-4"
                                     />
-                                    <img 
+                                    <img
                                       v-else
-                                      src="/images/svg/folder.svg" 
-                                      alt="quiz" 
-                                      class="w-3 h-3 sm:w-4 sm:h-4" 
+                                      src="/images/svg/folder.svg"
+                                      alt="quiz"
+                                      class="w-3 h-3 sm:w-4 sm:h-4"
                                     />
                                   </div>
-                                  
-                                  <!-- Lesson Title -->
-                                  <span class="text-xs sm:text-sm font-normal truncate" style="color: #393939;">
+
+                                  <!-- Lesson Title (chỉ hiển thị tên, không đánh số) -->
+                                  <span
+                                    class="text-sm font-normal truncate"
+                                    style="color: #393939"
+                                  >
                                     {{ lesson.title }}
                                   </span>
                                 </div>
-                                
+
                                 <!-- Action Buttons -->
-                                <div class="flex items-center gap-1 sm:gap-2 flex-shrink-0">
+                                <div
+                                  class="flex items-center gap-1 sm:gap-2 flex-shrink-0"
+                                >
                                   <!-- Học thử Button (for preview lessons) -->
                                   <button
                                     v-if="lesson.isPreview && !lesson.isLocked"
-                                    class="px-2 sm:px-3 py-1 text-[10px] sm:text-xs font-medium rounded border transition-colors whitespace-nowrap"
-                                    style="color: #1A75BB; border-color: #1A75BB; background-color: transparent;"
-                                    @click.stop="handleLessonNavigate(chapterIndex, lessonIndex, lesson)"
+                                    class="px-2 sm:px-3 py-1 text-xs sm:text-sm font-medium rounded border transition-colors whitespace-nowrap"
+                                    style="
+                                      color: #1a75bb;
+                                      border-color: #1a75bb;
+                                      background-color: transparent;
+                                    "
+                                    @click.stop="
+                                      handleLessonNavigate(
+                                        chapterIndex,
+                                        lessonIndex,
+                                        lesson
+                                      )
+                                    "
                                   >
                                     Học thử
                                   </button>
-                                  
+
                                   <!-- Lock Icon (for locked lessons - only show if course not purchased) -->
-                                  <img 
-                                    v-if="lesson.isLocked && !course?.isPurchased"
-                                    src="/images/svg/lock.svg" 
-                                    alt="locked" 
-                                    class="w-3 h-3 sm:w-4 sm:h-4" 
+                                  <img
+                                    v-if="
+                                      lesson.isLocked && !course?.isPurchased
+                                    "
+                                    src="/images/svg/lock.svg"
+                                    alt="locked"
+                                    class="w-3 h-3 sm:w-4 sm:h-4"
                                   />
                                 </div>
                               </div>
@@ -285,7 +435,7 @@
                           class="flex flex-col md:flex-row gap-8 items-start"
                         >
                           <!-- Instructor Avatar -->
-                          <div class="flex-shrink-0">
+                          <div class="flex-shrink-0 w-full md:w-auto">
                             <div class="w-48 h-48 mx-auto md:mx-0">
                               <img
                                 class="w-full h-full object-cover rounded-full border-4 border-prim-100 shadow-lg"
@@ -301,13 +451,15 @@
                           <!-- Instructor Info -->
                           <div class="flex-1">
                             <h2
-                              class="text-3xl font-bold text-primary-100 mb-2"
+                              class="text-xl sm:text-2xl font-bold text-[#1A75BB] mb-2 text-center md:text-left"
                             >
                               {{ course?.instructor?.name || "Chưa cập nhật" }}
                             </h2>
 
                             <div class="mb-6">
-                              <p class="text-gray-600 text-lg leading-relaxed font-semibold">
+                              <p
+                                class="text-[#1A75BB] text-lg leading-relaxed font-semibold text-center md:text-left"
+                              >
                                 {{
                                   course?.instructor?.specialization ||
                                   "Thông tin chuyên môn đang được cập nhật..."
@@ -316,8 +468,15 @@
                             </div>
 
                             <div class="mb-6">
-                              <p class="text-gray-600 text-lg leading-relaxed course-description-content">
-                                <span v-html="course?.instructor?.bio || 'Thông tin tiểu sử đang được cập nhật...'"></span>
+                              <p
+                                class="text-gray-600 text-base leading-relaxed course-description-content"
+                              >
+                                <span
+                                  v-html="
+                                    course?.instructor?.bio ||
+                                    'Thông tin tiểu sử đang được cập nhật...'
+                                  "
+                                ></span>
                               </p>
                             </div>
 
@@ -377,13 +536,13 @@
                       <!-- Reviews Summary -->
                       <div v-if="reviews?.length" class="mb-8">
                         <div class="bg-white rounded-lg shadow-sm p-6 mb-6">
-                          <h3 class="text-2xl font-bold text-primary-100 mb-4">
+                          <h3 class="text-2xl font-bold text-[#1A75BB] mb-4">
                             Đánh giá tổng quan
                           </h3>
                           <div class="flex items-center gap-6">
                             <div class="text-center">
                               <div
-                                class="text-4xl font-bold text-primary-100 mb-1"
+                                class="text-4xl font-bold text-[#1A75BB] mb-1"
                               >
                                 {{ calculatedRating.average.toFixed(1) }}
                               </div>
@@ -391,7 +550,7 @@
                                 :value="calculatedRating.average"
                                 :count="5"
                                 disabled
-                                style="font-size: 20px;"
+                                style="font-size: 20px"
                               />
                               <p class="text-sm text-gray-600 mt-1">
                                 {{ calculatedRating.count }} đánh giá
@@ -410,7 +569,7 @@
                                   class="flex-1 bg-gray-200 rounded-full h-2"
                                 >
                                   <div
-                                    class="bg-prim-100 h-2 rounded-full transition-all duration-300"
+                                    class="bg-[#1A75BB] h-2 rounded-full transition-all duration-300"
                                     :style="{ 
                                       width: calculatedRating.count > 0 
                                         ? `${(calculatedRating.breakdown[6 - i as keyof typeof calculatedRating.breakdown] / calculatedRating.count) * 100}%` 
@@ -419,7 +578,12 @@
                                   ></div>
                                 </div>
                                 <span class="text-sm text-gray-600 w-8">
-                                  {{ calculatedRating.breakdown[6 - i as keyof typeof calculatedRating.breakdown] }}
+                                  {{
+                                    calculatedRating.breakdown[
+                                      (6 -
+                                        i) as keyof typeof calculatedRating.breakdown
+                                    ]
+                                  }}
                                 </span>
                               </div>
                             </div>
@@ -428,7 +592,7 @@
 
                         <!-- Individual Reviews -->
                         <div class="space-y-6">
-                          <h3 class="text-2xl font-bold text-primary-100 mb-4">
+                          <h3 class="text-2xl font-bold text-[#1A75BB] mb-4">
                             Đánh giá chi tiết
                           </h3>
                           <div
@@ -450,7 +614,7 @@
                               <div class="flex-1">
                                 <div class="flex items-center gap-2 mb-2">
                                   <h4
-                                    class="text-lg font-semibold text-primary-100"
+                                    class="text-lg font-semibold text-[#1A75BB]"
                                   >
                                     {{ review.userName }}
                                   </h4>
@@ -463,14 +627,18 @@
                                 </div>
                                 <div class="flex items-center gap-2 mb-3">
                                   <!-- Star Rating Display -->
-                                  <div class="flex items-center gap-1 review-stars">
+                                  <div
+                                    class="flex items-center gap-1 review-stars"
+                                  >
                                     <span
                                       v-for="star in 5"
                                       :key="star"
                                       class="star-icon"
                                       :class="{
-                                        'star-filled': star <= Number(review.rating || 0),
-                                        'star-empty': star > Number(review.rating || 0)
+                                        'star-filled':
+                                          star <= Number(review.rating || 0),
+                                        'star-empty':
+                                          star > Number(review.rating || 0),
                                       }"
                                     >
                                       ★
@@ -510,7 +678,9 @@
           </div>
 
           <!-- Right Sidebar -->
-          <div class="col-span-12 lg:col-span-4 max-lg:absolute max-lg:-top-[49rem] max-lg:w-[calc(100%-48px)] max-[639px]:w-[calc(100%-32px)]">
+          <div
+            class="col-span-12 lg:col-span-4 max-lg:absolute max-lg:-top-[49rem] max-lg:w-[calc(100%-48px)] max-[639px]:w-[calc(100%-32px)]"
+          >
             <div
               class="bg-white rounded-md px-3 sm:px-4 pt-3 pb-5 z-[2] shadow-xl mt-4 lg:-mt-[100%] lg:sticky lg:top-[90px]"
             >
@@ -527,29 +697,52 @@
               <div class="mb-4">
                 <!-- Purchased Badge -->
                 <div v-if="course?.isPurchased" class="mb-3 sm:mb-4">
-                  <div class="flex items-center justify-center gap-2 px-3 py-2 rounded-lg" style="background-color: #e6f7ff; border: 1px solid #1a75bb;">
-                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#1a75bb" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                  <div
+                    class="flex items-center justify-center gap-2 px-3 py-2 rounded-lg"
+                    style="background-color: #e6f7ff; border: 1px solid #1a75bb"
+                  >
+                    <svg
+                      xmlns="http://www.w3.org/2000/svg"
+                      width="20"
+                      height="20"
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      stroke="#1a75bb"
+                      stroke-width="2"
+                      stroke-linecap="round"
+                      stroke-linejoin="round"
+                    >
                       <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path>
                       <polyline points="22 4 12 14.01 9 11.01"></polyline>
                     </svg>
-                    <span class="text-sm sm:text-base font-semibold" style="color: #1a75bb;">Đã mua khóa học này</span>
+                    <span
+                      class="text-sm sm:text-base font-semibold"
+                      style="color: #1a75bb"
+                      >Đã mua khóa học này</span
+                    >
                   </div>
                 </div>
 
                 <!-- Offer Timer (only show if not purchased) -->
-                <div v-if="!course?.isPurchased" class="flex items-center gap-2 mb-2 sm:mb-3">
+                <div
+                  v-if="!course?.isPurchased"
+                  class="flex items-center gap-2 mb-2 sm:mb-3"
+                >
                   <img
                     src="/images/svg/clock-pink.svg"
                     alt="clock"
                     class="w-3 h-3 sm:w-4 sm:h-4"
                   />
-                  <span class="text-xs sm:text-sm" style="color: #f48283"
+                  <span class="text-sm" style="color: #f48283"
                     >Ưu đãi còn 3 ngày</span
                   >
                 </div>
 
                 <!-- Price (only show if not purchased) -->
-                <div v-if="!course?.isPurchased" class="flex items-end gap-2 sm:gap-3 mb-3 sm:mb-4">
+                <div
+                  v-if="!course?.isPurchased"
+                  class="flex items-end gap-2 sm:gap-3 mb-3 sm:mb-4"
+                >
                   <h3
                     v-if="course?.price"
                     class="text-2xl sm:text-3xl md:text-4xl font-bold mb-0"
@@ -584,16 +777,25 @@
                     <!-- Nút Đã hoàn thành (đi tới trang chứng chỉ) -->
                     <a-button
                       class="!w-full !py-2 sm:!py-3 !h-[44px] sm:!h-[50px] !text-white !border-none !font-bold !text-sm sm:!text-base !rounded-lg !transition-all !duration-200 hover:!opacity-90"
-                      style="background: linear-gradient(88.69deg, #FFBE6A -1.04%, #EBBC46 23.61%, #FFDA7D 55.57%, #EBBC46 74.44%, #FFBE6A 97.91%) !important"
+                      style="
+                        background: linear-gradient(
+                          88.69deg,
+                          #ffbe6a -1.04%,
+                          #ebbc46 23.61%,
+                          #ffda7d 55.57%,
+                          #ebbc46 74.44%,
+                          #ffbe6a 97.91%
+                        ) !important;
+                      "
                       @click="goToCertificate"
                     >
                       Đã hoàn thành
                     </a-button>
-                    
+
                     <!-- Nút Review (đi tới trang học tập mode review) -->
                     <a-button
                       class="!w-full !py-2 sm:!py-3 !h-[44px] sm:!h-[50px] !text-white !border-none !font-bold !text-sm sm:!text-base !rounded-lg !transition-all !duration-200 hover:!opacity-90"
-                      style="background-color: #317BC4 !important"
+                      style="background-color: #317bc4 !important"
                       @click="goToReview"
                     >
                       Review
@@ -604,7 +806,16 @@
                   <a-button
                     v-else-if="course?.progress?.isCompleted"
                     class="!w-full !py-2 sm:!py-3 !h-[44px] sm:!h-[50px] !text-white !border-none !font-bold !text-sm sm:!text-base !rounded-lg !transition-all !duration-200 hover:!opacity-90"
-                    style="background: linear-gradient(88.69deg, #FFBE6A -1.04%, #EBBC46 23.61%, #FFDA7D 55.57%, #EBBC46 74.44%, #FFBE6A 97.91%) !important"
+                    style="
+                      background: linear-gradient(
+                        88.69deg,
+                        #ffbe6a -1.04%,
+                        #ebbc46 23.61%,
+                        #ffda7d 55.57%,
+                        #ebbc46 74.44%,
+                        #ffbe6a 97.91%
+                      ) !important;
+                    "
                     @click="goToCertificate"
                   >
                     Đã hoàn thành
@@ -648,7 +859,10 @@
                   <li
                     class="flex justify-between items-center border-b-[1px] border-solid border-gray-40 py-2 sm:py-3"
                   >
-                    <span class="font-semibold text-[#1A75BB] text-sm sm:text-base">Bài giảng:</span>
+                    <span
+                      class="font-semibold text-[#1A75BB] text-sm sm:text-base"
+                      >Bài giảng:</span
+                    >
                     <span
                       class="px-2 py-1 text-[10px] sm:text-xs rounded"
                       style="background-color: #f5f5f5; color: #999999"
@@ -658,7 +872,8 @@
                   <li
                     class="flex justify-between items-center border-b-[1px] border-solid border-gray-40 py-2 sm:py-3"
                   >
-                    <span class="font-semibold text-[#1A75BB] text-sm sm:text-base"
+                    <span
+                      class="font-semibold text-[#1A75BB] text-sm sm:text-base"
                       >Trắc nghiệm:</span
                     >
                     <span
@@ -670,7 +885,10 @@
                   <li
                     class="flex justify-between items-center border-b-[1px] border-solid border-gray-40 py-2 sm:py-3"
                   >
-                    <span class="font-semibold text-[#1A75BB] text-sm sm:text-base">Trình độ:</span>
+                    <span
+                      class="font-semibold text-[#1A75BB] text-sm sm:text-base"
+                      >Trình độ:</span
+                    >
                     <span
                       class="px-2 py-1 text-[10px] sm:text-xs rounded"
                       style="background-color: #f5f5f5; color: #999999"
@@ -680,7 +898,10 @@
                   <li
                     class="flex justify-between items-center border-b-[1px] border-solid border-gray-40 py-2 sm:py-3"
                   >
-                    <span class="font-semibold text-[#1A75BB] text-sm sm:text-base">Ngôn ngữ:</span>
+                    <span
+                      class="font-semibold text-[#1A75BB] text-sm sm:text-base"
+                      >Ngôn ngữ:</span
+                    >
                     <span
                       class="px-2 py-1 text-[10px] sm:text-xs rounded"
                       style="background-color: #f5f5f5; color: #999999"
@@ -690,7 +911,8 @@
                   <li
                     class="flex justify-between items-center border-b-[1px] border-solid border-gray-40 py-2 sm:py-3"
                   >
-                    <span class="font-semibold text-[#1A75BB] text-sm sm:text-base"
+                    <span
+                      class="font-semibold text-[#1A75BB] text-sm sm:text-base"
                       >Chứng nhận:</span
                     >
                     <span
@@ -704,11 +926,15 @@
 
               <!-- Social Media and Contact Section -->
               <div class="text-center mt-4 sm:mt-6">
-                <h4 class="text-[#1A75BB] font-semibold mb-2 sm:mb-3 text-sm sm:text-base">
+                <h4
+                  class="text-[#1A75BB] font-semibold mb-2 sm:mb-3 text-sm sm:text-base"
+                >
                   Tìm hiểu thêm thông tin về khóa học
                 </h4>
                 <div class="mb-3 sm:mb-4">
-                  <ul class="mb-0 flex items-center justify-center gap-2 sm:gap-3">
+                  <ul
+                    class="mb-0 flex items-center justify-center gap-2 sm:gap-3"
+                  >
                     <li>
                       <a
                         href="https://www.facebook.com/chamsocmevabe.vanphuc"
@@ -724,14 +950,14 @@
                     </li>
                     <li>
                       <a
-                        href="https://open.spotify.com"
+                        href="https://www.tiktok.com/@methuylamy"
                         target="_blank"
-                        class="block"
+                        class="flex items-center justify-center w-9 h-9 sm:w-11 sm:h-11 bg-[#ECECEC] rounded-full"
                       >
                         <img
-                          src="/images/svg/spotify-gray.svg"
-                          alt="Spotify"
-                          class="w-9 h-9 sm:w-11 sm:h-11"
+                          src="/images/svg/tiktok-gray.svg"
+                          alt="TikTok"
+                          class=""
                         />
                       </a>
                     </li>
@@ -765,7 +991,9 @@
                   </ul>
                 </div>
 
-                <h4 class="text-gray-700 font-semibold mb-2 sm:mb-3 text-sm sm:text-base">
+                <h4
+                  class="text-gray-700 font-semibold mb-2 sm:mb-3 text-sm sm:text-base"
+                >
                   Chi tiết xin liên hệ
                 </h4>
 
@@ -796,7 +1024,10 @@
                   target="_blank"
                   rel="noopener noreferrer"
                   class="!w-full !h-[45px] sm:!h-[50px] !rounded-full !border-none !font-bold !text-xs sm:!text-base !text-white !flex !flex-col !items-center !justify-center !gap-1"
-                  style="background-color: #2176ff !important; text-decoration: none;"
+                  style="
+                    background-color: #2176ff !important;
+                    text-decoration: none;
+                  "
                 >
                   <div class="flex items-center justify-center gap-2">
                     <img
@@ -806,7 +1037,9 @@
                     />
                     <div class="flex flex-col items-start">
                       <span class="text-xs sm:text-base">CHAT ZALO</span>
-                    <span class="text-[10px] sm:text-xs font-normal">Hỗ trợ tư vấn ngay</span>
+                      <span class="text-[10px] sm:text-xs font-normal"
+                        >Hỗ trợ tư vấn ngay</span
+                      >
                     </div>
                   </div>
                 </a>
@@ -835,7 +1068,12 @@
       :maskClosable="true"
       centered
       class="purchase-modal"
-      :body-style="{ padding: 0, borderRadius: '12px', background: 'transparent', boxShadow: 'none' }"
+      :body-style="{
+        padding: 0,
+        borderRadius: '12px',
+        background: 'transparent',
+        boxShadow: 'none',
+      }"
       :wrap-style="{ borderRadius: '12px' }"
     >
       <div class="purchase-modal-content">
@@ -852,22 +1090,21 @@
                 class="purchase-modal-image"
               />
             </div>
-            
+
             <!-- Text Content: width 400px, height 104px, gap 8px -->
             <div class="purchase-modal-text-content">
               <!-- Title: width 206px, height 24px, font-size 20px, font-weight 700, color #232325 -->
-              <h3 class="purchase-modal-title">
-                Bạn đang học rất tốt!
-              </h3>
-              
+              <h3 class="purchase-modal-title">Bạn đang học rất tốt!</h3>
+
               <!-- Description: width 400px, height 72px, font-size 16px, font-weight 500, color #6F727A, text-align center -->
               <p class="purchase-modal-description">
-                Bạn đã hoàn thành hết nội dung học thử. Đừng để kiến thức bị ngắt quãng, hãy mở khóa toàn bộ khóa học để tiếp tục bạn nhé!
+                Bạn đã hoàn thành hết nội dung học thử. Đừng để kiến thức bị
+                ngắt quãng, hãy mở khóa toàn bộ khóa học để tiếp tục bạn nhé!
               </p>
             </div>
           </div>
         </div>
-        
+
         <!-- CTA Section: padding 8px 40px 24px, width 480px, height 80px -->
         <div class="purchase-modal-cta-section">
           <!-- Button: width 400px, height 48px, padding 12px, gap 10px, background #317BC4 -->
@@ -892,7 +1129,12 @@
       :maskClosable="true"
       centered
       class="login-modal"
-      :body-style="{ padding: 0, borderRadius: '12px', background: 'transparent', boxShadow: 'none' }"
+      :body-style="{
+        padding: 0,
+        borderRadius: '12px',
+        background: 'transparent',
+        boxShadow: 'none',
+      }"
       :wrap-style="{ borderRadius: '12px' }"
     >
       <div class="login-modal-content">
@@ -909,22 +1151,21 @@
                 class="login-modal-image"
               />
             </div>
-            
+
             <!-- Text Content: width 400px, height 104px, gap 8px -->
             <div class="login-modal-text-content">
               <!-- Title: width 206px, height 24px, font-size 20px, font-weight 700, color #232325 -->
-              <h3 class="login-modal-title">
-                Mở khóa bài học thử miễn phí!
-              </h3>
-              
+              <h3 class="login-modal-title">Mở khóa bài học thử miễn phí!</h3>
+
               <!-- Description: width 400px, height 72px, font-size 16px, font-weight 500, color #6F727A, text-align center -->
               <p class="login-modal-description">
-                Hãy đăng nhập để truy cập video và tài liệu học tập ngay lập tức.
+                Hãy đăng nhập để truy cập video và tài liệu học tập ngay lập
+                tức.
               </p>
             </div>
           </div>
         </div>
-        
+
         <!-- CTA Section: padding 8px 40px 24px, width 480px, height 80px -->
         <div class="login-modal-cta-section">
           <!-- Button: width 400px, height 48px, padding 12px, gap 10px, background #317BC4 -->
@@ -955,7 +1196,7 @@ import CartToast from "~/components/cart/Toast.vue";
 import type { AddToCartData } from "~/types/cart";
 import { useApiBase } from "~/composables/useApiBase";
 // @ts-ignore - hls.js types
-import Hls from 'hls.js';
+import Hls from "hls.js";
 
 const route = useRoute();
 const router = useRouter();
@@ -974,40 +1215,42 @@ const showLoginModal = ref(false);
 watch(
   () => route.query.showPurchaseModal,
   (value) => {
-    if (value === 'true') {
+    if (value === "true") {
       showPurchaseModal.value = true;
       // Xóa query parameter sau khi hiện popup
-      router.replace({ query: { ...route.query, showPurchaseModal: undefined } });
+      router.replace({
+        query: { ...route.query, showPurchaseModal: undefined },
+      });
     }
   },
   { immediate: true }
 );
 
 // Expanded chapters state
-const expandedChapters = ref<Record<number, boolean>>({ 0: true }); // B1 expanded by default
-const videoRef = ref<any>(null)
+const expandedChapters = ref<Record<number, boolean>>({}); // Ban đầu collapse hết
+const videoRef = ref<any>(null);
 const course = computed(() => coursesStore.course);
 
 // Normalize description HTML to ensure ul displays as bullets
 // Convert <ol> without type/start attributes to <ul> (likely bullet lists created incorrectly)
 const normalizedDescription = computed(() => {
-  if (!course.value?.description) return '';
-  
+  if (!course.value?.description) return "";
+
   let html = course.value.description;
-  
+
   // If running on client side, use DOM parser for more accurate conversion
-  if (process.client && typeof DOMParser !== 'undefined') {
+  if (process.client && typeof DOMParser !== "undefined") {
     try {
       const parser = new DOMParser();
-      const doc = parser.parseFromString(html, 'text/html');
-      
+      const doc = parser.parseFromString(html, "text/html");
+
       // Find all <ol> elements without type or start attributes
-      const olElements = doc.querySelectorAll('ol:not([type]):not([start])');
+      const olElements = doc.querySelectorAll("ol:not([type]):not([start])");
       olElements.forEach((ol) => {
-        const ul = doc.createElement('ul');
+        const ul = doc.createElement("ul");
         // Copy all attributes except type and start
         Array.from(ol.attributes).forEach((attr) => {
-          if (attr.name !== 'type' && attr.name !== 'start') {
+          if (attr.name !== "type" && attr.name !== "start") {
             ul.setAttribute(attr.name, attr.value);
           }
         });
@@ -1018,20 +1261,20 @@ const normalizedDescription = computed(() => {
         // Replace ol with ul
         ol.parentNode?.replaceChild(ul, ol);
       });
-      
+
       html = doc.body.innerHTML;
     } catch (e) {
       // Fallback to regex if DOM parsing fails
-      html = html.replace(/<ol(?![^>]*\s(type|start)=[^>]*)>/gi, '<ul>');
-      html = html.replace(/<\/ol>/gi, '</ul>');
+      html = html.replace(/<ol(?![^>]*\s(type|start)=[^>]*)>/gi, "<ul>");
+      html = html.replace(/<\/ol>/gi, "</ul>");
     }
   } else {
     // Server-side or fallback: use regex
     // Convert <ol> without type/start to <ul> - these are likely bullet lists created incorrectly
-    html = html.replace(/<ol(?![^>]*\s(type|start)=[^>]*)>/gi, '<ul>');
-    html = html.replace(/<\/ol>/gi, '</ul>');
+    html = html.replace(/<ol(?![^>]*\s(type|start)=[^>]*)>/gi, "<ul>");
+    html = html.replace(/<\/ol>/gi, "</ul>");
   }
-  
+
   return html;
 });
 
@@ -1040,17 +1283,17 @@ const normalizedDescription = computed(() => {
 const heroBackgroundStyle = computed(() => {
   const bannerUrl = course.value?.banner;
   const thumbnailUrl = course.value?.thumbnail;
-  
+
   // Escape quotes trong URL nếu có
-  const escapeUrl = (url: string) => url.replace(/"/g, '%22');
-  
+  const escapeUrl = (url: string) => url.replace(/"/g, "%22");
+
   if (bannerUrl) {
     return `url("${escapeUrl(bannerUrl)}") center center/cover no-repeat`;
   }
   if (thumbnailUrl) {
     return `url("${escapeUrl(thumbnailUrl)}") center center/cover no-repeat`;
   }
-  return '#0e1d29db';
+  return "#0e1d29db";
 });
 
 // SEO Configuration
@@ -1266,9 +1509,12 @@ const reviews = computed(() => {
   const reviewsData = coursesStore.reviews;
   // Debug: Log reviews data to check structure (only on client side)
   if (import.meta.client && reviewsData && reviewsData.length > 0) {
-    console.log('🔍 [Reviews Debug] Reviews data:', reviewsData);
-    console.log('🔍 [Reviews Debug] First review:', reviewsData[0]);
-    console.log('🔍 [Reviews Debug] First review rating:', reviewsData[0]?.rating);
+    console.log("🔍 [Reviews Debug] Reviews data:", reviewsData);
+    console.log("🔍 [Reviews Debug] First review:", reviewsData[0]);
+    console.log(
+      "🔍 [Reviews Debug] First review rating:",
+      reviewsData[0]?.rating
+    );
   }
   return reviewsData;
 });
@@ -1285,18 +1531,23 @@ const calculatedRating = computed(() => {
         3: 0,
         2: 0,
         1: 0,
-      }
-    }
+      },
+    };
   }
-  
-  const total = reviews.value.length
+
+  const total = reviews.value.length;
   const sum = reviews.value.reduce((acc: number, review: any) => {
     const rating = Number(review.rating) || 0;
-    console.log('🔍 [Rating Debug] Review rating:', review.rating, 'Parsed:', rating);
+    console.log(
+      "🔍 [Rating Debug] Review rating:",
+      review.rating,
+      "Parsed:",
+      rating
+    );
     return acc + rating;
-  }, 0)
-  const average = total > 0 ? sum / total : 0
-  
+  }, 0);
+  const average = total > 0 ? sum / total : 0;
+
   // Calculate breakdown by star rating
   const breakdown = {
     5: reviews.value.filter((r: any) => Number(r.rating) === 5).length,
@@ -1304,14 +1555,14 @@ const calculatedRating = computed(() => {
     3: reviews.value.filter((r: any) => Number(r.rating) === 3).length,
     2: reviews.value.filter((r: any) => Number(r.rating) === 2).length,
     1: reviews.value.filter((r: any) => Number(r.rating) === 1).length,
-  }
-  
+  };
+
   return {
     average,
     count: total,
-    breakdown
-  }
-})
+    breakdown,
+  };
+});
 
 const isInCart = computed(() => {
   return cartStore.isInCart(course.value?._id || "");
@@ -1361,10 +1612,10 @@ const getIntroVideoToken = async () => {
   try {
     introVideoTokenLoading.value = true;
     const response = await fetch(`${apiUser}/video/token`, {
-      method: 'POST',
+      method: "POST",
       headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${authStore.token}`,
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${authStore.token}`,
       },
       body: JSON.stringify({
         courseId: course.value._id,
@@ -1379,7 +1630,7 @@ const getIntroVideoToken = async () => {
     const data = await response.json();
     introVideoToken.value = data.data?.token || null;
   } catch (error) {
-    console.error('❌ Error getting intro video token:', error);
+    console.error("❌ Error getting intro video token:", error);
     introVideoToken.value = null;
   } finally {
     introVideoTokenLoading.value = false;
@@ -1397,7 +1648,10 @@ const loadIntroVideoWithHls = async () => {
   }
 
   // Check if video is HLS format
-  const isHls = (course.value as any)?.introVideoHlsUrl || currentVideoUrl.value.endsWith('.m3u8') || false;
+  const isHls =
+    (course.value as any)?.introVideoHlsUrl ||
+    currentVideoUrl.value.endsWith(".m3u8") ||
+    false;
 
   if (isHls) {
     // HLS: Use hls.js to load HLS manifest (.m3u8)
@@ -1425,7 +1679,7 @@ const loadIntroVideoWithHls = async () => {
       });
 
       introHlsInstance.on(Hls.Events.ERROR, (event: string, data: any) => {
-        console.error('HLS error:', data);
+        console.error("HLS error:", data);
         if (data.fatal) {
           switch (data.type) {
             case Hls.ErrorTypes.NETWORK_ERROR:
@@ -1441,12 +1695,12 @@ const loadIntroVideoWithHls = async () => {
           }
         }
       });
-    } else if (videoRef.value.canPlayType('application/vnd.apple.mpegurl')) {
+    } else if (videoRef.value.canPlayType("application/vnd.apple.mpegurl")) {
       // Safari native HLS support
       videoRef.value.src = currentVideoUrl.value;
       videoRef.value.play().catch(console.error);
     } else {
-      console.error('HLS is not supported in this browser');
+      console.error("HLS is not supported in this browser");
     }
   } else {
     // MP4: Use native video element (streamed via proxy)
@@ -1460,22 +1714,22 @@ const playIntroVideo = async () => {
   // Set flag để cho phép lấy token
   userClickedPlay.value = true;
   introVideoReady.value = false; // Reset video ready state
-  
+
   // Lấy token ngay khi user click play
   await getIntroVideoToken();
-  
+
   // Đợi token được set
   await nextTick();
-  
+
   // Delay một chút trước khi set video src để tránh Cốc Cốc bắt được
-  await new Promise(resolve => setTimeout(resolve, 500)); // 500ms delay
-  
+  await new Promise((resolve) => setTimeout(resolve, 500)); // 500ms delay
+
   // Sau delay, set video ready để video URL được tạo và video element được render
   introVideoReady.value = true;
-  
+
   // Đợi video element được render
   await nextTick();
-  
+
   // Load video qua HLS (stream theo chunks - chống download tốt hơn)
   await loadIntroVideoWithHls();
 };
@@ -1528,7 +1782,7 @@ const addToCart = async () => {
     await cartStore.addToCart({
       courseId: course.value._id,
       quantity: 1,
-      userId: String(authStore?.user?.id)
+      userId: String(authStore?.user?.id),
     } as AddToCartData);
   } catch (error) {
     console.error("Error adding to cart:", error);
@@ -1542,10 +1796,10 @@ const toggleCourse = async () => {
     // Nếu đã có trong cart thì xóa, nếu chưa thì thêm
     if (isInCart.value) {
       // Tìm cart item để lấy course._id
-      const cartItem = cartStore.items.find(item => 
-        item.course?._id === course.value?._id
+      const cartItem = cartStore.items.find(
+        (item) => item.course?._id === course.value?._id
       );
-      
+
       if (cartItem && cartItem.course?._id) {
         // Sử dụng course._id để xóa
         await cartStore.removeFromCart(cartItem.course._id);
@@ -1555,7 +1809,7 @@ const toggleCourse = async () => {
       await cartStore.addToCart({
         courseId: course.value._id,
         quantity: 1,
-        userId: String(authStore?.user?.id)
+        userId: String(authStore?.user?.id),
       } as AddToCartData);
     }
   } catch (error) {
@@ -1565,17 +1819,17 @@ const toggleCourse = async () => {
 
 const redirectCheckout = async () => {
   if (!course.value) return;
-  
+
   try {
     // Thêm vào cart nếu chưa có
     if (!isInCart.value) {
       await cartStore.addToCart({
         courseId: course.value._id,
         quantity: 1,
-        userId: String(authStore?.user?.id)
+        userId: String(authStore?.user?.id),
       } as AddToCartData);
     }
-    
+
     // Đi tới màn cart (không phải checkout)
     router.push("/cart");
   } catch (error) {
@@ -1604,7 +1858,9 @@ const goToCertificate = () => {
 
 const goToReview = () => {
   if (!course.value?.slug) return;
-  router.push(`/my-learning/${course.value.slug}?chapter=0&lesson=0&review=true`);
+  router.push(
+    `/my-learning/${course.value.slug}?chapter=0&lesson=0&review=true`
+  );
 };
 
 const handlePurchaseFromModal = async () => {
@@ -1614,7 +1870,7 @@ const handlePurchaseFromModal = async () => {
 
 const handleLoginFromModal = () => {
   showLoginModal.value = false;
-  router.push('/login');
+  router.push("/login");
 };
 
 const accessCourse = () => {
@@ -1653,15 +1909,17 @@ const handleLessonNavigate = async (
 
   // Kiểm tra xem user đã mua hoặc đã hoàn thành khóa học chưa
   const courseId = course.value._id?.toString();
-  
+
   // Kiểm tra từ nhiều nguồn để đảm bảo chính xác
   const isPurchasedFromStore = course.value.isPurchased === true;
-  const isPurchasedFromUser = courseId && authStore.user?.courseRegister?.includes(courseId);
+  const isPurchasedFromUser =
+    courseId && authStore.user?.courseRegister?.includes(courseId);
   const isCompletedFromProgress = course.value.progress?.isCompleted === true;
-  const isCompletedFromUser = courseId && authStore.user?.courseCompleted?.includes(courseId);
+  const isCompletedFromUser =
+    courseId && authStore.user?.courseCompleted?.includes(courseId);
   const hasCert = hasCertificate.value;
-  
-  const isPurchasedOrCompleted = 
+
+  const isPurchasedOrCompleted =
     isPurchasedFromStore ||
     isPurchasedFromUser ||
     hasCert ||
@@ -1701,7 +1959,12 @@ const handleLessonNavigate = async (
     lesson: String(lessonIndex),
   };
 
-  if (isReviewMode.value || hasCert || isCompletedFromProgress || isCompletedFromUser) {
+  if (
+    isReviewMode.value ||
+    hasCert ||
+    isCompletedFromProgress ||
+    isCompletedFromUser
+  ) {
     query.review = "true";
   }
 
@@ -1716,7 +1979,7 @@ const toggleChapter = (chapterIndex: number) => {
   // Đảm bảo reactivity bằng cách tạo object mới
   expandedChapters.value = {
     ...expandedChapters.value,
-    [chapterIndex]: !expandedChapters.value[chapterIndex]
+    [chapterIndex]: !expandedChapters.value[chapterIndex],
   };
 };
 
@@ -1730,9 +1993,9 @@ const handlePreviewLesson = (lesson: any) => {
   }
   // Scroll to video section
   nextTick(() => {
-    const videoElement = document.querySelector('video');
+    const videoElement = document.querySelector("video");
     if (videoElement) {
-      videoElement.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      videoElement.scrollIntoView({ behavior: "smooth", block: "center" });
     }
   });
 };
@@ -1743,26 +2006,35 @@ const fetchData = async () => {
     if (process.client && authStore.isLoggedIn) {
       await authStore.initAuth();
     }
-    
+
     const slug = route.params.slug as string;
     await coursesStore.fetchDetail(slug);
     convertToObjectArray();
-    
+
     // Fetch reviews to calculate rating
     if (course.value?._id) {
       try {
-        console.log('🔍 [Fetch Data] Fetching reviews for course:', course.value._id);
+        console.log(
+          "🔍 [Fetch Data] Fetching reviews for course:",
+          course.value._id
+        );
         await coursesStore.fetchReviews(course.value._id);
-        console.log('✅ [Fetch Data] Reviews fetched:', coursesStore.reviews);
-        console.log('✅ [Fetch Data] Reviews count:', coursesStore.reviews.length);
+        console.log("✅ [Fetch Data] Reviews fetched:", coursesStore.reviews);
+        console.log(
+          "✅ [Fetch Data] Reviews count:",
+          coursesStore.reviews.length
+        );
         if (coursesStore.reviews.length > 0) {
-          console.log('✅ [Fetch Data] First review rating:', coursesStore.reviews[0]?.rating);
+          console.log(
+            "✅ [Fetch Data] First review rating:",
+            coursesStore.reviews[0]?.rating
+          );
         }
       } catch (error) {
         console.error("❌ [Fetch Data] Error fetching reviews:", error);
       }
     } else {
-      console.warn('⚠️ [Fetch Data] Course ID not found, cannot fetch reviews');
+      console.warn("⚠️ [Fetch Data] Course ID not found, cannot fetch reviews");
     }
   } catch (error) {
     console.error("❌ Error fetching course detail:", error);
@@ -1803,7 +2075,7 @@ watch(
 <style scoped>
 /* Purchase Modal Styles */
 .purchase-modal :deep(.ant-modal-content) {
-  background: #FFFFFF;
+  background: #ffffff;
   border-radius: 12px;
   box-shadow: 0px 1px 10px rgba(0, 0, 0, 0.05), 0px 2px 4px rgba(0, 0, 0, 0.1);
   overflow: hidden;
@@ -1822,7 +2094,7 @@ watch(
   position: relative;
   width: 100%;
   min-height: 328px;
-  background: #FFFFFF;
+  background: #ffffff;
   border-radius: 12px;
   overflow: hidden;
 }
@@ -1897,7 +2169,7 @@ watch(
 .purchase-modal-title {
   width: auto;
   min-height: 24px;
-  font-family: 'SVN-Gilroy', sans-serif;
+  font-family: "SVN-Gilroy", sans-serif;
   font-style: normal;
   font-weight: 700;
   font-size: 20px;
@@ -1914,14 +2186,14 @@ watch(
 .purchase-modal-description {
   width: 400px;
   min-height: 72px;
-  font-family: 'SVN-Gilroy', sans-serif;
+  font-family: "SVN-Gilroy", sans-serif;
   font-style: normal;
   font-weight: 500;
   font-size: 16px;
   line-height: 24px;
   text-align: center;
   letter-spacing: 0.3px;
-  color: #6F727A;
+  color: #6f727a;
   flex: none;
   order: 1;
   align-self: stretch;
@@ -1954,16 +2226,16 @@ watch(
   gap: 10px;
   width: 400px;
   height: 48px;
-  background: #317BC4 !important;
+  background: #317bc4 !important;
   border-radius: 8px;
   border: none;
-  font-family: 'SVN-Gilroy', sans-serif;
+  font-family: "SVN-Gilroy", sans-serif;
   font-style: normal;
   font-weight: 700;
   font-size: 16px;
   line-height: 24px;
   letter-spacing: 0.3px;
-  color: #FFFFFF !important;
+  color: #ffffff !important;
   flex: none;
   order: 0;
   flex-grow: 1;
@@ -1975,7 +2247,7 @@ watch(
 
 /* Login Modal Styles */
 .login-modal :deep(.ant-modal-content) {
-  background: #FFFFFF;
+  background: #ffffff;
   border-radius: 12px;
   box-shadow: 0px 1px 10px rgba(0, 0, 0, 0.05), 0px 2px 4px rgba(0, 0, 0, 0.1);
   overflow: hidden;
@@ -1994,7 +2266,7 @@ watch(
   position: relative;
   width: 100%;
   min-height: 328px;
-  background: #FFFFFF;
+  background: #ffffff;
   border-radius: 12px;
   overflow: hidden;
 }
@@ -2069,7 +2341,7 @@ watch(
 .login-modal-title {
   width: auto;
   min-height: 24px;
-  font-family: 'SVN-Gilroy', sans-serif;
+  font-family: "SVN-Gilroy", sans-serif;
   font-style: normal;
   font-weight: 700;
   font-size: 20px;
@@ -2086,14 +2358,14 @@ watch(
 .login-modal-description {
   width: 400px;
   min-height: 72px;
-  font-family: 'SVN-Gilroy', sans-serif;
+  font-family: "SVN-Gilroy", sans-serif;
   font-style: normal;
   font-weight: 500;
   font-size: 16px;
   line-height: 24px;
   text-align: center;
   letter-spacing: 0.3px;
-  color: #6F727A;
+  color: #6f727a;
   flex: none;
   order: 1;
   align-self: stretch;
@@ -2126,16 +2398,16 @@ watch(
   gap: 10px;
   width: 400px;
   height: 48px;
-  background: #317BC4 !important;
+  background: #317bc4 !important;
   border-radius: 8px;
   border: none;
-  font-family: 'SVN-Gilroy', sans-serif;
+  font-family: "SVN-Gilroy", sans-serif;
   font-style: normal;
   font-weight: 700;
   font-size: 16px;
   line-height: 24px;
   letter-spacing: 0.3px;
-  color: #FFFFFF !important;
+  color: #ffffff !important;
   flex: none;
   order: 0;
   flex-grow: 1;
@@ -2164,7 +2436,7 @@ watch(
 }
 
 .card-container :deep(.ant-tabs-content) {
-  background-color: #FFFFFF;
+  background-color: #ffffff;
 }
 
 .card-container > :deep(.ant-tabs-card > .ant-tabs-bar) {
@@ -2185,28 +2457,30 @@ watch(
   min-width: 150px;
 }
 
-
 .course-detail-tabs :deep(.ant-tabs-tab) {
   padding: 10px 12px;
   font-size: 14px;
   font-weight: 400;
-
 }
 
 .course-detail-tabs :deep(.ant-tabs-tab:hover) {
-  color: #1A75BB;
+  color: #1a75bb;
 }
 
 .course-detail-tabs :deep(.ant-tabs-tab-active) {
-  color: #1A75BB;
+  color: #1A75BB !important;
   font-weight: 700;
-  background-color: #FFFFFF;
+  background-color: #ffffff;
   border-top-left-radius: 8px;
   border-top-right-radius: 8px;
 }
 
+.course-detail-tabs :deep(.ant-tabs-tab-active .ant-tabs-tab-btn) {
+  color: #1A75BB !important;
+}
+
 .course-detail-tabs :deep(.ant-tabs-ink-bar) {
-  background-color: #1A75BB;
+  background-color: #1a75bb;
   height: 2px;
 }
 
@@ -2483,7 +2757,7 @@ div.course-description-content :deep(ul li) {
 
 /* Use ::marker for proper bullet display */
 .course-description-content :deep(ul li::marker) {
-  content: '• ' !important;
+  content: "• " !important;
   color: #333 !important;
   font-weight: bold !important;
 }
@@ -2500,7 +2774,7 @@ div.course-description-content :deep(ul li) {
 }
 
 .course-description-content :deep(ol:not([type]):not([start]) li::marker) {
-  content: '• ' !important;
+  content: "• " !important;
   color: #333 !important;
   font-weight: bold !important;
 }
@@ -2597,7 +2871,7 @@ div.course-description-content :deep(ul li) {
 }
 
 .course-description-content :deep(a) {
-  color: #317BC4;
+  color: #317bc4;
   text-decoration: underline;
 }
 
