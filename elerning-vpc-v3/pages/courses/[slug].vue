@@ -91,7 +91,9 @@
                       introVideoReady
                     "
                     ref="videoRef"
-                    :poster="(course as any)?.introVideoThumbnail || course?.thumbnail"
+                    :poster="
+                      (course as any)?.introVideoThumbnail || course?.thumbnail
+                    "
                     class="w-full h-auto min-h-[200px] sm:min-h-[300px] md:min-h-[400px] lg:min-h-[500px] object-cover rounded-[8px] sm:rounded-[12px] video-element"
                     preload="none"
                     playsinline
@@ -106,13 +108,19 @@
 
                   <!-- Thumbnail với nút Play (nếu có video nhưng chưa click play) -->
                   <div
-                    v-else-if="course?.introVideo || (course as any)?.introVideoHlsUrl"
+                    v-else-if="
+                      course?.introVideo || (course as any)?.introVideoHlsUrl
+                    "
                     class="relative w-full h-[200px] sm:h-[300px] md:h-[400px] lg:h-[500px] rounded-[8px] sm:rounded-[12px] overflow-hidden cursor-pointer group"
                     @click="playIntroVideo"
                   >
                     <img
                       class="w-full h-full object-cover"
-                      :src="(course as any)?.introVideoThumbnail || course?.thumbnail || '/images/courses/python-course.jpg'"
+                      :src="
+                        (course as any)?.introVideoThumbnail ||
+                        course?.thumbnail ||
+                        '/images/courses/python-course.jpg'
+                      "
                       alt="Course thumbnail"
                     />
                     <!-- Play button overlay -->
@@ -210,8 +218,7 @@
                               />
                             </svg>
 
-                            <span
-                              class="text-sm text-[#1a75bb]"
+                            <span class="text-sm text-[#1a75bb]"
                               >{{ course?.examCount || 0 }} bài trắc
                               nghiệm</span
                             >
@@ -231,8 +238,7 @@
                               />
                             </svg>
 
-                            <span
-                              class="text-sm text-[#1a75bb]"
+                            <span class="text-sm text-[#1a75bb]"
                               >{{ course?.videoCount || 0 }} video</span
                             >
                           </div>
@@ -254,8 +260,7 @@
                               />
                             </svg>
 
-                            <span
-                              class="text-sm text-[#1a75bb]"
+                            <span class="text-sm text-[#1a75bb]"
                               >{{ course?.documentCount || 0 }} Tài liệu</span
                             >
                           </div>
@@ -267,7 +272,8 @@
                         v-if="course?.chapters && course.chapters.length > 0"
                       >
                         <h3
-                          class="text-xl sm:text-2xl font-bold text-[#1A75BB] mb-1 uppercase"                        >
+                          class="text-xl sm:text-2xl font-bold text-[#1A75BB] mb-1 uppercase"
+                        >
                           NỘI DUNG CHÍNH
                         </h3>
 
@@ -287,9 +293,14 @@
                               >
                                 <span
                                   class="text-base font-semibold truncate"
-                                  :style="{ color: expandedChapters[chapterIndex] ? '#1A75BB' : '#393939' }"
+                                  :style="{
+                                    color: expandedChapters[chapterIndex]
+                                      ? '#1A75BB'
+                                      : '#393939',
+                                  }"
                                 >
-                                  Phần {{ chapterIndex + 1 }}: {{ chapter.title }}
+                                  Phần {{ chapterIndex + 1 }}:
+                                  {{ chapter.title }}
                                 </span>
                               </div>
                               <!-- Plus/Minus Icon -->
@@ -342,7 +353,7 @@
                                   handleLessonNavigate(
                                     chapterIndex,
                                     lessonIndex,
-                                    lesson
+                                    lesson,
                                   )
                                 "
                               >
@@ -397,7 +408,7 @@
                                       handleLessonNavigate(
                                         chapterIndex,
                                         lessonIndex,
-                                        lesson
+                                        lesson,
                                       )
                                     "
                                   >
@@ -430,7 +441,7 @@
                   <!-- Tab 3: Giảng viên -->
                   <a-tab-pane key="3" tab="Giảng viên">
                     <div class="py-5">
-                      <div class="bg-white rounded-lg shadow-sm p-8">
+                      <div class="bg-white rounded-lg shadow-sm p-2 md:p-6">
                         <div
                           class="flex flex-col md:flex-row gap-8 items-start"
                         >
@@ -451,7 +462,7 @@
                           <!-- Instructor Info -->
                           <div class="flex-1">
                             <h2
-                              class="text-xl sm:text-2xl font-bold text-[#1A75BB] mb-2 text-center md:text-left"
+                              class="text-2xl font-bold text-[#1A75BB] mb-2 text-center md:text-left"
                             >
                               {{ course?.instructor?.name || "Chưa cập nhật" }}
                             </h2>
@@ -467,17 +478,15 @@
                               </p>
                             </div>
 
-                            <div class="mb-6">
-                              <p
-                                class="text-gray-600 text-base leading-relaxed course-description-content"
-                              >
-                                <span
-                                  v-html="
-                                    course?.instructor?.bio ||
-                                    'Thông tin tiểu sử đang được cập nhật...'
-                                  "
-                                ></span>
-                              </p>
+                            <div
+                              class="mb-6 text-gray-600 text-base leading-relaxed course-description-content"
+                            >
+                              <span
+                                v-html="
+                                  course?.instructor?.bio ||
+                                  'Thông tin tiểu sử đang được cập nhật...'
+                                "
+                              ></span>
                             </div>
 
                             <div
@@ -491,7 +500,11 @@
                               </h3>
                               <div class="flex flex-wrap gap-2">
                                 <span
-                                  v-for="skill in ((course?.instructor as any)?.skills || '').split(',').map((s: string) => s.trim())"
+                                  v-for="skill in (
+                                    (course?.instructor as any)?.skills || ''
+                                  )
+                                    .split(',')
+                                    .map((s: string) => s.trim())"
                                   :key="skill"
                                   class="px-3 py-1 bg-prim-100 text-white rounded-full text-sm font-medium"
                                 >
@@ -570,10 +583,11 @@
                                 >
                                   <div
                                     class="bg-[#1A75BB] h-2 rounded-full transition-all duration-300"
-                                    :style="{ 
-                                      width: calculatedRating.count > 0 
-                                        ? `${(calculatedRating.breakdown[6 - i as keyof typeof calculatedRating.breakdown] / calculatedRating.count) * 100}%` 
-                                        : '0%' 
+                                    :style="{
+                                      width:
+                                        calculatedRating.count > 0
+                                          ? `${(calculatedRating.breakdown[(6 - i) as keyof typeof calculatedRating.breakdown] / calculatedRating.count) * 100}%`
+                                          : '0%',
                                     }"
                                   ></div>
                                 </div>
@@ -598,7 +612,7 @@
                           <div
                             v-for="(review, index) in reviews"
                             :key="`review_${index}`"
-                            class="bg-white rounded-lg shadow-sm p-6"
+                            class="bg-white rounded-lg shadow-sm p-3 md:p-6"
                           >
                             <div class="flex gap-4">
                               <div class="flex-shrink-0">
@@ -647,7 +661,7 @@
                                   <span class="text-sm text-gray-500 ml-2">
                                     {{
                                       new Date(
-                                        review.reviewDate || review.createdAt
+                                        review.reviewDate || review.createdAt,
                                       ).toLocaleDateString("vi-VN")
                                     }}
                                   </span>
@@ -764,7 +778,7 @@
                   >
                     {{
                       Number(
-                        course.priceSale || course.originalPrice
+                        course.priceSale || course.originalPrice,
                       ).toLocaleString("vi-VN")
                     }}₫
                   </h4>
@@ -1223,7 +1237,7 @@ watch(
       });
     }
   },
-  { immediate: true }
+  { immediate: true },
 );
 
 // Expanded chapters state
@@ -1300,7 +1314,7 @@ const heroBackgroundStyle = computed(() => {
 useHead({
   title: computed(
     () =>
-      `${course.value?.title || "Chi tiết khóa học"} - Van Phuc Care E-Learning`
+      `${course.value?.title || "Chi tiết khóa học"} - Van Phuc Care E-Learning`,
   ),
   meta: [
     {
@@ -1308,7 +1322,7 @@ useHead({
       content: computed(
         () =>
           course.value?.shortDescription ||
-          "Khám phá khóa học tại Van Phuc Care E-Learning"
+          "Khám phá khóa học tại Van Phuc Care E-Learning",
       ),
     },
     {
@@ -1327,7 +1341,7 @@ useHead({
         () =>
           `${
             course.value?.title || "Chi tiết khóa học"
-          } - Van Phuc Care E-Learning`
+          } - Van Phuc Care E-Learning`,
       ),
     },
     {
@@ -1335,7 +1349,7 @@ useHead({
       content: computed(
         () =>
           course.value?.shortDescription ||
-          "Khám phá khóa học tại Van Phuc Care E-Learning"
+          "Khám phá khóa học tại Van Phuc Care E-Learning",
       ),
     },
     {
@@ -1345,7 +1359,7 @@ useHead({
     {
       property: "og:url",
       content: computed(
-        () => `https://vanphuccare.com/courses/${course.value?.slug || ""}`
+        () => `https://vanphuccare.com/courses/${course.value?.slug || ""}`,
       ),
     },
     {
@@ -1354,7 +1368,7 @@ useHead({
         () =>
           `https://vanphuccare.com${
             course.value?.thumbnail || "/images/courses/default.jpg"
-          }`
+          }`,
       ),
     },
     {
@@ -1375,7 +1389,7 @@ useHead({
         () =>
           `${
             course.value?.title || "Chi tiết khóa học"
-          } - Van Phuc Care E-Learning`
+          } - Van Phuc Care E-Learning`,
       ),
     },
     {
@@ -1383,7 +1397,7 @@ useHead({
       content: computed(
         () =>
           course.value?.shortDescription ||
-          "Khám phá khóa học tại Van Phuc Care E-Learning"
+          "Khám phá khóa học tại Van Phuc Care E-Learning",
       ),
     },
     {
@@ -1392,25 +1406,25 @@ useHead({
         () =>
           `https://vanphuccare.com${
             course.value?.thumbnail || "/images/courses/default.jpg"
-          }`
+          }`,
       ),
     },
     {
       name: "article:author",
       content: computed(
-        () => course.value?.instructor?.name || "Van Phuc Care"
+        () => course.value?.instructor?.name || "Van Phuc Care",
       ),
     },
     {
       name: "article:published_time",
       content: computed(
-        () => course.value?.createdAt || new Date().toISOString()
+        () => course.value?.createdAt || new Date().toISOString(),
       ),
     },
     {
       name: "article:modified_time",
       content: computed(
-        () => course.value?.updatedAt || new Date().toISOString()
+        () => course.value?.updatedAt || new Date().toISOString(),
       ),
     },
   ],
@@ -1418,7 +1432,7 @@ useHead({
     {
       rel: "canonical",
       href: computed(
-        () => `https://vanphuccare.com/courses/${course.value?.slug || ""}`
+        () => `https://vanphuccare.com/courses/${course.value?.slug || ""}`,
       ),
     },
   ],
@@ -1513,7 +1527,7 @@ const reviews = computed(() => {
     console.log("🔍 [Reviews Debug] First review:", reviewsData[0]);
     console.log(
       "🔍 [Reviews Debug] First review rating:",
-      reviewsData[0]?.rating
+      reviewsData[0]?.rating,
     );
   }
   return reviewsData;
@@ -1542,7 +1556,7 @@ const calculatedRating = computed(() => {
       "🔍 [Rating Debug] Review rating:",
       review.rating,
       "Parsed:",
-      rating
+      rating,
     );
     return acc + rating;
   }, 0);
@@ -1744,7 +1758,7 @@ watch(
     introVideoReady.value = false;
     introVideoToken.value = null;
   },
-  { immediate: true }
+  { immediate: true },
 );
 
 // Methods
@@ -1797,7 +1811,7 @@ const toggleCourse = async () => {
     if (isInCart.value) {
       // Tìm cart item để lấy course._id
       const cartItem = cartStore.items.find(
-        (item) => item.course?._id === course.value?._id
+        (item) => item.course?._id === course.value?._id,
       );
 
       if (cartItem && cartItem.course?._id) {
@@ -1859,7 +1873,7 @@ const goToCertificate = () => {
 const goToReview = () => {
   if (!course.value?.slug) return;
   router.push(
-    `/my-learning/${course.value.slug}?chapter=0&lesson=0&review=true`
+    `/my-learning/${course.value.slug}?chapter=0&lesson=0&review=true`,
   );
 };
 
@@ -1897,7 +1911,7 @@ const handleTabChange = async (key: string) => {
 const handleLessonNavigate = async (
   chapterIndex: number,
   lessonIndex: number,
-  lesson: any
+  lesson: any,
 ) => {
   // Nếu không có slug thì bỏ qua
   if (!course.value?.slug) return;
@@ -2016,18 +2030,18 @@ const fetchData = async () => {
       try {
         console.log(
           "🔍 [Fetch Data] Fetching reviews for course:",
-          course.value._id
+          course.value._id,
         );
         await coursesStore.fetchReviews(course.value._id);
         console.log("✅ [Fetch Data] Reviews fetched:", coursesStore.reviews);
         console.log(
           "✅ [Fetch Data] Reviews count:",
-          coursesStore.reviews.length
+          coursesStore.reviews.length,
         );
         if (coursesStore.reviews.length > 0) {
           console.log(
             "✅ [Fetch Data] First review rating:",
-            coursesStore.reviews[0]?.rating
+            coursesStore.reviews[0]?.rating,
           );
         }
       } catch (error) {
@@ -2068,7 +2082,7 @@ watch(
     if (route.params.slug) {
       fetchData();
     }
-  }
+  },
 );
 </script>
 
@@ -2077,7 +2091,9 @@ watch(
 .purchase-modal :deep(.ant-modal-content) {
   background: #ffffff;
   border-radius: 12px;
-  box-shadow: 0px 1px 10px rgba(0, 0, 0, 0.05), 0px 2px 4px rgba(0, 0, 0, 0.1);
+  box-shadow:
+    0px 1px 10px rgba(0, 0, 0, 0.05),
+    0px 2px 4px rgba(0, 0, 0, 0.1);
   overflow: hidden;
 }
 
@@ -2249,7 +2265,9 @@ watch(
 .login-modal :deep(.ant-modal-content) {
   background: #ffffff;
   border-radius: 12px;
-  box-shadow: 0px 1px 10px rgba(0, 0, 0, 0.05), 0px 2px 4px rgba(0, 0, 0, 0.1);
+  box-shadow:
+    0px 1px 10px rgba(0, 0, 0, 0.05),
+    0px 2px 4px rgba(0, 0, 0, 0.1);
   overflow: hidden;
 }
 
@@ -2419,8 +2437,8 @@ watch(
 
 .card-container :deep(.ant-tabs-content) {
   margin-top: -16px;
-  padding-left: 20px;
-  padding-right: 20px;
+  padding-left: 12px;
+  padding-right: 12px;
   border-bottom-left-radius: 10px;
   border-bottom-right-radius: 10px;
 }
@@ -2468,7 +2486,7 @@ watch(
 }
 
 .course-detail-tabs :deep(.ant-tabs-tab-active) {
-  color: #1A75BB !important;
+  color: #1a75bb !important;
   font-weight: 700;
   background-color: #ffffff;
   border-top-left-radius: 8px;
@@ -2476,7 +2494,7 @@ watch(
 }
 
 .course-detail-tabs :deep(.ant-tabs-tab-active .ant-tabs-tab-btn) {
-  color: #1A75BB !important;
+  color: #1a75bb !important;
 }
 
 .course-detail-tabs :deep(.ant-tabs-ink-bar) {
@@ -2723,6 +2741,11 @@ watch(
   line-height: 1.8;
 }
 
+.course-description-content :deep(p),
+.course-description-content :deep(span),
+.course-description-content :deep(li) {
+  text-align: justify;
+}
 /* Ensure ul displays as bullet list - HIGH SPECIFICITY */
 .course-description-content :deep(ul),
 .course-description-content :deep(ul[class]),
