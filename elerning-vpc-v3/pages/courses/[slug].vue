@@ -612,7 +612,7 @@
                           <div
                             v-for="(review, index) in reviews"
                             :key="`review_${index}`"
-                            class="bg-white rounded-lg shadow-sm p-3 md:p-6"
+                            class="bg-white rounded-lg shadow-sm p-2 md:p-6"
                           >
                             <div class="flex gap-4">
                               <div class="flex-shrink-0">
