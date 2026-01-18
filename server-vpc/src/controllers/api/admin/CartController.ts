@@ -166,11 +166,22 @@ class CartController {
         let ratingStats: Record<string, { avg: number; count: number }> = {};
         try {
           const ReviewModel = getReviewModel();
+          // Match courseId as both ObjectId and String since data may be stored inconsistently
+          const courseObjectIds = courseIds.map((id: string) => {
+            try {
+              return new mongoose.Types.ObjectId(id);
+            } catch {
+              return id;
+            }
+          });
+          
           const ratingAggregation = await ReviewModel.aggregate([
             {
               $match: {
-                courseId: { $in: courseIds.map((id: string) => new mongoose.Types.ObjectId(id)) },
-                status: 'active',
+                $or: [
+                  { courseId: { $in: courseObjectIds } },
+                  { courseId: { $in: courseIds } },
+                ],
               },
             },
             {
