@@ -256,6 +256,7 @@ class CourseController {
 
           let totalVideoCount = 0;
           let totalDocumentCount = 0;
+          let totalQuizCount = 0;
 
           for (const chapter of chapters) {
             const lessons = await LessonsModel.model.find({
@@ -280,13 +281,13 @@ class CourseController {
               ) {
                 totalDocumentCount += 1;
               }
+
+              // Đếm số lesson có quiz (type === 'quiz' hoặc có quizId)
+              if (lessonData.type === 'quiz' || lessonData.quizId) {
+                totalQuizCount += 1;
+              }
             }
           }
-
-          const totalQuizCount = await QuizzesModel.countDocuments({
-            courseId: course._id.toString(),
-            status: 'active',
-          });
 
           return {
             _id: courseData._id.toString(),
@@ -645,6 +646,7 @@ class CourseController {
 
       let totalVideoCount = 0;
       let totalDocumentCount = 0;
+      let totalQuizCount = 0;
 
       for (const chapter of chapters) {
         const lessons = await LessonsModel.model.find({
@@ -666,13 +668,13 @@ class CourseController {
           } else if (lessonData.type === "document" && lessonData.documentUrl) {
             totalDocumentCount += 1;
           }
+
+          // Đếm số lesson có quiz (type === 'quiz' hoặc có quizId)
+          if (lessonData.type === 'quiz' || lessonData.quizId) {
+            totalQuizCount += 1;
+          }
         }
       }
-
-      const totalQuizCount = await QuizzesModel.countDocuments({
-        courseId: course._id.toString(),
-        status: "active",
-      });
       courseData.videoCount = totalVideoCount;
       courseData.documentCount = totalDocumentCount;
       courseData.quizCount = totalQuizCount;

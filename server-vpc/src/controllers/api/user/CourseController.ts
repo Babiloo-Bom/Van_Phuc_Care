@@ -209,6 +209,7 @@ class CourseController {
 
           let totalVideoCount = 0;
           let totalDocumentCount = 0;
+          let totalQuizCount = 0;
 
           for (const chapter of chapters) {
             const lessons = await LessonsModel.model.find({
@@ -233,13 +234,13 @@ class CourseController {
               ) {
                 totalDocumentCount += 1;
               }
+
+              // Đếm số lesson có quiz (type === 'quiz' hoặc có quizId)
+              if (lessonData.type === 'quiz' || lessonData.quizId) {
+                totalQuizCount += 1;
+              }
             }
           }
-
-          const totalQuizCount = await QuizzesModel.countDocuments({
-            courseId: course._id.toString(),
-            status: "active",
-          });
 
           // Convert introVideo (15 phút expiry)
           const convertedIntroVideo = courseData.introVideo
@@ -671,6 +672,7 @@ class CourseController {
 
       let totalVideoCount = 0;
       let totalDocumentCount = 0;
+      let totalQuizCount = 0;
 
       for (const chapter of chapters) {
         const lessons = await LessonsModel.model.find({
@@ -692,13 +694,14 @@ class CourseController {
           } else if (lessonData.type === "document" && lessonData.documentUrl) {
             totalDocumentCount += 1;
           }
+
+          // Đếm số lesson có quiz (type === 'quiz' hoặc có quizId)
+          if (lessonData.type === 'quiz' || lessonData.quizId) {
+            totalQuizCount += 1;
+          }
         }
       }
 
-      const totalQuizCount = await QuizzesModel.countDocuments({
-        courseId: course._id.toString(),
-        status: "active",
-      });
       courseData.videoCount = totalVideoCount;
       courseData.documentCount = totalDocumentCount;
       courseData.quizCount = totalQuizCount;
@@ -1025,6 +1028,7 @@ class CourseController {
           let totalVideoCount = 0;
           let totalDocumentCount = 0;
           let totalLessons = 0;
+          let totalQuizCount = 0;
           let completedLessons = 0; // will be overridden by aggregation when available
 
           for (const chapter of chapters) {
@@ -1051,14 +1055,14 @@ class CourseController {
                 totalDocumentCount += 1;
               }
 
+              // Đếm số lesson có quiz (type === 'quiz' hoặc có quizId)
+              if (lessonData.type === 'quiz' || lessonData.quizId) {
+                totalQuizCount += 1;
+              }
+
               totalLessons += 1;
             }
           }
-
-          const totalQuizCount = await QuizzesModel.countDocuments({
-            courseId: course._id.toString(),
-            status: "active",
-          });
 
           const progressPercentage =
             totalLessons > 0
@@ -1471,6 +1475,7 @@ class CourseController {
       // Calculate videoCount, documentCount, quizCount
       let totalVideoCount = 0;
       let totalDocumentCount = 0;
+      let totalQuizCount = 0;
 
       for (const chapter of chapters) {
         const lessons = await LessonsModel.model.find({
@@ -1492,13 +1497,13 @@ class CourseController {
           } else if (lessonData.type === "document" && lessonData.documentUrl) {
             totalDocumentCount += 1;
           }
+
+          // Đếm số lesson có quiz (type === 'quiz' hoặc có quizId)
+          if (lessonData.type === 'quiz' || lessonData.quizId) {
+            totalQuizCount += 1;
+          }
         }
       }
-
-      const totalQuizCount = await QuizzesModel.countDocuments({
-        courseId: course._id.toString(),
-        status: "active",
-      });
 
       courseData.videoCount = totalVideoCount;
       courseData.documentCount = totalDocumentCount;

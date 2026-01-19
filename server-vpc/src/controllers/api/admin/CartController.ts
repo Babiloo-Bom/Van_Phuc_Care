@@ -68,6 +68,7 @@ class CartController {
     try {
       let totalVideoCount = 0;
       let totalDocumentCount = 0;
+      let totalQuizCount = 0;
 
       // Convert courseId to ObjectId if it's a string
       const courseObjectId = typeof courseId === 'string' 
@@ -103,14 +104,13 @@ class CartController {
           } else if (lessonData.type === 'document' && lessonData.documentUrl) {
             totalDocumentCount += 1;
           }
+
+          // Đếm số lesson có quiz (type === 'quiz' hoặc có quizId)
+          if (lessonData.type === 'quiz' || lessonData.quizId) {
+            totalQuizCount += 1;
+          }
         }
       }
-
-      // Count quizzes
-      const totalQuizCount = await QuizzesModel.countDocuments({
-        courseId: courseObjectId.toString(),
-        status: 'active',
-      });
 
       return {
         videoCount: totalVideoCount,

@@ -356,6 +356,15 @@
                 ></div>
               </div>
 
+              <!-- Quiz Card (Desktop) - Hiển thị ở cuối lesson nếu chapter có quiz -->
+              <div v-if="currentChapter && hasQuizInChapter(currentChapter)" class="mt-6">
+                <QuizCard
+                  :chapter="currentChapter"
+                  :chapter-index="currentChapterIndex"
+                  :course-slug="slug"
+                />
+              </div>
+
               <!-- Navigation Buttons: Bài trước / Bài tiếp theo (Desktop) -->
               <div class="flex justify-center gap-4 mt-8">
                 <button
@@ -450,6 +459,15 @@
                         class="course-description-content prose max-w-none text-gray-700 leading-relaxed text-sm md:text-base"
                         v-html="normalizedLessonContent || currentLesson?.content || 'Chưa có nội dung'"
                       ></div>
+                    </div>
+
+                    <!-- Quiz Card (Mobile) - Hiển thị ở cuối lesson nếu chapter có quiz -->
+                    <div v-if="currentChapter && hasQuizInChapter(currentChapter)" class="mt-6">
+                      <QuizCard
+                        :chapter="currentChapter"
+                        :chapter-index="currentChapterIndex"
+                        :course-slug="slug"
+                      />
                     </div>
 
                     <!-- Navigation Buttons: Bài trước / Bài tiếp theo (Mobile) -->
@@ -580,6 +598,7 @@ import { useAuthStore } from "~/stores/auth";
 import NavCourse from "~/components/courses/NavCourse.vue";
 import DocumentsComponent from "~/components/lessons/DocumentsComponent.vue";
 import QuizzesComponent from "~/components/lessons/QuizzesComponent.vue";
+import QuizCard from "~/components/lessons/QuizCard.vue";
 import CourseCertificateComponent from "~/components/lessons/CourseCertificateComponent.vue";
 import ProgressBar from "~/components/common/ProgressBar.vue";
 import type { Course, Chapter, Lesson } from "~/stores/courses";
@@ -775,6 +794,16 @@ const hasVideo = computed(() => {
   
   return false;
 });
+
+// Check if chapter has quiz (kiểm tra bất kỳ lesson nào trong chapter có quiz)
+const hasQuizInChapter = (chapter: any) => {
+  if (!chapter?.lessons) return false
+  
+  // Tìm lesson có quiz trong chapter
+  return chapter.lessons.some((lesson: any) => {
+    return lesson?.type === 'quiz' || lesson?.quizId || lesson?.quiz
+  })
+};
 
 // Get video URL - Stream trực tiếp từ proxy (token ẩn URL gốc)
 // CHỈ tạo URL khi user click play VÀ video ready - ẩn URL khỏi Cốc Cốc

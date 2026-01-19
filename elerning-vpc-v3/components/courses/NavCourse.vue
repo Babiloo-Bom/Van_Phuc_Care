@@ -44,58 +44,46 @@
         </template>
         <div class="flex flex-col">
           <template v-for="(lesson, lessonIndex) in chapter.lessons" :key="`lesson_${chapterIndex}_${lessonIndex}`">
-            <!-- Lesson Item -->
+            <!-- Chỉ hiển thị lesson, không hiển thị quiz trong menu -->
             <div 
+              v-if="!hasQuiz(lesson)"
               class="flex items-center gap-3 py-3 lesson-item border-b border-dotted border-gray-300"
             >
               <!-- Icon section -->
               <div class="lesson-icon-container">
-                <template v-if="!hasQuiz(lesson)">
-                  <!-- Checkmark icon nếu đã hoàn thành -->
-                  <svg
-                    v-if="lesson.isCompleted"
-                    xmlns="http://www.w3.org/2000/svg"
-                    width="16"
-                    height="16"
-                    viewBox="0 0 14 14"
-                    fill="none"
-                    class="lesson-icon lesson-icon-completed"
-                  >
-                    <circle
-                      cx="7"
-                      cy="7"
-                      r="7"
-                      fill="#15CF74"
-                    />
-                    <path
-                      d="M4 7.005L5.892 8.9L9.79 5"
-                      stroke="white"
-                      stroke-width="1.5"
-                      stroke-linecap="square"
-                    />
-                  </svg>
-                  <!-- Radio button nếu chưa hoàn thành -->
-                  <div 
-                    v-else 
-                    class="lesson-icon lesson-icon-pending"
-                  ></div>
-                </template>
-                <template v-else>
-                  <div class="quiz-icon-container">
-                    <svg v-if="!lesson?.isCompleted" width="15" height="14" viewBox="0 0 15 14" fill="none" xmlns="http://www.w3.org/2000/svg">
-                      <path d="M6.1628 13.5H2.38759C1.3451 13.5 0.499993 12.7725 0.5 11.875L0.500073 2.125C0.50008 1.22753 1.34519 0.5 2.38767 0.5H10.8821C11.9246 0.5 12.7697 1.22754 12.7697 2.125V6.59377M8.9945 11.1979L10.7248 12.6875L14.5 9.43739M3.8036 3.75001H9.4664M3.8036 6.18752H9.4664M3.8036 8.62502H6.635" stroke="#798894" stroke-linecap="round" stroke-linejoin="round"/>
-                    </svg>
-                    <svg v-else width="15" height="14" viewBox="0 0 15 14" fill="none" xmlns="http://www.w3.org/2000/svg">
-                      <path d="M6.1628 13.5H2.38759C1.3451 13.5 0.499993 12.7725 0.5 11.875L0.500073 2.125C0.50008 1.22753 1.34519 0.5 2.38767 0.5H10.8821C11.9246 0.5 12.7697 1.22754 12.7697 2.125V6.59377M8.9945 11.1979L10.7248 12.6875L14.5 9.43739M3.8036 3.75001H9.4664M3.8036 6.18752H9.4664M3.8036 8.62502H6.635" stroke="#15CF74" stroke-linecap="round" stroke-linejoin="round"/>
-                    </svg>
-                  </div>
-                </template>
+                <!-- Checkmark icon nếu đã hoàn thành -->
+                <svg
+                  v-if="lesson.isCompleted"
+                  xmlns="http://www.w3.org/2000/svg"
+                  width="16"
+                  height="16"
+                  viewBox="0 0 14 14"
+                  fill="none"
+                  class="lesson-icon lesson-icon-completed"
+                >
+                  <circle
+                    cx="7"
+                    cy="7"
+                    r="7"
+                    fill="#15CF74"
+                  />
+                  <path
+                    d="M4 7.005L5.892 8.9L9.79 5"
+                    stroke="white"
+                    stroke-width="1.5"
+                    stroke-linecap="square"
+                  />
+                </svg>
+                <!-- Radio button nếu chưa hoàn thành -->
+                <div 
+                  v-else 
+                  class="lesson-icon lesson-icon-pending"
+                ></div>
               </div>
               
               <!-- Content section -->
               <div class="flex-1 min-w-0">
                 <h3 
-                  v-if="!hasQuiz(lesson)"
                   :class="`lesson-title ${
                     lesson.isCompleted ? 'lesson-title-completed' : 'lesson-title-pending hover:!text-[#155a8f]'
                   } ${!isPurchasedOrCompleted && isLessonLocked(chapterIndex, lessonIndex) ? 'lesson-title-locked' : ''}`"
@@ -104,21 +92,6 @@
                   class="flex items-center gap-2"
                 >
                   <span>{{ lesson.title }}</span>
-                  <img
-                    v-if="!isPurchasedOrCompleted && isLessonLocked(chapterIndex, lessonIndex)"
-                    src="/images/svg/lock.svg"
-                    alt="locked"
-                    class="w-3 h-3 sm:w-4 sm:h-4 flex-shrink-0"
-                  />
-                </h3>
-                <h3
-                  v-else
-                  :class="['lesson-title', { 'lesson-title-completed': lesson.isCompleted, 'lesson-title-pending hover:!text-[#155a8f]': !lesson.isCompleted, 'lesson-title-locked': !isPurchasedOrCompleted && isLessonLocked(chapterIndex, lessonIndex) }]"
-                  @click="handleQuizClick(chapterIndex, lessonIndex, lesson)"
-                  :style="!isPurchasedOrCompleted && isLessonLocked(chapterIndex, lessonIndex) ? { cursor: 'not-allowed', opacity: 0.6 } : { cursor: 'pointer' }"
-                  class="flex items-center gap-2"
-                >
-                  <span>{{ getQuizTitle(lesson) }}</span>
                   <img
                     v-if="!isPurchasedOrCompleted && isLessonLocked(chapterIndex, lessonIndex)"
                     src="/images/svg/lock.svg"
@@ -228,14 +201,8 @@ const getQuizTitle = (lesson: any) => {
 
 const getTotalLessons = (chapter: any) => {
   if (!chapter.lessons) return 0
-  let count = chapter.lessons.length
-  // Đếm thêm quiz nếu có (quiz không phải là lesson type riêng)
-  chapter.lessons.forEach((lesson: any) => {
-    if (hasQuiz(lesson) && lesson.type !== 'quiz') {
-      count++
-    }
-  })
-  return count
+  // Chỉ đếm lesson, không đếm quiz (quiz không hiển thị trong menu nữa)
+  return chapter.lessons.filter((lesson: any) => !hasQuiz(lesson)).length
 }
 
 const handlePanelClick = (chapter: number, event?: Event) => {
