@@ -202,8 +202,12 @@ const handleSubmit = async () => {
     }
   } catch (error: any) {
     console.error("Login error:", error);
-    const errorMessage = error.message || error.data?.message || "Tên đăng nhập hoặc mật khẩu không chính xác";
-    message.error(errorMessage);
+    const rawMessage =
+      error?.message ||
+      error?.data?.error?.message ||
+      error?.data?.message ||
+      "Tên đăng nhập hoặc mật khẩu không chính xác";
+    message.error(typeof rawMessage === "string" ? rawMessage : String(rawMessage));
   } finally {
     loading.value = false;
   }

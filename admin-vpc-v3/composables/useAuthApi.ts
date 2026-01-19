@@ -93,21 +93,31 @@ export const useAuthApi = () => {
     }
 
     // Try to extract message from API response
-    let customMessage = null
+    let customMessage: any = null
     if (error.data?.error) {
       customMessage = error.data.error
     } else if (error.data?.message) {
       customMessage = error.data.message
     }
 
+    // Normalize message to string (backend often returns { code, message })
+    const customMessageString =
+      typeof customMessage === 'string'
+        ? customMessage
+        : (customMessage && typeof customMessage === 'object' && typeof customMessage.message === 'string')
+          ? customMessage.message
+          : customMessage
+            ? String(customMessage)
+            : null
+
     // Get error code and create AuthError
     const errorCode = getErrorCode(error)
     const statusCode = error.statusCode || error.status || 500
 
     // Create AuthError with custom message if available
-    if (customMessage) {
+    if (customMessageString) {
       const authError = new AuthError(errorCode as AuthErrorCode, statusCode, error)
-      authError.message = customMessage
+      authError.message = customMessageString
       return authError
     }
 
