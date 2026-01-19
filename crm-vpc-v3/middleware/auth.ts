@@ -11,7 +11,6 @@ export default defineNuxtRouteMiddleware((to, from) => {
   
   // Check if user is authenticated
   if (!authStore.isAuthenticated) {
-    console.warn('[Auth Middleware] User not authenticated, redirecting to login');
     
     // Save intended destination
     if (process.client) {
@@ -24,7 +23,6 @@ export default defineNuxtRouteMiddleware((to, from) => {
 
   // Optional: Check if user account is active
   if (authStore.user && authStore.user.status === 'inactive') {
-    console.warn('[Auth Middleware] User account is inactive');
     
     // Logout and redirect
     authStore.logout();

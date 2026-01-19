@@ -48,7 +48,6 @@ export default defineEventHandler(async (event) => {
     
     return response;
   } catch (error: any) {
-    console.error('[tickets] POST error:', error.message || error);
     throw createError({
       statusCode: error.statusCode || 500,
       message: error.message || 'Failed to create ticket',

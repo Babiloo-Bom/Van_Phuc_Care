@@ -22,8 +22,6 @@ export default defineEventHandler(async (event) => {
 
     const targetUrl = `${apiHost}/api/u/services/${id}`;
 
-    console.log(`[GET /api/services/${id}] -> ${targetUrl}`);
-
     // Build headers
     const headers: Record<string, string> = {};
     if (authHeader) {
@@ -36,11 +34,9 @@ export default defineEventHandler(async (event) => {
       headers,
     });
 
-    console.log(`[GET /api/services/${id}] Success`);
     return response;
   } catch (error: any) {
     const id = getRouterParam(event, 'id');
-    console.error(`[GET /api/services/${id}] Error:`, error.message || error);
 
     if (error.data) {
       throw createError({

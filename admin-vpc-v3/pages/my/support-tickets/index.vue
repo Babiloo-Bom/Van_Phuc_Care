@@ -476,7 +476,7 @@
             allow-clear
             style="width: 100%"
             :not-found-content="loadingAssignableAdmins ? 'Đang tải...' : assignableAdmins.length === 0 ? 'Chưa có dữ liệu' : 'Không tìm thấy'"
-            @search="(value: string) => console.log('🔍 Search input:', value)"
+            @search="(value: string) => {}"
             @dropdown-visible-change="(open: boolean) => { if (open && assignableAdmins.length === 0) { loadAssignableAdmins() } }"
           >
             <a-select-option 
@@ -697,7 +697,6 @@ const fetchTickets = async () => {
       tickets.value = []
     }
   } catch (error: any) {
-    console.error('Error fetching tickets:', error)
     message.error('Không thể tải danh sách tickets')
     tickets.value = []
   } finally {
@@ -712,7 +711,6 @@ const fetchStatistics = async () => {
       statistics.value = response.data.statistics
     }
   } catch (error: any) {
-    console.error('Error fetching statistics:', error)
   }
 }
 
@@ -852,7 +850,6 @@ const loadComments = async (ticketId: string) => {
   try {
     loadingComments.value = true
     const response = await ticketsApi.getComments(ticketId)
-    console.log('📝 Load comments response:', response)
     
     // Handle different response structures
     // Backend returns: { success: true, data: { comments: [...] } }
@@ -875,13 +872,10 @@ const loadComments = async (ticketId: string) => {
     
     if (commentsData && Array.isArray(commentsData)) {
       comments.value = commentsData
-      console.log('✅ Loaded comments:', comments.value.length)
     } else {
       comments.value = []
-      console.warn('⚠️ No comments data found in response', response)
     }
   } catch (error: any) {
-    console.error('❌ Error loading comments:', error)
     message.error('Không thể tải bình luận')
     comments.value = []
   } finally {
@@ -964,7 +958,6 @@ const handleAddComment = async () => {
       })
     }
     
-    console.log('💬 Add comment response:', response)
     
     // Optionally add the new comment immediately to the list
     // Backend returns: { success: true, data: { comment: {...} } }
@@ -985,7 +978,6 @@ const handleAddComment = async () => {
       if (newComment) {
         // Add to comments list immediately
         comments.value.push(newComment)
-        console.log('✅ Added new comment to list immediately')
       }
     }
     
@@ -1003,7 +995,6 @@ const handleAddComment = async () => {
     // Refresh ticket detail to update status and other fields
     if (selectedTicket.value) {
       const ticketResponse = await ticketsApi.getTicket(selectedTicket.value._id)
-      console.log('🔄 Refresh ticket after comment response:', ticketResponse)
       
       if (ticketResponse.status && ticketResponse.data) {
         const ticketData = ticketResponse.data as any
@@ -1017,7 +1008,6 @@ const handleAddComment = async () => {
         
         if (refreshedTicket) {
           selectedTicket.value = refreshedTicket
-          console.log('✅ Refreshed ticket detail after comment')
         }
       }
     }
@@ -1025,7 +1015,6 @@ const handleAddComment = async () => {
     // Refresh ticket list to update status
     await fetchTickets()
   } catch (error: any) {
-    console.error('❌ Error adding comment:', error)
     message.error(error.message || 'Không thể gửi trả lời')
   } finally {
     submittingComment.value = false
@@ -1048,9 +1037,7 @@ const getCommentAuthorName = (comment: any) => {
 const loadAssignableAdmins = async () => {
   try {
     loadingAssignableAdmins.value = true
-    console.log('🔄 Loading assignable admins...')
     const response = await ticketsApi.getAssignableAdmins()
-    console.log('📋 Assignable admins response:', response)
     
     // Handle different response structures
     // Backend returns: { success: true, data: { admins: [...] } }
@@ -1062,28 +1049,21 @@ const loadAssignableAdmins = async () => {
       // Try nested structure first
       if (responseData.data && responseData.data.admins) {
         adminsData = responseData.data.admins
-        console.log('✅ Found admins in responseData.data.admins')
       } else if (responseData.admins) {
         adminsData = responseData.admins
-        console.log('✅ Found admins in responseData.admins')
       } else if (Array.isArray(responseData.data)) {
         adminsData = responseData.data
-        console.log('✅ Found admins in responseData.data (array)')
       } else if (Array.isArray(responseData)) {
         adminsData = responseData
-        console.log('✅ Found admins in responseData (array)')
       }
     }
     
     if (adminsData && Array.isArray(adminsData)) {
       assignableAdmins.value = adminsData
-      console.log(`✅ Loaded ${assignableAdmins.value.length} assignable admins:`, assignableAdmins.value)
     } else {
       assignableAdmins.value = []
-      console.warn('⚠️ No admins data found in response', response)
     }
   } catch (error: any) {
-    console.error('❌ Error loading assignable admins:', error)
     message.error('Không thể tải danh sách người xử lý')
     assignableAdmins.value = []
   } finally {
@@ -1103,7 +1083,6 @@ const filterAdminOption = (input: string, option: any) => {
   })
   
   if (!admin) {
-    console.log('⚠️ Admin not found for option:', option.value)
     return false
   }
   
@@ -1117,14 +1096,12 @@ const filterAdminOption = (input: string, option: any) => {
                   role.includes(searchText)
   
   if (matches) {
-    console.log('✅ Filter match:', { searchText, name, email, role })
   }
   
   return matches
 }
 
 const openAssignModal = async () => {
-  console.log('🔓 Opening assign modal...')
   
   // Set current assigned value if exists
   if (selectedTicket.value) {
@@ -1132,13 +1109,10 @@ const openAssignModal = async () => {
       ? selectedTicket.value.assignedTo._id 
       : selectedTicket.value.assignedTo
     assignForm.value.assignedTo = assignedTo || null
-    console.log('📌 Current assigned to:', assignForm.value.assignedTo)
   }
   
   // Always load admins when opening modal to ensure fresh data
-  console.log('📥 Loading assignable admins...')
   await loadAssignableAdmins()
-  console.log('📊 Assignable admins count:', assignableAdmins.value.length)
   
   showAssignModal.value = true
 }
@@ -1158,7 +1132,6 @@ const handleAssignTicket = async () => {
       assignForm.value.assignedTo
     )
     
-    console.log('✅ Assign ticket response:', response)
     
     message.success('Phân công ticket thành công')
     showAssignModal.value = false
@@ -1177,14 +1150,12 @@ const handleAssignTicket = async () => {
       
       if (updatedTicket) {
         selectedTicket.value = updatedTicket
-        console.log('✅ Updated ticket from assign response')
       }
     }
     
     // Always refresh ticket detail to ensure we have latest data
     if (selectedTicket.value) {
       const ticketResponse = await ticketsApi.getTicket(selectedTicket.value._id)
-      console.log('🔄 Refresh ticket detail response:', ticketResponse)
       
       if (ticketResponse.status && ticketResponse.data) {
         const ticketData = ticketResponse.data as any
@@ -1198,7 +1169,6 @@ const handleAssignTicket = async () => {
         
         if (refreshedTicket) {
           selectedTicket.value = refreshedTicket
-          console.log('✅ Refreshed ticket detail')
         }
       }
     }
@@ -1206,7 +1176,6 @@ const handleAssignTicket = async () => {
     // Refresh ticket list
     await fetchTickets()
   } catch (error: any) {
-    console.error('❌ Error assigning ticket:', error)
     message.error(error.message || 'Không thể phân công ticket')
   } finally {
     assigning.value = false

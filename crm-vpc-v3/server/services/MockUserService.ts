@@ -49,7 +49,6 @@ export class MockUserService {
     };
 
     this.users.push(user);
-    console.log('✅ Mock user created:', user);
     return user;
   }
 
@@ -76,7 +75,6 @@ export class MockUserService {
         user.name = googleData.name;
         user.avatar = googleData.picture;
         user.updatedAt = new Date();
-        console.log('✅ Mock Google user updated:', user);
         return user;
       }
 
@@ -90,7 +88,6 @@ export class MockUserService {
         user.name = googleData.name;
         user.avatar = googleData.picture;
         user.updatedAt = new Date();
-        console.log('✅ Mock Google account linked:', user);
         return user;
       }
 
@@ -107,14 +104,12 @@ export class MockUserService {
       return newUser;
 
     } catch (error: any) {
-      console.error('❌ Mock Google user management failed:', error);
       throw new Error('Failed to manage Google user: ' + error.message);
     }
   }
 
   // ===== GET ALL USERS =====
   static async getAllUsers(): Promise<MockUser[]> {
-    console.log('📊 Mock users in memory:', this.users.length);
     return [...this.users];
   }
 
@@ -143,7 +138,6 @@ export class MockUserService {
   static async clearAllUsers(): Promise<number> {
     const count = this.users.length;
     this.users = [];
-    console.log(`🗑️ Cleared ${count} mock users`);
     return count;
   }
 }

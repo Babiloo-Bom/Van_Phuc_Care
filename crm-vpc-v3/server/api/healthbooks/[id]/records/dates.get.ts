@@ -35,8 +35,6 @@ export default defineEventHandler(async (event) => {
     const queryStr = queryString.toString();
     const targetUrl = `${apiHost}/api/u/healthbooks/${id}/records/dates${queryStr ? `?${queryStr}` : ''}`;
 
-    console.log(`[GET /api/healthbooks/${id}/records/dates] -> ${targetUrl}`);
-
     // Forward request to backend
     const response = await $fetch(targetUrl, {
       method: 'GET',
@@ -45,11 +43,9 @@ export default defineEventHandler(async (event) => {
       },
     });
 
-    console.log(`[GET /api/healthbooks/${id}/records/dates] Success`);
     return response;
   } catch (error: any) {
     const id = getRouterParam(event, 'id');
-    console.error(`[GET /api/healthbooks/${id}/records/dates] Error:`, error.message || error);
 
     if (error.statusCode === 404 || error.status === 404) {
       return { data: { dates: [] } };

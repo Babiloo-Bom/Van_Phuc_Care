@@ -737,7 +737,6 @@ const loadUsers = async () => {
     }
     
     const response = await usersApi.getUsers(params)
-    console.log('🔍 Users API response:', response)
     
     if (response.status && response.data) {
       // Backend returns: { message: "", data: { users: [...], pagination: {...} } }
@@ -745,7 +744,6 @@ const loadUsers = async () => {
       // So we need: response.data.data.users
       const responseData = response.data.data || response.data
       
-      console.log('🔍 Response data:', responseData)
       
       // Get users array
       let usersList: any[] = []
@@ -782,13 +780,10 @@ const loadUsers = async () => {
         paginationConfig.value.total = responseData.total
       }
       
-      console.log('✅ Loaded users:', users.value.length, 'Total:', paginationConfig.value.total)
     } else {
-      console.warn('⚠️ Response missing status or data:', response)
       users.value = []
     }
   } catch (error: any) {
-    console.error('❌ Load users failed:', error)
     message.error('Không thể tải danh sách người dùng: ' + (error.message || 'Unknown error'))
     users.value = []
   } finally {
@@ -812,7 +807,6 @@ const loadStats = async () => {
       }
     }
   } catch (error: any) {
-    console.error('❌ Failed to load user stats:', error)
   }
 }
 
@@ -841,13 +835,11 @@ const viewUser = async (user: any) => {
   try {
     loading.value = true
     const response = await usersApi.getUser(user._id || user.id)
-    console.log('🔍 Get user response:', response)
     
     if (response.status && response.data) {
       // Backend returns: { message: "", data: { user: {...} } }
       // apiClient.get wraps it: { status: true, data: { message: "", data: { user: {...} } } }
       const userData = response.data.data?.user || response.data.user || response.data.data || response.data
-      console.log('✅ Parsed user data:', userData)
       
       if (!userData) {
         throw new Error('Không tìm thấy thông tin người dùng')
@@ -874,7 +866,6 @@ const viewUser = async (user: any) => {
       throw new Error(response.message || 'Không thể tải thông tin người dùng')
     }
   } catch (error: any) {
-    console.error('❌ Get user failed:', error)
     message.error(error.message || 'Không thể tải thông tin người dùng')
     // Fallback to show user from list
     selectedUser.value = user
@@ -933,7 +924,6 @@ const handleAvatarChange = async (event: Event) => {
 
     // Upload image immediately
     const uploadResult = await uploadImage(file)
-    console.log('Upload result:', uploadResult)
     
     // Extract avatar URL from response
     const responseData = uploadResult.data as any
@@ -945,10 +935,8 @@ const handleAvatarChange = async (event: Event) => {
       responseData?.data?.urls?.[0] || 
       responseData?.urls?.[0]
 
-    console.log('Extracted avatar URL:', avatarUrl)
 
     if (!avatarUrl) {
-      console.error('No avatar URL found in response:', responseData)
       throw new Error('Không thể tải ảnh lên')
     }
 
@@ -956,7 +944,6 @@ const handleAvatarChange = async (event: Event) => {
     editForm.value.avatar = avatarUrl
     message.success('Tải ảnh đại diện thành công!')
   } catch (err: any) {
-    console.error('Error uploading avatar:', err)
     message.error(err.message || 'Không thể tải ảnh đại diện')
     // Reset preview on error
     avatarPreview.value = ''
@@ -1043,7 +1030,6 @@ const handleSaveUser = async () => {
     }
     
     const response = await usersApi.updateUser(selectedUser.value._id || selectedUser.value.id, updateData)
-    console.log('🔍 Update user response:', response)
     
     if (response.status && response.data) {
       message.success('Cập nhật thông tin người dùng thành công')
@@ -1052,12 +1038,10 @@ const handleSaveUser = async () => {
       try {
         const userId = selectedUser.value._id || selectedUser.value.id
         const refreshResponse = await usersApi.getUser(userId)
-        console.log('🔍 Refresh user response:', refreshResponse)
         
         if (refreshResponse.status && refreshResponse.data) {
           // Parse response same as viewUser
           const userData = refreshResponse.data.data?.user || refreshResponse.data.user || refreshResponse.data.data || refreshResponse.data
-          console.log('✅ Refreshed user data:', userData)
           
           if (userData) {
             selectedUser.value = userData
@@ -1075,7 +1059,6 @@ const handleSaveUser = async () => {
           }
         }
       } catch (refreshError) {
-        console.warn('⚠️ Failed to refresh user data, using update response:', refreshError)
         // Fallback to using update response
         const userData = response.data.data?.user || response.data.user || response.data.data || response.data
         if (userData) {
@@ -1093,7 +1076,6 @@ const handleSaveUser = async () => {
       message.error('Không thể cập nhật thông tin người dùng')
     }
   } catch (error: any) {
-    console.error('❌ Update user failed:', error)
     message.error('Không thể cập nhật thông tin người dùng: ' + (error.message || 'Unknown error'))
   } finally {
     saving.value = false
@@ -1113,7 +1095,6 @@ const toggleUserStatus = async (user: any) => {
       throw new Error(response.message || 'Failed to toggle status')
     }
   } catch (error: any) {
-    console.error('❌ Toggle user status failed:', error)
     message.error('Không thể thay đổi trạng thái người dùng')
   } finally {
     loading.value = false
@@ -1133,7 +1114,6 @@ const deleteUser = async (user: any) => {
       throw new Error(response.message || 'Failed to delete user')
     }
   } catch (error: any) {
-    console.error('❌ Delete user failed:', error)
     message.error('Không thể xóa người dùng')
   } finally {
     loading.value = false
@@ -1323,7 +1303,6 @@ const handleCreateAvatarChange = async (event: Event) => {
 
     // Upload image immediately
     const uploadResult = await uploadImage(file)
-    console.log('Upload result:', uploadResult)
     
     // Extract avatar URL from response
     const responseData = uploadResult.data as any
@@ -1335,10 +1314,8 @@ const handleCreateAvatarChange = async (event: Event) => {
       responseData?.data?.urls?.[0] || 
       responseData?.urls?.[0]
 
-    console.log('Extracted avatar URL:', avatarUrl)
 
     if (!avatarUrl) {
-      console.error('No avatar URL found in response:', responseData)
       throw new Error('Không thể tải ảnh lên')
     }
 
@@ -1346,7 +1323,6 @@ const handleCreateAvatarChange = async (event: Event) => {
     createForm.value.avatar = avatarUrl
     message.success('Tải ảnh đại diện thành công!')
   } catch (err: any) {
-    console.error('Error uploading avatar:', err)
     message.error(err.message || 'Không thể tải ảnh đại diện')
     // Reset preview on error
     createAvatarPreview.value = ''
@@ -1393,7 +1369,6 @@ const handleCreateUser = async () => {
     }
     
     const response = await usersApi.createUser(createData)
-    console.log('🔍 Create user response:', response)
     
     if (response.status && response.data) {
       message.success('Tạo người dùng mới thành công')
@@ -1409,7 +1384,6 @@ const handleCreateUser = async () => {
       throw new Error(response.message || 'Không thể tạo người dùng')
     }
   } catch (error: any) {
-    console.error('❌ Create user failed:', error)
     if (error.errorFields) {
       // Validation errors
       return

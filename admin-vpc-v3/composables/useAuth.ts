@@ -204,7 +204,6 @@ export const useAuth = () => {
 
       return result.success
     } catch (error) {
-      console.error('Token renewal failed:', error)
       return false
     }
   }

@@ -203,9 +203,6 @@ export const useRegister = () => {
 
     try {
       // Debug log
-      console.log('🔍 Register data:', { 
-        email: data.email, 
-        fullname: data.fullname, 
         hasPassword: !!data.password 
       })
       
@@ -286,8 +283,6 @@ export const useRegister = () => {
 
     try {
       const result = await authStore.verifyEmail(registeredEmail.value, otp)
-      console.log('🔍 Admin useRegister.verifyEmail result:', result)
-      console.log('🔍 Admin useRegister.verifyEmail result.success:', result.success)
 
       if (result.success) {
         registrationStep.value = 'complete'
@@ -347,26 +342,21 @@ export const useRegister = () => {
 
     try {
       // Auto login after successful verification
-      console.log('🔍 Admin completeRegistration: Attempting auto-login with email:', registeredEmail.value)
       const result = await authStore.loginAfterRegister(registeredEmail.value, registeredPassword.value)
-      console.log('🔍 Admin completeRegistration: Login result:', result)
 
       if (result.success) {
         // Redirect to dashboard
-        console.log('🔍 Admin completeRegistration: Login successful, redirecting to /')
         setTimeout(() => {
           router.push('/')
         }, 1500)
         return { success: true }
       } else {
-        console.error('🔍 Admin completeRegistration: Login failed:', result.error)
         return {
           success: false,
           error: result.error || 'Đăng nhập thất bại sau khi đăng ký'
         }
       }
     } catch (error: any) {
-      console.error('🔍 Admin completeRegistration: Exception:', error)
       return {
         success: false,
         error: 'Đăng nhập thất bại sau khi đăng ký'

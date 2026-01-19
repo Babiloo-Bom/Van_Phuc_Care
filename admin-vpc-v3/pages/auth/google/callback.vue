@@ -120,7 +120,6 @@ const handleGoogleCallback = async () => {
     }
 
   } catch (error: any) {
-    console.error('❌ Google callback failed:', error)
     const errorMsg = error.message || 'Đăng nhập Google thất bại'
     // Redirect về login với error message
     router.push(`/login?google_error=${encodeURIComponent(errorMsg)}`)
@@ -152,7 +151,6 @@ const getRedirectPath = (): string => {
       return stateData.redirect || '/'
     }
   } catch (error) {
-    console.warn('⚠️ Invalid state parameter:', error)
   }
   
   return '/'

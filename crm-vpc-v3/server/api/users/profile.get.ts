@@ -20,9 +20,6 @@ export default defineEventHandler(async (event) => {
     }
 
     const targetUrl = `${apiHost}/api/u/users/profile`;
-
-    console.log(`[GET /api/users/profile] -> ${targetUrl}`);
-
     // Forward request to backend
     const response = await $fetch(targetUrl, {
       method: 'GET',
@@ -30,12 +27,8 @@ export default defineEventHandler(async (event) => {
         'Authorization': authHeader,
       },
     });
-
-    console.log('[GET /api/users/profile] Success');
     return response;
   } catch (error: any) {
-    console.error('[GET /api/users/profile] Error:', error.message || error);
-
     if (error.data) {
       throw createError({
         statusCode: error.statusCode || 500,

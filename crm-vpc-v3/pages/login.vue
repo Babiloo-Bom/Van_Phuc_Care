@@ -250,7 +250,6 @@ const handleSubmit = async () => {
       message.error(result.error || "Đăng nhập thất bại");
     }
   } catch (error: any) {
-    console.error("Login error:", error);
     message.error("Tên đăng nhập hoặc mật khẩu không chính xác");
   } finally {
     loading.value = false;
@@ -281,7 +280,6 @@ const handleGoogleLogin = async () => {
     )}&frontend_url=${encodeURIComponent(frontendUrl)}`;
     window.location.href = url;
   } catch (error: any) {
-    console.error("Google login error:", error);
     message.error("Đăng nhập Google thất bại");
   }
 };

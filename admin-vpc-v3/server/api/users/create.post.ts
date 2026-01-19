@@ -38,7 +38,6 @@ export default defineEventHandler(async (event) => {
     }
 
   } catch (error: any) {
-    console.error('❌ User creation from backend failed:', error)
     
     // Fallback to mock service
     try {
@@ -69,7 +68,6 @@ export default defineEventHandler(async (event) => {
         }
       }
     } catch (mockError: any) {
-      console.error('❌ Mock service also failed:', mockError)
       
       return {
         success: false,

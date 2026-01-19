@@ -29,8 +29,6 @@ export default defineEventHandler(async (event) => {
 
     const targetUrl = `${apiHost}/api/u/vaccination-records/${id}`;
 
-    console.log(`[DELETE /api/vaccinations/records/${id}] -> ${targetUrl}`);
-
     // Forward request to backend
     const response = await $fetch(targetUrl, {
       method: 'DELETE',
@@ -39,11 +37,9 @@ export default defineEventHandler(async (event) => {
       },
     });
 
-    console.log(`[DELETE /api/vaccinations/records/${id}] Success`);
     return response;
   } catch (error: any) {
     const id = getRouterParam(event, 'id');
-    console.error(`[DELETE /api/vaccinations/records/${id}] Error:`, error.message || error);
 
     if (error.data) {
       throw createError({

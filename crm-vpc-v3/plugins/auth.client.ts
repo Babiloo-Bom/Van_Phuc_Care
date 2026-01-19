@@ -39,10 +39,8 @@ export default defineNuxtPlugin(async nuxtApp => {
     onRequestError({ request, error }) {
       // Ignore AbortError (request cancelled due to navigation/reload)
       if (error?.name === 'AbortError' || String(error?.message).includes('aborted')) {
-        console.log('[API] Request cancelled (navigation/reload)');
         return;
       }
-      console.error('Request error:', error);
     },
     onResponseError({ request, response }) {
       // Handle 401 - unauthorized
@@ -60,19 +58,16 @@ export default defineNuxtPlugin(async nuxtApp => {
         // Don't call logout if user was never authenticated
         // This prevents setting logout sync cookie when user simply opens the site without auth
         if (!authStore.isAuthenticated && !authStore.token) {
-          console.log('[Auth] 401 but user was never authenticated, skipping logout');
           return;
         }
         
         // Don't logout if SSO login is in progress
         if (authStore.isSSOLoginInProgress) {
-          console.warn('[Auth] 401 during SSO login, skipping logout');
           return;
         }
         
         // Don't logout immediately after login
         if (authStore.justLoggedIn) {
-          console.warn('[Auth] 401 immediately after login, skipping logout');
           return;
         }
         
@@ -81,19 +76,14 @@ export default defineNuxtPlugin(async nuxtApp => {
           ? Date.now() - authStore.loginTimestamp 
           : Infinity;
         if (timeSinceLogin < 15000) {
-          console.warn('[Auth] 401 but login was recent (', timeSinceLogin, 'ms ago), skipping logout');
           return;
         }
         
         // Don't logout on profile refresh errors - session might still be valid
         if (isProfileRequest) {
-          console.warn('[Auth] 401 on profile request, skipping logout (non-critical)');
           return;
         }
         
-        console.warn('[Auth] Unauthorized (401), logging out...');
-        console.warn('[Auth] Request URL:', requestUrl);
-        console.warn('[Auth] Time since login:', timeSinceLogin, 'ms');
         isLoggingOut = true;
         
         // Clear auth state directly without calling logout API

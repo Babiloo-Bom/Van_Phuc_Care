@@ -161,7 +161,6 @@ const loadSavedCredentials = () => {
       }
     }
   } catch (error) {
-    console.error('Error loading saved credentials:', error);
   }
 };
 
@@ -186,9 +185,7 @@ const handleSubmit = async (e?: Event) => {
     loading.value = true;
     errorText.value = "";
 
-    console.log('🔍 [Login] Starting login attempt...');
     const result = await authStore.login(form.email, form.password, form.remember);
-    console.log('🔍 [Login] Login result:', result);
 
     if (result.success) {
       message.success("Đăng nhập thành công!");
@@ -214,7 +211,6 @@ const handleSubmit = async (e?: Event) => {
     } else {
       // Login failed - show error
       const msg = result.error || "Đăng nhập thất bại";
-      console.error('❌ [Login] Login failed:', msg);
       errorText.value = msg;
       
       // Show toast with delay to ensure it displays
@@ -226,14 +222,6 @@ const handleSubmit = async (e?: Event) => {
       }, 100);
     }
   } catch (error: any) {
-    console.error("❌ [Login] Login exception:", error);
-    console.error("❌ [Login] Error details:", {
-      message: error?.message,
-      code: error?.code,
-      data: error?.data,
-      stack: error?.stack
-    });
-    
     // Extract error message with multiple fallbacks
     let rawMessage = null;
     
@@ -256,7 +244,6 @@ const handleSubmit = async (e?: Event) => {
     }
     
     const msg = rawMessage || "Tên đăng nhập hoặc mật khẩu không chính xác";
-    console.error('❌ [Login] Final error message:', msg);
     
     errorText.value = msg;
     

@@ -202,7 +202,6 @@ const fetchBanners = async () => {
       }
     }
   } catch (error) {
-    console.error('Error fetching banners:', error)
     message.error('Lỗi khi tải banner')
   } finally {
     loading.value = false
@@ -211,8 +210,6 @@ const fetchBanners = async () => {
 
 // Handle upload - separate functions for each page type
 const handleUpload = async (file: File, pageType: 'all-courses' | 'my-courses') => {
-  console.log('=== Starting upload for', pageType, '===')
-  console.log('File:', file.name, file.type, file.size)
   
   const isImage = file.type.startsWith('image/')
   if (!isImage) {
@@ -229,7 +226,6 @@ const handleUpload = async (file: File, pageType: 'all-courses' | 'my-courses') 
   uploading.value = true
   try {
     const uploadResponse = await uploadsApi.uploadImage(file)
-    console.log('Upload response:', JSON.stringify(uploadResponse, null, 2))
     
     if (uploadResponse.status) {
       // Response structure: { status: true, data: { message: '', data: { fileAttributes: [{ source: 'url' }] } } }
@@ -252,7 +248,6 @@ const handleUpload = async (file: File, pageType: 'all-courses' | 'my-courses') 
         imageUrl = responseData.data.url
       }
       
-      console.log('Extracted image URL:', imageUrl)
       
       if (imageUrl) {
         const fileItem = {
@@ -271,14 +266,12 @@ const handleUpload = async (file: File, pageType: 'all-courses' | 'my-courses') 
         }
         message.success('Upload ảnh thành công')
       } else {
-        console.error('Could not extract image URL from response:', responseData)
         throw new Error('Không thể lấy URL ảnh từ server')
       }
     } else {
       throw new Error('Upload ảnh thất bại')
     }
   } catch (error: any) {
-    console.error('Upload error:', error)
     message.error(error?.message || 'Không thể upload ảnh')
   } finally {
     uploading.value = false
@@ -287,13 +280,11 @@ const handleUpload = async (file: File, pageType: 'all-courses' | 'my-courses') 
 
 // Wrapper functions for beforeUpload - must return false to prevent auto upload
 const beforeUploadAllCourses = (file: File) => {
-  console.log('beforeUploadAllCourses called')
   handleUpload(file, 'all-courses')
   return false
 }
 
 const beforeUploadMyCourses = (file: File) => {
-  console.log('beforeUploadMyCourses called')
   handleUpload(file, 'my-courses')
   return false
 }
@@ -318,7 +309,6 @@ const handleSave = async (pageType: 'all-courses' | 'my-courses') => {
   saving.value = true
   try {
     const formData = pageType === 'all-courses' ? allCoursesForm : myCoursesForm
-    console.log('Saving banner for', formData.image)
     if (!formData.image) {
       message.error('Vui lòng upload hình ảnh')
       return
@@ -338,7 +328,6 @@ const handleSave = async (pageType: 'all-courses' | 'my-courses') => {
       await fetchBanners()
     }
   } catch (error: any) {
-    console.error('Error saving banner:', error)
     message.error(error?.message || 'Không thể lưu banner')
   } finally {
     saving.value = false

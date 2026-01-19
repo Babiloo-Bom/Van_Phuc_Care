@@ -27,9 +27,6 @@ export default defineEventHandler(async (event) => {
 
     const queryStr = queryString.toString();
     const targetUrl = `${apiHost}/api/u/transactions-list${queryStr ? `?${queryStr}` : ''}`;
-
-    console.log(`[GET /api/transactions/list] -> ${targetUrl}`);
-
     // Forward request to backend
     const response = await $fetch(targetUrl, {
       method: 'GET',
@@ -37,12 +34,8 @@ export default defineEventHandler(async (event) => {
         'Authorization': authHeader,
       },
     });
-
-    console.log('[GET /api/transactions/list] Success');
     return response;
   } catch (error: any) {
-    console.error('[GET /api/transactions/list] Error:', error.message || error);
-
     if (error.data) {
       throw createError({
         statusCode: error.statusCode || 500,

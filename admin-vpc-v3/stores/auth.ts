@@ -70,18 +70,6 @@ export const useAuthStore = defineStore('auth', {
           remindAccount,
         )
 
-        console.log('🔍 Login response (full):', JSON.stringify(response, null, 2))
-        console.log('🔍 Response type:', typeof response)
-        console.log('🔍 Response keys:', response ? Object.keys(response) : 'null/undefined')
-        console.log('🔍 Response structure check:', {
-          hasData: !!response?.data,
-          hasAccessToken: !!response?.data?.accessToken,
-          hasDirectAccessToken: !!response?.accessToken,
-          hasToken: !!response?.token,
-          responseDataKeys: response?.data ? Object.keys(response.data) : [],
-          fullResponse: response
-        })
-
         // Backend returns: { message: "", data: { accessToken, tokenExpireAt } }
         // $fetch may unwrap response, so check multiple structures
         let token: string | undefined
@@ -92,39 +80,25 @@ export const useAuthStore = defineStore('auth', {
           // Structure: { message: "", data: { accessToken, tokenExpireAt } }
           token = response.data.accessToken
           tokenExpireAt = response.data.tokenExpireAt
-          console.log('✅ Found token in response.data.accessToken')
         } else if (response?.data?.data?.accessToken) {
           // Structure: { message: "", data: { data: { accessToken, tokenExpireAt } } }
           token = response.data.data.accessToken
           tokenExpireAt = response.data.data.tokenExpireAt
-          console.log('✅ Found token in response.data.data.accessToken')
         } else if (response?.accessToken) {
           // Structure: { accessToken, tokenExpireAt } (unwrapped)
           token = response.accessToken
           tokenExpireAt = response.tokenExpireAt
-          console.log('✅ Found token in response.accessToken (unwrapped)')
         } else if (response?.token) {
           // Structure: { token, tokenExpireAt }
           token = response.token
           tokenExpireAt = response.tokenExpireAt
-          console.log('✅ Found token in response.token')
         } else if (response?.data?.token) {
           // Structure: { message: "", data: { token, tokenExpireAt } }
           token = response.data.token
           tokenExpireAt = response.data.tokenExpireAt
-          console.log('✅ Found token in response.data.token')
         }
 
-        console.log('🔍 Extracted values:', { 
-          hasToken: !!token, 
-          tokenLength: token?.length,
-          tokenPreview: token ? `${token.substring(0, 20)}...` : 'none',
-          tokenExpireAt: tokenExpireAt 
-        })
-
         if (!token) {
-          console.error('❌ No token found in response. Full response:', response)
-          console.error('❌ Response stringified:', JSON.stringify(response, null, 2))
           throw new Error('No token received from server')
         }
 
@@ -170,20 +144,10 @@ export const useAuthStore = defineStore('auth', {
           
           return { success: true, user: userData, token }
         } catch (profileError: any) {
-          console.error('❌ Failed to fetch user profile:', profileError)
           // Even if profile fetch fails, login is still successful if we have token
           return { success: true, user: null, token, error: profileError.message }
         }
       } catch (error: any) {
-        console.error('❌ Login error:', error)
-        console.error('❌ Error stack:', error.stack)
-        console.error('❌ Error details:', {
-          message: error.message,
-          code: error.code,
-          data: error.data,
-          status: error.status,
-          statusCode: error.statusCode
-        })
         
         this.isLoading = false
         this.isAuthenticated = false
@@ -256,7 +220,6 @@ export const useAuthStore = defineStore('auth', {
           const allowedRoles = ['admin', 'manager', 'worker']
           
           if (newRole && !allowedRoles.includes(newRole)) {
-            console.warn('⚠️ Refreshed user data has invalid role:', newRole, '- keeping existing role')
             // Don't update role if it becomes invalid - just update other fields
             this.user = {
               ...this.user,
@@ -318,7 +281,6 @@ export const useAuthStore = defineStore('auth', {
 
         return { success: true }
       } catch (error: any) {
-        console.error('Forgot password error:', error)
         return { 
           success: false, 
           error: error.data?.message || error.message || 'Gửi OTP thất bại'
@@ -341,7 +303,6 @@ export const useAuthStore = defineStore('auth', {
 
         return { success: true, token: response.data?.token }
       } catch (error: any) {
-        console.error('Verify OTP error:', error)
         return { 
           success: false, 
           error: error.data?.message || error.message || 'Mã OTP không chính xác'
@@ -365,7 +326,6 @@ export const useAuthStore = defineStore('auth', {
 
         return { success: true }
       } catch (error: any) {
-        console.error('Reset password error:', error)
         return { 
           success: false, 
           error: error.data?.message || error.message || 'Đổi mật khẩu thất bại'
@@ -390,7 +350,6 @@ export const useAuthStore = defineStore('auth', {
           }
           localStorage.setItem('authData', JSON.stringify(authData))
         } catch (error) {
-          console.error('❌ Error saving auth data:', error)
         }
       }
     },
@@ -412,7 +371,6 @@ export const useAuthStore = defineStore('auth', {
 
         return { success: true }
       } catch (error: any) {
-        console.error('Change password error:', error)
         
         // Check for specific error code
         if (error.status === 425 || error.data?.error?.code === 425) {
@@ -436,7 +394,6 @@ export const useAuthStore = defineStore('auth', {
      * @param showMessage Whether to show success message (default: true, set to false when called from initAuth)
      */
     async logout(showMessage = true) {
-      console.log('[Auth] Logout called', { showMessage })
       this.isLoading = true
 
       try {
@@ -486,7 +443,6 @@ export const useAuthStore = defineStore('auth', {
           await navigateTo('/login')
         }
       } catch (error) {
-        console.error('Logout error:', error)
         // Still redirect to login even if there's an error
         if (process.client) {
           window.location.href = '/login'
@@ -516,7 +472,6 @@ export const useAuthStore = defineStore('auth', {
           try {
             authData = JSON.parse(authDataStr)
           } catch (e) {
-            console.error('⚠️ Failed to parse authData:', e)
           }
         }
 
@@ -545,7 +500,6 @@ export const useAuthStore = defineStore('auth', {
             const userRole = this.user?.role
             const allowedRoles = ['admin', 'manager', 'worker']
             if (!userRole || !allowedRoles.includes(userRole)) {
-              console.warn('[InitAuth] User role not allowed:', userRole)
               this.logout(false) // Don't show message - invalid session
               return
             }
@@ -555,11 +509,9 @@ export const useAuthStore = defineStore('auth', {
             try {
               await this.refreshUserData()
             } catch (refreshError) {
-              console.warn('⚠️ Failed to refresh user data during initAuth, but keeping session:', refreshError)
               // Don't logout on refresh error - session might still be valid
             }
           } catch (e) {
-            console.error('❌ Error restoring from authData:', e)
             this.logout(false) // Don't show message - error restoring session
             return
           }
@@ -587,7 +539,6 @@ export const useAuthStore = defineStore('auth', {
             const userRole = this.user?.role
             const allowedRoles = ['admin', 'manager', 'worker']
             if (!userRole || !allowedRoles.includes(userRole)) {
-              console.warn('[InitAuth] User role not allowed:', userRole)
               this.logout(false) // Don't show message - invalid session
               return
             }
@@ -599,7 +550,6 @@ export const useAuthStore = defineStore('auth', {
                 this.rememberAccount = authData.remindAccount || false
               } catch (e) {
                 // Ignore parse error for authData, it's optional
-                console.warn('⚠️ Failed to parse authData, continuing:', e)
               }
             }
 
@@ -610,19 +560,15 @@ export const useAuthStore = defineStore('auth', {
               try {
                 await this.refreshUserData()
               } catch (refreshError) {
-                console.warn('⚠️ Failed to refresh user data during initAuth, but keeping session:', refreshError)
                 // Don't logout on refresh error - session might still be valid
               }
             } else {
-              console.log('ℹ️ Skipping refreshUserData - just logged in', timeSinceLogin, 'ms ago')
             }
           } catch (error) {
-            console.error('❌ Init auth error (critical):', error)
             // Only logout on critical errors (parse errors, etc.), not on refresh errors
             this.logout(false) // Don't show message - critical error
           }
         } else {
-          console.log('ℹ️ No auth data found in localStorage')
         }
       }
     },
@@ -631,24 +577,20 @@ export const useAuthStore = defineStore('auth', {
      * Calculate token expiry time from TTL string (e.g., '7d', '24h', '1y')
      */
     calculateExpireTime(ttl: string | Date | number): string {
-      console.log('🔍 calculateExpireTime called with:', ttl, 'type:', typeof ttl)
       const now = new Date()
       
       // If ttl is already a Date object, return it
       if (ttl instanceof Date) {
-        console.log('🔍 ttl is Date object')
         return ttl.toISOString()
       }
       
       // If ttl is a number (timestamp), convert to Date
       if (typeof ttl === 'number') {
-        console.log('🔍 ttl is number')
         return new Date(ttl).toISOString()
       }
       
       // If ttl is a string, parse it
       if (typeof ttl !== 'string') {
-        console.log('🔍 ttl is not string, using default')
         // Default to 7 days if format is invalid
         return new Date(now.getTime() + 7 * 24 * 60 * 60 * 1000).toISOString()
       }
@@ -715,7 +657,6 @@ export const useAuthStore = defineStore('auth', {
 
         return { success: true, user: response.user }
       } catch (error: any) {
-        console.error('Update profile error:', error)
         return { 
           success: false, 
           error: error.data?.message || error.message || 'Cập nhật thông tin thất bại'

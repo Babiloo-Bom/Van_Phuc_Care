@@ -31,9 +31,6 @@ export default defineEventHandler(async (event) => {
         message: 'Request body is required',
       });
     }
-
-    console.log(`[POST /api/uploaders/image] Forwarding multipart, size: ${rawBody.length} bytes`);
-
     // Forward multipart request to backend using native fetch
     const response = await fetch(targetUrl, {
       method: 'POST',
@@ -46,7 +43,6 @@ export default defineEventHandler(async (event) => {
 
     if (!response.ok) {
       const errorData = await response.json().catch(() => ({ message: 'Unknown error' }));
-      console.error(`[POST /api/uploaders/image] Backend error:`, response.status, errorData);
       throw createError({
         statusCode: response.status,
         message: errorData.message || `Backend returned ${response.status}`,
@@ -55,11 +51,8 @@ export default defineEventHandler(async (event) => {
     }
 
     const data = await response.json();
-    console.log(`[POST /api/uploaders/image] Success`);
     return data;
   } catch (error: any) {
-    console.error('[POST /api/uploaders/image] Error:', error.message || error);
-
     if (error.data) {
       throw createError({
         statusCode: error.statusCode || 500,

@@ -35,7 +35,6 @@ export default defineEventHandler(async (event) => {
     return tokenResponse
 
   } catch (error: any) {
-    console.error('❌ Google token exchange failed:', error)
     
     throw createError({
       statusCode: 500,

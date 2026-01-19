@@ -1771,19 +1771,14 @@ const handleRemoveThumbnail = () => {
 }
 
 const handleBannerChange = (info: any) => {
-  console.log('📷 [Banner] handleBannerChange called:', info)
   const { fileList } = info
-  console.log('📷 [Banner] fileList:', fileList)
   if (fileList.length > 0) {
     const file = fileList[0]
-    console.log('📷 [Banner] file:', file)
-    console.log('📷 [Banner] originFileObj:', file.originFileObj)
     // Tạo preview URL từ file local
     if (file.originFileObj) {
       const reader = new FileReader()
       reader.onload = (e) => {
         formData.banner = e.target?.result as string
-        console.log('📷 [Banner] formData.banner set to base64 preview')
       }
       reader.readAsDataURL(file.originFileObj)
     } else if (file.url) {
@@ -1854,7 +1849,6 @@ const handleIntroVideoChange = async (info: any) => {
         pollIntroVideoJobStatus(formData.introVideoJobId)
       }
     } catch (error: any) {
-      console.error('Upload intro video error:', error)
       
     // Extract error message from error response
     let errorMessage = error.message || 'Upload video giới thiệu thất bại'
@@ -1909,7 +1903,6 @@ const handleRemoveIntroVideo = async () => {
       await uploadsApi.cancelVideoUpload(formData.introVideoJobId)
       message.success('Đã hủy upload video và xóa các file đã tạo')
     } catch (error: any) {
-      console.error('Cancel video upload error:', error)
       message.warning('Không thể hủy upload, nhưng đã xóa khỏi form')
     }
   }
@@ -1944,7 +1937,6 @@ const handleIntroVideoThumbnailChange = async (info: any) => {
     try {
       const uploadsApi = useUploadsApi()
       const response = await uploadsApi.uploadImage(file)
-      console.log('Upload thumbnail response:', JSON.stringify(response, null, 2))
       
       if (!response.status) {
         throw new Error(response.message || 'Upload thất bại')
@@ -1952,7 +1944,6 @@ const handleIntroVideoThumbnailChange = async (info: any) => {
       
       // Extract image URL using helper function
       const imageUrl = extractImageUrl(response)
-      console.log('Extracted image URL:', imageUrl)
       
       if (imageUrl) {
         formData.introVideoThumbnail = imageUrl
@@ -1964,13 +1955,11 @@ const handleIntroVideoThumbnailChange = async (info: any) => {
         }]
         message.success('Upload thumbnail video thành công')
       } else {
-        console.error('No image URL found in response:', response)
         message.error('Không nhận được URL ảnh từ server. Vui lòng thử lại.')
         introVideoThumbnailFileList.value = []
         formData.introVideoThumbnail = ''
       }
     } catch (error: any) {
-      console.error('Upload intro video thumbnail error:', error)
       message.error(error.message || 'Upload thumbnail thất bại')
       introVideoThumbnailFileList.value = []
       formData.introVideoThumbnail = ''
@@ -2027,7 +2016,6 @@ const handleLessonVideoThumbnailChange = async (chapterIndex: number, lessonInde
         }
       }
     } catch (error: any) {
-      console.error('Upload lesson video thumbnail error:', error)
       message.error(error.message || 'Upload thumbnail thất bại')
       if (!lesson.videoThumbnailFileList) {
         lesson.videoThumbnailFileList = []
@@ -2124,7 +2112,6 @@ const handleDeleteLessonVideo = async (chapterIndex: number, lessonIndex: number
         
         message.success('Đã xóa video thành công')
       } catch (error: any) {
-        console.error('Error deleting lesson video:', error)
         message.error(error.message || 'Không thể xóa video. Vui lòng thử lại.')
       }
     },
@@ -2158,7 +2145,6 @@ const uploadFileToMinIO = async (file: File, folder: string = 'courses'): Promis
   try {
     // URL đúng: /api/uploads/minio (không có /a)
     const url = apiHost ? `${apiHost}/api/uploads/minio?folder=${folder}` : `/api/uploads/minio?folder=${folder}`
-    console.log('📤 Uploading to:', url) // Debug
     
     const response: any = await $fetch(url, {
       method: 'POST',
@@ -2168,7 +2154,6 @@ const uploadFileToMinIO = async (file: File, folder: string = 'courses'): Promis
       }
     })
     
-    console.log('📤 Upload response:', response) // Debug
     
     // Parse response
     const files = response?.data?.files || response?.files || []
@@ -2179,7 +2164,6 @@ const uploadFileToMinIO = async (file: File, folder: string = 'courses'): Promis
     
     throw new Error('Upload failed: No file URL in response')
   } catch (error: any) {
-    console.error('❌ Upload error:', error)
     throw new Error(error.message || 'Upload failed')
   }
 }
@@ -2229,15 +2213,8 @@ const uploadVideoToR2 = async (
   let url = apiHost ? `${apiHost}/api/uploads/video?folder=${folder}` : `/api/uploads/video?folder=${folder}`
   if (lessonId) {
     url += `&lessonId=${lessonId}`
-    console.log('✅ [Video Upload] Including lessonId in URL:', lessonId)
   } else {
-    console.log('⚠️ [Video Upload] No lessonId provided - lesson may not be saved to database yet')
-    console.log('⚠️ [Video Upload] Worker will try to find lesson by jobId after course is saved')
   }
-  console.log('📤 [Video Upload] Uploading video to:', url)
-  console.log('📤 [Video Upload] Has token:', !!authStore.token)
-  console.log('📤 [Video Upload] File name:', file.name)
-  console.log('📤 [Video Upload] File size:', file.size)
   
   // Use XMLHttpRequest for progress tracking
   return new Promise((resolve, reject) => {
@@ -2422,13 +2399,10 @@ const uploadVideoToR2 = async (
     
     // Handle response
     xhr.addEventListener('load', () => {
-      console.log('📤 [Video Upload] Response status:', xhr.status)
-      console.log('📤 [Video Upload] Response headers:', xhr.getAllResponseHeaders())
       
       if (xhr.status >= 200 && xhr.status < 300) {
         try {
           const response = JSON.parse(xhr.responseText)
-          console.log('📤 Video upload response:', response)
           
           // Parse response first to check status
           const videos = response?.data?.videos || response?.videos || []
@@ -2459,7 +2433,6 @@ const uploadVideoToR2 = async (
               progressTracker.percent = 40
               progressTracker.stage = 'queueing'
             }
-            console.log('⏸️ [Video Upload] Stopped simulated progress - reset to 40%, will use polling for real progress')
           }
           
           if (videos.length > 0 && videos[0]) {
@@ -2479,7 +2452,6 @@ const uploadVideoToR2 = async (
                 segments: video.segments || 0,
               },
             }
-            console.log('📤 Final videoData:', videoData)
             
             // CRITICAL: Only clear progress tracker if video is ready
             // If status is 'queueing' or 'processing', keep progress tracker visible
@@ -2522,7 +2494,6 @@ const uploadVideoToR2 = async (
                 clearInterval(r2UploadIntervalId)
                 r2UploadIntervalId = null
               }
-              console.log('⏳ [Video Upload] Video is still processing, keeping progress tracker visible for polling')
             }
             
             resolve(videoData)
@@ -2530,7 +2501,6 @@ const uploadVideoToR2 = async (
             throw new Error('Video upload failed: No file URL in response')
           }
         } catch (error: any) {
-          console.error('❌ Parse response error:', error)
           
           // Clear intervals on error
           if (processingIntervalId) {
@@ -2546,13 +2516,10 @@ const uploadVideoToR2 = async (
         }
       } else {
         // Handle error response
-        console.error('❌ [Video Upload] Error response status:', xhr.status)
-        console.error('❌ [Video Upload] Error response text:', xhr.responseText)
         
         let errorMessage = 'Upload video thất bại'
         try {
           const errorResponse = JSON.parse(xhr.responseText)
-          console.error('❌ [Video Upload] Parsed error response:', errorResponse)
           
           if (errorResponse?.error?.errorMessage) {
             errorMessage = errorResponse.error.errorMessage
@@ -2562,7 +2529,6 @@ const uploadVideoToR2 = async (
             errorMessage = errorResponse.message
           }
         } catch (e) {
-          console.error('❌ [Video Upload] Failed to parse error response:', e)
           // If can't parse, use status-based message
           if (xhr.status === 401) {
             errorMessage = 'Không có quyền truy cập. Vui lòng đăng nhập lại.'
@@ -2592,7 +2558,6 @@ const uploadVideoToR2 = async (
     
     // Handle errors
     xhr.addEventListener('error', (event) => {
-      console.error('❌ [Video Upload] Network error:', event)
       
       // Clear intervals on error
       if (processingIntervalId) {
@@ -2641,12 +2606,9 @@ const uploadVideoToR2 = async (
     // Set headers
     if (authStore.token) {
       xhr.setRequestHeader('Authorization', `Bearer ${authStore.token}`)
-      console.log('📤 [Video Upload] Authorization header set')
     } else {
-      console.warn('⚠️ [Video Upload] No token available!')
     }
     
-    console.log('📤 [Video Upload] Sending request...')
     xhr.send(uploadFormData)
   })
 }
@@ -2687,9 +2649,6 @@ const addChapter = () => {
 }
 
 const removeChapter = (index: number) => {
-  console.log('🗑️ [Frontend] Removing chapter at index:', index)
-  console.log('🗑️ [Frontend] Chapters before remove:', formData.chapters.length)
-  console.log('🗑️ [Frontend] Chapter to remove:', formData.chapters[index]?._id, formData.chapters[index]?.title)
   
   formData.chapters.splice(index, 1)
   
@@ -2697,13 +2656,6 @@ const removeChapter = (index: number) => {
   formData.chapters.forEach((ch, idx) => {
     ch.index = idx
   })
-  
-  console.log('🗑️ [Frontend] Chapters after remove:', formData.chapters.length)
-  console.log('🗑️ [Frontend] Remaining chapters:', formData.chapters.map((ch: any) => ({
-    _id: ch._id,
-    title: ch.title,
-    index: ch.index
-  })))
 }
 
 const addLesson = (chapterIndex: number) => {
@@ -2801,15 +2753,6 @@ const updateCorrectAnswer = (chapterIndex: number, lessonIndex: number, question
         opt.isCorrect = false
       }
     })
-    
-    console.log(`🔍 [UpdateCorrectAnswer] Question ${questionIndex} updated:`, {
-      correctAnswer: question.correctAnswer,
-      options: question.options.map((opt: any) => ({
-        id: opt.id,
-        text: opt.text,
-        isCorrect: opt.isCorrect
-      }))
-    })
   }
 }
 
@@ -2902,13 +2845,10 @@ const resetForm = () => {
 
 // Modal handlers - THÊM LẠI CÁC HÀM NÀY
 const showCreateModal = () => {
-  console.log('showCreateModal called') // Debug
   editingCourse.value = null
   resetForm()
   modalVisible.value = true
-  console.log('modalVisible set to:', modalVisible.value) // Debug
   nextTick(() => {
-    console.log('After nextTick, modalVisible:', modalVisible.value) // Debug
   })
 }
 
@@ -2931,9 +2871,6 @@ const editCourse = async (course: Course) => {
       // Force 'ready' if URL exists, regardless of what's in database
       const introVideoStatusValue = hasIntroVideoUrl ? 'ready' : (courseData.introVideoStatus || 'ready')
       
-      console.log('🔍 [Load Course] courseData.introVideoStatus from DB:', courseData.introVideoStatus)
-      console.log('🔍 [Load Course] hasIntroVideoUrl:', hasIntroVideoUrl)
-      console.log('🔍 [Load Course] introVideoStatusValue (will be set):', introVideoStatusValue)
       
       Object.assign(formData, {
         title: courseData.title || '',
@@ -3169,41 +3106,26 @@ const editCourse = async (course: Course) => {
         introVideoUploadProgress.percent = 0
         // Ensure uploading flag is false
         uploadingIntroVideo.value = false
-        console.log('✅ [Load Course] Auto-fixed introVideoStatus to ready (has URL):', formData.introVideo || formData.introVideoHlsUrl)
-        console.log('✅ [Load Course] formData.introVideoStatus =', formData.introVideoStatus)
-        console.log('✅ [Load Course] introVideoUploadProgress.stage =', introVideoUploadProgress.stage)
-        console.log('✅ [Load Course] uploadingIntroVideo =', uploadingIntroVideo.value)
-        console.log('✅ [Load Course] introVideoUploadProgress.percent =', introVideoUploadProgress.percent)
         
         // Force another nextTick to ensure template updates
         await nextTick()
-        console.log('✅ [Load Course] After second nextTick, formData.introVideoStatus =', formData.introVideoStatus)
-        console.log('✅ [Load Course] getStatusText result =', getStatusText(formData.introVideoStatus))
         
         // Final verification: check if status is actually 'ready'
         if (formData.introVideoStatus !== 'ready') {
-          console.error('❌ [Load Course] CRITICAL ERROR: formData.introVideoStatus is NOT ready! Value:', formData.introVideoStatus)
           // Force set one more time
           formData.introVideoStatus = 'ready'
           await nextTick()
-          console.log('✅ [Load Course] Force set again, now:', formData.introVideoStatus)
         } else {
-          console.log('✅ [Load Course] Status verified: ready')
         }
         
         // Force Vue to re-render the component
         // Use setTimeout to ensure DOM is ready
         setTimeout(() => {
-          console.log('🔄 [Load Course] Force checking template values after timeout')
-          console.log('🔄 [Load Course] formData.introVideoStatus =', formData.introVideoStatus)
-          console.log('🔄 [Load Course] getStatusText =', getStatusText(formData.introVideoStatus))
         }, 100)
       } else {
-        console.log('⚠️ [Load Course] No intro video URL, status:', formData.introVideoStatus)
       }
     }
   } catch (error) {
-    console.error('Error loading course:', error)
     message.error('Không thể tải thông tin khóa học')
   }
   
@@ -3238,7 +3160,6 @@ const fetchCourseReviews = async (courseId: string) => {
     const response: any = await $fetch(`${apiBase}/reviews/course/${courseId}`)
     courseReviews.value = response.data?.reviews || response.reviews || []
   } catch (error: any) {
-    console.error('Error fetching reviews:', error)
     courseReviews.value = []
   }
 }
@@ -3253,7 +3174,6 @@ const fetchUsersList = async () => {
       usersList.value = Array.isArray(data) ? data : (data.users || [])
     }
   } catch (error: any) {
-    console.error('Error fetching users:', error)
     message.error('Không thể tải danh sách người dùng')
   } finally {
     usersLoading.value = false
@@ -3316,7 +3236,6 @@ const handleReviewAvatarChange = async (info: any) => {
         reviewAvatarFileList.value = []
       }
     } catch (error: any) {
-      console.error('Error uploading avatar:', error)
       message.error(error.message || 'Lỗi khi tải ảnh đại diện')
       // Remove file from list if upload failed
       reviewAvatarFileList.value = []
@@ -3420,7 +3339,6 @@ const deleteReview = async (reviewId: string, index: number) => {
           courseReviews.value.splice(index, 1)
           message.success('Xóa đánh giá thành công')
         } catch (error: any) {
-          console.error('Error deleting review:', error)
           message.error('Xóa đánh giá thất bại')
         }
       }
@@ -3510,7 +3428,6 @@ const saveReview = async () => {
     
     reviewModalVisible.value = false
   } catch (error: any) {
-    console.error('Error saving review:', error)
     message.error(error.message || 'Lưu đánh giá thất bại')
   } finally {
     reviewModalLoading.value = false
@@ -3524,7 +3441,6 @@ const handleModalOk = async () => {
     modalLoading.value = true
     
     // Upload thumbnail to MinIO - CHỈ KHI CÓ FILE MỚI
-    console.log('📤 [Upload] thumbnailFileList:', thumbnailFileList.value.length, thumbnailFileList.value[0]?.originFileObj ? 'has originFileObj' : 'no originFileObj')
     if (thumbnailFileList.value.length > 0 && thumbnailFileList.value[0].originFileObj) {
       formData.thumbnail = await uploadFileToMinIO(thumbnailFileList.value[0].originFileObj as File, 'courses/thumbnails')
     }
@@ -3534,11 +3450,8 @@ const handleModalOk = async () => {
     }
     
     // Upload banner to MinIO - CHỈ KHI CÓ FILE MỚI
-    console.log('📤 [Upload] bannerFileList:', bannerFileList.value.length, bannerFileList.value[0]?.originFileObj ? 'has originFileObj' : 'no originFileObj')
     if (bannerFileList.value.length > 0 && bannerFileList.value[0]?.originFileObj) {
-      console.log('📤 [Upload] Uploading banner to MinIO...')
       formData.banner = await uploadFileToMinIO(bannerFileList.value[0].originFileObj as File, 'courses/banners')
-      console.log('📤 [Upload] Banner uploaded:', formData.banner)
     }
     // Nếu không có file mới nhưng có URL (khi edit), giữ nguyên URL
     else if (bannerFileList.value.length > 0 && bannerFileList.value[0]?.url) {
@@ -3592,12 +3505,6 @@ const handleModalOk = async () => {
     }
 
     // Prepare payload
-    console.log('🔍 [Frontend Submit] formData.chapters count:', formData.chapters.length)
-    console.log('🔍 [Frontend Submit] formData.chapters:', formData.chapters.map((ch: any) => ({
-      _id: ch._id,
-      title: ch.title,
-      index: ch.index
-    })))
     
     // Upload lesson video thumbnails first
     const uploadsApi = useUploadsApi()
@@ -3624,8 +3531,6 @@ const handleModalOk = async () => {
     }
     
     // Đảm bảo introVideoThumbnail được bao gồm trong payload
-    console.log('🔍 [Frontend Submit] formData.introVideoThumbnail:', formData.introVideoThumbnail)
-    console.log('🔍 [Frontend Submit] introVideoThumbnailFileList:', introVideoThumbnailFileList.value)
     
     const payload: any = {
       ...formData,
@@ -3714,19 +3619,6 @@ const handleModalOk = async () => {
               })
             
             // Only send quizData if there are valid questions
-            console.log(`🔍 [Quiz Debug] Lesson "${lesson.title}":`, {
-              hasQuiz: !!lesson.quiz,
-              questionsCount: lesson.quiz?.questions?.length || 0,
-              validQuestionsCount: validQuestions.length,
-              questions: lesson.quiz?.questions?.map((q: any) => ({
-                id: q.id,
-                question: q.question || q.text || '',
-                correctAnswer: q.correctAnswer,
-                optionsCount: q.options?.length || 0,
-                hasCorrectOption: q.options?.some((opt: any) => opt.isCorrect) || false
-              }))
-            })
-            
             if (validQuestions.length > 0) {
               lessonData.quizData = {
                 title: lesson.quiz.title || '',
@@ -3736,36 +3628,15 @@ const handleModalOk = async () => {
                 timeLimit: lesson.quiz.timeLimit || 0,
                 attempts: lesson.quiz.attempts || 3,
               }
-              console.log(`✅ [Quiz Debug] Added quizData to lesson "${lesson.title}":`, lessonData.quizData)
-            } else {
-              console.warn(`⚠️ [Quiz Debug] No valid questions for lesson "${lesson.title}" - quizData not added`)
             }
-          } else {
-            console.log(`ℹ️ [Quiz Debug] Lesson "${lesson.title}" has no quiz or questions`)
           }
 
           return lessonData
         }) || [],
       })),
     }
-    
-    console.log('🔍 [Frontend Submit] Final payload chapters count:', payload.chapters.length)
-    console.log('🔍 [Frontend Submit] Final payload chapters:', payload.chapters.map((ch: any) => ({
-      _id: ch._id,
-      title: ch.title,
-      index: ch.index,
-      lessonsCount: ch.lessons?.length || 0,
-      lessons: ch.lessons?.map((l: any) => ({
-        _id: l._id,
-        title: l.title,
-        hasQuizData: !!l.quizData,
-        quizQuestionsCount: l.quizData?.questions?.length || 0
-      }))
-    })))
-    console.log('🔍 [Frontend Submit] Full payload with quizData:', JSON.stringify(payload, null, 2))
 
     if (editingCourse.value) {
-      console.log('🔍 [Frontend Submit] Updating course:', editingCourse.value._id)
       const response = await coursesApi.updateCourse(editingCourse.value._id, payload)
       if (response.status) {
         message.success('Cập nhật khóa học thành công')
@@ -3797,7 +3668,6 @@ const handleModalOk = async () => {
     }
 
     // Các lỗi khác (API / logic)
-    console.error('Lỗi khi lưu khóa học:', error)
 
     // Extract error message from various possible locations
     let apiMessage = 
@@ -3883,7 +3753,6 @@ const viewCourse = async (course: Course) => {
       viewingCourse.value = courseData as Course
     }
   } catch (error) {
-    console.error('Error loading course:', error)
     message.error('Không thể tải thông tin khóa học')
   }
   viewModalVisible.value = true
@@ -3897,7 +3766,6 @@ const toggleCourseStatus = async (course: Course) => {
       fetchCourses()
     }
   } catch (error: any) {
-    console.error('Toggle status error:', error)
     message.error('Không thể thay đổi trạng thái')
   }
 }
@@ -3910,7 +3778,6 @@ const deleteCourse = async (course: Course) => {
       fetchCourses()
     }
   } catch (error: any) {
-    console.error('Delete error:', error)
     message.error('Không thể xóa khóa học')
   }
 }
@@ -4054,7 +3921,6 @@ const fetchCourses = async () => {
       // Xóa dòng: stats.inactive = 0
     }
   } catch (error: any) {
-    console.error('Failed to fetch courses:', error)
     message.error('Không thể tải danh sách khóa học')
     // Đảm bảo courses luôn là array khi có lỗi
     courses.value = []
@@ -4091,16 +3957,13 @@ const refreshData = () => {
 // New handlers for lesson file uploads
 // Upload lesson video to R2/CDN
 const handleLessonVideoChange = async (chapterIndex: number, lessonIndex: number, info: any) => {
-  console.log('📤 [Lesson Video Upload] handleLessonVideoChange called', { chapterIndex, lessonIndex })
   
   const lesson = formData.chapters[chapterIndex].lessons[lessonIndex]
   const { fileList } = info
   
-  console.log('📤 [Lesson Video Upload] File list:', fileList)
   
   if (fileList.length > 0 && fileList[0].originFileObj) {
     const file = fileList[0].originFileObj as File
-    console.log('📤 [Lesson Video Upload] File selected:', file.name, file.size)
     
     // Set uploading state
     lesson.uploadingVideo = true
@@ -4143,7 +4006,6 @@ const handleLessonVideoChange = async (chapterIndex: number, lessonIndex: number
       // Upload video to R2/CDN - returns full video object with progress tracking
       // Pass lessonId if lesson already exists in database (for auto-update from worker)
       const lessonId = lesson._id || undefined
-      console.log('🔍 [Lesson Video Upload] lesson._id:', lesson._id, 'lessonId:', lessonId)
       const videoData = await uploadVideoToR2(file, `courses/lessons/${Date.now()}`, progressKey, lessonId)
       
       // Cập nhật video với đầy đủ thông tin (bao gồm jobId và thumbnail)
@@ -4213,9 +4075,7 @@ const handleLessonVideoChange = async (chapterIndex: number, lessonIndex: number
             }) || [],
           })),
         })
-        console.log('✅ [Lesson Video] Saved jobId to database for lesson:', lesson._id, 'jobId:', videoData.jobId)
       } catch (error: any) {
-        console.error('⚠️ [Lesson Video] Failed to save jobId to database:', error.message)
         // Don't fail the upload if save fails - jobId is still in formData
       }
     }
@@ -4231,7 +4091,6 @@ const handleLessonVideoChange = async (chapterIndex: number, lessonIndex: number
       pollLessonVideoJobStatus(chapterIndex, lessonIndex, videoData.jobId)
     }
     } catch (error: any) {
-      console.error('Upload video error:', error)
       
       // Extract error message from error response
       let errorMsg = error.message || 'Upload video thất bại'
@@ -4279,7 +4138,6 @@ const pollIntroVideoJobStatus = async (jobId: string) => {
   introVideoPollInterval.value = setInterval(async () => {
     try {
       pollCount++
-      console.log(`🔍 [Intro Video Polling] Polling job ${jobId}, attempt ${pollCount}`)
       const response = await uploadsApi.getVideoJobStatus(jobId)
       const jobData = response?.data || response
       // jobData.status is the real job status; response.status is only success boolean
@@ -4289,7 +4147,6 @@ const pollIntroVideoJobStatus = async (jobId: string) => {
       const state = jobData?.state ?? jobData?.data?.state ?? ''
       const progress = jobData?.progress ?? jobData?.data?.progress ?? 0
       
-      console.log(`🔍 [Intro Video Polling] Job ${jobId} status: ${jobStatus}, state: ${state}, progress: ${progress}%`)
       
       // If job not found but video URL exists, consider it ready
       if (state === 'not_found' || jobStatus === 'unknown') {
@@ -4379,14 +4236,12 @@ const pollIntroVideoJobStatus = async (jobId: string) => {
         introVideoUploadProgress.stage = progress >= 85 ? 'uploading-r2' : progress >= 70 ? 'processing' : 'queueing'
         // Keep progress tracker visible while backend is processing
         uploadingIntroVideo.value = true
-        console.log(`🔄 [Intro Video Polling] Job ${jobId} is processing, progress: ${progress}% (synced with backend)`)
       } else if (jobStatus === 'queueing') {
         formData.introVideoStatus = 'queueing'
         // Update progress to 40% (after file upload, before processing)
         introVideoUploadProgress.percent = 40
         introVideoUploadProgress.stage = 'queueing'
         uploadingIntroVideo.value = true
-        console.log(`⏳ [Intro Video Polling] Job ${jobId} is queueing`)
       }
       
       // Stop polling after max attempts
@@ -4410,7 +4265,6 @@ const pollIntroVideoJobStatus = async (jobId: string) => {
         }
       }
     } catch (error: any) {
-      console.error(`❌ [Intro Video Polling] Error polling job ${jobId}:`, error)
       // Continue polling on error (might be temporary network issue)
       // But stop after max attempts
       if (pollCount >= maxPolls) {
@@ -4455,7 +4309,6 @@ const pollLessonVideoJobStatus = async (chapterIndex: number, lessonIndex: numbe
   lessonVideoPollIntervals.value[progressKey] = setInterval(async () => {
     try {
       pollCount++
-      console.log(`🔍 [Lesson Video Polling] Polling job ${jobId}, attempt ${pollCount}`)
       const response = await uploadsApi.getVideoJobStatus(jobId)
       const jobData = response?.data || response
       // jobData.status is the real job status; response.status is only success boolean
@@ -4465,7 +4318,6 @@ const pollLessonVideoJobStatus = async (chapterIndex: number, lessonIndex: numbe
       const state = jobData?.state ?? jobData?.data?.state ?? ''
       const progress = jobData?.progress ?? jobData?.data?.progress ?? 0
       
-      console.log(`🔍 [Lesson Video Polling] Job ${jobId} status: ${jobStatus}, state: ${state}, progress: ${progress}%`)
       
       // If job not found but video URL exists, consider it ready
       if (state === 'not_found' || jobStatus === 'unknown') {
@@ -4500,7 +4352,6 @@ const pollLessonVideoJobStatus = async (chapterIndex: number, lessonIndex: numbe
             qualityMetadata: jobResult.qualityMetadata || lesson.videos[0].qualityMetadata,
             errorMessage: '',
           }
-          console.log('✅ [Lesson Video Polling] Updated lesson video with hlsUrl:', jobResult.hlsUrl, 'thumbnail:', jobResult.thumbnail)
         } else if (lesson.videos.length > 0) {
           lesson.videos[0].status = 'ready'
           lesson.videos[0].errorMessage = ''
@@ -4528,10 +4379,8 @@ const pollLessonVideoJobStatus = async (chapterIndex: number, lessonIndex: numbe
                   }) || [],
                 })),
               })
-              console.log('✅ [Lesson Video Polling] Saved video URL to database for lesson:', lesson._id)
             }
           } catch (error: any) {
-            console.error('⚠️ [Lesson Video Polling] Failed to save video URL to database:', error.message)
             // Don't fail - video is still updated in local state
           }
         }
@@ -4576,12 +4425,10 @@ const pollLessonVideoJobStatus = async (chapterIndex: number, lessonIndex: numbe
           // Keep progress tracker visible while backend is processing
           lesson.uploadingVideo = true
         }
-        console.log(`🔄 [Lesson Video Polling] Job ${jobId} is processing, progress: ${progress}% (synced with backend)`)
       } else if (jobStatus === 'queueing') {
         if (lesson.videos.length > 0) {
           lesson.videos[0].status = 'queueing'
         }
-        console.log(`⏳ [Lesson Video Polling] Job ${jobId} is queueing`)
       }
       
       // Stop polling after max attempts
@@ -4598,7 +4445,6 @@ const pollLessonVideoJobStatus = async (chapterIndex: number, lessonIndex: numbe
         delete lessonVideoUploadProgress[progressKey]
       }
     } catch (error: any) {
-      console.error(`❌ [Lesson Video Polling] Error polling job ${jobId}:`, error)
       // Continue polling on error (might be temporary network issue)
       // But stop after max attempts
       if (pollCount >= maxPolls) {
@@ -4651,7 +4497,6 @@ const handleLessonDocumentChange = async (chapterIndex: number, lessonIndex: num
       
       message.success('Upload tài liệu thành công')
     } catch (error: any) {
-      console.error('Upload document error:', error)
       message.error('Upload tài liệu thất bại: ' + (error.message || 'Unknown error'))
       // Xóa file khỏi fileList nếu upload thất bại
       lesson.documentFileList = []

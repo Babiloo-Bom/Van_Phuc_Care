@@ -183,7 +183,6 @@ const handleAvatarError = (e: Event) => {
 
 const handleSearch = () => {
   // TODO: Implement search logic
-  console.log("Search:", searchQuery.value);
 };
 
 const toggleUserMenu = () => {
@@ -199,7 +198,6 @@ const handleLogout = async () => {
     await authStore.logout();
     router.push("/login");
   } catch (error) {
-    console.error("Logout error:", error);
   }
 };
 

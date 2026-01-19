@@ -256,7 +256,6 @@ const handleSubmit = async () => {
     emit("success");
     handleClose();
   } catch (error: any) {
-    console.error("Error creating support request:", error);
     const errorMessage = error?.data?.message || error?.message || "Có lỗi xảy ra khi tạo yêu cầu";
     message.error(errorMessage);
   } finally {

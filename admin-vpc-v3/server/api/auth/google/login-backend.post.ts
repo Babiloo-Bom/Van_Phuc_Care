@@ -18,16 +18,6 @@ export default defineEventHandler(async (event): Promise<GoogleLoginResponse> =>
     }
 
     const config = useRuntimeConfig(event)
-
-    console.log('🔄 Step 1: Exchange code for Google token...')
-    console.log('🔍 Config check:', {
-      clientId: config.public.googleClientId,
-      hasClientSecret: !!config.googleClientSecret,
-      clientSecretLength: config.googleClientSecret?.length || 0,
-      baseUrl: config.public.baseUrl,
-      redirectUri: `${config.public.baseUrl}/auth/google/callback`
-    })
-    
     // Step 1: Exchange authorization code for Google access token
     const params = new URLSearchParams({
       code,
@@ -37,7 +27,6 @@ export default defineEventHandler(async (event): Promise<GoogleLoginResponse> =>
       grant_type: 'authorization_code'
     })
     
-    console.log('🔍 Request params:', params.toString())
     
     const tokenResponse = await $fetch<any>('https://oauth2.googleapis.com/token', {
       method: 'POST',
@@ -51,8 +40,6 @@ export default defineEventHandler(async (event): Promise<GoogleLoginResponse> =>
       throw new Error('Failed to get access token from Google')
     }
 
-    console.log('✅ Step 1: Access token received')
-    console.log('🔄 Step 2: Fetching user profile from Google...')
 
     // Step 2: Get user profile from Google
     const userProfile = await $fetch<any>('https://www.googleapis.com/oauth2/v2/userinfo', {
@@ -61,8 +48,6 @@ export default defineEventHandler(async (event): Promise<GoogleLoginResponse> =>
       }
     })
 
-    console.log('✅ Step 2: User profile received:', userProfile.email)
-    console.log('🔄 Step 3: Sending to backend API for user creation & JWT generation...')
 
     // Step 3: Send to backend API to create/update user and get JWT
     try {
@@ -75,17 +60,13 @@ export default defineEventHandler(async (event): Promise<GoogleLoginResponse> =>
         }
       })
 
-      console.log('✅ Step 3: Backend response received')
-      console.log('📦 Backend response:', JSON.stringify(backendResponse, null, 2))
 
       // Check if backend returned success
       if (!backendResponse || (!backendResponse.status && !backendResponse.data)) {
-        console.error('❌ Invalid backend response:', backendResponse)
         throw new Error(backendResponse?.message || 'Backend authentication failed')
       }
 
       // Backend response is valid, continue
-      console.log('✅ Backend authentication successful')
 
       // Extract data from backend response
       const userData = backendResponse.data
@@ -112,14 +93,12 @@ export default defineEventHandler(async (event): Promise<GoogleLoginResponse> =>
       }
 
     } catch (backendError: any) {
-      console.error('❌ Backend API error:', backendError)
       
       // If backend fails, we can't proceed (no fallback to MockService for security)
       throw new Error(`Backend authentication failed: ${backendError.message}`)
     }
 
   } catch (error: any) {
-    console.error('❌ Google login failed:', error)
     return {
       success: false,
       error: error.message || 'Failed to complete Google login'

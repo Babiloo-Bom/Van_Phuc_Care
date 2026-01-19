@@ -216,12 +216,10 @@ const handleElearningLinkClick = async (path: string) => {
       const { buildSSOUrl } = await import('~/utils/sso');
       const baseUrl = String(elearningBaseUrl.value || 'https://edu.vanphuccare.vn');
       const ssoUrl = await buildSSOUrl(baseUrl, '/my-learning');
-      console.log('[SSO] Opening Elearning with SSO:', ssoUrl);
       // Wait a bit for cookie to be set
       await new Promise(resolve => setTimeout(resolve, 200));
       window.open(ssoUrl, '_blank', 'noopener,noreferrer');
     } catch (error) {
-      console.error('[SSO] Error building SSO URL:', error);
       // Fallback: open without SSO
       window.open(path, '_blank', 'noopener,noreferrer');
     }
@@ -237,7 +235,6 @@ const handleLogout = async () => {
     await authStore.logout();
     router.push('/login');
   } catch (error) {
-    console.error('Logout error:', error);
   }
 };
 </script>

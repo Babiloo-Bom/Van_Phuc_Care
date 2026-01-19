@@ -505,7 +505,6 @@ const loadCustomers = async () => {
     }
     
     const response = await customersApi.getCustomers(params)
-    console.log('🔍 Customers API response:', response)
     
     if (response.status && response.data) {
       const responseData: any = response.data
@@ -546,7 +545,6 @@ const loadCustomers = async () => {
       customers.value = []
     }
   } catch (error: any) {
-    console.error('❌ Load customers failed:', error)
     message.error('Không thể tải danh sách khách hàng: ' + (error.message || 'Unknown error'))
     customers.value = []
   } finally {
@@ -591,18 +589,14 @@ const refreshData = () => {
 const viewCustomer = async (customer: any) => {
   try {
     loading.value = true
-    console.log('🔍 Viewing customer:', customer._id || customer.id)
     const response = await customersApi.getCustomer(customer._id || customer.id)
-    console.log('🔍 Get customer response:', response)
     
     if (response.status && response.data) {
       const responseData: any = response.data
-      console.log('🔍 Response data:', responseData)
       
       // Backend returns: { message: "", data: { customer: {...} } }
       // apiClient wraps it: { status: true, data: { message: "", data: { customer: {...} } } }
       const customerData = responseData.data?.customer || responseData.customer || responseData.data || responseData
-      console.log('✅ Parsed customer data:', customerData)
       
       if (!customerData) {
         throw new Error('Không tìm thấy thông tin khách hàng')
@@ -623,10 +617,8 @@ const viewCustomer = async (customer: any) => {
       throw new Error(response.message || 'Không thể tải thông tin khách hàng')
     }
   } catch (error: any) {
-    console.error('❌ Get customer failed:', error)
     message.error(error.message || 'Không thể tải thông tin khách hàng')
     // Fallback to show customer from list
-    console.log('⚠️ Using fallback customer data from list')
     selectedCustomer.value = customer
     editForm.value = {
       fullname: customer.fullname || customer.name || '',
@@ -680,9 +672,7 @@ const handleSaveCustomer = async () => {
       isActive: editForm.value.isActive
     }
     
-    console.log('🔍 Updating customer:', selectedCustomer.value._id || selectedCustomer.value.id, updateData)
     const response = await customersApi.updateCustomer(selectedCustomer.value._id || selectedCustomer.value.id, updateData)
-    console.log('🔍 Update customer response:', response)
     
     if (response.status && response.data) {
       message.success('Cập nhật thông tin khách hàng thành công')
@@ -690,7 +680,6 @@ const handleSaveCustomer = async () => {
       // Parse updated customer from response
       const responseData: any = response.data
       const updatedCustomerData = responseData.data?.customer || responseData.customer || responseData.data || responseData
-      console.log('✅ Updated customer data:', updatedCustomerData)
       
       if (updatedCustomerData) {
         // Update selected customer in modal
@@ -726,7 +715,6 @@ const handleSaveCustomer = async () => {
             }
           }
         } catch (refreshError) {
-          console.warn('⚠️ Failed to refresh customer data:', refreshError)
         }
       }
       
@@ -737,7 +725,6 @@ const handleSaveCustomer = async () => {
       message.error('Không thể cập nhật thông tin khách hàng')
     }
   } catch (error: any) {
-    console.error('❌ Update customer failed:', error)
     message.error('Không thể cập nhật thông tin khách hàng: ' + (error.message || 'Unknown error'))
   } finally {
     saving.value = false
@@ -756,7 +743,6 @@ const toggleCustomerStatus = async (customer: any) => {
       throw new Error(response.message || 'Failed to toggle status')
     }
   } catch (error: any) {
-    console.error('❌ Toggle customer status failed:', error)
     message.error('Không thể thay đổi trạng thái khách hàng')
   } finally {
     loading.value = false
@@ -775,7 +761,6 @@ const deleteCustomer = async (customer: any) => {
       throw new Error(response.message || 'Failed to delete customer')
     }
   } catch (error: any) {
-    console.error('❌ Delete customer failed:', error)
     message.error('Không thể xóa khách hàng')
   } finally {
     loading.value = false

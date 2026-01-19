@@ -29,7 +29,6 @@ export default defineEventHandler(async (event) => {
     }
 
   } catch (error: any) {
-    console.error('❌ User deletion from backend failed:', error)
     
     return {
       success: false,

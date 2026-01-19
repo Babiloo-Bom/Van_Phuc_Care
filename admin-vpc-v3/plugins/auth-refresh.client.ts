@@ -29,8 +29,6 @@ export default defineNuxtPlugin((nuxtApp) => {
     const thirtyMinutes = 30 * 60 * 1000
     
     if (timeUntilExpiry < thirtyMinutes && timeUntilExpiry > 0) {
-      console.log('[Auth] Token expiring soon, attempting renewal...')
-      
       // Try to renew token if remember me is enabled
       if (authStore.rememberAccount) {
         try {
@@ -48,29 +46,18 @@ export default defineNuxtPlugin((nuxtApp) => {
                   savedPassword,
                   true
                 )
-                
-                if (result.success) {
-                  console.log('[Auth] Token renewed successfully')
-                } else {
-                  console.warn('[Auth] Token renewal failed:', result.error)
-                }
               }
             }
           }
         } catch (error: any) {
           // Ignore AbortError (request cancelled due to navigation/reload)
           if (error?.name === 'AbortError' || error?.message?.includes('aborted')) {
-            console.log('[Auth] Token renewal cancelled (navigation/reload)')
             return
           }
-          console.error('[Auth] Token renewal error:', error)
         }
-      } else {
-        console.log('[Auth] Token expiring soon but remember me not enabled')
       }
     } else if (timeUntilExpiry <= 0) {
       // Token already expired
-      console.warn('[Auth] Token expired, logging out...')
       authStore.logout()
       navigateTo('/login')
     }

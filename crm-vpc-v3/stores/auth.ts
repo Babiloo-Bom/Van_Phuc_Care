@@ -145,7 +145,6 @@ export const useAuthStore = defineStore('auth', {
           };
           
         } catch (profileError) {
-          console.error('⚠️ Failed to fetch user profile, using basic data:', profileError);
           // Fallback to basic user data if profile fetch fails
           this.user = {
             id: response.id || response._id || 'temp-id',
@@ -176,31 +175,24 @@ export const useAuthStore = defineStore('auth', {
         // Set justLoggedIn flag to prevent auto-logout for 15 seconds
         this.justLoggedIn = true;
         this.loginTimestamp = Date.now();
-        console.log('[Login] Set justLoggedIn flag, timestamp:', this.loginTimestamp);
-        
         // Clear any leftover logout sync cookie when logging in
         // Set SSO cookie to sync login with other sites
         if (process.client) {
           try {
             const { clearLogoutSyncCookie } = await import('~/utils/authSync');
             clearLogoutSyncCookie();
-            console.log('[Login] Cleared logout sync cookie');
           } catch (e) {
-            console.warn('[Login] Failed to clear logout sync cookie:', e);
           }
           
           try {
             const { setSSOCookie } = await import('~/utils/sso');
             setSSOCookie(token);
-            console.log('[Login] Set SSO cookie for cross-site login sync');
           } catch (e) {
-            console.warn('[Login] Failed to set SSO cookie:', e);
           }
         }
         
         setTimeout(() => {
           this.justLoggedIn = false;
-          console.log('[Login] Cleared justLoggedIn flag after 15 seconds');
         }, 15000); // 15 seconds grace period
 
         return { success: true, user: this.user, token };
@@ -212,7 +204,6 @@ export const useAuthStore = defineStore('auth', {
         ) {
           return { success: false, error: 'Request cancelled' };
         }
-        console.error('Login error:', error);
         return {
           success: false,
           error:
@@ -251,7 +242,6 @@ export const useAuthStore = defineStore('auth', {
         }
         return false;
       } catch (error) {
-        console.error('❌ Error updating course register:', error);
         return false;
       }
     },
@@ -292,7 +282,6 @@ export const useAuthStore = defineStore('auth', {
       } catch (error) {
         // Don't throw error - just log it. This is a non-critical operation.
         // The session is still valid even if refresh fails.
-        console.warn('⚠️ Error refreshing user data (non-critical):', error);
         // Re-throw only if it's a critical error (not 401, not network error)
         const status = (error as any)?.statusCode || (error as any)?.status;
         if (status && status !== 401 && status !== 0) {
@@ -363,7 +352,6 @@ export const useAuthStore = defineStore('auth', {
         // Response from Nuxt server proxy: { message, data: { accessToken, ... } }
         // Extract actual data from response.data
         const responseData = response?.data || response;
-        console.log('Verify email response data:', responseData);
         // Auto login: Save token and user info from response
         if (responseData?.accessToken) {
           this.token = responseData.accessToken;
@@ -384,10 +372,8 @@ export const useAuthStore = defineStore('auth', {
           // Set justLoggedIn flag to prevent auto-logout for 30 seconds
           this.justLoggedIn = true;
           this.loginTimestamp = Date.now();
-          console.log('[VerifyEmail] Set justLoggedIn flag, timestamp:', this.loginTimestamp);
           setTimeout(() => {
             this.justLoggedIn = false;
-            console.log('[VerifyEmail] Cleared justLoggedIn flag after 30 seconds');
           }, 30000);
           
           // Persist using cookies (CRM uses cookie-only persistence)
@@ -410,15 +396,11 @@ export const useAuthStore = defineStore('auth', {
             // Clear logout sync cookie on successful login
             const { clearLogoutSyncCookie } = await import('~/utils/authSync');
             clearLogoutSyncCookie();
-            console.log('[VerifyEmail] Cleared logout sync cookie');
-            
             // Set SSO cookie to sync login with other sites
             try {
               const { setSSOCookie } = await import('~/utils/sso');
               setSSOCookie(responseData.accessToken);
-              console.log('[VerifyEmail] Set SSO cookie for cross-site login sync');
             } catch (e) {
-              console.warn('[VerifyEmail] Failed to set SSO cookie:', e);
             }
           }
           
@@ -428,7 +410,6 @@ export const useAuthStore = defineStore('auth', {
 
         return { success: true, user: this.user, token: this.token };
       } catch (error: any) {
-        console.error('Verify email error:', error);
         return {
           success: false,
           error:
@@ -463,7 +444,6 @@ export const useAuthStore = defineStore('auth', {
 
         return { success: true };
       } catch (error: any) {
-        console.error('Forgot password error:', error);
         return {
           success: false,
           error: error.data?.message || error.message || 'Gửi OTP thất bại',
@@ -509,7 +489,6 @@ export const useAuthStore = defineStore('auth', {
 
         return { success: true };
       } catch (error: any) {
-        console.error('Reset password error:', error);
         return {
           success: false,
           error:
@@ -537,7 +516,6 @@ export const useAuthStore = defineStore('auth', {
 
         return { success: true };
       } catch (error: any) {
-        console.error('Change password error:', error);
 
         // Check for specific error code
         if (error.status === 425 || error.data?.error?.code === 425) {
@@ -562,7 +540,6 @@ export const useAuthStore = defineStore('auth', {
      * Migrated from admin-vpc/api/auth.js
      */
     async logout() {
-      console.log('[Auth] Logout called');
       this.isLoading = true;
 
       try {
@@ -613,7 +590,6 @@ export const useAuthStore = defineStore('auth', {
         // Redirect to login
         navigateTo('/login');
       } catch (error) {
-        console.error('Logout error:', error);
       } finally {
         this.isLoading = false;
       }
@@ -633,7 +609,6 @@ export const useAuthStore = defineStore('auth', {
           };
           setCookie('authData', JSON.stringify(authData), this.tokenExpireAt || undefined);
         } catch (error) {
-          console.error('❌ Error saving auth data:', error);
         }
       }
     },
@@ -652,16 +627,13 @@ export const useAuthStore = defineStore('auth', {
           const hasSSOCookie = checkSSOCookie();
           
           if (hasSSOCookie) {
-            console.log('[InitAuth] SSO cookie detected, attempting SSO login first');
             const { handleSSOLogin } = await import('~/utils/sso');
             const ssoResult = await handleSSOLogin();
             if (ssoResult) {
-              console.log('✅ [InitAuth] SSO login successful');
               // Clear logout sync cookie if it exists (SSO login takes priority)
               try {
                 const { clearLogoutSyncCookie } = await import('~/utils/authSync');
                 clearLogoutSyncCookie();
-                console.log('[InitAuth] Cleared logout sync cookie after SSO login');
               } catch (e) {
                 // Ignore errors
               }
@@ -669,7 +641,6 @@ export const useAuthStore = defineStore('auth', {
             }
           }
         } catch (e) {
-          console.warn('⚠️ [InitAuth] Error checking SSO cookie:', e);
         }
         
         // SECOND: Check logout sync cookie - if exists, don't restore auth and clear it
@@ -677,21 +648,16 @@ export const useAuthStore = defineStore('auth', {
         try {
           const { checkLogoutSyncCookie, clearLogoutSyncCookie } = await import('~/utils/authSync');
           const hasLogoutSync = checkLogoutSyncCookie();
-          console.log('[InitAuth] Checking logout sync cookie:', hasLogoutSync);
-          
           if (hasLogoutSync) {
-            console.log('⚠️ [InitAuth] Logout sync cookie detected, clearing auth state');
             clearLogoutSyncCookie();
             // Clear local auth state
             this.user = null;
             this.token = null;
             this.isAuthenticated = false;
             // Don't restore from localStorage if logout sync cookie exists
-            console.log('ℹ️ [InitAuth] Staying logged out due to logout sync cookie');
             return;
           }
         } catch (e) {
-          console.warn('⚠️ [InitAuth] Error checking logout sync cookie:', e);
         }
         
         // Read from cookies (CRM uses cookies for persistence)
@@ -707,7 +673,6 @@ export const useAuthStore = defineStore('auth', {
           try {
             authData = JSON.parse(authDataStr);
           } catch (e) {
-            console.error('⚠️ Failed to parse authData:', e);
           }
         }
 
@@ -730,7 +695,6 @@ export const useAuthStore = defineStore('auth', {
             this.user = authData.user;
             this.isAuthenticated = true;
           } catch (e) {
-            console.error('❌ Error restoring from authData:', e);
             this.logout();
             return;
           }
@@ -761,7 +725,6 @@ export const useAuthStore = defineStore('auth', {
                 this.rememberAccount = authData.remindAccount || false;
               } catch (e) {
                 // Ignore parse error for authData, it's optional
-                console.warn('⚠️ Failed to parse authData, continuing:', e);
               }
             }
 
@@ -771,14 +734,11 @@ export const useAuthStore = defineStore('auth', {
               try {
                 await this.refreshUserData();
               } catch (refreshError) {
-                console.warn('⚠️ Failed to refresh user data during initAuth, but keeping session:', refreshError);
                 // Don't logout on refresh error - session might still be valid
               }
             } else {
-              console.log('ℹ️ Skipping refreshUserData during SSO login');
             }
           } catch (error) {
-            console.error('❌ Init auth error (critical):', error);
             // Only logout on critical errors (parse errors, etc.), not on refresh errors
             // Check if error is from refreshUserData (it should not throw for non-critical errors)
             const isCriticalError = !(error as any)?.isRefreshError;
@@ -786,11 +746,7 @@ export const useAuthStore = defineStore('auth', {
               // Only logout if not during SSO login
               if (!this.isSSOLoginInProgress) {
                 this.logout();
-              } else {
-                console.warn('⚠️ Init auth error during SSO, skipping logout');
               }
-            } else {
-              console.warn('⚠️ Non-critical error during initAuth, keeping session');
             }
           }
         } else {
@@ -804,7 +760,6 @@ export const useAuthStore = defineStore('auth', {
                 const now = Date.now();
                 if (!isNaN(expireTime) && now >= expireTime) {
                   // Token expired, clear data
-                  console.log('⚠️ Token expired, logging out');
                   this.logout();
                   return;
                 }
@@ -814,20 +769,16 @@ export const useAuthStore = defineStore('auth', {
               this.tokenExpireAt = tokenExpireAt;
               this.user = user;
               this.isAuthenticated = true;
-              console.log('ℹ️ Restored auth from token and user (SSO format)');
               // Save as authData for future compatibility
               this.saveAuth();
             } catch (e) {
-              console.error('❌ Error restoring from token/user:', e);
               this.logout();
             }
           } else {
             // Check if we're already authenticated (might be from SSO)
             if (this.isAuthenticated && this.token && this.user) {
-              console.log('ℹ️ Already authenticated, skipping initAuth');
               return;
             }
-            console.log('ℹ️ No auth data found in localStorage');
           }
         }
       }
@@ -962,42 +913,33 @@ export const useAuthStore = defineStore('auth', {
             rememberAccount: false,
           };
           setCookie('authData', JSON.stringify(authData), this.tokenExpireAt || undefined);
-          console.log('[Google Login] Auth data saved to cookies');
         }
 
         // Set justLoggedIn flag to prevent auto-logout for 15 seconds
         this.justLoggedIn = true;
         this.loginTimestamp = Date.now();
-        console.log('[Google Login] Set justLoggedIn flag, timestamp:', this.loginTimestamp);
-        
         // Clear any leftover logout sync cookie when logging in
         // Set SSO cookie to sync login with other sites
         if (process.client) {
           try {
             const { clearLogoutSyncCookie } = await import('~/utils/authSync');
             clearLogoutSyncCookie();
-            console.log('[Google Login] Cleared logout sync cookie');
           } catch (e) {
-            console.warn('[Google Login] Failed to clear logout sync cookie:', e);
           }
           
           try {
             const { setSSOCookie } = await import('~/utils/sso');
             setSSOCookie(accessToken);
-            console.log('[Google Login] Set SSO cookie for cross-site login sync');
           } catch (e) {
-            console.warn('[Google Login] Failed to set SSO cookie:', e);
           }
         }
         
         setTimeout(() => {
           this.justLoggedIn = false;
-          console.log('[Google Login] Cleared justLoggedIn flag after 15 seconds');
         }, 15000); // 15 seconds grace period
 
         return { success: true };
       } catch (error: any) {
-        console.error('Complete Google login error:', error);
         // Cleanup on error
         if (process.client) {
           localStorage.removeItem('auth_token');
@@ -1031,7 +973,6 @@ export const useAuthStore = defineStore('auth', {
 
         return { success: true, user: response.user };
       } catch (error: any) {
-        console.error('Update profile error:', error);
         return {
           success: false,
           error:

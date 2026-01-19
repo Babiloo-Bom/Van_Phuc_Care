@@ -35,7 +35,6 @@ onMounted(async () => {
     Quill = quillModule.default
     await import('quill/dist/quill.snow.css')
   } catch (error) {
-    console.error('Failed to load Quill:', error)
     return
   }
 

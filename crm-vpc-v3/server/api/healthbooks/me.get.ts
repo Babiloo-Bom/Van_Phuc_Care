@@ -18,9 +18,6 @@ export default defineEventHandler(async (event) => {
         message: 'Authorization header is required',
       });
     }
-
-    console.log('[GET /api/healthbooks/me] -> /api/u/healthbooks/me');
-
     // Forward request to backend
     const response = await $fetch(`${apiHost}/api/u/healthbooks/me`, {
       method: 'GET',
@@ -28,12 +25,8 @@ export default defineEventHandler(async (event) => {
         'Authorization': authHeader,
       },
     });
-
-    console.log('[GET /api/healthbooks/me] Success');
     return response;
   } catch (error: any) {
-    console.error('[GET /api/healthbooks/me] Error:', error.message || error);
-
     // If it's a 404 or similar, return empty data instead of error
     if (error.statusCode === 404 || error.status === 404) {
       return { data: null };

@@ -115,9 +115,6 @@ export const useAuthApi = () => {
 
         // Exponential backoff: 1s, 2s, 4s, 8s...
         const backoffDelay = RETRY_CONFIG.retryDelay * Math.pow(2, attempt);
-        console.warn(
-          `🔄 Retry attempt ${attempt + 1}/${retries} after ${backoffDelay}ms`
-        );
         await delay(backoffDelay);
       }
     }
@@ -243,7 +240,6 @@ export const useAuthApi = () => {
 
         return result;
       } catch (error: any) {
-        console.error("🔍 Register API error:", error.data);
         // Tạo error với message từ API response, giữ nguyên data
         const errorMessage = error.data?.message || error.message || 'Đăng ký thất bại';
         const err = new Error(errorMessage) as any;
@@ -527,7 +523,6 @@ export const useAuthApi = () => {
           })
         );
       } catch (error: any) {
-        console.error("❌ getUserProfile error:", error);
         throw transformError(error);
       }
     },
@@ -557,7 +552,6 @@ export const useAuthApi = () => {
           })
         );
       } catch (error: any) {
-        console.error("❌ updateCourseRegister error:", error);
         throw transformError(error);
       }
     },

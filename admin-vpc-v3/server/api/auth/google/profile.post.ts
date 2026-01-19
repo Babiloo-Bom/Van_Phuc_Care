@@ -25,7 +25,6 @@ export default defineEventHandler(async (event) => {
     return profileResponse
 
   } catch (error: any) {
-    console.error('❌ Google profile fetch failed:', error)
     
     throw createError({
       statusCode: 500,

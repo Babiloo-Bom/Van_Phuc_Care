@@ -224,11 +224,9 @@ const fetchServices = async () => {
         const myServices = myServicesRes.data?.data?.data || myServicesRes.data?.data || [];
         registeredServiceIds.value = new Set(myServices.map((s: any) => s.serviceId || s._id));
       } catch (e) {
-        console.error("Error fetching my services:", e);
       }
     }
   } catch (e) {
-    console.error("Error fetching services:", e);
     services.value = [];
   } finally {
     isLoading.value = false;
@@ -267,7 +265,6 @@ async function openRegisterModal(service: any) {
     try {
       await authStore.refreshUserData();
     } catch (e) {
-      console.error("Failed to refresh profile:", e);
     }
   }
 
@@ -322,7 +319,6 @@ async function handleRegisterSubmit() {
       message.error(response.message || "Đăng ký thất bại!");
     }
   } catch (e: any) {
-    console.error("Failed to register service:", e);
     // Error already shown by apiClient, no need to show again
   } finally {
     isSubmitting.value = false;

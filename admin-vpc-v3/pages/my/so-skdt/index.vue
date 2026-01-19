@@ -1019,7 +1019,6 @@ const selectedCustomer = ref<Customer | null>(null)
 
 // Computed để format options cho a-select
 const customerSelectOptions = computed(() => {
-  console.log('🔄 Computing customerSelectOptions, results:', customerSearchResults.value.length)
   return customerSearchResults.value.map((customer: any) => {
     const name = customer.fullname || `${customer.firstname || ''} ${customer.lastname || ''}`.trim()
     return {
@@ -1133,7 +1132,6 @@ const fetchHealthBooks = async () => {
       message.error(response.message || 'Không thể tải danh sách sổ SKĐT')
     }
   } catch (error: any) {
-    console.error('Error fetching health books:', error)
     message.error('Không thể tải danh sách sổ SKĐT')
   } finally {
     loading.value = false
@@ -1182,64 +1180,45 @@ const handleCustomerSearch = debounce(async (searchValue: string) => {
       page: 1
     }
     
-    console.log('🔍 Searching customers with params:', params)
     
     const response = await customersApi.getCustomers(params)
     
-    console.log('📦 Customers API response:', response)
-    console.log('📦 Response status:', response.status)
-    console.log('📦 Response data:', response.data)
     
     if (response.status && response.data) {
       // Xử lý nhiều cấu trúc response có thể
       let customers: Customer[] = []
       
-      console.log('🔍 Debugging response structure:')
-      console.log('  - response.data:', response.data)
-      console.log('  - response.data.data:', response.data.data)
-      console.log('  - typeof response.data.data:', typeof response.data.data)
-      console.log('  - Array.isArray(response.data.data):', Array.isArray(response.data.data))
       
       // Trường hợp 1: { data: { data: [], pagination: {} } } - Đây là format từ sendSuccess
       if (response.data.data) {
         if (Array.isArray(response.data.data)) {
           customers = response.data.data
-          console.log('✅ Found customers in response.data.data (array):', customers.length)
         } 
         // Trường hợp 1b: { data: { data: { data: [], pagination: {} } } } - nested
         else if (response.data.data && typeof response.data.data === 'object') {
-          console.log('  - response.data.data is object, checking for nested data...')
-          console.log('  - response.data.data.data:', response.data.data.data)
-          console.log('  - Array.isArray(response.data.data.data):', Array.isArray(response.data.data.data))
           
           if (response.data.data.data && Array.isArray(response.data.data.data)) {
             customers = response.data.data.data
-            console.log('✅ Found customers in response.data.data.data (nested):', customers.length)
           }
           // Trường hợp 1c: { data: { data: { customers: [] } } }
           else if (response.data.data.customers && Array.isArray(response.data.data.customers)) {
             customers = response.data.data.customers
-            console.log('✅ Found customers in response.data.data.customers:', customers.length)
           }
         }
       }
       // Trường hợp 2: { data: { items: [], pagination: {} } }
       else if (response.data.items && Array.isArray(response.data.items)) {
         customers = response.data.items
-        console.log('✅ Found customers in response.data.items:', customers.length)
       }
       // Trường hợp 3: { data: [] } - data là array trực tiếp
       else if (Array.isArray(response.data)) {
         customers = response.data
-        console.log('✅ Found customers in response.data (array):', customers.length)
       }
       // Trường hợp 4: { data: { customers: [] } }
       else if (response.data.customers && Array.isArray(response.data.customers)) {
         customers = response.data.customers
-        console.log('✅ Found customers in response.data.customers:', customers.length)
       }
       
-      console.log('📋 Raw customers before normalization:', customers)
       
       // Normalize customers để đảm bảo có firstname/lastname
       customers = customers.map((customer: any) => {
@@ -1262,27 +1241,16 @@ const handleCustomerSearch = debounce(async (searchValue: string) => {
         return customer
       })
       
-      console.log('✅ Parsed and normalized customers:', customers)
-      console.log('📋 Sample customer:', customers[0])
       
       // Đảm bảo customers luôn là array
       customerSearchResults.value = Array.isArray(customers) ? customers : []
-      console.log('✅ Final customerSearchResults.value:', customerSearchResults.value.length)
-      console.log('✅ Final customerSearchResults.value content:', customerSearchResults.value)
-      console.log('✅ customerSearchResults is reactive?', customerSearchResults.value === customers)
       
       // Force update để đảm bảo Vue detect thay đổi
       await nextTick()
-      console.log('✅ After nextTick, customerSearchResults:', customerSearchResults.value.length)
     } else {
-      console.warn('⚠️ API returned error or no data', {
-        status: response.status,
-        hasData: !!response.data
-      })
       customerSearchResults.value = []
     }
   } catch (error) {
-    console.error('❌ Error searching customers:', error)
     customerSearchResults.value = []
   } finally {
     customerSearchLoading.value = false
@@ -1383,7 +1351,6 @@ const editHealthBook = async (healthBook: HealthBook) => {
       })
     }
   } catch (error) {
-    console.error('Error loading health book:', error)
     message.error('Không thể tải thông tin sổ SKĐT')
   }
   modalVisible.value = true
@@ -1398,7 +1365,6 @@ const viewHealthBook = async (healthBook: HealthBook) => {
       viewingHealthBook.value = response.data.data || response.data
     }
   } catch (error) {
-    console.error('Error loading health book:', error)
     message.error('Không thể tải thông tin sổ SKĐT')
   }
   viewModalVisible.value = true
@@ -1413,7 +1379,6 @@ const deleteHealthBook = async (healthBook: HealthBook) => {
       fetchHealthBooks()
     }
   } catch (error: any) {
-    console.error('Error deleting health book:', error)
     message.error('Không thể xóa sổ SKĐT')
   }
 }
@@ -1472,7 +1437,6 @@ const handleModalOk = async () => {
       }
     }
   } catch (error: any) {
-    console.error('Modal error:', error)
     if (error?.errorFields) {
       message.error('Vui lòng điền đầy đủ thông tin')
     } else {
@@ -1573,7 +1537,6 @@ const loadVaccinationSchedule = async (healthBookId: string) => {
       vaccinationSchedule.value = []
     }
   } catch (error: any) {
-    console.error('Error loading vaccination schedule:', error)
     message.error('Không thể tải lịch tiêm chủng')
     vaccinationSchedule.value = []
   } finally {
@@ -1630,7 +1593,6 @@ const markAsCompleted = async (record: VaccinationScheduleItem) => {
       await loadVaccinationSchedule(currentHealthBook.value._id!)
     }
   } catch (error: any) {
-    console.error('Error marking as completed:', error)
     message.error('Không thể đánh dấu đã tiêm')
   } finally {
     vaccinationLoading.value = false
@@ -1649,7 +1611,6 @@ const deleteVaccinationRecord = async (record: VaccinationScheduleItem) => {
       await loadVaccinationSchedule(currentHealthBook.value._id!)
     }
   } catch (error: any) {
-    console.error('Error deleting vaccination record:', error)
     message.error('Không thể xóa bản ghi tiêm chủng')
   } finally {
     vaccinationLoading.value = false
@@ -1711,7 +1672,6 @@ const handleVaccinationFormOk = async () => {
       }
     }
   } catch (error: any) {
-    console.error('Error saving vaccination record:', error)
     message.error('Không thể lưu bản ghi tiêm chủng')
   } finally {
     vaccinationLoading.value = false

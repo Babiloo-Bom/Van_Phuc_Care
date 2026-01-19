@@ -29,8 +29,6 @@ export default defineEventHandler(async (event) => {
 
     const targetUrl = `${apiHost}/api/u/vaccination-records/${customerId}`;
 
-    console.log(`[GET /api/vaccinations/records/${customerId}] -> ${targetUrl}`);
-
     // Forward request to backend
     const response = await $fetch(targetUrl, {
       method: 'GET',
@@ -39,11 +37,9 @@ export default defineEventHandler(async (event) => {
       },
     });
 
-    console.log(`[GET /api/vaccinations/records/${customerId}] Success`);
     return response;
   } catch (error: any) {
     const customerId = getRouterParam(event, 'customerId');
-    console.error(`[GET /api/vaccinations/records/${customerId}] Error:`, error.message || error);
 
     if (error.statusCode === 404 || error.status === 404) {
       return { vaccinationRecords: [] };

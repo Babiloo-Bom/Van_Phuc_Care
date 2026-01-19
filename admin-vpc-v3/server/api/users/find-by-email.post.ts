@@ -23,7 +23,6 @@ export default defineEventHandler(async (event) => {
     }
 
   } catch (error: any) {
-    console.error('❌ User lookup failed:', error)
     
     return {
       success: false,

@@ -23,9 +23,6 @@ export default defineEventHandler(async (event) => {
     const body = await readBody(event);
 
     const targetUrl = `${apiHost}/api/u/sessions/change_password`;
-
-    console.log(`[PATCH /api/sessions/change-password] -> ${targetUrl}`);
-
     // Forward request to backend
     const response = await $fetch(targetUrl, {
       method: 'PATCH',
@@ -35,12 +32,8 @@ export default defineEventHandler(async (event) => {
       },
       body,
     });
-
-    console.log('[PATCH /api/sessions/change-password] Success');
     return response;
   } catch (error: any) {
-    console.error('[PATCH /api/sessions/change-password] Error:', error.message || error);
-
     if (error.data) {
       throw createError({
         statusCode: error.statusCode || 500,

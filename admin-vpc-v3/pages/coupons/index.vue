@@ -634,7 +634,6 @@ const loadCoupons = async () => {
       calculateStats()
     }
   } catch (error: any) {
-    console.error('❌ Load coupons failed:', error)
     message.error('Không thể tải danh sách mã giảm giá')
     coupons.value = []
   } finally {
@@ -652,7 +651,6 @@ const loadCourses = async () => {
       courses.value = responseData.courses || responseData.data || []
     }
   } catch (error: any) {
-    console.error('❌ Load courses failed:', error)
   } finally {
     loadingCourses.value = false
   }
@@ -778,7 +776,6 @@ const handleSaveCoupon = async () => {
       throw new Error(response.message || 'Failed to save coupon')
     }
   } catch (error: any) {
-    console.error('❌ Save coupon failed:', error)
     if (error.errorFields) {
       return
     }
@@ -804,7 +801,6 @@ const deleteCoupon = async (coupon: any) => {
       throw new Error(response.message || 'Failed to delete coupon')
     }
   } catch (error: any) {
-    console.error('❌ Delete coupon failed:', error)
     message.error('Không thể xóa mã giảm giá')
   } finally {
     loading.value = false

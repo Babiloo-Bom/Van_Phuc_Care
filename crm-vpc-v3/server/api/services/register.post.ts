@@ -23,9 +23,6 @@ export default defineEventHandler(async (event) => {
     const body = await readBody(event);
 
     const targetUrl = `${apiHost}/api/u/services/register`;
-
-    console.log(`[POST /api/services/register] -> ${targetUrl}`);
-
     // Forward request to backend
     const response = await $fetch(targetUrl, {
       method: 'POST',
@@ -35,12 +32,8 @@ export default defineEventHandler(async (event) => {
       },
       body,
     });
-
-    console.log('[POST /api/services/register] Success');
     return response;
   } catch (error: any) {
-    console.error('[POST /api/services/register] Error:', error.message || error);
-
     if (error.data) {
       throw createError({
         statusCode: error.statusCode || 500,

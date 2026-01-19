@@ -11,7 +11,6 @@ export default defineEventHandler(async (event): Promise<GoogleLoginResponse> =>
     const { code, redirectUri: bodyRedirectUri } = body;
 
     if (!code) {
-      console.error('❌ No authorization code provided');
       return {
         success: false,
         error: 'Authorization code is required',
@@ -42,7 +41,6 @@ export default defineEventHandler(async (event): Promise<GoogleLoginResponse> =>
 
       // Check if backend returned success
       if (!backendResponse || !backendResponse.data) {
-        console.error('❌ Invalid backend response:', backendResponse);
         throw new Error(backendResponse?.message || 'Backend authentication failed');
       }
 
@@ -71,7 +69,6 @@ export default defineEventHandler(async (event): Promise<GoogleLoginResponse> =>
       };
 
     } catch (backendError: any) {
-      console.error('❌ Backend API error:', backendError);
       // Extract error message from backend response
       const errorMessage = backendError?.data?.message || 
                           backendError?.data?.error || 
@@ -81,11 +78,6 @@ export default defineEventHandler(async (event): Promise<GoogleLoginResponse> =>
     }
 
   } catch (error: any) {
-    console.error('❌ Error details:', {
-      message: error.message,
-      stack: error.stack,
-      name: error.name,
-    });
     return {
       success: false,
       error: error.message || 'Google login failed',

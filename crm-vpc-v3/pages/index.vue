@@ -861,7 +861,6 @@ const fetchHealthBookProfile = async () => {
       }, 500);
     }
   } catch (err: any) {
-    console.error("Error fetching healthbook profile:", err);
     hasHealthBook.value = false;
     healthBook.value = null;
     loading.value = false;
@@ -913,7 +912,6 @@ const fetchHealthRecordByDate = async (date?: string) => {
     // Get health record by date using healthbook ID
     const healthBookId = healthBook.value?._id;
     if (!healthBookId) {
-      console.error("No healthbook ID available");
       loading.value = false;
       hasHealthBookRecord.value = false;
       return;
@@ -1016,7 +1014,6 @@ const fetchHealthRecordByDate = async (date?: string) => {
       }
     }
   } catch (err: any) {
-    console.error("Error fetching health record:", err);
     // Don't treat missing record as error, just set to null
     healthBook.value = null;
 
@@ -1069,7 +1066,6 @@ const fetchMarkedDatesForMonth = async (monthDate: Dayjs) => {
     cachedMonths.value.add(monthKey);
     
   } catch (err) {
-    console.error("Error fetching record dates:", err);
   }
 };
 
@@ -1144,7 +1140,6 @@ const handleAvatarChange = async (event: Event) => {
 
     message.success("Cập nhật ảnh đại diện thành công!");
   } catch (err: any) {
-    console.error("Error uploading avatar:", err);
     message.error(err.message || "Không thể cập nhật ảnh đại diện");
   } finally {
     isUploadingAvatar.value = false;
@@ -1246,7 +1241,6 @@ const handleEditInfoSubmit = async () => {
     message.success("Cập nhật thông tin thành công!");
     showEditInfoModal.value = false;
   } catch (err: any) {
-    console.error("Error updating info:", err);
     message.error(err.message || "Không thể cập nhật thông tin");
   } finally {
     isUpdatingInfo.value = false;
@@ -1298,8 +1292,6 @@ onMounted(async () => {
       await fetchHealthBookProfile();
       return;
     } catch (err: any) {
-      console.error("❌ Google login error:", err);
-
       // Clean URL first
       await router.replace("/");
 
@@ -1399,8 +1391,6 @@ onMounted(async () => {
       await fetchHealthBookProfile();
       return;
     } catch (err: any) {
-      console.error("❌ Google login error:", err);
-
       // Clean URL first to prevent reload loop
       await router.replace("/");
 

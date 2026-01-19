@@ -280,7 +280,6 @@ const fetchRequest = async () => {
       error.value = "Không tìm thấy yêu cầu hỗ trợ";
     }
   } catch (err: any) {
-    console.error("Error fetching support request:", err);
     error.value = err.message || "Không thể tải thông tin yêu cầu hỗ trợ";
   } finally {
     loading.value = false;
@@ -293,7 +292,6 @@ const fetchComments = async () => {
     const comments = await getComments(requestId.value);
     responses.value = comments;
   } catch (err: any) {
-    console.error("Error fetching comments:", err);
   }
 };
 

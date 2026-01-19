@@ -23,9 +23,6 @@ export default defineEventHandler(async (event) => {
     const body = await readBody(event);
 
     const targetUrl = `${apiHost}/api/u/users/profile`;
-
-    console.log(`[PUT /api/users/profile] -> ${targetUrl}`);
-
     // Forward request to backend
     const response = await $fetch(targetUrl, {
       method: 'PUT',
@@ -35,12 +32,8 @@ export default defineEventHandler(async (event) => {
       },
       body,
     });
-
-    console.log('[PUT /api/users/profile] Success');
     return response;
   } catch (error: any) {
-    console.error('[PUT /api/users/profile] Error:', error.message || error);
-
     if (error.data) {
       throw createError({
         statusCode: error.statusCode || 500,

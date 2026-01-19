@@ -37,11 +37,9 @@ export const connectToDatabase = async (): Promise<typeof mongoose> => {
   connectionPromise = mongoose.connect(MONGODB_URI, MONGODB_OPTIONS)
     .then((mongoose) => {
       isConnected = true
-      console.log('✅ MongoDB connected successfully')
       return mongoose
     })
     .catch((error) => {
-      console.error('❌ MongoDB connection failed:', error)
       isConnected = false
       connectionPromise = null
       throw error
@@ -56,23 +54,19 @@ export const disconnectFromDatabase = async (): Promise<void> => {
     await mongoose.disconnect()
     isConnected = false
     connectionPromise = null
-    console.log('✅ MongoDB disconnected')
   }
 }
 
 // ===== CONNECTION EVENTS =====
 mongoose.connection.on('connected', () => {
-  console.log('🔗 Mongoose connected to MongoDB')
   isConnected = true
 })
 
 mongoose.connection.on('error', (error) => {
-  console.error('❌ Mongoose connection error:', error)
   isConnected = false
 })
 
 mongoose.connection.on('disconnected', () => {
-  console.log('🔌 Mongoose disconnected from MongoDB')
   isConnected = false
 })
 

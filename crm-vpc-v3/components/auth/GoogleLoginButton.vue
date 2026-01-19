@@ -84,7 +84,6 @@ const handleGoogleLogin = async () => {
     window.location.href = authUrl
     
   } catch (error: any) {
-    console.error('❌ Google login failed:', error)
     errorMessage.value = error.message || 'Đăng nhập Google thất bại'
     
     if (props.showError) {

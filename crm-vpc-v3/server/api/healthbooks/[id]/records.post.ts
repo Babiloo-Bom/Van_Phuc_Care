@@ -29,8 +29,6 @@ export default defineEventHandler(async (event) => {
     }
 
     const targetUrl = `${apiHost}/api/u/healthbooks/${id}/records`;
-    console.log(`[POST /api/healthbooks/${id}/records] -> ${targetUrl}`);
-
     // Forward request to backend
     const response = await $fetch(targetUrl, {
       method: 'POST',
@@ -41,11 +39,9 @@ export default defineEventHandler(async (event) => {
       body,
     });
 
-    console.log(`[POST /api/healthbooks/${id}/records] Success`);
     return response;
   } catch (error: any) {
     const id = getRouterParam(event, 'id');
-    console.error(`[POST /api/healthbooks/${id}/records] Error:`, error.message || error);
 
     if (error.data) {
       throw createError({

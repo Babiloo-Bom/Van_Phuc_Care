@@ -93,7 +93,6 @@ onMounted(async () => {
       }
     }, 500)
   } catch (error) {
-    console.error('❌ Failed to load Chart.js:', error)
   }
 })
 
@@ -121,7 +120,6 @@ const renderChart = () => {
       try {
         chartInstance.destroy()
       } catch (e) {
-        console.warn('Warning destroying chart:', e)
       }
       chartInstance = null
     }
@@ -134,7 +132,6 @@ const renderChart = () => {
 
     const ctx = chartCanvas.value.getContext('2d')
     if (!ctx) {
-      console.warn('Chart canvas context not available')
       return
     }
 
@@ -238,11 +235,7 @@ const renderChart = () => {
     chartInstance.update()
   }
   } catch (error) {
-    console.error('❌ Error rendering chart:', error)
-    console.error('Error details:', {
-      message: error instanceof Error ? error.message : String(error),
-      stack: error instanceof Error ? error.stack : undefined
-    })
+    // Error handling
   }
 }
 

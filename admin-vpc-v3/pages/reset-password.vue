@@ -175,7 +175,6 @@ const handleResetPassword = async () => {
       error.value = result.error || 'Đổi mật khẩu thất bại. Token có thể đã hết hạn.'
     }
   } catch (validationError) {
-    console.error('Validation error:', validationError)
   } finally {
     loading.value = false
   }

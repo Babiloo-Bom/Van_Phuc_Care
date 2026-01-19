@@ -308,7 +308,6 @@ const handleLogout = async () => {
     await authStore.logout()
     message.success('Đăng xuất thành công')
   } catch (error: any) {
-    console.error('Logout error:', error)
     message.error('Đăng xuất thất bại')
   }
 }

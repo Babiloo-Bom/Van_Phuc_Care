@@ -16,9 +16,6 @@ export default defineEventHandler(async (event) => {
     const body = await readBody(event);
 
     const targetUrl = `${apiHost}/api/u/feedbacks`;
-
-    console.log(`[POST /api/feedbacks] -> ${targetUrl}`);
-
     // Build headers
     const headers: Record<string, string> = {
       'Content-Type': 'application/json',
@@ -33,12 +30,8 @@ export default defineEventHandler(async (event) => {
       headers,
       body,
     });
-
-    console.log('[POST /api/feedbacks] Success');
     return response;
   } catch (error: any) {
-    console.error('[POST /api/feedbacks] Error:', error.message || error);
-
     if (error.data) {
       throw createError({
         statusCode: error.statusCode || 500,

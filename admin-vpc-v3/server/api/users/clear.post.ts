@@ -21,7 +21,6 @@ export default defineEventHandler(async (event) => {
       // Note: Real database clear would need to be implemented
       result = { message: 'Real database clear not implemented', cleared: 0 }
     } catch (dbError: any) {
-      console.warn('⚠️ Database not available, using mock service:', dbError.message)
       
       // Fallback to mock service
       const { MockUserService } = await import('~/server/services/MockUserService')
@@ -45,7 +44,6 @@ export default defineEventHandler(async (event) => {
     }
 
   } catch (error: any) {
-    console.error('❌ Clear users failed:', error)
     
     return {
       success: false,

@@ -41,7 +41,6 @@ export default defineEventHandler(async (event) => {
         source: 'crm', // Identify this is from CRM for email verification link
       },
     });
-    console.log('Register response:', response);
     return response;
   } catch (error: any) {
     // Forward error from backend
@@ -49,9 +48,6 @@ export default defineEventHandler(async (event) => {
     // Backend returns: { error: { code, message } } or { message }
     const statusCode = error.statusCode || error.status || error.data?.error?.code || 500;
     const message = error.data?.error?.message || error.data?.message || error.message || 'Đăng ký thất bại';
-    
-    console.error('Register error:', { statusCode, message, data: error.data });
-    
     throw createError({
       statusCode,
       message,

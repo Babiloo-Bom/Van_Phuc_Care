@@ -28,7 +28,6 @@ export class UserService {
       await user.save()
       return user
     } catch (error: any) {
-      console.error('❌ User creation failed:', error)
       throw new Error('Failed to create user: ' + error.message)
     }
   }
@@ -38,7 +37,6 @@ export class UserService {
     try {
       return await User.findByEmail(email)
     } catch (error: any) {
-      console.error('❌ User lookup by email failed:', error)
       throw new Error('Failed to find user by email')
     }
   }
@@ -50,7 +48,6 @@ export class UserService {
       await connectToDatabase()
       return await User.findByGoogleId(googleId)
     } catch (error: any) {
-      console.error('❌ User lookup by Google ID failed:', error)
       // Return null instead of throwing error for now
       return null
     }
@@ -96,7 +93,6 @@ export class UserService {
       })
 
     } catch (error: any) {
-      console.error('❌ Google user management failed:', error)
       throw new Error('Failed to manage Google user: ' + error.message)
     }
   }
@@ -111,7 +107,6 @@ export class UserService {
       )
       return user
     } catch (error: any) {
-      console.error('❌ User update failed:', error)
       throw new Error('Failed to update user')
     }
   }
@@ -121,7 +116,6 @@ export class UserService {
     try {
       return await this.updateUser(userId, { isActive: false })
     } catch (error: any) {
-      console.error('❌ User deactivation failed:', error)
       throw new Error('Failed to deactivate user')
     }
   }
@@ -131,7 +125,6 @@ export class UserService {
     try {
       return await this.updateUser(userId, { isActive: true })
     } catch (error: any) {
-      console.error('❌ User activation failed:', error)
       throw new Error('Failed to activate user')
     }
   }
@@ -155,7 +148,6 @@ export class UserService {
 
       return { users, total, pages }
     } catch (error: any) {
-      console.error('❌ Get all users failed:', error)
       throw new Error('Failed to get users')
     }
   }
@@ -165,7 +157,6 @@ export class UserService {
     try {
       return await User.findByProvider(provider)
     } catch (error: any) {
-      console.error('❌ Get users by provider failed:', error)
       throw new Error('Failed to get users by provider')
     }
   }
@@ -175,7 +166,6 @@ export class UserService {
     try {
       return await this.getUsersByProvider('google')
     } catch (error: any) {
-      console.error('❌ Get Google users failed:', error)
       throw new Error('Failed to get Google users')
     }
   }
@@ -205,7 +195,6 @@ export class UserService {
 
       return { total, active, google, local, byRole }
     } catch (error: any) {
-      console.error('❌ Get user stats failed:', error)
       throw new Error('Failed to get user statistics')
     }
   }

@@ -24,11 +24,9 @@ export default defineNuxtPlugin((nuxtApp) => {
       }
       
       if (response.status === 403) {
-        console.error('Forbidden:', response._data)
       }
       
       if (response.status >= 500) {
-        console.error('Server error:', response._data)
       }
     }
   })

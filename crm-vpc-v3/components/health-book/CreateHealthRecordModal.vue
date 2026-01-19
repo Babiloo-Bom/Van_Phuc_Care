@@ -669,7 +669,6 @@ const handleSubmit = async () => {
     emit("success");
     handleClose();
   } catch (error) {
-    console.error("Error creating health record:", error);
     // Error already shown by apiClient
   } finally {
     loading.value = false;

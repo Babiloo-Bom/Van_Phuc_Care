@@ -86,7 +86,6 @@ export class JWTService {
       const decoded = jwt.verify(token, JWT_SECRET) as JWTPayload
       return decoded
     } catch (error: any) {
-      console.error('❌ JWT verification failed:', error.message)
       return null
     }
   }
@@ -100,7 +99,6 @@ export class JWTService {
       }) as JWTPayload
       return decoded
     } catch (error: any) {
-      console.error('❌ Access token verification failed:', error.message)
       return null
     }
   }
@@ -114,7 +112,6 @@ export class JWTService {
       }) as JWTPayload
       return decoded
     } catch (error: any) {
-      console.error('❌ Refresh token verification failed:', error.message)
       return null
     }
   }
@@ -180,7 +177,6 @@ export class JWTService {
       // For now, return null (implement when UserService.findById is available)
       return null
     } catch (error: any) {
-      console.error('❌ Token refresh failed:', error)
       return null
     }
   }

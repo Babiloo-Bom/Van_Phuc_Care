@@ -323,7 +323,6 @@ const fetchRequests = async () => {
     requests.value = response.data
     total.value = response.pagination.total
   } catch (err: any) {
-    console.error('Error fetching support requests:', err)
     error.value = err.message || 'Không thể tải danh sách yêu cầu hỗ trợ'
     message.error('Không thể tải danh sách yêu cầu hỗ trợ')
   } finally {

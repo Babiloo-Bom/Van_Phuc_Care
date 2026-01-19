@@ -206,7 +206,6 @@ const handleSendOtp = async () => {
       error.value = result.error || 'Gửi OTP thất bại'
     }
   } catch (validationError) {
-    console.error('Validation error:', validationError)
   } finally {
     loading.value = false
   }
@@ -241,7 +240,6 @@ const handleVerifyOtp = async () => {
       error.value = result.error || 'Mã OTP không chính xác'
     }
   } catch (validationError) {
-    console.error('Validation error:', validationError)
   } finally {
     loading.value = false
   }

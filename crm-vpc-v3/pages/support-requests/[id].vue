@@ -327,7 +327,6 @@ const fetchRequestDetail = async () => {
       }
     ]
   } catch (err: any) {
-    console.error('Error fetching request:', err)
     error.value = err?.data?.message || err?.message || 'Không thể tải thông tin yêu cầu hỗ trợ'
   } finally {
     loading.value = false
@@ -397,7 +396,6 @@ const handleComplete = () => {
           message.success('Đã đánh dấu hoàn tất!')
         }
       } catch (err: any) {
-        console.error('Error updating status:', err)
         const errorMessage = err?.data?.message || err?.message || 'Có lỗi xảy ra'
         message.error(errorMessage)
       }
@@ -441,7 +439,6 @@ const handleSendReply = async () => {
 
     message.success('Đã gửi phản hồi!')
   } catch (err: any) {
-    console.error('Error sending reply:', err)
     const errorMessage = err?.data?.message || err?.message || 'Có lỗi xảy ra'
     message.error(errorMessage)
   } finally {

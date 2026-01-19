@@ -75,7 +75,6 @@ export const useAuthApi = () => {
 
         // Exponential backoff: 1s, 2s, 4s, 8s...
         const backoffDelay = RETRY_CONFIG.retryDelay * Math.pow(2, attempt)
-        console.warn(`🔄 Retry attempt ${attempt + 1}/${retries} after ${backoffDelay}ms`)
         await delay(backoffDelay)
       }
     }
@@ -157,8 +156,6 @@ export const useAuthApi = () => {
     async login(username: string, password: string, remindAccount = false) {
       try {
         const url = `${fullApiBase}/sessions/login`
-        console.log('🔍 Login URL:', url)
-        console.log('🔍 Login payload:', { username, hasPassword: !!password, remindAccount })
 
         // Determine origin dynamically (avoid hard-coded domain which can break production auth)
         const origin =
@@ -181,18 +178,8 @@ export const useAuthApi = () => {
           })
         )
         
-        console.log('🔍 Login API response type:', typeof response)
-        console.log('🔍 Login API response:', response)
-        
         return response
       } catch (error: any) {
-        console.error('❌ Login API error:', error)
-        console.error('❌ Error details:', {
-          message: error.message,
-          status: error.status,
-          statusCode: error.statusCode,
-          data: error.data
-        })
         throw transformError(error)
       }
     },
@@ -357,11 +344,9 @@ export const useAuthApi = () => {
       } catch (error: any) {
         // Ignore 404 errors - logout endpoint may not exist
         if (error.statusCode === 404 || error.status === 404) {
-          console.log('ℹ️ Logout endpoint not found, continuing with local logout')
           return { success: true }
         }
         // For other errors, still ignore to allow logout to complete
-        console.warn('⚠️ Logout API error (ignored):', error)
         return { success: true }
       }
     },

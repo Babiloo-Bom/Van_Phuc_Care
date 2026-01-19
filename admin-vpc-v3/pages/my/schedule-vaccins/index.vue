@@ -415,7 +415,6 @@ const fetchScheduleVaccins = async () => {
       pagination.total = responseData.pagination?.total || 0
     }
   } catch (error) {
-    console.error('❌ Failed to fetch schedule vaccins:', error)
     message.error('Không thể tải danh sách lịch tiêm')
   } finally {
     loading.value = false
@@ -524,7 +523,6 @@ const handleModalOk = async () => {
       }
     }
   } catch (error) {
-    console.error('❌ Form validation or API error:', error)
   } finally {
     modalLoading.value = false
   }
@@ -548,7 +546,6 @@ const handleDelete = async (id: string | undefined) => {
       fetchScheduleVaccins()
     }
   } catch (error) {
-    console.error('❌ Failed to delete schedule vaccin:', error)
     message.error('Không thể xóa lịch tiêm')
   }
 }
@@ -599,14 +596,6 @@ const handleThumbnailChange = async (info: any) => {
       try {
         const response = await uploadsApi.uploadImage(file.originFileObj)
         
-        console.log('🔍 Upload response (full):', JSON.stringify(response, null, 2))
-        console.log('🔍 Upload response structure:', {
-          hasData: !!response.data,
-          hasDataData: !!response.data?.data,
-          responseKeys: response.data ? Object.keys(response.data) : [],
-          dataKeys: response.data?.data ? Object.keys(response.data.data) : []
-        })
-        
         // Parse response to get URL - try multiple structures
         const responseData = response.data as any
         
@@ -616,45 +605,36 @@ const handleThumbnailChange = async (info: any) => {
         // Structure 1: response.data.data.fileAttributes[0].source
         if (responseData?.data?.fileAttributes?.[0]?.source) {
           imageUrl = responseData.data.fileAttributes[0].source
-          console.log('✅ Found URL in response.data.data.fileAttributes[0].source')
         }
         // Structure 2: response.data.fileAttributes[0].source
         else if (responseData?.fileAttributes?.[0]?.source) {
           imageUrl = responseData.fileAttributes[0].source
-          console.log('✅ Found URL in response.data.fileAttributes[0].source')
         }
         // Structure 3: response.data.data.files[0].url
         else if (responseData?.data?.files?.[0]?.url) {
           imageUrl = responseData.data.files[0].url
-          console.log('✅ Found URL in response.data.data.files[0].url')
         }
         // Structure 4: response.data.files[0].url
         else if (responseData?.files?.[0]?.url) {
           imageUrl = responseData.files[0].url
-          console.log('✅ Found URL in response.data.files[0].url')
         }
         // Structure 5: response.data.data.url
         else if (responseData?.data?.url) {
           imageUrl = responseData.data.url
-          console.log('✅ Found URL in response.data.data.url')
         }
         // Structure 6: response.data.url
         else if (responseData?.url) {
           imageUrl = responseData.url
-          console.log('✅ Found URL in response.data.url')
         }
         // Structure 7: response.data.data.urls[0]
         else if (responseData?.data?.urls?.[0]) {
           imageUrl = responseData.data.urls[0]
-          console.log('✅ Found URL in response.data.data.urls[0]')
         }
         // Structure 8: response.data.urls[0]
         else if (responseData?.urls?.[0]) {
           imageUrl = responseData.urls[0]
-          console.log('✅ Found URL in response.data.urls[0]')
         }
         
-        console.log('🔍 Extracted image URL:', imageUrl)
         
         if (imageUrl) {
           formData.thumbnail = imageUrl
@@ -669,16 +649,9 @@ const handleThumbnailChange = async (info: any) => {
           
           message.success('Upload ảnh thành công')
         } else {
-          console.error('❌ No URL found in response. Full response:', response)
           throw new Error('Không thể lấy URL ảnh từ response. Vui lòng thử lại.')
         }
       } catch (error: any) {
-        console.error('❌ Upload error:', error)
-        console.error('❌ Error details:', {
-          message: error.message,
-          response: error.response,
-          data: error.data
-        })
         message.error(error.message || 'Upload ảnh thất bại')
         thumbnailFileList.value = []
         formData.thumbnail = ''

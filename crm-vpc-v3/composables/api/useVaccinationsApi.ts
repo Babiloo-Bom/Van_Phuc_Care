@@ -31,28 +31,16 @@ export function useVaccinationsApi() {
         queryParams.customerId = params.customerId;
       }
       
-      console.log('🔍 getVaccinationSchedule called with params:', queryParams)
       
       // Use Nuxt server proxy endpoint
       const res = await apiClient.get<VaccinationScheduleResponse>('/api/vaccinations/schedule', { 
         params: queryParams,
         showError: false 
       });
-      
-      console.log('🔍 getVaccinationSchedule response:', res)
-      console.log('🔍 Response structure:', {
-        hasData: !!res?.data,
-        hasDataData: !!res?.data?.data,
-        hasScheduleVaccin: !!res?.data?.data?.scheduleVaccin,
-        scheduleVaccinLength: res?.data?.data?.scheduleVaccin?.length
-      })
-      
       const scheduleVaccin = res?.data?.data?.scheduleVaccin || res?.data?.scheduleVaccin || []
-      console.log('✅ Returning scheduleVaccin:', scheduleVaccin.length, 'items')
       
       return scheduleVaccin
     } catch (err: any) {
-      console.error('❌ getVaccinationSchedule error:', err)
       error.value = err?.message || 'Không thể tải lịch tiêm';
       return [];
     } finally {

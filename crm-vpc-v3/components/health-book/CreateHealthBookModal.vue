@@ -291,7 +291,6 @@ const handleSubmit = async () => {
     }
     // Error is already handled by API client, no need to show duplicate message
   } catch (error: any) {
-    console.error("Error creating healthbook:", error);
     // Don't show error message here - API client already shows it
   } finally {
     loading.value = false;

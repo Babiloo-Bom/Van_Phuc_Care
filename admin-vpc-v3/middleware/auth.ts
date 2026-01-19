@@ -15,7 +15,6 @@ export default defineNuxtRouteMiddleware(async (to, from) => {
 
   // Check if user is authenticated
   if (!authStore.isAuthenticated) {
-    console.warn('[Auth Middleware] User not authenticated, redirecting to login')
     
     // Save intended destination
     if (process.client) {
@@ -31,7 +30,6 @@ export default defineNuxtRouteMiddleware(async (to, from) => {
   const allowedRoles = ['admin', 'manager', 'worker']
   
   if (!userRole || !allowedRoles.includes(userRole)) {
-    console.warn('[Auth Middleware] User role not allowed:', userRole)
     
     // Show error message before logout
     if (process.client) {
@@ -46,7 +44,6 @@ export default defineNuxtRouteMiddleware(async (to, from) => {
 
   // Optional: Check if user account is active
   if (authStore.user && authStore.user.status === 'inactive') {
-    console.warn('[Auth Middleware] User account is inactive')
     
     // Logout and redirect (don't show message - account inactive)
     await authStore.logout(false)

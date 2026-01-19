@@ -29,8 +29,6 @@ export default defineEventHandler(async (event) => {
     }
 
     const targetUrl = `${apiHost}/api/u/healthbooks/${id}`;
-    console.log(`[PATCH /api/healthbooks/${id}] -> ${targetUrl}, Content-Type: ${contentType}`);
-
     // Check if it's multipart form data (file upload)
     if (contentType.includes('multipart/form-data')) {
       // For file uploads, read raw body and forward it
@@ -42,8 +40,6 @@ export default defineEventHandler(async (event) => {
           message: 'Request body is required',
         });
       }
-
-      console.log(`[PATCH /api/healthbooks/${id}] Forwarding multipart, size: ${rawBody.length} bytes`);
 
       // Forward multipart request to backend using native fetch
       const response = await fetch(targetUrl, {
@@ -57,7 +53,6 @@ export default defineEventHandler(async (event) => {
 
       if (!response.ok) {
         const errorData = await response.json().catch(() => ({ message: 'Unknown error' }));
-        console.error(`[PATCH /api/healthbooks/${id}] Backend error:`, response.status, errorData);
         throw createError({
           statusCode: response.status,
           message: errorData.message || `Backend returned ${response.status}`,
@@ -66,7 +61,6 @@ export default defineEventHandler(async (event) => {
       }
 
       const data = await response.json();
-      console.log(`[PATCH /api/healthbooks/${id}] Success`);
       return data;
     } else {
       // For JSON requests, use $fetch
@@ -81,12 +75,10 @@ export default defineEventHandler(async (event) => {
         body,
       });
 
-      console.log(`[PATCH /api/healthbooks/${id}] Success`);
       return response;
     }
   } catch (error: any) {
     const id = getRouterParam(event, 'id');
-    console.error(`[PATCH /api/healthbooks/${id}] Error:`, error.message || error);
 
     if (error.data) {
       throw createError({

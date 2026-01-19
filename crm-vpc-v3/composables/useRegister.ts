@@ -203,12 +203,6 @@ export const useRegister = () => {
 
     try {
       // Debug log
-      console.log('🔍 Register data:', { 
-        email: data.email, 
-        fullname: data.fullname, 
-        hasPassword: !!data.password, 
-      });
-      
       // Call register API through auth store
       const result = await authStore.register(data.email, data.password, data.repeat_password, data.fullname);
 
@@ -286,8 +280,6 @@ export const useRegister = () => {
 
     try {
       const result = await authStore.verifyEmail(registeredEmail.value, otp);
-      console.log('🔍 CRM useRegister.verifyEmail result:', result);
-      console.log('🔍 CRM useRegister.verifyEmail result.success:', result.success);
 
       if (result.success) {
         registrationStep.value = 'complete';
@@ -347,26 +339,21 @@ export const useRegister = () => {
 
     try {
       // Auto login after successful verification
-      console.log('🔍 CRM completeRegistration: Attempting auto-login with email:', registeredEmail.value);
       const result = await authStore.loginAfterRegister(registeredEmail.value, registeredPassword.value);
-      console.log('🔍 CRM completeRegistration: Login result:', result);
 
       if (result.success) {
         // Redirect to dashboard
-        console.log('🔍 CRM completeRegistration: Login successful, redirecting to /');
         setTimeout(() => {
           router.push('/');
         }, 1500);
         return { success: true };
       } else {
-        console.error('🔍 CRM completeRegistration: Login failed:', result.error);
         return {
           success: false,
           error: result.error || 'Đăng nhập thất bại sau khi đăng ký',
         };
       }
     } catch (error: any) {
-      console.error('🔍 CRM completeRegistration: Exception:', error);
       return {
         success: false,
         error: 'Đăng nhập thất bại sau khi đăng ký',

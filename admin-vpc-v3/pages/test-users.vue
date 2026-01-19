@@ -93,18 +93,15 @@ const loadUsers = async () => {
     const usersResponse = await $fetch('/api/users/list')
     if (usersResponse.success) {
       users.value = usersResponse.data.users
-      console.log('✅ Users loaded:', users.value)
     }
     
     // Load stats
     const statsResponse = await $fetch('/api/users/stats')
     if (statsResponse.success) {
       stats.value = statsResponse.data
-      console.log('✅ Stats loaded:', stats.value)
     }
     
   } catch (error: any) {
-    console.error('❌ Load failed:', error)
   } finally {
     loading.value = false
   }

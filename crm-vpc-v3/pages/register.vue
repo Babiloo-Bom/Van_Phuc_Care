@@ -335,7 +335,6 @@ const handleSubmit = async () => {
       }
     }
   } catch (error: any) {
-    console.error("Register error:", error);
     message.error("Đăng ký thất bại");
   } finally {
     loading.value = false;

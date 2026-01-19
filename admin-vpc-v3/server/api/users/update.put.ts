@@ -31,7 +31,6 @@ export default defineEventHandler(async (event) => {
     }
 
   } catch (error: any) {
-    console.error('❌ User update from backend failed:', error)
     
     return {
       success: false,

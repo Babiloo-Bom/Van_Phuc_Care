@@ -224,7 +224,6 @@ async function fetchUserInfo() {
       address: u.fullAddress || "",
     });
   } catch (e) {
-    console.error("❌ Failed to fetch user info:", e);
     message.error("Không thể tải thông tin người dùng");
   } finally {
     loading.value = false;
@@ -287,7 +286,6 @@ const handleAvatarChange = async (event: Event) => {
       responseData?.urls?.[0];
 
     if (!avatarUrl) {
-      console.error("No avatar URL found in response:", responseData);
       throw new Error("Không thể tải ảnh lên");
     }
 
@@ -318,7 +316,6 @@ const handleAvatarChange = async (event: Event) => {
       throw new Error(response.message || "Không thể cập nhật ảnh đại diện");
     }
   } catch (err: any) {
-    console.error("Error uploading avatar:", err);
     message.error(err.message || "Không thể cập nhật ảnh đại diện");
     // Reset preview on error
     avatarPreview.value = "";
@@ -349,7 +346,6 @@ async function handleInfoSubmit() {
           responseData?.urls?.[0];
 
         if (!avatarUrl) {
-          console.error("No avatar URL found in response:", responseData);
           throw new Error("Không thể tải ảnh lên");
         }
       } catch (uploadErr: any) {
@@ -388,7 +384,6 @@ async function handleInfoSubmit() {
       message.error(response.message || "Cập nhật thất bại!");
     }
   } catch (e: any) {
-    console.error("Failed to update user info:", e);
     message.error(e?.message || "Cập nhật thất bại, vui lòng thử lại!");
   }
 }
@@ -435,7 +430,6 @@ async function handlePasswordSubmit() {
       message.error(response.message || "Đổi mật khẩu thất bại!");
     }
   } catch (e: any) {
-    console.error("Failed to change password:", e);
     message.error(e?.message || "Đổi mật khẩu thất bại, vui lòng thử lại!");
   }
 }
@@ -467,7 +461,6 @@ async function handleErrorSubmit() {
       message.error(response.message || "Gửi phản hồi thất bại!");
     }
   } catch (e: any) {
-    console.error("Failed to submit feedback:", e);
     message.error(e?.message || "Gửi phản hồi thất bại, vui lòng thử lại!");
   }
 }

@@ -131,7 +131,6 @@ export const useApiClient = () => {
   }
 
   const handleError = (error: any, options: ApiRequestOptions = {}) => {
-    console.error('[API Error]', error)
 
     let errorMessage = 'Có lỗi xảy ra, vui lòng thử lại'
     

@@ -14,7 +14,6 @@ export default defineNuxtRouteMiddleware((to, from) => {
 
   // First check if authenticated
   if (!authStore.isAuthenticated) {
-    console.warn('[Permission Middleware] User not authenticated');
     return navigateTo('/login');
   }
 
@@ -40,8 +39,6 @@ export default defineNuxtRouteMiddleware((to, from) => {
   );
 
   if (!hasAllPermissions) {
-    console.warn('[Permission Middleware] User lacks required permissions:', permissions);
-    console.log('[Permission Middleware] User has:', userPermissions);
     
     // Redirect to unauthorized page
     return navigateTo('/unauthorized');

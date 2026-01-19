@@ -59,7 +59,6 @@ export const useApiClient = () => {
    * Handle API errors
    */
   const handleError = (error: any, options: ApiRequestOptions = {}) => {
-    console.error('[API Error]', error);
 
     let errorMessage = 'Có lỗi xảy ra, vui lòng thử lại';
     
@@ -94,31 +93,14 @@ export const useApiClient = () => {
             ? Date.now() - authStore.loginTimestamp 
             : Infinity;
           
-          console.log('[API] 401 error details:', {
-            isAuthenticated: authStore.isAuthenticated,
-            hasToken: !!authStore.token,
-            isSSOLoginInProgress: authStore.isSSOLoginInProgress,
-            justLoggedIn: authStore.justLoggedIn,
-            loginTimestamp: authStore.loginTimestamp,
-            timeSinceLogin: timeSinceLogin + 'ms',
-            isProfileRequest,
-            requestUrl,
-          });
-          
           // Only logout if user was actually authenticated
           if (!authStore.isAuthenticated && !authStore.token) {
-            console.log('[API] 401 error but user not authenticated, skipping auto-logout');
           } else if (authStore.isSSOLoginInProgress) {
-            console.log('[API] 401 error during SSO login, skipping auto-logout');
           } else if (authStore.justLoggedIn) {
-            console.log('[API] 401 error immediately after login, skipping auto-logout');
           } else if (timeSinceLogin < 15000) {
-            console.warn('[API] 401 error but login was recent (', timeSinceLogin, 'ms ago), skipping auto-logout');
           } else if (isProfileRequest) {
-            console.warn('[API] 401 error on profile request, skipping auto-logout (non-critical)');
           } else {
             // Auto logout and redirect
-            console.warn('[API] 401 error, logging out (login was', timeSinceLogin, 'ms ago)');
             authStore.logout();
             router.push('/login');
           }

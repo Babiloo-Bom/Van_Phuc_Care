@@ -30,8 +30,6 @@ export default defineEventHandler(async (event) => {
 
     const targetUrl = `${apiHost}/api/u/vaccination-records/${id}`;
 
-    console.log(`[PUT /api/vaccinations/records/${id}] -> ${targetUrl}`);
-
     // Forward request to backend
     const response = await $fetch(targetUrl, {
       method: 'PUT',
@@ -42,11 +40,9 @@ export default defineEventHandler(async (event) => {
       body,
     });
 
-    console.log(`[PUT /api/vaccinations/records/${id}] Success`);
     return response;
   } catch (error: any) {
     const id = getRouterParam(event, 'id');
-    console.error(`[PUT /api/vaccinations/records/${id}] Error:`, error.message || error);
 
     if (error.data) {
       throw createError({

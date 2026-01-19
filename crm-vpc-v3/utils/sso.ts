@@ -378,7 +378,6 @@ export async function handleSSOLogin(): Promise<boolean> {
         // Don't clear auth_token - it might be valid, just SSO failed
       }
     } catch (error: any) {
-      console.warn('[SSO] Error verifying token:', error);
       // Clear SSO flag
       authStore.isSSOLoginInProgress = false;
       // DON'T clear auth state on SSO failure - the main auth cookie might still be valid

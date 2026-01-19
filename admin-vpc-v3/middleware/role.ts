@@ -16,7 +16,6 @@ export default defineNuxtRouteMiddleware(async (to, from) => {
 
   // First check if authenticated
   if (!authStore.isAuthenticated) {
-    console.warn('[Role Middleware] User not authenticated')
     return navigateTo('/login')
   }
 
@@ -32,7 +31,6 @@ export default defineNuxtRouteMiddleware(async (to, from) => {
   const userRole = authStore.user?.role
 
   if (!userRole) {
-    console.warn('[Role Middleware] User has no role')
     return navigateTo('/unauthorized')
   }
 
@@ -41,7 +39,6 @@ export default defineNuxtRouteMiddleware(async (to, from) => {
   const hasRequiredRole = allowedRoles.includes(userRole)
 
   if (!hasRequiredRole) {
-    console.warn('[Role Middleware] User does not have required role(s):', allowedRoles, 'User role:', userRole)
     
     // Show error message
     if (process.client) {

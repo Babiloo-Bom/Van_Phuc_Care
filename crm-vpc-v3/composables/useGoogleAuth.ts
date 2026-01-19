@@ -58,7 +58,6 @@ export const useGoogleAuth = () => {
 
       return data.value!;
     } catch (error: any) {
-      console.error('❌ Google token exchange failed:', error);
       throw new Error('Không thể xác thực với Google. Vui lòng thử lại.');
     }
   };
@@ -81,7 +80,6 @@ export const useGoogleAuth = () => {
 
       return data.value!;
     } catch (error: any) {
-      console.error('❌ Google user profile fetch failed:', error);
       throw new Error('Không thể lấy thông tin người dùng từ Google.');
     }
   };
@@ -100,13 +98,11 @@ export const useGoogleAuth = () => {
       );
 
       if (!response) {
-        console.error('❌ No data received from server');
         throw new Error('Không nhận được phản hồi từ server');
       }
 
       return response;
     } catch (error: any) {
-      console.error('❌ Google login API failed:', error);
       throw new Error('Đăng nhập Google thất bại. Vui lòng thử lại.');
     }
   };
@@ -126,7 +122,6 @@ export const useGoogleAuth = () => {
 
       return loginResponse;
     } catch (error: any) {
-      console.error('❌ Google login flow failed:', error);
       throw error;
     }
   };

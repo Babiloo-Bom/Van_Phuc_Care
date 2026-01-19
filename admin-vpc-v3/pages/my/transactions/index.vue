@@ -639,7 +639,6 @@ const fetchOrders = async () => {
       pagination.total = 0
     }
   } catch (error: any) {
-    console.error('Failed to fetch orders:', error)
     message.error('Không thể tải danh sách đơn hàng')
     orders.value = []
   } finally {
@@ -694,7 +693,6 @@ const handleUpdateStatus = async () => {
     updateModalVisible.value = false
     fetchOrders()
   } catch (error: any) {
-    console.error('Failed to update order status:', error)
     message.error('Không thể cập nhật trạng thái')
   }
 }
@@ -741,7 +739,6 @@ const handleUserSearch = debounce(async (searchValue: string) => {
       userSearchResults.value = []
     }
   } catch (error) {
-    console.error('❌ Error searching users:', error)
     userSearchResults.value = []
   } finally {
     userSearchLoading.value = false
@@ -775,47 +772,32 @@ const loadCourses = async () => {
     loadingCourses.value = true
     const response = await coursesApi.getCourses({ limit: 1000 })
     
-    console.log('📚 Load courses response:', response)
     
     if (response.status && response.data) {
       const responseData = response.data as any
-      console.log('📚 responseData:', responseData)
-      console.log('📚 responseData.data:', responseData.data)
-      console.log('📚 responseData.data?.data:', responseData.data?.data)
-      console.log('📚 responseData.data?.data?.courses:', responseData.data?.data?.courses)
       
       // Parse nested structure: data.data.data.courses
       let coursesList: any[] = []
       
       if (responseData.data?.data?.courses && Array.isArray(responseData.data.data.courses)) {
         coursesList = responseData.data.data.courses
-        console.log('✅ Found courses in responseData.data.data.courses')
       } else if (responseData.data?.courses && Array.isArray(responseData.data.courses)) {
         coursesList = responseData.data.courses
-        console.log('✅ Found courses in responseData.data.courses')
       } else if (responseData.data?.data && Array.isArray(responseData.data.data)) {
         coursesList = responseData.data.data
-        console.log('✅ Found courses in responseData.data.data (array)')
       } else if (responseData.courses && Array.isArray(responseData.courses)) {
         coursesList = responseData.courses
-        console.log('✅ Found courses in responseData.courses')
       } else if (Array.isArray(responseData.data)) {
         coursesList = responseData.data
-        console.log('✅ Found courses in responseData.data (array)')
       } else if (Array.isArray(responseData)) {
         coursesList = responseData
-        console.log('✅ Found courses in responseData (array)')
       }
       
       courses.value = coursesList
-      console.log('✅ Loaded courses:', courses.value.length)
-      console.log('✅ Courses data:', courses.value)
     } else {
-      console.warn('⚠️ No courses data in response')
       courses.value = []
     }
   } catch (error: any) {
-    console.error('❌ Load courses failed:', error)
     courses.value = []
     message.error('Không thể tải danh sách khóa học')
   } finally {
@@ -861,7 +843,6 @@ const handleManualActivation = async () => {
       throw new Error(response.message || 'Failed to activate')
     }
   } catch (error: any) {
-    console.error('❌ Manual activation failed:', error)
     if (error.errorFields) {
       return
     }

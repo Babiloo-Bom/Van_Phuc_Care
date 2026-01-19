@@ -9,18 +9,10 @@ export default defineEventHandler(async (event) => {
     const config = useRuntimeConfig(event);
     const apiHost = config.apiHostInternal || 'http://localhost:3000';
     const query = getQuery(event);
-
-    console.log('🔍 [GET /api/vaccinations/schedule] Request received', {
-      query,
-      hasHealthBookId: !!query.healthBookId,
-      hasCustomerId: !!query.customerId
-    })
-
     // Get authorization header from client
     const authHeader = getHeader(event, 'authorization');
 
     if (!authHeader) {
-      console.warn('⚠️ [GET /api/vaccinations/schedule] No authorization header')
       throw createError({
         statusCode: 401,
         message: 'Authorization header is required',
@@ -34,9 +26,6 @@ export default defineEventHandler(async (event) => {
 
     const queryStr = queryString.toString();
     const targetUrl = `${apiHost}/api/u/schedule-vaccins${queryStr ? `?${queryStr}` : ''}`;
-
-    console.log(`📡 [GET /api/vaccinations/schedule] -> ${targetUrl}`);
-
     // Forward request to backend
     const response = await $fetch(targetUrl, {
       method: 'GET',
@@ -44,22 +33,8 @@ export default defineEventHandler(async (event) => {
         'Authorization': authHeader,
       },
     });
-
-    console.log('✅ [GET /api/vaccinations/schedule] Success', {
-      hasResponse: !!response,
-      responseType: typeof response,
-      hasData: !!response?.data,
-      scheduleVaccinLength: response?.data?.scheduleVaccin?.length
-    });
     return response;
   } catch (error: any) {
-    console.error('❌ [GET /api/vaccinations/schedule] Error:', error.message || error);
-    console.error('❌ Error details:', {
-      statusCode: error.statusCode,
-      status: error.status,
-      data: error.data
-    });
-
     if (error.data) {
       throw createError({
         statusCode: error.statusCode || 500,

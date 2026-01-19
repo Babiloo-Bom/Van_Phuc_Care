@@ -74,7 +74,6 @@ const fetchVaccinations = async () => {
     });
     vaccinations.value = data;
   } catch (error: any) {
-    console.error('❌ VaccinationSchedule fetch error:', error)
     vaccinations.value = []
   }
 };

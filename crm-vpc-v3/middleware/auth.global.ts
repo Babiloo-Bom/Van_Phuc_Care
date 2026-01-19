@@ -27,9 +27,6 @@ export default defineNuxtRouteMiddleware((to, from) => {
     const expireTime = new Date(authStore.tokenExpireAt).getTime();
 
     if (now >= expireTime) {
-      console.warn("[Auth Global] Token expired, logging out...");
-      console.warn("[Auth Global] Expire time:", new Date(expireTime).toISOString());
-      console.warn("[Auth Global] Current time:", new Date(now).toISOString());
       authStore.logout();
 
       // Redirect to login if trying to access protected route

@@ -1055,7 +1055,6 @@ const fetchServices = async () => {
         : (responseData.pagination?.total || 0)
     }
   } catch (error) {
-    console.error('❌ Failed to fetch services:', error)
     message.error('Không thể tải danh sách dịch vụ')
   } finally {
     loading.value = false
@@ -1092,7 +1091,6 @@ const fetchCourseOrders = async () => {
       orderPagination.total = courseOrders.value.length
     }
   } catch (error) {
-    console.error('❌ Failed to fetch course orders:', error)
     message.error('Không thể tải danh sách đơn hàng khoá học')
   } finally {
     loading.value = false
@@ -1165,7 +1163,6 @@ const handleDeleteService = async (id?: string) => {
     message.success('Xóa dịch vụ thành công')
     fetchServices()
   } catch (error) {
-    console.error('❌ Failed to delete service:', error)
     message.error('Không thể xóa dịch vụ')
   }
 }
@@ -1203,7 +1200,6 @@ const handleServiceThumbnailChange = async (info: any) => {
 
   try {
     const uploadResponse = await uploadsApi.uploadImage(file)
-    console.log('🔍 Upload response:', uploadResponse)
     
     if (uploadResponse.status) {
       const responseData = (uploadResponse as any).data?.data || (uploadResponse as any).data || uploadResponse
@@ -1234,7 +1230,6 @@ const handleServiceThumbnailChange = async (info: any) => {
       }
     }
   } catch (error) {
-    console.error('❌ Upload error:', error)
     message.error('Upload ảnh thất bại')
   }
 }
@@ -1261,7 +1256,6 @@ const handleServiceModalOk = async () => {
     serviceModalVisible.value = false
     fetchServices()
   } catch (error) {
-    console.error('❌ Failed to save service:', error)
     message.error('Không thể lưu dịch vụ')
   }
 }
@@ -1322,7 +1316,6 @@ const handleOrderModalOk = async () => {
     orderModalVisible.value = false
     fetchCourseOrders()
   } catch (error) {
-    console.error('❌ Failed to update order:', error)
     message.error('Không thể cập nhật đơn hàng')
   }
 }
@@ -1358,7 +1351,6 @@ const fetchLeads = async () => {
       leadPagination.total = responseData.pagination?.total || 0
     }
   } catch (error) {
-    console.error('❌ Failed to fetch leads:', error)
     message.error('Không thể tải danh sách khách hàng đăng ký')
   } finally {
     loading.value = false
@@ -1374,7 +1366,6 @@ const fetchLeadStats = async () => {
       leadStats.value = responseData.stats || { total: 0, new: 0, contacted: 0, inCrm: 0 }
     }
   } catch (error) {
-    console.error('❌ Failed to fetch lead stats:', error)
   }
 }
 
@@ -1408,7 +1399,6 @@ const handleLeadStatusChange = async (record: Lead, action: string) => {
       fetchLeads()
       fetchLeadStats()
     } catch (error) {
-      console.error('❌ Failed to delete lead:', error)
       message.error('Không thể xóa khách hàng đăng ký')
     }
   } else if (['new', 'contacted', 'in_crm'].includes(action)) {
@@ -1418,7 +1408,6 @@ const handleLeadStatusChange = async (record: Lead, action: string) => {
       fetchLeads()
       fetchLeadStats()
     } catch (error) {
-      console.error('❌ Failed to update lead status:', error)
       message.error('Không thể cập nhật trạng thái')
     }
   }

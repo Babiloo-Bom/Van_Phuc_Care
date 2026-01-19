@@ -21,9 +21,6 @@ export default defineEventHandler(async (event) => {
     }
 
     const targetUrl = `${apiHost}/api/u/vaccination-records`;
-
-    console.log('[POST /api/vaccinations/records] -> ', targetUrl);
-
     // Forward request to backend
     const response = await $fetch(targetUrl, {
       method: 'POST',
@@ -33,12 +30,8 @@ export default defineEventHandler(async (event) => {
       },
       body,
     });
-
-    console.log('[POST /api/vaccinations/records] Success');
     return response;
   } catch (error: any) {
-    console.error('[POST /api/vaccinations/records] Error:', error.message || error);
-
     if (error.data) {
       throw createError({
         statusCode: error.statusCode || 500,

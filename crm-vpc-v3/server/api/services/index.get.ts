@@ -21,9 +21,6 @@ export default defineEventHandler(async (event) => {
 
     const queryStr = queryString.toString();
     const targetUrl = `${apiHost}/api/u/services${queryStr ? `?${queryStr}` : ''}`;
-
-    console.log(`[GET /api/services] -> ${targetUrl}`);
-
     // Build headers
     const headers: Record<string, string> = {};
     if (authHeader) {
@@ -35,12 +32,8 @@ export default defineEventHandler(async (event) => {
       method: 'GET',
       headers,
     });
-
-    console.log('[GET /api/services] Success');
     return response;
   } catch (error: any) {
-    console.error('[GET /api/services] Error:', error.message || error);
-
     if (error.data) {
       throw createError({
         statusCode: error.statusCode || 500,

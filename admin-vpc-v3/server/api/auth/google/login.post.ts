@@ -59,7 +59,6 @@ export default defineEventHandler(async (event) => {
 
       user = await UserService.createOrUpdateGoogleUser(googleUserData)
     } catch (dbError: any) {
-      console.warn('⚠️ Database not available, using mock service:', dbError.message)
       
       // Fallback to mock service
       const { MockUserService } = await import('~/server/services/MockUserService')
@@ -106,7 +105,6 @@ export default defineEventHandler(async (event) => {
     }
 
   } catch (error: any) {
-    console.error('❌ Google login failed:', error)
     
     return {
       success: false,

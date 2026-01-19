@@ -371,7 +371,6 @@ const fetchDashboardData = async () => {
         }
       }
     } catch (error) {
-      console.error('❌ Failed to fetch order stats:', error)
       // Không hiển thị error để không làm phiền user
     }
 
@@ -403,7 +402,6 @@ const fetchDashboardData = async () => {
         }
       }
     } catch (error) {
-      console.error('❌ Failed to fetch courses stats:', error)
     }
 
     // Fetch user statistics (users, not customers)
@@ -414,7 +412,6 @@ const fetchDashboardData = async () => {
         stats.totalUsers = statsData?.total ?? 0
       }
     } catch (error) {
-      console.warn('Failed to fetch user stats:', error)
       // Fallback: try to get total from users list if stats endpoint fails
       try {
         const usersRes = await usersApi.getUsers({ limit: 1 })
@@ -424,7 +421,6 @@ const fetchDashboardData = async () => {
           stats.totalUsers = total
         }
       } catch (fallbackError) {
-        console.warn('Failed to fetch users count as fallback:', fallbackError)
       }
     }
 
@@ -455,7 +451,6 @@ const fetchDashboardData = async () => {
         }
       }
     } catch (error) {
-      console.error('❌ Failed to fetch health books stats:', error)
     }
 
     // Fetch recent courses (thay thế recent orders)
@@ -478,7 +473,6 @@ const fetchDashboardData = async () => {
         recentCourses.value = []
       }
     } catch (error) {
-      console.warn('Failed to fetch recent courses:', error)
       recentCourses.value = []
     }
 
@@ -493,7 +487,6 @@ const fetchDashboardData = async () => {
         revenueChartData.value = Array.isArray(chartData) ? chartData : []
       }
     } catch (error) {
-      console.error('❌ Failed to fetch revenue by month:', error)
       revenueChartData.value = []
     } finally {
       revenueChartLoading.value = false
@@ -511,7 +504,6 @@ const fetchDashboardData = async () => {
         topCourses.value = responseData?.topCourses || []
       }
     } catch (error) {
-      console.error('❌ Failed to fetch completion rate:', error)
       completionRate.value = 0
       completedCourses.value = 0
       totalPurchasedCourses.value = 0
@@ -520,7 +512,6 @@ const fetchDashboardData = async () => {
       completionRateLoading.value = false
     }
   } catch (error: any) {
-    console.error('Failed to fetch dashboard data:', error)
     message.error('Không thể tải dữ liệu dashboard')
   } finally {
     loading.value = false
