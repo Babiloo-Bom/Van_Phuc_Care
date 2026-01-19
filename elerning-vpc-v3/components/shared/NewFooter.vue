@@ -295,14 +295,13 @@
             <!-- DMCA Badge -->
             <div class="mt-6">
               <a
-                href="http://www.dmca.com/Protection/Status.aspx?ID=your-id"
-                target="_blank"
-                rel="noopener noreferrer"
+                href="//www.dmca.com/Protection/Status.aspx?ID=2299c51b-d707-427e-a2f1-91566f377b22"
+                title="DMCA.com Protection Status"
+                class="dmca-badge"
               >
                 <img
-                  src="https://images.dmca.com/Badges/dmca-badge-w250-5x1-09.png?ID=your-id"
+                  src="https://images.dmca.com/Badges/dmca_protected_1_120.png?ID=2299c51b-d707-427e-a2f1-91566f377b22"
                   alt="DMCA.com Protection Status"
-                  class="h-10"
                 />
               </a>
             </div>
@@ -310,7 +309,7 @@
             <!-- Đã thông báo Bộ Công Thương Badge -->
             <div>
               <a
-                href="http://online.gov.vn/Home/WebDetails/your-id"
+                href="http://online.gov.vn/Home/WebDetails/139466"
                 target="_blank"
                 rel="noopener noreferrer"
               >
@@ -344,7 +343,16 @@
 </template>
 
 <script setup lang="ts">
-// Component logic (if needed)
+// DMCA badge helper (client-side)
+useHead({
+  script: [
+    {
+      src: 'https://images.dmca.com/Badges/DMCABadgeHelper.min.js',
+      async: true,
+      defer: true
+    }
+  ]
+})
 </script>
 
 <style scoped>
