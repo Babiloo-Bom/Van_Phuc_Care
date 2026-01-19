@@ -371,6 +371,34 @@
                   </div>
                 </a-form-item>
               </a-col>
+              <a-col :span="12">
+                <a-form-item label="Ngày bắt đầu khuyến mãi" name="promotionStartDate">
+                  <a-date-picker
+                    v-model:value="formData.promotionStartDate"
+                    format="DD/MM/YYYY"
+                    style="width: 100%"
+                    placeholder="Chọn ngày bắt đầu"
+                    :show-time="false"
+                  />
+                  <div style="color: #8c8c8c; font-size: 12px; margin-top: 4px;">
+                    Trong khoảng thời gian này sẽ áp dụng giá khuyến mãi
+                  </div>
+                </a-form-item>
+              </a-col>
+              <a-col :span="12">
+                <a-form-item label="Ngày kết thúc khuyến mãi" name="promotionEndDate">
+                  <a-date-picker
+                    v-model:value="formData.promotionEndDate"
+                    format="DD/MM/YYYY"
+                    style="width: 100%"
+                    placeholder="Chọn ngày kết thúc"
+                    :show-time="false"
+                  />
+                  <div style="color: #8c8c8c; font-size: 12px; margin-top: 4px;">
+                    Sau ngày này sẽ trở về giá gốc
+                  </div>
+                </a-form-item>
+              </a-col>
               <a-col :span="24">
                 <a-form-item label="Ảnh đại diện" name="thumbnail">
                   <a-upload
@@ -1383,6 +1411,7 @@ import type { Course } from '~/types/api'
 import { useCoursesApi } from '~/composables/api/useCoursesApi'
 import type { UploadFile } from 'ant-design-vue'
 import { watch, nextTick } from 'vue'
+import dayjs, { type Dayjs } from 'dayjs'
 
 definePageMeta({
   layout: 'default',
@@ -1578,6 +1607,8 @@ const formData = reactive({
   price: 0,
   originalPrice: 0,
   discount: 0,
+  promotionStartDate: null as any,
+  promotionEndDate: null as any,
     instructor: {
       name: '',
       avatar: '',
@@ -2844,6 +2875,8 @@ const resetForm = () => {
     price: 0,
     originalPrice: 0,
     discount: 0,
+    promotionStartDate: null as any,
+    promotionEndDate: null as any,
     instructor: {
       name: '',
       avatar: '',
@@ -2926,6 +2959,8 @@ const editCourse = async (course: Course) => {
         price: courseData.price || 0,
         originalPrice: courseData.originalPrice || 0,
         discount: courseData.discount || 0,
+        promotionStartDate: courseData.promotionStartDate ? dayjs(courseData.promotionStartDate) : null,
+        promotionEndDate: courseData.promotionEndDate ? dayjs(courseData.promotionEndDate) : null,
         instructor: courseData.instructor || { name: '', avatar: '', bio: '', specialization: '' },
         category: courseData.category || '',
         level: courseData.level || 'beginner',
@@ -3594,6 +3629,13 @@ const handleModalOk = async () => {
     
     const payload: any = {
       ...formData,
+      // Convert promotion dates to ISO string or null
+      promotionStartDate: formData.promotionStartDate 
+        ? (formData.promotionStartDate as Dayjs).toISOString() 
+        : null,
+      promotionEndDate: formData.promotionEndDate 
+        ? (formData.promotionEndDate as Dayjs).toISOString() 
+        : null,
       // Đảm bảo introVideoThumbnail được bao gồm
       introVideoThumbnail: formData.introVideoThumbnail || '',
       chapters: formData.chapters.map((ch, idx) => ({

@@ -92,6 +92,14 @@ const courseSchema = new mongoose.Schema(
       type: Number,
       default: 0,
     },
+    promotionStartDate: {
+      type: Date,
+      default: null,
+    },
+    promotionEndDate: {
+      type: Date,
+      default: null,
+    },
     instructor: {
       name: {
         type: String,
@@ -169,6 +177,54 @@ const courseSchema = new mongoose.Schema(
 const Course = mongoose.models.Course || mongoose.model("Course", courseSchema);
 
 class CourseController {
+  /**
+   * Calculate effective price based on promotion period
+   * Returns promotion price if within promotion period, otherwise returns original price
+   */
+  private static calculateEffectivePrice(courseData: any): {
+    price: number;
+    originalPrice: number;
+    isPromotionActive: boolean;
+    daysRemaining?: number;
+  } {
+    const now = new Date();
+    const promotionStartDate = courseData.promotionStartDate 
+      ? new Date(courseData.promotionStartDate) 
+      : null;
+    const promotionEndDate = courseData.promotionEndDate 
+      ? new Date(courseData.promotionEndDate) 
+      : null;
+    
+    // Check if promotion is active
+    const isPromotionActive = 
+      promotionStartDate && 
+      promotionEndDate && 
+      now >= promotionStartDate && 
+      now <= promotionEndDate;
+    
+    // Calculate days remaining
+    let daysRemaining: number | undefined;
+    if (isPromotionActive && promotionEndDate) {
+      const diffTime = promotionEndDate.getTime() - now.getTime();
+      daysRemaining = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+      if (daysRemaining < 0) daysRemaining = 0;
+    }
+    
+    // If promotion is active, use promotion price, otherwise use original price
+    const effectivePrice = isPromotionActive 
+      ? (courseData.price || courseData.originalPrice || 0)
+      : (courseData.originalPrice || courseData.price || 0);
+    
+    const originalPrice = courseData.originalPrice || courseData.price || 0;
+    
+    return {
+      price: effectivePrice,
+      originalPrice: originalPrice,
+      isPromotionActive: !!isPromotionActive,
+      daysRemaining,
+    };
+  }
+
   /**
    * Convert MinIO path to full URL (presigned or public)
    */
@@ -289,6 +345,9 @@ class CourseController {
             }
           }
 
+          // Calculate effective price based on promotion period
+          const priceInfo = CourseController.calculateEffectivePrice(courseData);
+          
           return {
             _id: courseData._id.toString(),
             title: courseData.title,
@@ -297,9 +356,13 @@ class CourseController {
             shortDescription: courseData.shortDescription,
             thumbnail: courseData.thumbnail,
             banner: courseData.banner || '',
-            price: courseData.price,
-            originalPrice: courseData.originalPrice || courseData.price,
+            price: priceInfo.price,
+            originalPrice: priceInfo.originalPrice,
             discount: courseData.discount || 0,
+            promotionStartDate: courseData.promotionStartDate || null,
+            promotionEndDate: courseData.promotionEndDate || null,
+            isPromotionActive: priceInfo.isPromotionActive,
+            promotionDaysRemaining: priceInfo.daysRemaining,
             instructor: courseData.instructor,
             category: courseData.category,
             level: courseData.level,
@@ -678,6 +741,14 @@ class CourseController {
       courseData.videoCount = totalVideoCount;
       courseData.documentCount = totalDocumentCount;
       courseData.quizCount = totalQuizCount;
+      
+      // Calculate effective price based on promotion period
+      const priceInfo = CourseController.calculateEffectivePrice(courseData);
+      courseData.price = priceInfo.price;
+      courseData.originalPrice = priceInfo.originalPrice;
+      courseData.isPromotionActive = priceInfo.isPromotionActive;
+      courseData.promotionDaysRemaining = priceInfo.daysRemaining;
+      
       sendSuccess(res, { course: courseData });
     } catch (error: any) {
       sendError(res, 500, error.message, error as Error);
@@ -783,6 +854,13 @@ class CourseController {
 
       const courseData = course.toObject();
       courseData.chapters = chaptersWithLessons;
+
+      // Calculate effective price based on promotion period
+      const priceInfo = CourseController.calculateEffectivePrice(courseData);
+      courseData.price = priceInfo.price;
+      courseData.originalPrice = priceInfo.originalPrice;
+      courseData.isPromotionActive = priceInfo.isPromotionActive;
+      courseData.promotionDaysRemaining = priceInfo.daysRemaining;
 
       sendSuccess(res, { course: courseData });
     } catch (error: any) {

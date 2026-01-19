@@ -737,9 +737,9 @@
                   </div>
                 </div>
 
-                <!-- Offer Timer (only show if not purchased) -->
+                <!-- Offer Timer (only show if not purchased and promotion is active) -->
                 <div
-                  v-if="!course?.isPurchased"
+                  v-if="!course?.isPurchased && promotionDaysRemaining !== null && promotionDaysRemaining > 0"
                   class="flex items-center gap-2 mb-2 sm:mb-3"
                 >
                   <img
@@ -748,7 +748,7 @@
                     class="w-3 h-3 sm:w-4 sm:h-4"
                   />
                   <span class="text-sm" style="color: #f48283"
-                    >Ưu đãi còn 3 ngày</span
+                    >Ưu đãi còn {{ promotionDaysRemaining }} ngày</span
                   >
                 </div>
 
@@ -1244,6 +1244,32 @@ watch(
 const expandedChapters = ref<Record<number, boolean>>({}); // Ban đầu collapse hết
 const videoRef = ref<any>(null);
 const course = computed(() => coursesStore.course);
+
+// Calculate promotion days remaining
+const promotionDaysRemaining = computed(() => {
+  if (!course.value) return null;
+  
+  // Use promotionDaysRemaining from backend if available
+  if ((course.value as any).promotionDaysRemaining !== undefined) {
+    return (course.value as any).promotionDaysRemaining;
+  }
+  
+  // Fallback: calculate from promotionEndDate
+  const promotionEndDate = (course.value as any).promotionEndDate;
+  if (!promotionEndDate) return null;
+  
+  const endDate = new Date(promotionEndDate);
+  const now = new Date();
+  const diffTime = endDate.getTime() - now.getTime();
+  const daysRemaining = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+  
+  // Only return positive days (promotion is still active)
+  if (daysRemaining > 0) {
+    return daysRemaining;
+  }
+  
+  return null;
+});
 
 // Normalize description HTML to ensure ul displays as bullets
 // Convert <ol> without type/start attributes to <ul> (likely bullet lists created incorrectly)
