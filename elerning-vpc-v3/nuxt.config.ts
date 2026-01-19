@@ -15,6 +15,14 @@ export default defineNuxtConfig({
     '@pinia/nuxt',
     '@nuxtjs/seo'
   ],
+
+  // Site config for SEO module
+  site: {
+    url: process.env.NUXT_PUBLIC_APP_URL || 'http://localhost:3102',
+    name: 'Van Phuc Care E-Learning',
+    description: 'Nền tảng học trực tuyến hàng đầu Việt Nam',
+    defaultLocale: 'vi'
+  },
   // Enable pages module for routing
   // Enable pages module for routing
   pages: true,
@@ -102,7 +110,9 @@ export default defineNuxtConfig({
       meta: [
         { charset: 'utf-8' },
         { name: 'viewport', content: 'width=device-width, initial-scale=1' },
-        { name: 'description', content: 'Nền tảng học trực tuyến hàng đầu Việt Nam với các khóa học chất lượng cao' }
+        { name: 'description', content: 'Nền tảng học trực tuyến hàng đầu Việt Nam với các khóa học chất lượng cao về chăm sóc mẹ và bé, nuôi dạy con, sức khỏe thai kỳ. Học mọi lúc, mọi nơi với giáo viên chuyên nghiệp.' },
+        { name: 'keywords', content: 'học trực tuyến, e-learning, khóa học online, chăm sóc mẹ và bé, nuôi dạy con, thai kỳ, sức khỏe bà bầu, Van Phuc Care, Vạn Phúc Care, học online, giáo dục trực tuyến, bệnh viện Vạn Phúc' },
+        { name: 'dmca-site-verification', content: 'MEhyUXU4clB0cEdaZm1aSk56MVhnWTZ4MHY4R3REQkQzblptNHdqVmFkcz01' }
       ],
       link: [
         { rel: 'icon', type: 'image/png', href: '/images/logo_van_phuc.png' },
