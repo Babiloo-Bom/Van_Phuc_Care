@@ -119,10 +119,26 @@ export const actions = {
     },
 
     async deleteLesson(context, params) {
+        const { lessonIndex, lesson } = params;
         const _chapters = _cloneDeep(context.state.course.chapters) || [];
-        _chapters[context.state.chapterSelected.index].lessons.splice(params, 1);
+        
+        // Nếu lesson đã có _id (đã lưu vào database), gọi API để xóa
+        if (lesson && lesson._id) {
+            try {
+                await this.$api.courses.deleteLesson(lesson._id);
+            } catch (error) {
+                console.error('Error deleting lesson:', error);
+                this.$message.error('Không thể xóa bài học. Vui lòng thử lại.');
+                return;
+            }
+        }
+        
+        // Xóa lesson khỏi state local
+        _chapters[context.state.chapterSelected.index].lessons.splice(lessonIndex, 1);
         context.commit('SET_STATE', { prop: 'chapterSelected', data: _chapters[context.state.chapterSelected.index] || {} });
         context.commit('SET_STATE', { prop: 'course', data: { ...context.state.course, chapters: _chapters } });
+        
+        this.$message.success('Đã xóa bài học thành công');
     },
 
     async fetchExercises({ commit }, params) {

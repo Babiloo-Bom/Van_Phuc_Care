@@ -5,20 +5,20 @@
       <div class="mb-8">
         <!-- Mobile: Centered layout -->
         <div class="md:hidden text-center">
-          <h2 class="text-[32px] font-bold mb-2" style="color: #1A75BB;">
+          <h1 class="text-[32px] font-bold mb-2" style="color: #1A75BB;">
             Giỏ hàng
-          </h2>
+          </h1>
           <p class="text-[16px]" style="color: #7C7C7C;">
             ({{ cartItems.length }} sản phẩm)
           </p>
         </div>
         <!-- Desktop: Original layout -->
-        <h2 class="hidden md:block text-2xl sm:text-3xl font-bold text-[#1A75BB]">
+        <h1 class="hidden md:block text-2xl sm:text-3xl font-bold text-[#1A75BB]">
           Giỏ hàng
           <span class="text-base sm:text-lg font-normal ml-2" style="color: #7C7C7C;">
             ({{ cartItems.length }} sản phẩm)
           </span>
-        </h2>
+        </h1>
       </div>
       
       <div class="flex flex-col lg:flex-row lg:gap-8 xl:gap-12">
@@ -1077,6 +1077,23 @@ const processVnPay = async () => {
     isProcessingOrderVnpay.value = false
   }
 }
+
+// SEO
+useHead({
+  title: "Giỏ hàng - Van Phuc Care E-Learning",
+  meta: [
+    {
+      name: "description",
+      content:
+        "Xem và quản lý giỏ hàng các khóa học tại Van Phuc Care E-Learning. Thanh toán và đăng ký các khóa học trực tuyến về chăm sóc sức khỏe Mẹ và Bé",
+    },
+    {
+      name: "keywords",
+      content:
+        "giỏ hàng, cart, Vạn Phúc Care, e-learning, khóa học trực tuyến, thanh toán, chăm sóc sức khỏe mẹ và bé",
+    },
+  ],
+});
 
 // Middleware để yêu cầu đăng nhập
 definePageMeta({

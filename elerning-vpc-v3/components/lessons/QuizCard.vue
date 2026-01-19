@@ -6,7 +6,7 @@
     <!-- Left: Icon and Info -->
     <div class="flex items-center gap-4 flex-1 min-w-0">
       <!-- Icon -->
-      <div class="flex-shrink-0">
+      <div class="flex-shrink-0 w-10 h-10 bg-green-100 rounded-full flex items-center justify-center">
         <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
           <circle cx="12" cy="12" r="10" stroke="#15CF74" stroke-width="2" fill="none"/>
           <path d="M12 6V12L16 14" stroke="#15CF74" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
@@ -26,15 +26,11 @@
     
     <!-- Right: Button -->
     <div class="flex-shrink-0">
-      <button
+      <a-button
         @click="handleStartQuiz"
         :disabled="isLocked"
-        :class="[
-          'flex items-center gap-2 px-4 py-2 md:px-6 md:py-2.5 rounded-lg font-semibold text-sm md:text-base transition-all',
-          isLocked
-            ? 'bg-gray-300 text-gray-500 cursor-not-allowed'
-            : 'bg-[#1A75BB] text-white hover:bg-[#155a8f] shadow-sm hover:shadow-md'
-        ]"
+        :type="isLocked ? 'default' : 'primary'"
+        class="!flex items-center gap-2"
       >
         <svg 
           v-if="!isLocked"
@@ -48,7 +44,7 @@
           <path d="M8 0L6.59 1.41L12.17 7H0V9H12.17L6.59 14.59L8 16L16 8L8 0Z" fill="currentColor"/>
         </svg>
         <span>Làm bài ngay</span>
-      </button>
+      </a-button>
     </div>
   </div>
 </template>

@@ -308,14 +308,14 @@ const updateSEOMetaTags = () => {
     "học trực tuyến, e-learning, khóa học online, lập trình, marketing, thiết kế, khoa học dữ liệu, Van Phuc Care, học online, giáo dục trực tuyến"
   );
 
-  // Canonical URL
-  let canonical = document.querySelector('link[rel="canonical"]');
-  if (!canonical) {
-    canonical = document.createElement("link");
-    canonical.setAttribute("rel", "canonical");
-    document.head.appendChild(canonical);
-  }
-  canonical.setAttribute('href', 'https://vanphuccare.com')
+  // Canonical URL - Removed to allow proper indexing
+  // let canonical = document.querySelector('link[rel="canonical"]');
+  // if (!canonical) {
+  //   canonical = document.createElement("link");
+  //   canonical.setAttribute("rel", "canonical");
+  //   document.head.appendChild(canonical);
+  // }
+  // canonical.setAttribute('href', 'https://vanphuccare.com')
   
 }
 
@@ -382,12 +382,13 @@ useHead({
       content: "https://vanphuccare.com/images/og-home.jpg",
     },
   ],
-  link: [
-    {
-      rel: "canonical",
-      href: "https://vanphuccare.com",
-    },
-  ],
+  // Canonical removed to allow proper indexing
+  // link: [
+  //   {
+  //     rel: "canonical",
+  //     href: "https://vanphuccare.com",
+  //   },
+  // ],
 });
 
 // Nếu user truy cập vào `/` thì chuyển về `/courses`

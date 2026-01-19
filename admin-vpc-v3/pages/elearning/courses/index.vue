@@ -786,9 +786,20 @@
                                 </div>
                                 
                                 <!-- Video Info Section -->
-                                <div v-if="lesson.videos && lesson.videos.length > 0 && (lesson.videos[0].hlsUrl || (lesson.videos[0].qualityMetadata && (lesson.videos[0].qualityMetadata.resolution || lesson.videos[0].qualityMetadata.codec)))" style="margin-top: 12px; padding: 12px; background: #f5f5f5; border-radius: 4px; border: 1px solid #d9d9d9;">
+                                <div v-if="lesson.videos && lesson.videos.length > 0 && (lesson.videos[0].hlsUrl || (lesson.videos[0].qualityMetadata && (lesson.videos[0].qualityMetadata.resolution || lesson.videos[0].qualityMetadata.codec)))" style="margin-top: 12px; padding: 12px; background: #f5f5f5; border-radius: 4px; border: 1px solid #d9d9d9; position: relative;">
+                                  <!-- Delete Video Button -->
+                                  <a-button 
+                                    type="text" 
+                                    danger 
+                                    size="small"
+                                    style="position: absolute; top: 8px; right: 8px;"
+                                    @click="() => handleDeleteLessonVideo(chapterIndex, lessonIndex)"
+                                  >
+                                    <DeleteOutlined /> Xóa video
+                                  </a-button>
+                                  
                                   <!-- HLS URL -->
-                                  <div v-if="lesson.videos[0].hlsUrl" style="margin-bottom: 8px;">
+                                  <div v-if="lesson.videos[0].hlsUrl" style="margin-bottom: 8px; padding-right: 80px;">
                                     <div style="font-size: 12px; color: #666; margin-bottom: 4px;">
                                       <strong>HLS URL:</strong>
                                     </div>
@@ -2018,6 +2029,75 @@ const handleRemoveLessonVideoThumbnail = (chapterIndex: number, lessonIndex: num
   if (lesson.videos && lesson.videos.length > 0) {
     lesson.videos[0].thumbnail = ''
   }
+}
+
+const handleDeleteLessonVideo = async (chapterIndex: number, lessonIndex: number) => {
+  const lesson = formData.chapters[chapterIndex].lessons[lessonIndex]
+  
+  // Xác nhận trước khi xóa
+  Modal.confirm({
+    title: 'Xóa video',
+    content: 'Bạn có chắc chắn muốn xóa video này? Video và tất cả các file liên quan (HLS, thumbnail) sẽ bị xóa vĩnh viễn.',
+    okText: 'Xóa',
+    okType: 'danger',
+    cancelText: 'Hủy',
+    onOk: async () => {
+      try {
+        // Nếu lesson đã có _id (đã lưu vào database), gọi API để xóa video từ server
+        if (lesson._id && lesson.videos && lesson.videos.length > 0) {
+          const coursesApi = useCoursesApi()
+          // Cập nhật lesson với videos rỗng để xóa video
+          // Backend sẽ tự động xóa video files khi nhận được request update với videos rỗng
+          const updatedLesson = {
+            ...lesson,
+            videos: [],
+          }
+          
+          // Cập nhật lesson trong course
+          if (editingCourse.value?._id) {
+            const updatedChapters = formData.chapters.map((ch: any, chIdx: number) => ({
+              ...ch,
+              index: chIdx,
+              lessons: ch.lessons?.map((l: any, lIdx: number) => {
+                if (chIdx === chapterIndex && lIdx === lessonIndex) {
+                  return updatedLesson
+                }
+                return l
+              }) || [],
+            }))
+            
+            await coursesApi.updateCourse(editingCourse.value._id, {
+              ...formData,
+              chapters: updatedChapters,
+            })
+          }
+        }
+        
+        // Xóa video khỏi local state
+        lesson.videos = []
+        lesson.videoUrl = ''
+        lesson.videoHlsUrl = ''
+        lesson.videoStatus = 'ready'
+        lesson.videoFileList = []
+        lesson.uploadingVideo = false
+        
+        // Xóa progress tracker nếu có
+        const progressKey = `chapter-${chapterIndex}-lesson-${lessonIndex}`
+        if (lessonVideoUploadProgress[progressKey]) {
+          delete lessonVideoUploadProgress[progressKey]
+        }
+        if (lessonVideoPollIntervals.value[progressKey]) {
+          clearInterval(lessonVideoPollIntervals.value[progressKey])
+          delete lessonVideoPollIntervals.value[progressKey]
+        }
+        
+        message.success('Đã xóa video thành công')
+      } catch (error: any) {
+        console.error('Error deleting lesson video:', error)
+        message.error(error.message || 'Không thể xóa video. Vui lòng thử lại.')
+      }
+    },
+  })
 }
 
 const handleRemoveInstructorAvatar = () => {

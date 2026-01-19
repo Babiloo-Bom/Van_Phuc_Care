@@ -211,7 +211,11 @@ useHead({
   meta: [
     {
       name: "description",
-      content: "Đăng ký tài khoản mới tại Van Phuc Care E-Learning",
+      content: "Đăng ký tài khoản mới tại Van Phuc Care E-Learning để truy cập các khóa học trực tuyến và dịch vụ chăm sóc sức khỏe Mẹ và Bé",
+    },
+    {
+      name: "keywords",
+      content: "đăng ký, register, tạo tài khoản, Vạn Phúc Care, e-learning, khóa học trực tuyến, chăm sóc sức khỏe mẹ và bé",
     },
   ],
 });

@@ -1,5 +1,8 @@
 <template>
   <div class="">
+    <!-- H1 Title for SEO -->
+    <h1 class="sr-only">Khóa học của tôi - Van Phuc Care E-Learning</h1>
+    
     <!-- Hero Banner -->
     <BannerSlider
       page-type="my-courses"
@@ -100,7 +103,12 @@ useHead({
     {
       name: "description",
       content:
-        "Quản lý và học các khóa học đã đăng ký tại Van Phuc Care E-Learning",
+        "Quản lý và học các khóa học đã đăng ký tại Van Phuc Care E-Learning. Truy cập vào các khóa học trực tuyến về chăm sóc sức khỏe Mẹ và Bé",
+    },
+    {
+      name: "keywords",
+      content:
+        "khóa học của tôi, my courses, Vạn Phúc Care, e-learning, khóa học trực tuyến, chăm sóc sức khỏe mẹ và bé",
     },
   ],
 });

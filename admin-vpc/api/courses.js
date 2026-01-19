@@ -9,4 +9,6 @@ export default (axios) => ({
     getExercises: (id) => axios.get(`/a/exercises/${id}`).then((_) => _.data),
     createExercise: (params) => axios.post('/a/exercises/', params).then((_) => _.data),
     updateExercise: (id, params) => axios.patch(`/a/exercises/${id}`, params).then((_) => _.data),
+    
+    deleteLesson: (lessonId) => axios.delete(`/a/lessons/${lessonId}`).then((_) => _.data),
 });

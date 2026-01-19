@@ -42,3 +42,11 @@ mongodb_config/
 mongodb-backup-*/
  
 production.env
+
+# SSH Keys - Never commit private keys!
+*.pem
+*.key
+*_key
+*_key.pub
+github_actions_key
+github_actions_key.pub

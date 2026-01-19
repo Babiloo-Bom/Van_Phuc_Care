@@ -1,5 +1,8 @@
 <template>
   <div class="">
+    <!-- H1 Title for SEO -->
+    <h1 class="sr-only">Tất cả khóa học - Van Phuc Care E-Learning</h1>
+    
     <!-- Banner Section -->
     <BannerSlider
       page-type="all-courses"
@@ -437,14 +440,14 @@ if (process.client) {
     "khóa học trực tuyến, e-learning, lập trình, marketing, thiết kế, khoa học dữ liệu, học online, Van Phuc Care"
   );
 
-  // Canonical URL
-  let canonical = document.querySelector('link[rel="canonical"]');
-  if (!canonical) {
-    canonical = document.createElement("link");
-    canonical.setAttribute("rel", "canonical");
-    document.head.appendChild(canonical);
-  }
-  canonical.setAttribute("href", "https://vanphuccare.com/courses");
+  // Canonical URL - Removed to allow proper indexing
+  // let canonical = document.querySelector('link[rel="canonical"]');
+  // if (!canonical) {
+  //   canonical = document.createElement("link");
+  //   canonical.setAttribute("rel", "canonical");
+  //   document.head.appendChild(canonical);
+  // }
+  // canonical.setAttribute("href", "https://vanphuccare.com/courses");
 }
 
 // Also use useHead as fallback
@@ -500,12 +503,13 @@ useHead({
       content: "https://vanphuccare.com/images/og-courses.jpg",
     },
   ],
-  link: [
-    {
-      rel: "canonical",
-      href: "https://vanphuccare.com/courses",
-    },
-  ],
+  // Canonical removed to allow proper indexing
+  // link: [
+  //   {
+  //     rel: "canonical",
+  //     href: "https://vanphuccare.com/courses",
+  //   },
+  // ],
 });
 
 // Schema.org markup for Course List (temporarily disabled for testing)

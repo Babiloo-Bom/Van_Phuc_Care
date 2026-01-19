@@ -31,11 +31,11 @@
 
               <!-- Title -->
               <div class="flex items-center gap-4">
-                <h4
+                <h1
                   class="max-lg:text-[28px] text-4xl font-bold text-white mb-1"
                 >
                   {{ course?.title }}
-                </h4>
+                </h1>
               </div>
 
               <!-- Short Description -->

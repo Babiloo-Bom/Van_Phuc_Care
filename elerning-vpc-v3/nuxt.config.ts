@@ -95,6 +95,9 @@ export default defineNuxtConfig({
   // App config
   app: {
     head: {
+      htmlAttrs: {
+        lang: 'vi'
+      },
       title: 'Van Phuc Care E-Learning',
       meta: [
         { charset: 'utf-8' },

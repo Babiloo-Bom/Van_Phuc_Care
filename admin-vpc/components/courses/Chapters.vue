@@ -354,7 +354,8 @@
             },
 
             deleteLessons(index) {
-                this.$store.dispatch('courses/deleteLesson', index);
+                const lesson = this.form.lessons[index];
+                this.$store.dispatch('courses/deleteLesson', { lessonIndex: index, lesson });
             },
 
             handleRemove(file) {

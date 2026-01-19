@@ -308,7 +308,7 @@ useHead({
 
 .terms-list strong {
   color: #000;
-  font-weight: 600;
+  font-weight: 700;
 }
 
 /* Ordered List */

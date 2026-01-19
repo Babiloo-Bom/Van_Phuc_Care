@@ -7,7 +7,7 @@
         <div class="logo-section">
           <img src="/images/logo-vanphuc-new-mobile.png" alt="Van Phuc Care" class="lg:hidden logo" />
           <img src="/images/logo-vanphuc-new.png" alt="Van Phuc Care" class="hidden lg:block logo" />
-          <h2 class="main-title">Đăng nhập</h2>
+          <h1 class="main-title">Đăng nhập</h1>
           <p class="subtitle">Chào mừng bạn đến với Vạn Phúc Care</p>
         </div>
         <!-- Google Login Button -->
@@ -135,11 +135,15 @@ const SAVED_PASSWORD_KEY = "elearning_saved_password";
 
 // SEO
 useHead({
-  title: "Đăng nhập - Vạn Phúc Care",
+  title: "Đăng nhập - Vạn Phúc Care E-Learning",
   meta: [
     {
       name: "description",
-      content: "Đăng nhập vào hệ thống Vạn Phúc Care để truy cập các dịch vụ chăm sóc sức khỏe",
+      content: "Đăng nhập vào hệ thống Vạn Phúc Care E-Learning để truy cập các khóa học trực tuyến và dịch vụ chăm sóc sức khỏe Mẹ và Bé",
+    },
+    {
+      name: "keywords",
+      content: "đăng nhập, login, Vạn Phúc Care, e-learning, khóa học trực tuyến, chăm sóc sức khỏe mẹ và bé",
     },
   ],
 });

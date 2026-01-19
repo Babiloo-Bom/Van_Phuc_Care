@@ -440,14 +440,13 @@ class LessonController {
       if (lessonData.videos && lessonData.videos.length > 0) {
         const hlsFoldersToDelete = new Set<string>();
         const thumbnailFoldersToDelete = new Set<string>();
+        const videoFilesToDelete = new Set<string>();
         
         for (const video of lessonData.videos) {
           try {
-            if (video.videoUrl || video.hlsUrl) {
-              const videoUrl = video.hlsUrl || video.videoUrl;
-              
-              // Extract HLS folder path
-              const hlsFolder = CloudflareService.extractHlsFolderFromUrl(videoUrl);
+            // Xóa HLS folder nếu có hlsUrl
+            if (video.hlsUrl) {
+              const hlsFolder = CloudflareService.extractHlsFolderFromUrl(video.hlsUrl);
               if (hlsFolder) {
                 hlsFoldersToDelete.add(hlsFolder);
                 
@@ -456,20 +455,36 @@ class LessonController {
                 // Thumbnail folder: "courses/lessons/{timestamp}/thumbnails"
                 const thumbnailFolder = hlsFolder.replace('/hls', '/thumbnails');
                 thumbnailFoldersToDelete.add(thumbnailFolder);
-              } else {
-                // Fallback: try to delete single file
-                let objectName = videoUrl;
-                if (videoUrl.includes(process.env.CLOUDFLARE_R2_PUBLIC_URL || '')) {
-                  objectName = videoUrl.replace(process.env.CLOUDFLARE_R2_PUBLIC_URL || '', '').replace(/^\//, '');
-                  } else if (videoUrl.includes('/')) {
-                    const urlParts = videoUrl.split('/');
-                    const coursesIndex = urlParts.findIndex((part: string) => part === 'courses' || part === 'lessons');
-                    if (coursesIndex !== -1) {
-                      objectName = urlParts.slice(coursesIndex).join('/');
-                    }
+              }
+            }
+            
+            // Xóa video file gốc nếu có videoUrl (và không phải là HLS URL)
+            if (video.videoUrl) {
+              // Kiểm tra xem videoUrl có phải là HLS URL không
+              const isHlsUrl = video.videoUrl.includes('/hls/') || video.videoUrl.includes('.m3u8');
+              
+              if (!isHlsUrl) {
+                // Đây là video file gốc, cần xóa
+                let objectName = video.videoUrl;
+                if (video.videoUrl.includes(process.env.CLOUDFLARE_R2_PUBLIC_URL || '')) {
+                  objectName = video.videoUrl.replace(process.env.CLOUDFLARE_R2_PUBLIC_URL || '', '').replace(/^\//, '');
+                } else if (video.videoUrl.includes('/')) {
+                  const urlParts = video.videoUrl.split('/');
+                  const coursesIndex = urlParts.findIndex((part: string) => part === 'courses' || part === 'lessons');
+                  if (coursesIndex !== -1) {
+                    objectName = urlParts.slice(coursesIndex).join('/');
                   }
+                }
                 if (objectName) {
-                  await CloudflareService.deleteFile(objectName);
+                  videoFilesToDelete.add(objectName);
+                }
+              } else {
+                // Nếu videoUrl là HLS URL nhưng không có hlsUrl riêng, xử lý như HLS
+                const hlsFolder = CloudflareService.extractHlsFolderFromUrl(video.videoUrl);
+                if (hlsFolder) {
+                  hlsFoldersToDelete.add(hlsFolder);
+                  const thumbnailFolder = hlsFolder.replace('/hls', '/thumbnails');
+                  thumbnailFoldersToDelete.add(thumbnailFolder);
                 }
               }
             }
@@ -514,6 +529,16 @@ class LessonController {
             console.log(`✅ [Delete Lesson] Deleted thumbnail folder: ${thumbnailFolder}`);
           } catch (err) {
             console.error(`❌ [Delete Lesson] Error deleting thumbnail folder ${thumbnailFolder}:`, err);
+          }
+        }
+        
+        // Xóa các video file gốc
+        for (const videoFile of videoFilesToDelete) {
+          try {
+            await CloudflareService.deleteFile(videoFile);
+            console.log(`✅ [Delete Lesson] Deleted video file: ${videoFile}`);
+          } catch (err) {
+            console.error(`❌ [Delete Lesson] Error deleting video file ${videoFile}:`, err);
           }
         }
       }
