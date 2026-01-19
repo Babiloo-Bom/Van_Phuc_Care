@@ -264,7 +264,7 @@ useHead({
   line-height: 1.84;
   color: #000;
   margin-bottom: 0;
-  font-weight: 500;
+  font-weight: 400;
 }
 
 .section-text {

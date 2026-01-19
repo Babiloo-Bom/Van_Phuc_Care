@@ -134,14 +134,20 @@
     <!-- Bottom Bar -->
     <div class="bg-blue-600 py-4">
       <div class="container mx-auto">
-        <div class="flex items-center justify-start">
-          <a href="#" class="text-white text-sm hover:text-gray-200 transition-colors">
-            Điều khoản
-          </a>
-          <div class="w-px h-4 bg-white mx-4"></div>
-          <a href="#" class="text-white text-sm hover:text-gray-200 transition-colors">
-            Chính sách bảo mật
-          </a>
+        <div class="flex items-center justify-between flex-wrap gap-4">
+          <div class="flex items-center">
+            <a href="#" class="text-white text-sm hover:text-gray-200 transition-colors">
+              Điều khoản
+            </a>
+            <div class="w-px h-4 bg-white mx-4"></div>
+            <a href="#" class="text-white text-sm hover:text-gray-200 transition-colors">
+              Chính sách bảo mật
+            </a>
+          </div>
+          <!-- DMCA Protection Badge -->
+          <div>
+            <a href="//www.dmca.com/Protection/Status.aspx?ID=2299c51b-d707-427e-a2f1-91566f377b22" title="DMCA.com Protection Status" class="dmca-badge"> <img src ="https://images.dmca.com/Badges/dmca_protected_1_120.png?ID=2299c51b-d707-427e-a2f1-91566f377b22"  alt="DMCA.com Protection Status" /></a>  <script src="https://images.dmca.com/Badges/DMCABadgeHelper.min.js"> </script>
+          </div>
         </div>
       </div>
     </div>
