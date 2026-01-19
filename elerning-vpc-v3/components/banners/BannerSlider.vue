@@ -96,8 +96,8 @@
     <!-- Fallback Banner (if no banners from API) -->
     <div
       v-else
-      class="md:mb-[5rem] h-[480px] min-h-[480px] max-h-[480px] w-full py-10 sm:pt-20 sm:pb-20 md:pb-60 bg-cover bg-center bg-no-repeat bg-[url('https://cdn.synck.io.vn/vanphuccare/banner/main.webp')] relative z-[1] after:absolute after:content-[''] after:top-0 after:left-0 after:w-full after:h-full after:opacity-60 after:bg-prim-100"
-      style="background-size: cover; background-position: center; background-repeat: no-repeat;"
+      class="md:mb-[5rem] h-[480px] min-h-[480px] max-h-[480px] w-full py-10 sm:pt-20 sm:pb-20 md:pb-60 bg-cover bg-center bg-no-repeat relative z-[1] after:absolute after:content-[''] after:top-0 after:left-0 after:w-full after:h-full after:opacity-60 after:bg-prim-100"
+      :style="fallbackBannerStyle"
     >
       <div class="absolute inset-0 bg-[#1A75BBB2]"></div>
       <div class="container h-full" :class="props.pageType === 'all-courses' ? 'mx-auto !px-0 md:!px-auto' : props.pageType === 'my-courses' ? 'mx-auto' : ''">
@@ -200,6 +200,21 @@ const { getBanners } = useBannersApi()
 
 // Computed để kiểm tra có banners hay không - đảm bảo reactivity
 const hasBanners = computed(() => banners.value && banners.value.length > 0)
+
+// Fallback banner style - sử dụng local image làm fallback chính (đảm bảo luôn có)
+// Nếu muốn dùng CDN, có thể thay đổi URL này
+const fallbackBannerStyle = computed(() => {
+  // Ưu tiên local image (luôn có sẵn), có thể thay bằng CDN nếu cần
+  const fallbackImage = '/images/home/banner.png'
+  // Alternative: 'https://cdn.synck.io.vn/vanphuccare/banner/main.webp'
+  
+  return {
+    backgroundImage: `url("${fallbackImage}")`,
+    backgroundSize: 'cover',
+    backgroundPosition: 'center',
+    backgroundRepeat: 'no-repeat',
+  }
+})
 
 // Helper function để tạo background style - giải quyết SSR/CSR hydration issue
 // Wrap URL trong quotes để handle special characters như () và spaces
