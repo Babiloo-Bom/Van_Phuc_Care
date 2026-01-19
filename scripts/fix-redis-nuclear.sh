@@ -4,7 +4,7 @@
 # This will DELETE ALL Redis data and recreate everything
 
 REDIS_CONTAINER="vpc-redis"
-VOLUME_NAME="vpc-redis-data"
+VOLUME_NAME="redis_data"  # From docker-compose.prod.yml
 
 echo "============================================"
 echo "Redis Nuclear Reset (Complete Data Loss)"

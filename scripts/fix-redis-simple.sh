@@ -4,7 +4,7 @@
 # Run this on the server to fix Redis corruption
 
 REDIS_CONTAINER="vpc-redis"
-VOLUME_NAME="vpc-redis-data"
+VOLUME_NAME="redis_data"  # From docker-compose.prod.yml
 
 echo "============================================"
 echo "Fixing Redis Database Corruption"
