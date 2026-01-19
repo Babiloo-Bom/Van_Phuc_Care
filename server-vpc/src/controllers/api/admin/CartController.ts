@@ -5,6 +5,11 @@ import ChaptersModel from '@mongodb/chapters';
 import LessonsModel from '@mongodb/lessons';
 import QuizzesModel from '@mongodb/quizzes';
 
+// Get Review model
+const getReviewModel = () => {
+  return mongoose.models.Review || mongoose.model('Review');
+};
+
 // Cart schema
 const cartSchema = new mongoose.Schema({
   userId: {
@@ -152,6 +157,54 @@ class CartController {
       // Calculate and add videoCount, documentCount, quizCount for each course in cart
       const cartData = cart.toObject();
       if (cartData.items && cartData.items.length > 0) {
+        // Get all courseIds from cart items
+        const courseIds = cartData.items
+          .map((item: any) => item.courseId?.toString() || item.course?._id?.toString())
+          .filter(Boolean);
+
+        // Aggregate ratings from Review collection for all courses at once
+        let ratingStats: Record<string, { avg: number; count: number }> = {};
+        try {
+          const ReviewModel = getReviewModel();
+          // Match courseId as both ObjectId and String since data may be stored inconsistently
+          const courseObjectIds = courseIds.map((id: string) => {
+            try {
+              return new mongoose.Types.ObjectId(id);
+            } catch {
+              return id;
+            }
+          });
+          
+          const ratingAggregation = await ReviewModel.aggregate([
+            {
+              $match: {
+                $or: [
+                  { courseId: { $in: courseObjectIds } },
+                  { courseId: { $in: courseIds } },
+                ],
+              },
+            },
+            {
+              $group: {
+                _id: '$courseId',
+                avgRating: { $avg: '$rating' },
+                count: { $sum: 1 },
+              },
+            },
+          ]);
+
+          // Convert aggregation result to lookup object
+          ratingStats = ratingAggregation.reduce((acc: Record<string, { avg: number; count: number }>, item: any) => {
+            acc[item._id.toString()] = {
+              avg: Math.round((item.avgRating || 0) * 10) / 10, // Round to 1 decimal
+              count: item.count || 0,
+            };
+            return acc;
+          }, {});
+        } catch (ratingError) {
+          console.error('Error fetching ratings for cart:', ratingError);
+        }
+
         const itemsWithCounts = await Promise.all(
           cartData.items.map(async (item: any) => {
             const courseId = item.courseId?.toString() || item.course?._id?.toString();
@@ -160,27 +213,26 @@ class CartController {
               return item;
             }
 
-            // Calculate counts if not already present
-            if (
-              item.course?.videoCount === undefined ||
-              item.course?.documentCount === undefined ||
-              item.course?.quizCount === undefined
-            ) {
-              const counts = await CartController.calculateCourseCounts(courseId);
-              
-              // Update course object with counts
-              return {
-                ...item,
-                course: {
-                  ...item.course,
-                  videoCount: counts.videoCount,
-                  documentCount: counts.documentCount,
-                  quizCount: counts.quizCount,
+            // Calculate counts
+            const counts = await CartController.calculateCourseCounts(courseId);
+            
+            // Get rating from aggregation or fallback to stored value
+            const ratingData = ratingStats[courseId];
+            
+            // Update course object with counts and real rating
+            return {
+              ...item,
+              course: {
+                ...item.course,
+                videoCount: counts.videoCount,
+                documentCount: counts.documentCount,
+                quizCount: counts.quizCount,
+                rating: {
+                  average: ratingData?.avg ?? item.course?.rating?.average ?? 0,
+                  count: ratingData?.count ?? item.course?.rating?.count ?? 0,
                 },
-              };
-            }
-
-            return item;
+              },
+            };
           })
         );
 

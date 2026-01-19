@@ -189,6 +189,26 @@ class CourseController {
         }
       }
 
+      // Aggregate reviews to get up-to-date rating statistics (avg + count) for all courses in one query
+      let ratingStats: Record<string, { avg: number; count: number }> = {};
+      try {
+        // Use the Review model if available
+        const ReviewModel = mongoose.models.Review || mongoose.model('Review');
+        const agg = await ReviewModel.aggregate([
+          { $match: { courseId: { $in: courses.map((c: any) => c._id) } } },
+          { $group: { _id: '$courseId', avgRating: { $avg: '$rating' }, count: { $sum: 1 } } },
+        ]);
+        ratingStats = agg.reduce((acc: any, item: any) => {
+          acc[String(item._id)] = {
+            avg: item.avgRating ? parseFloat(item.avgRating.toFixed(2)) : 0,
+            count: item.count || 0,
+          };
+          return acc;
+        }, {});
+      } catch (err) {
+        console.warn('⚠️ Failed to aggregate ratings for courses:', err);
+      }
+
       const coursesWithStats = await Promise.all(
         courses.map(async (course: any) => {
           const courseData = course.toObject();
@@ -268,8 +288,9 @@ class CourseController {
             lessons: courseData.lessons || 0,
             students: courseData.students || 0,
             rating: {
-              average: courseData.rating?.average || 0,
-              count: courseData.rating?.count || 0,
+              // Prefer aggregated reviews if available, otherwise fallback to stored course rating
+              average: ratingStats[courseIdStr]?.avg ?? courseData.rating?.average ?? 0,
+              count: ratingStats[courseIdStr]?.count ?? courseData.rating?.count ?? 0,
             },
             tags: courseData.tags || [],
             isPublished: courseData.isPublished,
@@ -863,6 +884,25 @@ class CourseController {
       );
       const userIdStr = userId.toString();
 
+      // Aggregate ratings for purchased courses (avg + count)
+      let ratingStats: Record<string, { avg: number; count: number }> = {};
+      try {
+        const ReviewModel = mongoose.models.Review || mongoose.model('Review');
+        const aggRatings = await ReviewModel.aggregate([
+          { $match: { courseId: { $in: purchasedObjectIds } } },
+          { $group: { _id: '$courseId', avgRating: { $avg: '$rating' }, count: { $sum: 1 } } },
+        ]);
+        ratingStats = aggRatings.reduce((acc: any, item: any) => {
+          acc[String(item._id)] = {
+            avg: item.avgRating ? parseFloat(item.avgRating.toFixed(2)) : 0,
+            count: item.count || 0,
+          };
+          return acc;
+        }, {});
+      } catch (err) {
+        console.warn('⚠️ Failed to aggregate ratings for purchased courses:', err);
+      }
+
       const agg = await Course.aggregate([
         { $match: { _id: { $in: purchasedObjectIds }, status: "active" } },
         {
@@ -1096,8 +1136,8 @@ class CourseController {
             lessons: courseData.lessons || 0,
             students: courseData.students || 0,
             rating: {
-              average: courseData.rating?.average || 0,
-              count: courseData.rating?.count || 0,
+              average: ratingStats[courseId]?.avg ?? courseData.rating?.average ?? 0,
+              count: ratingStats[courseId]?.count ?? courseData.rating?.count ?? 0,
             },
             tags: courseData.tags || [],
             isPublished: courseData.isPublished,

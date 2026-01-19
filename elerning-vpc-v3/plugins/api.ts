@@ -5,16 +5,14 @@ export default defineNuxtPlugin(nuxtApp => {
     baseURL: config.public.apiBase as string,
     
     onRequest({ request, options }) {
-      // Add auth token to all requests
+      // Add auth token to all requests (read from cookie)
       if (process.client) {
-        const token = localStorage.getItem('auth_token');
+        const token = useCookie('auth_token').value;
         if (token) {
           options.headers = {
             ...options.headers as Record<string, string>,
             Authorization: `Bearer ${token}`
           }
-        } else {
-          console.log('🔍 API Plugin: No token found in localStorage');
         }
       }
     },
@@ -24,9 +22,10 @@ export default defineNuxtPlugin(nuxtApp => {
       if (response.status === 401) {
         // Unauthorized - redirect to login
         if (process.client) {
-          localStorage.removeItem('auth_token');
-          localStorage.removeItem('user');
-          localStorage.removeItem('token_expire_at');
+          // Remove auth cookies
+          document.cookie = `auth_token=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/; SameSite=Lax`;
+          document.cookie = `user=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/; SameSite=Lax`;
+          document.cookie = `token_expire_at=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/; SameSite=Lax`;
         }
         navigateTo('/login');
       }

@@ -6,7 +6,7 @@
         <!-- Logo -->
         <div class="logo-section">
           <nuxt-img
-            src="/images/logo-vanphuc-new-mobile.png"
+            src="/images/logo-login-mobile.png"
             alt="Van Phuc Care"
             class="lg:hidden logo"
             format="webp"
@@ -16,7 +16,7 @@
             fetchpriority="high"
           />
           <nuxt-img
-            src="/images/logo-vanphuc-new.png"
+            src="/images/logo-login.png"
             alt="Van Phuc Care"
             class="hidden lg:block logo"
             format="webp"
@@ -204,17 +204,22 @@ const form = reactive({
 const loading = ref(false);
 
 // Handle Google OAuth callback
-const handleGoogleCallback = () => {
+const handleGoogleCallback = async () => {
   const urlParams = new URLSearchParams(window.location.search);
   const googleSuccess = urlParams.get("google_success");
   const googleError = urlParams.get("google_error");
   const token = urlParams.get("token");
+  const tokenExpireAt = urlParams.get("tokenExpireAt"); // Backend may return expiry time
 
   if (googleSuccess && token) {
-    // Store token and redirect
-    localStorage.setItem("auth_token", token);
-    message.success("Đăng nhập Google thành công!");
-    navigateTo("/");
+    // Use authStore to handle Google login (proper cookie handling with expiry from backend)
+    const result = await authStore.completeGoogleLogin(token, tokenExpireAt || undefined);
+    if (result.success) {
+      message.success("Đăng nhập Google thành công!");
+      navigateTo("/");
+    } else {
+      message.error(result.error || "Đăng nhập Google thất bại");
+    }
   } else if (googleError) {
     // Decode error message from URL parameter
     const errorMessage = decodeURIComponent(

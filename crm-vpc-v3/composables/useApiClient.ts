@@ -81,7 +81,11 @@ export const useApiClient = () => {
       switch (status) {
         case 401:
           errorMessage = 'Phiên đăng nhập hết hạn, vui lòng đăng nhập lại';
-          // Don't auto logout during SSO login process or immediately after login
+          // Don't auto logout if:
+          // 1. User is not authenticated (no token) - nothing to logout from
+          // 2. SSO login is in progress
+          // 3. User just logged in (grace period)
+          // 4. It's a profile request (non-critical)
           const requestUrl = error.request?.url || error.url || '';
           const isProfileRequest = requestUrl.includes('/users/profile') || requestUrl.includes('/profile');
           
@@ -91,16 +95,20 @@ export const useApiClient = () => {
             : Infinity;
           
           console.log('[API] 401 error details:', {
+            isAuthenticated: authStore.isAuthenticated,
+            hasToken: !!authStore.token,
             isSSOLoginInProgress: authStore.isSSOLoginInProgress,
             justLoggedIn: authStore.justLoggedIn,
             loginTimestamp: authStore.loginTimestamp,
             timeSinceLogin: timeSinceLogin + 'ms',
             isProfileRequest,
             requestUrl,
-            willLogout: !authStore.isSSOLoginInProgress && !authStore.justLoggedIn && timeSinceLogin >= 15000 && !isProfileRequest,
           });
           
-          if (authStore.isSSOLoginInProgress) {
+          // Only logout if user was actually authenticated
+          if (!authStore.isAuthenticated && !authStore.token) {
+            console.log('[API] 401 error but user not authenticated, skipping auto-logout');
+          } else if (authStore.isSSOLoginInProgress) {
             console.log('[API] 401 error during SSO login, skipping auto-logout');
           } else if (authStore.justLoggedIn) {
             console.log('[API] 401 error immediately after login, skipping auto-logout');

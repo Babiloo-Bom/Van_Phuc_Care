@@ -74,9 +74,44 @@ export const useApiClient = () => {
       switch (status) {
         case 401:
           errorMessage = 'Phiên đăng nhập hết hạn, vui lòng đăng nhập lại';
-          // Auto logout and redirect
-          authStore.logout();
-          router.push('/login');
+          // Don't auto logout if:
+          // 1. User is not authenticated (no token) - nothing to logout from
+          // 2. SSO login is in progress
+          // 3. User just logged in (grace period)
+          // 4. It's a profile request (non-critical)
+          const requestUrl = error.request?.url || error.url || '';
+          const isProfileRequest = requestUrl.includes('/users/profile') || requestUrl.includes('/profile');
+          
+          // Check if login was recent (within last 30 seconds)
+          const timeSinceLogin = authStore.loginTimestamp 
+            ? Date.now() - authStore.loginTimestamp 
+            : Infinity;
+          
+          console.log('[API] 401 error details:', {
+            isAuthenticated: authStore.isAuthenticated,
+            hasToken: !!authStore.token,
+            justLoggedIn: authStore.justLoggedIn,
+            loginTimestamp: authStore.loginTimestamp,
+            timeSinceLogin: timeSinceLogin + 'ms',
+            isProfileRequest,
+            requestUrl,
+          });
+          
+          // Only logout if user was actually authenticated
+          if (!authStore.isAuthenticated && !authStore.token) {
+            console.log('[API] 401 error but user not authenticated, skipping auto-logout');
+          } else if (authStore.justLoggedIn) {
+            console.log('[API] 401 error immediately after login, skipping auto-logout');
+          } else if (timeSinceLogin < 30000) {
+            console.warn('[API] 401 error but login was recent (', timeSinceLogin, 'ms ago), skipping auto-logout');
+          } else if (isProfileRequest) {
+            console.warn('[API] 401 error on profile request, skipping auto-logout (non-critical)');
+          } else {
+            // Auto logout and redirect
+            console.warn('[API] 401 error, logging out (login was', timeSinceLogin, 'ms ago)');
+            authStore.logout();
+            router.push('/login');
+          }
           break;
         case 403:
           errorMessage = 'Bạn không có quyền thực hiện thao tác này';

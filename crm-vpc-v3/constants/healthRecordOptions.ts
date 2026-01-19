@@ -213,3 +213,255 @@ export const earlyWarningOptions = [
   { label: 'Không cười', value: 'no_smile' },
   { label: 'Khác', value: 'other' },
 ];
+
+// --- Detailed staged options (grouped by period) ---
+export const grossMotorSkillsStages = [
+  {
+    period: '0-3 tháng',
+    options: [
+      { label: 'Nâng đầu/ngực khi nằm sấp', value: 'lift_head_chest' },
+      { label: 'Chuyển động chân tay nhịp nhàng', value: 'rhythmic_movement' },
+      { label: 'Giữ đầu ổn định hơn khi được bế', value: 'hold_head_stable' },
+    ],
+  },
+  {
+    period: '4-6 tháng',
+    options: [
+      { label: 'Lật thành thạo', value: 'roll_mastery' },
+      { label: 'Bắt đầu tập ngồi', value: 'start_sitting' },
+      { label: 'Có thể tự ngồi 2-5p', value: 'sit_independent_2_5min' },
+    ],
+  },
+  {
+    period: '7-9 tháng',
+    options: [
+      { label: 'Bắt đầu biết bò -> thành thạo', value: 'crawl_start_mastery' },
+      { label: 'Vịn tường, thành giường đứng dậy', value: 'pull_to_stand' },
+    ],
+  },
+  {
+    period: '10-12 tháng',
+    options: [
+      { label: 'Bắt đầu tập đi, đi men', value: 'start_walking_cruising' },
+      { label: 'Đứng độc lập được vài giây', value: 'stand_independent_seconds' },
+    ],
+  },
+  {
+    period: '13-18 tháng',
+    options: [
+      { label: 'Bắt đầu đi vững, ít ngã, có thể chạy', value: 'walk_steady_run' },
+      { label: 'Tự xúc đồ ăn, vẫn còn rơi vãi', value: 'self_feed_spill' },
+      { label: 'Cầm cốc uống thành thạo', value: 'cup_drinking_mastery' },
+    ],
+  },
+  {
+    period: '19-24 tháng',
+    options: [
+      { label: 'Chạy vững vàng', value: 'run_steady' },
+      { label: 'Lên xuống cầu thang', value: 'stairs_up_down' },
+      { label: 'Biết đá bóng', value: 'kick_ball' },
+      { label: 'Biết bật chân lên khỏi mặt đất', value: 'jump_off_ground' },
+    ],
+  },
+];
+
+export const fineMotorSkillsStages = [
+  {
+    period: '0-3 tháng',
+    options: [
+      { label: 'Mở bàn tay thả lỏng', value: 'open_hand_relaxed' },
+      { label: 'Phản xạ nắm', value: 'grasp_reflex' },
+      { label: 'Đưa tay lên miệng', value: 'hand_to_mouth' },
+    ],
+  },
+  {
+    period: '4-6 tháng',
+    options: [
+      { label: 'Thành thạo cầm nắm', value: 'grasp_mastery' },
+      { label: 'Chuyển đồ vật từ tay này qua tay khác/cho vào mồm', value: 'transfer_to_mouth' },
+      { label: 'Khám phá đồ vật bằng miệng', value: 'explore_with_mouth' },
+    ],
+  },
+  {
+    period: '7-9 tháng',
+    options: [
+      { label: 'Cầm nắm thành thạo hơn', value: 'grasp_more_mastery' },
+      { label: 'Sử dụng ngón cái ngón trỏ nhặt vật nhỏ', value: 'pincer_grasp' },
+      { label: 'Đập 2 vật vào nhau', value: 'bang_objects' },
+    ],
+  },
+  {
+    period: '10-12 tháng',
+    options: [
+      { label: 'Hiểu công dụng đồ vật', value: 'understand_object_use' },
+    ],
+  },
+  {
+    period: '13-18 tháng',
+    options: [
+      { label: 'Bắt đầu biết giả vờ bắt chước người lớn', value: 'pretend_imitate' },
+    ],
+  },
+  {
+    period: '19-24 tháng',
+    options: [
+      { label: 'Phân loại hình dạng và màu sắc', value: 'sort_shapes_colors' },
+      { label: 'Bắt đầu biết tô màu', value: 'start_coloring' },
+    ],
+  },
+];
+
+export const visualCognitionStages = [
+  {
+    period: '0-3 tháng',
+    options: [
+      { label: 'Nhìn theo vật di chuyển từ trái sang phải', value: 'track_left_right' },
+      { label: 'Nhìn chăm chú vào khuôn mặt người chăm sóc', value: 'stare_caregiver_face' },
+    ],
+  },
+  {
+    period: '4-6 tháng',
+    options: [
+      { label: 'Lấy đồ có chủ đích', value: 'intentional_reach' },
+      { label: 'Sử dụng bàn tay lấy vật nhỏ', value: 'hand_grasp_small' },
+    ],
+  },
+  {
+    period: '7-9 tháng',
+    options: [
+      { label: 'Nhận biết sự tồn tại của đồ vật, thích chơi ú òa', value: 'object_permanence_peekaboo' },
+      { label: 'Nhìn theo vật rơi xuống đất', value: 'track_falling_object' },
+    ],
+  },
+  {
+    period: '10-12 tháng',
+    options: [
+      { label: 'Tìm đồ vật bị giấu', value: 'find_hidden_object' },
+      { label: 'Bắt chước hành động người khác', value: 'imitate_actions' },
+      { label: 'Cho đồ vào hộp rồi lấy ra', value: 'put_take_out_box' },
+    ],
+  },
+  {
+    period: '13-18 tháng',
+    options: [
+      { label: 'Hiểu ngôn ngữ và chỉ dẫn đơn giản', value: 'understand_simple_instructions' },
+    ],
+  },
+  {
+    period: '19-24 tháng',
+    options: [
+      { label: 'Tương tác với người xung quanh nhưng chưa hòa đồng', value: 'interact_not_social' },
+      { label: 'Muốn tự làm mọi thứ, không làm được sẽ ăn vạ', value: 'want_independence_tantrum' },
+    ],
+  },
+];
+
+export const communicationEmotionStages = [
+  {
+    period: '0-3 tháng',
+    options: [
+      { label: 'Nụ cười xã hội', value: 'social_smile' },
+      { label: 'Hóng chuyện, phát ra âm thanh gù gù', value: 'cooing_sounds' },
+      { label: 'Bình tĩnh lại khi được bế hoặc nói chuyện', value: 'calm_when_held_talked' },
+    ],
+  },
+  {
+    period: '4-6 tháng',
+    options: [
+      { label: 'Bập bẹ các âm tiết đơn giản', value: 'babble_simple_syllables' },
+    ],
+  },
+  {
+    period: '7-9 tháng',
+    options: [
+      { label: 'Hiểu được từ không', value: 'understand_no' },
+      { label: 'Bắt chước âm thanh cử chỉ', value: 'imitate_sounds_gestures' },
+      { label: 'Nói bập bẹ chuỗi dài hơn', value: 'longer_babble' },
+    ],
+  },
+  {
+    period: '10-12 tháng',
+    options: [
+      { label: 'Bắt đầu nói đc từ đơn', value: 'start_single_words' },
+      { label: 'Giao tiếp bằng cử chỉ (vẫy tay, lắc đầu,...)', value: 'gesture_communication' },
+    ],
+  },
+  {
+    period: '13-18 tháng',
+    options: [
+      { label: 'Giai đoạn bùng nổ ngôn ngữ (nói đc 3-20 từ đơn)', value: 'language_explosion' },
+      { label: 'Hiểu mệnh lệnh đơn giản', value: 'understand_simple_commands' },
+    ],
+  },
+  {
+    period: '19-24 tháng',
+    options: [
+      { label: 'Ghép từ và câu ngắn', value: 'combine_words_short_sentences' },
+      { label: 'Vốn từ vựng ~50 từ', value: 'vocabulary_50_words' },
+      { label: 'Thể hiện sự ngang bướng', value: 'show_stubbornness' },
+    ],
+  },
+];
+
+export const earlyWarningStages = [
+  {
+    period: '0-3 tháng',
+    options: [
+      { label: 'Cổ quá mềm', value: 'neck_too_soft' },
+      { label: 'Cứng cơ', value: 'muscle_stiffness' },
+      { label: 'Không nhấc được đầu khi nằm sấp', value: 'cant_lift_head_tummy' },
+      { label: 'Bàn tay nắm chặt liên tục sau 3 tháng tuổi', value: 'tight_fist_after_3months' },
+      { label: 'Không cầm nắm vật đặt vào tay', value: 'no_grasp_object' },
+      { label: 'Không nhìn theo vật chuyển động', value: 'no_track_moving_object' },
+      { label: 'Không giao tiếp bằng mắt', value: 'no_eye_contact' },
+      { label: 'Không cười với người khác sau 3 tháng', value: 'no_smile_after_3months' },
+      { label: 'Không phản ứng với tiếng động lớn', value: 'no_response_loud_sound' },
+      { label: 'Quấy khóc liên tục không thể dỗ dành', value: 'excessive_crying' },
+    ],
+  },
+  {
+    period: '4-6 tháng',
+    options: [
+      { label: 'Không lật được', value: 'cant_roll' },
+      { label: 'Cơ thể quá mềm hoặc quá cứng', value: 'body_too_soft_or_stiff' },
+      { label: 'Chỉ với tay bằng một bên (nguy cơ liệt nửa người hoặc tổn thương thần kinh)', value: 'one_hand_reach_only' },
+      { label: 'Không cười, không phát ra âm thanh', value: 'no_smile_no_sound' },
+    ],
+  },
+  {
+    period: '7-9 tháng',
+    options: [
+      { label: 'Không thể ngồi vững', value: 'cant_sit_stable' },
+      { label: 'Không dồn trọng lượng lên chân khi được bế đứng', value: 'no_weight_bearing_legs' },
+      { label: 'Không bập bẹ', value: 'no_babbling' },
+      { label: 'Không phản ứng khi được gọi tên', value: 'no_response_name' },
+      { label: 'Không quan tâm đến đồ chơi', value: 'no_interest_toys' },
+      { label: 'Không nhìn theo hướng chỉ tay của người lớn', value: 'no_follow_pointing' },
+    ],
+  },
+  {
+    period: '10-12 tháng',
+    options: [],
+  },
+  {
+    period: '13-18 tháng',
+    options: [
+      { label: 'Không chỉ ngón tay để thể hiện sự quan tâm', value: 'no_pointing_interest' },
+      { label: 'Không chơi giả vờ', value: 'no_pretend_play' },
+      { label: 'Không nhìn vào mắt người đối diện khi giao tiếp', value: 'no_eye_contact_communication' },
+      { label: 'Mất đi kỹ năng đã có', value: 'loss_acquired_skills' },
+    ],
+  },
+  {
+    period: '19-24 tháng',
+    options: [],
+  },
+];
+
+// Flattened detailed option lists for label lookup
+export const grossMotorSkillsDetailedOptions = grossMotorSkillsStages.flatMap((s) => s.options);
+export const fineMotorSkillsDetailedOptions = fineMotorSkillsStages.flatMap((s) => s.options);
+export const visualCognitionDetailedOptions = visualCognitionStages.flatMap((s) => s.options);
+export const communicationEmotionDetailedOptions = communicationEmotionStages.flatMap((s) => s.options);
+export const earlyWarningDetailedOptions = earlyWarningStages.flatMap((s) => s.options);
+

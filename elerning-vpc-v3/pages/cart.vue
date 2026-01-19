@@ -1,8 +1,8 @@
 <template>
-  <div class="mb-12 sm:mb-16 lg:mb-20 mt-12 max-md:px-4">
-    <main class="container mx-auto py-6 sm:py-8 lg:py-10 lg:pt-0">
+  <div class="mb-12 sm:mb-16 lg:mb-20 mt-8">
+    <main class="container mx-auto pb-6 sm:pb-8 lg:pb-10 px-4 lg:px-0 xl:px-4">
       <!-- Header -->
-      <div class="mb-6 sm:mb-8">
+      <div class="mb-8">
         <!-- Mobile: Centered layout -->
         <div class="md:hidden text-center">
           <h2 class="text-[32px] font-bold mb-2" style="color: #1A75BB;">
@@ -13,7 +13,7 @@
           </p>
         </div>
         <!-- Desktop: Original layout -->
-        <h2 class="hidden md:block text-2xl sm:text-3xl font-bold text-primary-100">
+        <h2 class="hidden md:block text-2xl sm:text-3xl font-bold text-[#1A75BB]">
           Giỏ hàng
           <span class="text-base sm:text-lg font-normal ml-2" style="color: #7C7C7C;">
             ({{ cartItems.length }} sản phẩm)
@@ -242,7 +242,7 @@
           <div class="lg:sticky lg:top-28">
             <div class=" overflow-hidden">
               <!-- Content -->
-              <div class="px-4 sm:px-5 md:px-6">
+              <div>
                 <!-- Coupon Input -->
                 <div class="mb-6">
                   <h4 class="text-base sm:text-lg font-bold text-gray-800 mb-3">

@@ -1,5 +1,41 @@
 import { defineStore } from "pinia";
 
+// Helper functions for cookie-based auth persistence (Elearning uses cookies-only)
+function isSecure() {
+  if (!process.client) return false;
+  return window.location.protocol === 'https:';
+}
+function getCookieDomain() {
+  if (!process.client) return null;
+  const hostname = window.location.hostname;
+  // Allow localhost without domain (cookies won't be shared between ports)
+  if (hostname === 'localhost' || hostname === '127.0.0.1') return null;
+  // Support local test domains like my.local.test, edu.local.test
+  const parts = hostname.split('.');
+  if (parts.length >= 2) return '.' + parts.slice(-2).join('.');
+  return null;
+}
+function setCookie(name: string, value: string, expiresIso?: string) {
+  if (!process.client) return;
+  let cookieStr = `${name}=${encodeURIComponent(value)}; path=/; SameSite=Lax`;
+  if (expiresIso) cookieStr += `; expires=${new Date(expiresIso).toUTCString()}`;
+  const domain = getCookieDomain();
+  if (domain) cookieStr += `; domain=${domain}`;
+  if (isSecure()) cookieStr += '; Secure';
+  document.cookie = cookieStr;
+}
+function getCookie(name: string): string | null {
+  if (!process.client) return null;
+  const match = document.cookie.match(new RegExp('(^|;)\\s*' + name + '=([^;]+)'));
+  return match ? decodeURIComponent(match[2]) : null;
+}
+function removeCookie(name: string) {
+  if (!process.client) return;
+  const domain = getCookieDomain();
+  if (domain) document.cookie = `${name}=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/; domain=${domain}; SameSite=Lax`;
+  document.cookie = `${name}=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/; SameSite=Lax`;
+}
+
 export interface User {
   id: string | number;
   email: string;
@@ -96,26 +132,18 @@ export const useAuthStore = defineStore("auth", {
           console.log('[Login] Cleared justLoggedIn flag after 30 seconds');
         }, 30000); // 30 seconds grace period (increased from 15)
 
-        // Save to localStorage
+        // Persist auth using cookies (Elearning uses cookie-only persistence)
         if (process.client) {
-          localStorage.setItem("auth_token", token);
-          localStorage.setItem("token_expire_at", this.tokenExpireAt || "");
-          localStorage.setItem("user", JSON.stringify(this.user));
-          // Save loginTimestamp to localStorage for initAuth restoration
-          localStorage.setItem("login_timestamp", String(this.loginTimestamp));
+          setCookie('auth_token', token, this.tokenExpireAt || undefined);
+          setCookie('token_expire_at', this.tokenExpireAt || '');
+          setCookie('user', JSON.stringify(this.user), this.tokenExpireAt || undefined);
+          if (this.loginTimestamp) setCookie('login_timestamp', String(this.loginTimestamp));
 
           if (remindAccount) {
-            localStorage.setItem(
-              "auth_data",
-              JSON.stringify({
-                username,
-                remindAccount,
-                origin: "vanphuccare.gensi.vn",
-              })
-            );
+            setCookie('auth_data', JSON.stringify({ username, remindAccount, origin: 'vanphuccare.gensi.vn' }), this.tokenExpireAt || undefined);
           }
           
-          // Also save authData for initAuth compatibility
+          // Also save authData for initAuth compatibility (as cookie)
           const authData = {
             user: this.user,
             token: this.token,
@@ -123,7 +151,7 @@ export const useAuthStore = defineStore("auth", {
             rememberAccount: this.rememberAccount,
             loginTimestamp: this.loginTimestamp,
           };
-          localStorage.setItem("authData", JSON.stringify(authData));
+          setCookie('authData', JSON.stringify(authData), this.tokenExpireAt || undefined);
           
           // Clear logout sync cookie on successful login
           const { clearLogoutSyncCookie } = await import('~/utils/authSync');
@@ -184,11 +212,11 @@ export const useAuthStore = defineStore("auth", {
           fullname: data.fullname,
         };
 
-        // Save to localStorage
+        // Save to cookies (E-Learning uses cookie-based persistence for SSO)
         if (process.client) {
-          localStorage.setItem("auth_token", token);
-          localStorage.setItem("token_expire_at", this.tokenExpireAt || "");
-          localStorage.setItem("user", JSON.stringify(this.user));
+          setCookie('auth_token', token, this.tokenExpireAt || undefined);
+          setCookie('token_expire_at', this.tokenExpireAt || '');
+          setCookie('user', JSON.stringify(this.user), this.tokenExpireAt || undefined);
           
           // Set SSO cookie to sync login with other sites
           try {
@@ -498,17 +526,17 @@ export const useAuthStore = defineStore("auth", {
         this.justLoggedIn = false;
         this.loginTimestamp = null;
 
-        // Clear localStorage
+        // Clear cookies (Elearning uses cookie-only persistence)
         if (process.client) {
-          localStorage.removeItem("auth_token");
-          localStorage.removeItem("user");
-          localStorage.removeItem("login_timestamp");
-          localStorage.removeItem("authData"); // Clear authData (camelCase)
-          localStorage.removeItem("token_expire_at");
+          removeCookie('auth_token');
+          removeCookie('user');
+          removeCookie('login_timestamp');
+          removeCookie('authData'); // Clear authData (camelCase)
+          removeCookie('token_expire_at');
 
           // Keep auth_data if rememberAccount was true
           if (!this.rememberAccount) {
-            localStorage.removeItem("auth_data");
+            removeCookie('auth_data');
           }
         }
 
@@ -522,7 +550,7 @@ export const useAuthStore = defineStore("auth", {
     },
 
     /**
-     * Save current auth state to localStorage
+     * Save current auth state (Elearning: cookie-based)
      */
     saveAuth() {
       if (process.client && this.user && this.token) {
@@ -533,12 +561,13 @@ export const useAuthStore = defineStore("auth", {
             tokenExpireAt: this.tokenExpireAt,
             rememberAccount: this.rememberAccount
           }
-          localStorage.setItem('authData', JSON.stringify(authData))
+          setCookie('authData', JSON.stringify(authData), this.tokenExpireAt || undefined)
         } catch (error) {
           console.error("❌ Error saving auth data:", error);
         }
       }
     },
+
 
     /**
      * Check and restore session from localStorage
@@ -601,7 +630,8 @@ export const useAuthStore = defineStore("auth", {
         if (this.isAuthenticated && this.token && this.user) {
           // Still restore loginTimestamp if missing (might have been lost)
           if (!this.loginTimestamp) {
-            const loginTimestampStr = localStorage.getItem("login_timestamp");
+            // Try cookie-based login timestamp first (Elearning uses cookies)
+            const loginTimestampStr = getCookie('login_timestamp') || localStorage.getItem('login_timestamp');
             if (loginTimestampStr) {
               const loginTimestamp = parseInt(loginTimestampStr);
               if (!isNaN(loginTimestamp)) {
@@ -616,8 +646,8 @@ export const useAuthStore = defineStore("auth", {
                 }
               }
             }
-            // Also try to restore from authData
-            const authDataStr = localStorage.getItem("authData");
+            // Also try to restore from authData cookie
+            const authDataStr = getCookie('authData') || localStorage.getItem('authData');
             if (authDataStr && !this.loginTimestamp) {
               try {
                 const authData = JSON.parse(authDataStr);
@@ -643,10 +673,11 @@ export const useAuthStore = defineStore("auth", {
           return;
         }
         
-        const token = localStorage.getItem("auth_token");
-        const tokenExpireAt = localStorage.getItem("token_expire_at");
-        const userStr = localStorage.getItem("user");
-        const authDataStr = localStorage.getItem("authData") || localStorage.getItem("auth_data");
+        // Read from cookies (Elearning uses cookies for persistence)
+        const token = getCookie('auth_token');
+        const tokenExpireAt = getCookie('token_expire_at');
+        const userStr = getCookie('user');
+        const authDataStr = getCookie('authData') || getCookie('auth_data');
 
         let authData: any = null;
             if (authDataStr) {
@@ -827,25 +858,60 @@ export const useAuthStore = defineStore("auth", {
     /**
      * Complete Google Login
      * Store token and user data from Google OAuth
+     * If userData is not provided, will fetch from API
+     * If tokenExpireAt is not provided, defaults to 7 days
      */
     async completeGoogleLogin(
       accessToken: string,
-      tokenExpireAt: number,
-      userData: User
+      tokenExpireAt?: string | number,
+      userData?: User
     ) {
       try {
         this.token = accessToken;
 
         // Handle tokenExpireAt properly
-        if (typeof tokenExpireAt === "number") {
-          this.tokenExpireAt = new Date(
-            Date.now() + tokenExpireAt
-          ).toISOString();
+        if (tokenExpireAt) {
+          if (typeof tokenExpireAt === 'number') {
+            this.tokenExpireAt = new Date(Date.now() + tokenExpireAt).toISOString();
+          } else if (typeof tokenExpireAt === 'string') {
+            // Could be ISO string or duration string like '7d'
+            const parsed = new Date(tokenExpireAt);
+            if (!isNaN(parsed.getTime())) {
+              this.tokenExpireAt = parsed.toISOString();
+            } else {
+              this.tokenExpireAt = this.calculateExpireTime(tokenExpireAt);
+            }
+          }
         } else {
           // Default to 7 days if not provided
-          this.tokenExpireAt = new Date(
-            Date.now() + 7 * 24 * 60 * 60 * 1000
-          ).toISOString();
+          this.tokenExpireAt = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString();
+        }
+
+        // Persist token via cookie immediately
+        if (process.client) {
+          setCookie('auth_token', accessToken, this.tokenExpireAt || undefined);
+        }
+
+        // If userData is not provided, fetch from API
+        if (!userData) {
+          const authApi = useAuthApi();
+          const profileResponse = (await authApi.getUserProfile()) as any;
+          const fetchedUserData = profileResponse?.data?.user || profileResponse?.data?.data || profileResponse?.data;
+          
+          userData = {
+            id: fetchedUserData?._id || fetchedUserData?.id || 'temp-id',
+            email: fetchedUserData?.email || '',
+            username: fetchedUserData?.username || fetchedUserData?.email,
+            fullname: fetchedUserData?.fullname || fetchedUserData?.name || '',
+            name: fetchedUserData?.name || fetchedUserData?.fullname,
+            phone: fetchedUserData?.phoneNumber || fetchedUserData?.phone,
+            role: fetchedUserData?.role || 'user',
+            avatar: fetchedUserData?.avatar,
+            verified: fetchedUserData?.verified,
+            status: fetchedUserData?.status,
+            courseRegister: fetchedUserData?.courseRegister || [],
+            courseCompleted: fetchedUserData?.courseCompleted || [],
+          };
         }
 
         this.user = userData;
@@ -860,13 +926,13 @@ export const useAuthStore = defineStore("auth", {
           console.log('[Google Login] Cleared justLoggedIn flag after 30 seconds');
         }, 30000); // 30 seconds grace period (increased from 15)
 
-          // Save to localStorage
+          // Save to cookies (E-Learning uses cookie-based persistence for SSO)
           if (process.client) {
-            localStorage.setItem("auth_token", accessToken);
-            localStorage.setItem("token_expire_at", this.tokenExpireAt);
-            localStorage.setItem("user", JSON.stringify(userData));
-            // Save loginTimestamp to localStorage for initAuth restoration
-            localStorage.setItem("login_timestamp", String(this.loginTimestamp));
+            setCookie('auth_token', accessToken, this.tokenExpireAt || undefined);
+            setCookie('token_expire_at', this.tokenExpireAt || '');
+            setCookie('user', JSON.stringify(userData), this.tokenExpireAt || undefined);
+            // Save loginTimestamp to cookie for initAuth restoration
+            setCookie('login_timestamp', String(this.loginTimestamp));
             
             // Also save authData for initAuth compatibility
             const authData = {
@@ -876,7 +942,7 @@ export const useAuthStore = defineStore("auth", {
               rememberAccount: false,
               loginTimestamp: this.loginTimestamp,
             };
-            localStorage.setItem("authData", JSON.stringify(authData));
+            setCookie('authData', JSON.stringify(authData), this.tokenExpireAt || undefined);
             
             // Clear logout sync cookie on successful login
             const { clearLogoutSyncCookie } = await import('~/utils/authSync');
@@ -916,7 +982,7 @@ export const useAuthStore = defineStore("auth", {
           this.user = { ...this.user, ...response.user };
 
           if (process.client) {
-            localStorage.setItem("user", JSON.stringify(this.user));
+            setCookie('user', JSON.stringify(this.user), this.tokenExpireAt || undefined);
           }
         }
 

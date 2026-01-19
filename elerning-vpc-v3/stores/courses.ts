@@ -2,6 +2,27 @@ import { defineStore } from 'pinia';
 import { useAuthStore } from './auth';
 import { useApiBase } from '~/composables/useApiBase';
 
+// Helper function to set cookie with domain for SSO (E-Learning uses cookies)
+function getCookieDomainForCourses() {
+  if (typeof window === 'undefined') return null;
+  const hostname = window.location.hostname;
+  if (hostname === 'localhost' || hostname === '127.0.0.1') return null;
+  const parts = hostname.split('.');
+  if (parts.length >= 2) return '.' + parts.slice(-2).join('.');
+  return null;
+}
+
+function setCookieForCourses(name: string, value: string, expiresIso?: string) {
+  if (typeof window === 'undefined') return;
+  const isSecure = window.location.protocol === 'https:';
+  let cookieStr = `${name}=${encodeURIComponent(value)}; path=/; SameSite=Lax`;
+  if (expiresIso) cookieStr += `; expires=${new Date(expiresIso).toUTCString()}`;
+  const domain = getCookieDomainForCourses();
+  if (domain) cookieStr += `; domain=${domain}`;
+  if (isSecure) cookieStr += '; Secure';
+  document.cookie = cookieStr;
+}
+
 export interface Course {
   _id: string
   title: string
@@ -311,16 +332,16 @@ export const useCoursesStore = defineStore('courses', {
           const purchasedIds = (this.myCourses || []).map((c: any) => c._id?.toString()).filter(Boolean)
           if (authStore.user) {
             authStore.user.courseRegister = purchasedIds
-            // Persist vào localStorage (giữ nguyên các field khác)
+            // Persist to cookies (E-Learning uses cookies for SSO)
             const userData = { ...authStore.user, courseRegister: purchasedIds }
             if (process.client) {
-              localStorage.setItem('user', JSON.stringify(userData))
-              localStorage.setItem('authData', JSON.stringify({
+              setCookieForCourses('user', JSON.stringify(userData), authStore.tokenExpireAt || undefined)
+              setCookieForCourses('authData', JSON.stringify({
                 user: userData,
                 token: authStore.token,
                 tokenExpireAt: authStore.tokenExpireAt,
                 loginTimestamp: authStore.loginTimestamp,
-              }))
+              }), authStore.tokenExpireAt || undefined)
             }
           }
         } catch (e) {

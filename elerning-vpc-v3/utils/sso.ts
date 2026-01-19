@@ -5,14 +5,23 @@
  */
 
 const SSO_COOKIE = 'auth_sso_token';
-const COOKIE_DOMAIN = '.vanphuccare.vn'; // Hardcode domain for production
+
+function getSiteType(): 'admin' | 'elearning' | 'crm' {
+  if (!process.client) return 'elearning';
+  const hostname = window.location.hostname.toLowerCase();
+  if (hostname.startsWith('admin.') || hostname.includes('.admin') || hostname.includes('admin.')) return 'admin';
+  if (hostname.includes('edu') || hostname.includes('elearning') || hostname.includes('learn')) return 'elearning';
+  return 'crm';
+}
 
 /**
- * Check if running on localhost
+ * Check if running on localhost (but not local test domains)
  */
 function isLocalhost(): boolean {
   if (!process.client) return false;
   const hostname = window.location.hostname;
+  // Allow local test domains like my.local.test, edu.local.test
+  if (hostname.endsWith('.local.test')) return false;
   return hostname === 'localhost' || hostname === '127.0.0.1' || hostname.startsWith('192.168.') || hostname.startsWith('10.');
 }
 
@@ -87,30 +96,28 @@ export async function setSSOCookie(token: string): Promise<void> {
   const expires = new Date();
   expires.setMinutes(expires.getMinutes() + 1);
   
-  if (isLocalhost()) {
-    // On localhost, use localStorage as fallback (same as logout sync)
+    const site = getSiteType();
+  if (site === 'admin') {
+    // Admin: use localStorage only (no cookie)
     const syncKey = 'auth_sso_token_' + Date.now();
     localStorage.setItem(syncKey, encodedToken);
-    // Clean up old sync keys
+    // Clean up old keys
     Object.keys(localStorage).forEach(key => {
       if (key.startsWith('auth_sso_token_') && key !== syncKey) {
         const parts = key.split('_');
         const timestamp = parts[3] ? parseInt(parts[3]) : 0;
-        if (timestamp && Date.now() - timestamp > 60000) {
-          localStorage.removeItem(key);
-        }
+        if (timestamp && Date.now() - timestamp > 60000) localStorage.removeItem(key);
       }
     });
-  } else {
-    // Production: Use cookie with domain for subdomain sharing
-    try {
-      const cookieString = `${SSO_COOKIE}=${encodedToken}; expires=${expires.toUTCString()}; path=/; domain=${COOKIE_DOMAIN}; SameSite=Lax`;
-      document.cookie = cookieString;
-    } catch (e) {
-      // Fallback if domain setting fails
-      document.cookie = `${SSO_COOKIE}=${encodedToken}; expires=${expires.toUTCString()}; path=/; SameSite=Lax`;
-    }
+    return;
   }
+
+  // Elearning/CRM: set cookie (omit domain on localhost)
+  const domain = getCookieDomain();
+  let cookieString = `${SSO_COOKIE}=${encodedToken}; expires=${expires.toUTCString()}; path=/; SameSite=Lax`;
+  if (domain) cookieString += `; domain=${domain}`;
+  if (isSecure()) cookieString += '; Secure';
+  document.cookie = cookieString;
 }
 
 /**
@@ -119,32 +126,26 @@ export async function setSSOCookie(token: string): Promise<void> {
 export function checkSSOCookie(): string | null {
   if (!process.client) return null;
   
-  if (isLocalhost()) {
-    // On localhost, check localStorage for sync keys
+    const site = getSiteType();
+  if (site === 'admin') {
+    // Admin: check localStorage
     const keys = Object.keys(localStorage);
     for (let key of keys) {
       if (key.startsWith('auth_sso_token_')) {
         const parts = key.split('_');
         const timestamp = parts[3] ? parseInt(parts[3]) : 0;
-        // Check if sync key is recent (within 1 minute)
-        if (timestamp && Date.now() - timestamp < 60000) {
-          const value = localStorage.getItem(key);
-          return value;
-        }
-      }
-    }
-    return null;
-  } else {
-    // Production: Check cookie
-    const cookies = document.cookie.split(';');
-    for (let cookie of cookies) {
-      const [name, value] = cookie.trim().split('=');
-      if (name === SSO_COOKIE && value) {
-        return value;
+        if (timestamp && Date.now() - timestamp < 60000) return localStorage.getItem(key) || null;
       }
     }
     return null;
   }
+  // Elearning/CRM: check cookie only
+  const cookies = document.cookie.split(';');
+  for (let cookie of cookies) {
+    const [name, ...rest] = cookie.trim().split('=');
+    if (name === SSO_COOKIE) return rest.join('=') || null;
+  }
+  return null;
 }
 
 /**
@@ -152,21 +153,21 @@ export function checkSSOCookie(): string | null {
  */
 export function clearSSOCookie(): void {
   if (process.client) {
-    if (isLocalhost()) {
-      // Clear all localStorage sync keys
-      Object.keys(localStorage).forEach(key => {
-        if (key.startsWith('auth_sso_token_')) {
-          localStorage.removeItem(key);
-        }
-      });
-    } else {
-      // Production: Clear cookie
-      try {
-        document.cookie = `${SSO_COOKIE}=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/; domain=${COOKIE_DOMAIN}; SameSite=Lax`;
-      } catch (e) {
-        document.cookie = `${SSO_COOKIE}=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/; SameSite=Lax`;
-      }
+      const site = getSiteType();
+  if (site === 'admin') {
+    // Clear admin localStorage keys
+    Object.keys(localStorage).forEach(key => { if (key.startsWith('auth_sso_token_')) localStorage.removeItem(key); });
+    return;
+  }
+  // Elearning/CRM: clear cookie (try both with domain and without)
+  const domain = getCookieDomain();
+  try {
+    if (domain) {
+      document.cookie = `${SSO_COOKIE}=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/; domain=${domain}; SameSite=Lax`;
     }
+  } catch (e) {}
+  document.cookie = `${SSO_COOKIE}=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/; SameSite=Lax`;
+  return;
   }
 }
 
@@ -199,9 +200,18 @@ export async function handleSSOLogin(): Promise<boolean> {
     if (!authStore.justLoggedIn) {
       authStore.justLoggedIn = true;
       authStore.loginTimestamp = Date.now();
-      // Save to localStorage immediately for restoration after refresh
+      // Persist login timestamp according to site policy (admin -> localStorage, others -> cookie)
+      const site = getSiteType();
       if (process.client) {
-        localStorage.setItem('login_timestamp', String(authStore.loginTimestamp));
+        if (site === 'admin') {
+          localStorage.setItem('login_timestamp', String(authStore.loginTimestamp));
+        } else {
+          const domain = getCookieDomain();
+          let cookieStr = `login_timestamp=${authStore.loginTimestamp}; path=/; SameSite=Lax`;
+          if (domain) cookieStr += `; domain=${domain}`;
+          if (isSecure()) cookieStr += '; Secure';
+          document.cookie = cookieStr;
+        }
       }
       setTimeout(() => {
         authStore.justLoggedIn = false;
@@ -219,8 +229,19 @@ export async function handleSSOLogin(): Promise<boolean> {
     
     // Set token FIRST before calling API (so API can use it)
     authStore.token = ssoData.token;
+    // Calculate cookie expiration (default 7 days)
+    const tokenExpires = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000);
     if (process.client) {
-      localStorage.setItem('auth_token', ssoData.token);
+      const site = getSiteType();
+      if (site === 'admin') {
+        localStorage.setItem('auth_token', ssoData.token);
+      } else {
+        const domain = getCookieDomain();
+        let cookieStr = `auth_token=${ssoData.token}; expires=${tokenExpires.toUTCString()}; path=/; SameSite=Lax`;
+        if (domain) cookieStr += `; domain=${domain}`;
+        if (isSecure()) cookieStr += '; Secure';
+        document.cookie = cookieStr;
+      }
     }
     
     // Set justLoggedIn flag IMMEDIATELY to protect against auto-logout
@@ -229,9 +250,18 @@ export async function handleSSOLogin(): Promise<boolean> {
     if (!authStore.justLoggedIn) {
       authStore.justLoggedIn = true;
       authStore.loginTimestamp = Date.now();
-      // Save to localStorage immediately for restoration after refresh
+      // Persist loginTimestamp according to site policy (admin -> localStorage, others -> cookie)
       if (process.client) {
-        localStorage.setItem('login_timestamp', String(authStore.loginTimestamp));
+        const site = getSiteType();
+        if (site === 'admin') {
+          localStorage.setItem('login_timestamp', String(authStore.loginTimestamp));
+        } else {
+          const domain = getCookieDomain();
+          let cookieStr = `login_timestamp=${authStore.loginTimestamp}; path=/; SameSite=Lax`;
+          if (domain) cookieStr += `; domain=${domain}`;
+          if (isSecure()) cookieStr += '; Secure';
+          document.cookie = cookieStr;
+        }
       }
       setTimeout(() => {
         authStore.justLoggedIn = false;
@@ -240,7 +270,16 @@ export async function handleSSOLogin(): Promise<boolean> {
       // Update timestamp if already set (to extend grace period)
       authStore.loginTimestamp = Date.now();
       if (process.client) {
-        localStorage.setItem('login_timestamp', String(authStore.loginTimestamp));
+        const site = getSiteType();
+        if (site === 'admin') {
+          localStorage.setItem('login_timestamp', String(authStore.loginTimestamp));
+        } else {
+          const domain = getCookieDomain();
+          let cookieStr = `login_timestamp=${authStore.loginTimestamp}; path=/; SameSite=Lax`;
+          if (domain) cookieStr += `; domain=${domain}`;
+          if (isSecure()) cookieStr += '; Secure';
+          document.cookie = cookieStr;
+        }
       }
     }
     
@@ -269,21 +308,45 @@ export async function handleSSOLogin(): Promise<boolean> {
           courseCompleted: userData?.courseCompleted || [],
         };
         
-        // Save user to localStorage (token already saved above)
+        // Persist user and authData according to site policy (admin -> localStorage, others -> cookies)
         if (process.client) {
-          localStorage.setItem('user', JSON.stringify(authStore.user));
-          // Also save authData for initAuth compatibility
-          const authData = {
-            user: authStore.user,
-            token: authStore.token,
-            tokenExpireAt: authStore.tokenExpireAt || new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString(),
-            rememberAccount: authStore.rememberAccount || false,
-            loginTimestamp: authStore.loginTimestamp, // Include loginTimestamp for restoration
-          };
-          localStorage.setItem('authData', JSON.stringify(authData));
-          // Also save loginTimestamp separately for fallback
-          if (authStore.loginTimestamp) {
-            localStorage.setItem('login_timestamp', String(authStore.loginTimestamp));
+          const site = getSiteType();
+          if (site === 'admin') {
+            localStorage.setItem('user', JSON.stringify(authStore.user));
+            const authData = {
+              user: authStore.user,
+              token: authStore.token,
+              tokenExpireAt: authStore.tokenExpireAt || new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString(),
+              rememberAccount: authStore.rememberAccount || false,
+              loginTimestamp: authStore.loginTimestamp,
+            };
+            localStorage.setItem('authData', JSON.stringify(authData));
+            if (authStore.loginTimestamp) localStorage.setItem('login_timestamp', String(authStore.loginTimestamp));
+          } else {
+            const domain = getCookieDomain();
+            const expires = authStore.tokenExpireAt || new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString();
+            const expiresDate = new Date(expires).toUTCString();
+            // user cookie
+            let userCookie = `user=${encodeURIComponent(JSON.stringify(authStore.user))}; expires=${expiresDate}; path=/; SameSite=Lax`;
+            if (domain) userCookie += `; domain=${domain}`;
+            if (isSecure()) userCookie += '; Secure';
+            document.cookie = userCookie;
+            // authData cookie
+            let authCookie = `authData=${encodeURIComponent(JSON.stringify({ user: authStore.user, token: authStore.token, tokenExpireAt: expires }))}; expires=${expiresDate}; path=/; SameSite=Lax`;
+            if (domain) authCookie += `; domain=${domain}`;
+            if (isSecure()) authCookie += '; Secure';
+            document.cookie = authCookie;
+            // token_expire_at cookie
+            let expireCookie = `token_expire_at=${encodeURIComponent(expires)}; expires=${expiresDate}; path=/; SameSite=Lax`;
+            if (domain) expireCookie += `; domain=${domain}`;
+            if (isSecure()) expireCookie += '; Secure';
+            document.cookie = expireCookie;
+            if (authStore.loginTimestamp) {
+              let tsCookie = `login_timestamp=${authStore.loginTimestamp}; path=/; SameSite=Lax`;
+              if (domain) tsCookie += `; domain=${domain}`;
+              if (isSecure()) tsCookie += '; Secure';
+              document.cookie = tsCookie;
+            }
           }
         }
         
@@ -311,14 +374,12 @@ export async function handleSSOLogin(): Promise<boolean> {
       return false;
     }
     
-    // If no userData, clear everything
+    // If no userData, clear SSO state but not main auth
     authStore.token = null;
     authStore.isAuthenticated = false;
     authStore.justLoggedIn = false;
     authStore.loginTimestamp = null;
-    if (process.client) {
-      localStorage.removeItem('auth_token');
-    }
+    // Don't clear main auth cookies - they might still be valid
     clearSSOCookie();
     return false;
   } catch (error) {

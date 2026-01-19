@@ -1,7 +1,7 @@
 <template>
   <div class="documents-container">
     <!-- Documents Header -->
-    <div class="documents-header  mb-6">
+    <div v-if="documents.length > 0" class="documents-header  mb-6">
       <div class="flex items-center gap-3 mb-4">
         <div class="w-10 h-10 bg-blue-100 rounded-full flex items-center justify-center">
           <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" class="fill-none stroke-blue-600">
@@ -172,21 +172,6 @@
           </div>
         </div>
       </div>
-    </div>
-
-    <!-- Empty State -->
-    <div v-else-if="!loading" class="empty-state text-center py-12">
-      <div class="w-20 h-20 mx-auto mb-6 bg-gray-100 rounded-full flex items-center justify-center">
-        <svg xmlns="http://www.w3.org/2000/svg" width="40" height="40" viewBox="0 0 24 24" class="fill-none stroke-gray-400">
-          <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
-          <path d="M14 2v6h6" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
-          <path d="M16 13H8" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
-          <path d="M16 17H8" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
-          <path d="M10 9H8" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
-        </svg>
-      </div>
-      <h3 class="text-lg font-semibold text-gray-600 mb-2">Không có tài liệu</h3>
-      <p class="text-gray-500">Bài học này không có tài liệu để tải xuống.</p>
     </div>
 
     <!-- Loading State -->

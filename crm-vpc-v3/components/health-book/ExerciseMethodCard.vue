@@ -40,7 +40,7 @@
         <div class="mb-2">
           <h5 class="font-bold text-[#4A4A4A] text-sm mb-1">Vận động thô</h5>
           <div v-if="healthBook.grossMotorSkills" class="text-sm text-[#4A4A4A]">
-            {{ getHealthRecordOptionLabel(healthBook.grossMotorSkills, grossMotorSkillsOptions) }}
+            {{ getHealthRecordOptionLabel(healthBook.grossMotorSkills, [...grossMotorSkillsOptions, ...grossMotorSkillsDetailedOptions]) }}
           </div>
           <div v-else class="text-sm text-[#4A4A4A]">
             Không có
@@ -50,7 +50,7 @@
         <div class="mb-2">
           <h5 class="font-bold text-[#4A4A4A] text-sm mb-1">Vận động tĩnh</h5>
           <div v-if="healthBook.fineMotorSkills" class="text-sm text-[#4A4A4A]">
-            {{ getHealthRecordOptionLabel(healthBook.fineMotorSkills, fineMotorSkillsOptions) }}
+            {{ getHealthRecordOptionLabel(healthBook.fineMotorSkills, [...fineMotorSkillsOptions, ...fineMotorSkillsDetailedOptions]) }}
           </div>
           <div v-else class="text-sm text-[#4A4A4A]">
             Không có
@@ -61,7 +61,7 @@
         <div class="mb-2">
           <h5 class="font-bold text-[#4A4A4A] text-sm mb-1">Thị giác & nhận thức</h5>
           <div v-if="healthBook.visualCognition" class="text-sm text-[#4A4A4A]">
-            {{ getHealthRecordOptionLabel(healthBook.visualCognition, visualCognitionOptions) }}
+            {{ getHealthRecordOptionLabel(healthBook.visualCognition, [...visualCognitionOptions, ...visualCognitionDetailedOptions]) }}
           </div>
           <div v-else class="text-sm text-[#4A4A4A]">
             Không có
@@ -72,7 +72,7 @@
         <div class="mb-2">
           <h5 class="font-bold text-[#4A4A4A] text-sm mb-1">Giao tiếp & Cảm xúc</h5>
           <div v-if="healthBook.communicationEmotion" class="text-sm text-[#4A4A4A]">
-            {{ getHealthRecordOptionLabel(healthBook.communicationEmotion, communicationEmotionOptions) }}
+            {{ getHealthRecordOptionLabel(healthBook.communicationEmotion, [...communicationEmotionOptions, ...communicationEmotionDetailedOptions]) }}
           </div>
           <div v-else class="text-sm text-[#4A4A4A]">
             Không có
@@ -83,7 +83,7 @@
         <div>
           <h5 class="font-bold text-[#4A4A4A] text-sm mb-1">Dấu hiệu cảnh báo sớm</h5>
           <div v-if="healthBook.earlyWarning" class="text-sm text-[#4A4A4A]">
-            {{ getHealthRecordOptionLabel(healthBook.earlyWarning, earlyWarningOptions) }}
+            {{ getHealthRecordOptionLabel(healthBook.earlyWarning, [...earlyWarningOptions, ...earlyWarningDetailedOptions]) }}
           </div>
           <div v-else class="text-sm text-[#4A4A4A]">
             Không có
@@ -106,6 +106,12 @@ import {
   visualCognitionOptions,
   communicationEmotionOptions,
   earlyWarningOptions,
+  // detailed flattened options (for staging values)
+  grossMotorSkillsDetailedOptions,
+  fineMotorSkillsDetailedOptions,
+  visualCognitionDetailedOptions,
+  communicationEmotionDetailedOptions,
+  earlyWarningDetailedOptions,
 } from "~/constants/healthRecordOptions";
 import { getHealthRecordOptionLabel } from "~/utils/healthbook";
 
