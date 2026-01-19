@@ -256,20 +256,20 @@ useHead({
   font-weight: 700;
   color: #000;
   margin-bottom: 0;
-  line-height: 1.84;
+  line-height: 1.44;
 }
 
 .section-description {
-  font-size: 1.25rem;
-  line-height: 1.84;
+  font-size: 1rem;
+  line-height: 1.44;
   color: #000;
   margin-bottom: 0;
   font-weight: 400;
 }
 
 .section-text {
-  font-size: 1.25rem;
-  line-height: 1.84;
+  font-size: 1rem;
+  line-height: 1.44;
   color: #000;
   margin-top: 0;
 }
@@ -300,15 +300,15 @@ useHead({
 }
 
 .terms-list > li {
-  font-size: 1.25rem;
-  line-height: 1.84;
+  font-size: 1rem;
+  line-height: 1.44;
   color: #000;
   position: relative;
 }
 
 .terms-list strong {
   color: #000;
-  font-weight: 700;
+  font-weight: 600;
 }
 
 /* Ordered List */
@@ -319,8 +319,8 @@ useHead({
 }
 
 .sub-list li {
-  font-size: 1.25rem;
-  line-height: 1.84;
+  font-size: 1rem;
+  line-height: 1.44;
   color: #000;
   margin-bottom: 0;
 }
@@ -332,8 +332,8 @@ useHead({
 
 /* Contact Info */
 .contact-info {
-  font-size: 1.25rem;
-  line-height: 1.84;
+  font-size: 1rem;
+  line-height: 1.44;
   color: #000;
   margin-top: 0.5rem;
 }
@@ -351,11 +351,11 @@ useHead({
 /* Responsive Styles */
 @media (max-width: 1024px) {
   .section-title {
-    font-size: 1.25rem;
+    font-size: 1.35rem;
   }
 
   .subsection-title {
-    font-size: 1.25rem;
+    font-size: 1.075rem;
   }
 }
 
@@ -366,29 +366,29 @@ useHead({
   }
 
   .subsection-title {
-    font-size: 1.25rem;
+    font-size: 1.05rem;
   }
 
   .section-description,
   .section-text,
   .subsection-text {
-    font-size: 1.25rem;
+    font-size: 1rem;
   }
 
   .privacy-list > li,
   .sub-list li {
-    font-size: 1.25rem;
+    font-size: 1rem;
     padding-left: 1.25rem;
   }
 }
 
 @media (max-width: 640px) {
   .section-title {
-    font-size: 1.25rem;
+    font-size: 1.125rem;
   }
 
   .subsection-title {
-    font-size: 1.25rem;
+    font-size: 1rem;
   }
 
   .section-description,
@@ -396,7 +396,7 @@ useHead({
   .subsection-text,
   .privacy-list > li,
   .sub-list li {
-    font-size: 1.25rem;
+    font-size: 1rem;
     line-height: 1.7;
   }
 
@@ -421,15 +421,15 @@ useHead({
 
 @media (max-width: 480px) {
   .section-title {
-    font-size: 1.25rem;
+    font-size: 1rem;
   }
 
   .subsection-title {
-    font-size: 1.25rem;
+    font-size: 1rem;
   }
 
   .privacy-list > li::before {
-    font-size: 1.25rem;
+    font-size: 1rem;
   }
 }
 </style>
