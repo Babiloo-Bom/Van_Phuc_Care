@@ -1,6 +1,8 @@
 <template>
-  <div class="quiz-container">
-    <template v-if="!quizResult?.quizCompleted">
+  <ClientOnly>
+    <template #default>
+      <div class="quiz-container">
+        <template v-if="!quizResult?.quizCompleted">
       <!-- Quiz Content -->
       <div v-if="quiz && quiz?.questions.length > 0" class="quiz-content">
         <div class="w-full mx-auto lg:w-[723px]">
@@ -59,6 +61,18 @@
             </a-button>
           </div>
         </div>
+      </div>
+
+      <!-- Quiz exists but has no questions -->
+      <div v-if="quiz && (!quiz.questions || !Array.isArray(quiz.questions) || quiz.questions.length === 0) && !loading" class="text-center py-8 w-full mx-auto lg:w-[723px] bg-white rounded-lg">
+        <div class="w-16 h-16 mx-auto mb-4 bg-gray-100 rounded-full flex items-center justify-center">
+          <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" class="fill-none stroke-gray-400">
+            <path d="M9 12l2 2 4-4" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+            <path d="M21 12c0 4.97-4.03 9-9 9s-9-4.03-9-9 4.03-9 9-9c1.5 0 2.91.37 4.15 1.02" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+          </svg>
+        </div>
+        <h3 class="text-lg font-semibold text-gray-600 mb-2">Quiz chưa có câu hỏi</h3>
+        <p class="text-gray-500">Quiz này chưa được cấu hình câu hỏi. Vui lòng liên hệ quản trị viên.</p>
       </div>
 
       <!-- Loading State -->
@@ -147,28 +161,29 @@
         </div>
       </div>
     </template>
-    <!-- Chỉ hiển thị thông báo "đã hoàn thành" khi không ở chế độ review -->
-    <div v-if="quizComplete && !props.isReviewMode" class="text-center py-8 w-full bg-white rounded-lg">
-      <div class="w-16 h-16 mx-auto mb-4 bg-gray-100 rounded-full flex items-center justify-center">
-        <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" class="fill-none stroke-gray-400">
-          <path d="M9 12l2 2 4-4" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
-          <path d="M21 12c0 4.97-4.03 9-9 9s-9-4.03-9-9 4.03-9 9-9c1.5 0 2.91.37 4.15 1.02" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
-        </svg>
+        <QuizFinishModal 
+          v-if="quizResult && quizResult.quizCompleted"
+          :visible="isVisibleModal" 
+          :title="quizResult.passed ? 'Xin chúc mừng, bạn đã vượt qua bài kiểm tra!!!': 'Rất tiếc, bạn chưa vượt qua bài kiểm tra!!!'"
+          :description="quizResult.passed ? 'Làm tốt lắm, hãy tiếp tục phát huy lần sau nhé!': 'Hãy cố gắng ôn tập kỹ hơn trong lần sau nhé!'"
+          :quiz-result="quizResult"
+          :on-close="handleCloseModal"
+          :on-submit="handleSubmitModal"
+        />
       </div>
-      <h3 class="text-lg font-semibold text-gray-600 mb-2">Bài kiểm tra đã hoàn thành</h3>
-    </div>
-  </div>
-  <QuizFinishModal :visible="isVisibleModal" 
-    :title="quizResult?.passed ? 'Xin chúc mừng, bạn đã vượt qua bài kiểm tra!!!': 'Rất tiếc, bạn chưa vượt qua bài kiểm tra!!!'"
-    :description="quizResult?.passed ? 'Làm tốt lắm, hãy tiếp tục phát huy lần sau nhé!': 'Hãy cố gắng ôn tập kỹ hơn trong lần sau nhé!'"
-    :quiz-result="(quizResult as IQuizResult)"
-    :on-close="handleCloseModal"
-    :on-submit="handleSubmitModal"
-  />
+    </template>
+    <template #fallback>
+      <div class="text-center py-8">
+        <a-spin size="large" />
+        <p class="text-gray-600 mt-4">Đang tải quiz...</p>
+      </div>
+    </template>
+  </ClientOnly>
 </template>
 
 <script setup lang="ts">
-import { ref, computed, onMounted, onUnmounted, nextTick } from 'vue'
+import { ref, computed, onMounted, onUnmounted, nextTick, watch } from 'vue'
+import { useRoute, useRouter } from 'vue-router'
 import QuizFinishModal from './QuizFinishModal.vue'
 import { useQuizStore, type IQuiz, type IQuizResult } from '~/stores/quiz';
 
@@ -179,7 +194,9 @@ const props = defineProps<{
   quizComplete: boolean
   isReviewMode?: boolean
 }>()
-const quizStore = useQuizStore(); 
+const quizStore = useQuizStore();
+const route = useRoute();
+const router = useRouter(); 
 
 const emit = defineEmits<{
   close: []
@@ -202,34 +219,107 @@ const startTime = ref<Date | null>(null)
 const timeLeft = ref(0)
 const timer = ref<any>(null)
 
+// Tìm lesson gốc (lesson có quiz property) từ lesson quiz hiện tại
+const findOriginalLessonIndex = (): number | null => {
+  // Nếu có originalLesson trong query, dùng nó
+  const originalLesson = route.query.originalLesson;
+  if (originalLesson !== undefined) {
+    return parseInt(originalLesson as string) || null;
+  }
+  
+  // Nếu không có, tìm lesson có quiz property trước lesson hiện tại
+  // (giả định quiz là lesson riêng sau lesson gốc)
+  const currentLessonIndex = parseInt(route.query.lesson as string) || 0;
+  const chapterIndex = parseInt(route.query.chapter as string) || 0;
+  
+  // Tìm lesson có quiz property trước lesson hiện tại
+  // Logic này cần access course data, nhưng component này không có
+  // Nên tốt nhất là dùng originalLesson từ query
+  
+  return null;
+}
+
 const handleCloseModal = () => {
   isVisibleModal.value = false;
-  emit('completed', true)
+  
+  // Quay về lesson gốc (lesson có quiz property)
+  const originalLesson = route.query.originalLesson;
+  const chapterIndex = route.query.chapter;
+  const review = route.query.review;
+  
+  if (originalLesson !== undefined && chapterIndex !== undefined) {
+    // Navigate về lesson gốc, bỏ quiz=true
+    const queryParams: any = {
+      chapter: String(chapterIndex),
+      lesson: String(originalLesson)
+    };
+    if (review === 'true') {
+      queryParams.review = 'true';
+    }
+    
+    router.push({
+      path: route.path,
+      query: queryParams
+    });
+  } else {
+    // Nếu không có originalLesson, chỉ bỏ quiz=true và giữ lesson hiện tại
+    const queryParams: any = {
+      ...route.query
+    };
+    delete queryParams.quiz;
+    delete queryParams.originalLesson;
+    
+    router.push({
+      path: route.path,
+      query: queryParams
+    });
+  }
+  
+  // Ở chế độ review không đánh dấu hoàn thành tiến độ
+  if (!props.isReviewMode) {
+    emit('completed', true)
+  }
 }
 const handleSubmitModal = () => {
   isVisibleModal.value = false;
   isShowQuizResult.value = true;
 }
-const getOptionStatus = (questionId: string, option: any) =>{
-  const userAns = quizAttempt?.value?.answers.find((a: any) => a.questionId === questionId);
+const getOptionStatus = (questionId: string, option: any) => {
+  const userAns = quizAttempt?.value?.answers?.find((a: any) => a.questionId === questionId);
   if (option.isCorrect) return 'correct'
-  if (userAns && userAns.answer ==option.id  && !option.isCorrect) {
+  if (userAns && userAns.answer == option.id && !option.isCorrect) {
     return 'incorrect'
   }
   return ''
 }
 // Methods
 const init = async () => {
+  console.log('🔄 [Quiz Component] Initializing quiz for:', {
+    courseId: props.courseId,
+    chapterId: props.chapterId,
+    lessonId: props.lessonId
+  })
+  // Reset state trước khi fetch quiz mới để tránh hiển thị quiz cũ
   quizStore.resetState()
+  isShowQuizResult.value = false
+  isVisibleModal.value = false
+  
   await quizStore.fetchQuiz({
     courseId: props.courseId,
     chapterId: props.chapterId,
     lessonId: props.lessonId,
   })
   
-  // Ở chế độ review, nếu quiz đã hoàn thành thì tự động hiển thị kết quả
-  // Đợi một chút để đảm bảo quizResult đã được set
+  // Kiểm tra quiz sau khi fetch
   await nextTick()
+  const fetchedQuiz = quizStore.currentQuiz
+  console.log('📋 [Quiz Component] Fetched quiz:', {
+    hasQuiz: !!fetchedQuiz,
+    questionsCount: fetchedQuiz?.questions?.length || 0,
+    quizId: fetchedQuiz?._id
+  })
+  
+  // Ở chế độ review, nếu quiz đã hoàn thành thì tự động hiển thị kết quả
   if (props.isReviewMode && props.quizComplete && quizResult.value?.quizCompleted) {
     isShowQuizResult.value = true
   }
@@ -264,19 +354,28 @@ const submitQuiz = async () => {
     answers: answers.value,
     timeSpent
   })
+  
+  // Đảm bảo modal hiển thị ngay sau khi submit thành công
+  await nextTick()
+  const result = quizStore.quizResult
+  if (result && result.quizCompleted) {
+    // Luôn hiển thị popup sau khi nộp bài (kể cả review)
+    isVisibleModal.value = true;
+  }
 }
+
 watch(quizResult,
-  (value) => {
-    if(!value) return;
+  (value, oldValue) => {
+    console.log('🔍 [Quiz Watch] quizResult changed:', { value, oldValue, isReviewMode: props.isReviewMode })
+    if (!value) return;
     if (value.quizCompleted) {
-      // Ở chế độ review, tự động hiển thị kết quả thay vì hiển thị modal
-      if (props.isReviewMode) {
-        isShowQuizResult.value = true;
-      } else {
-        isVisibleModal.value = true;
-      }
+      console.log('✅ [Quiz Watch] Quiz completed, showing modal/result')
+      // Luôn hiển thị popup khi quizCompleted (kể cả review)
+      console.log('📢 [Quiz Watch] Setting isVisibleModal to true')
+      isVisibleModal.value = true;
     }
-  } 
+  },
+  { immediate: false, deep: true }
 )
 watch(
   quiz,
@@ -297,13 +396,39 @@ watch(
   { immediate: false }
 );
 
+// Watch lessonId để reset và fetch quiz mới khi chuyển lesson
+watch(
+  () => props.lessonId,
+  (newLessonId, oldLessonId) => {
+    if (newLessonId && newLessonId !== oldLessonId) {
+      console.log('🔄 [Quiz Component] Lesson changed, resetting quiz:', {
+        oldLessonId,
+        newLessonId
+      })
+      // Reset state khi lesson thay đổi
+      quizStore.resetState()
+      isShowQuizResult.value = false
+      isVisibleModal.value = false
+      stopTimer()
+      // Fetch quiz mới
+      init()
+    }
+  },
+  { immediate: false }
+)
+
 // Lifecycle
 onMounted(() => {
-  init()
+  // Chỉ init ở client-side để tránh hydration mismatch
+  if (process.client) {
+    init()
+  }
 })
 
 onUnmounted(() => {
   stopTimer()
+  // Reset state khi unmount để tránh hiển thị quiz cũ khi mount lại
+  quizStore.resetState()
 })
 </script>
 

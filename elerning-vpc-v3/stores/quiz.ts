@@ -71,13 +71,38 @@ export const useQuizStore = defineStore('quiz', {
     },
     async fetchQuiz(params?: any) {
       this.loading = true;
+      // Reset currentQuiz trước khi fetch để tránh hiển thị quiz cũ
+      this.currentQuiz = null
       try {
         const quizApi = useQuizApi()
         const response: any = await quizApi.getQuizz(params)
+        console.log('📥 [Quiz Store] API response:', {
+          hasData: !!response.data,
+          hasQuiz: !!response.data?.quiz,
+          questionsCount: response.data?.quiz?.questions?.length || 0
+        })
         if (response.data && response.data.quiz) {
-          this.currentQuiz = response.data.quiz
+          const quizData = response.data.quiz
+          // Kiểm tra nếu quiz không có câu hỏi hoặc câu hỏi rỗng, set currentQuiz = null
+          if (!quizData.questions || !Array.isArray(quizData.questions) || quizData.questions.length === 0) {
+            console.warn('⚠️ [Quiz Store] Quiz has no questions, setting currentQuiz to null', {
+              quizId: quizData._id,
+              quizTitle: quizData.title
+            })
+            this.currentQuiz = null
+          } else {
+            console.log('✅ [Quiz Store] Quiz loaded successfully:', {
+              quizId: quizData._id,
+              questionsCount: quizData.questions.length
+            })
+            this.currentQuiz = quizData
+          }
+        } else {
+          console.log('ℹ️ [Quiz Store] No quiz data in response')
+          this.currentQuiz = null
         }
       } catch (error) {
+        console.error('❌ [Quiz Store] Error fetching quiz:', error)
         this.currentQuiz = null
       } finally {
         this.loading = false;
@@ -99,14 +124,21 @@ export const useQuizStore = defineStore('quiz', {
         })
         if (response.data) {
           this.quizAttempt = response?.data?.quizAttempt
-          this.quizResult = {
+          // Tính totalPoints từ số câu hỏi trong quiz hoặc từ response
+          const totalPoints = this.currentQuiz?.questions?.length || 
+                            response?.data?.quizAttempt?.totalPoints || 
+                            response?.data?.quizAttempt?.answers?.length || 
+                            0
+          const quizResultData = {
             quizCompleted: true,
-            totalPoints: response?.data?.quizAttempt?.answers?.length,
-            passed: response.data.quizAttempt?.passed,
-            score: response.data.quizAttempt?.score,
-            percentage: response.data.quizAttempt?.percentage,
+            totalPoints: totalPoints,
+            passed: response.data.quizAttempt?.passed || false,
+            score: response.data.quizAttempt?.score || 0,
+            percentage: response.data.quizAttempt?.percentage || 0,
             attemptsLeft: this.currentQuiz.attempts - (response.data.quizAttempt?.attemptNumber || 1)
           }
+          console.log('✅ [Quiz Store] Setting quizResult:', quizResultData)
+          this.quizResult = quizResultData
           return this.quizResult;
         }
       } catch (error) {

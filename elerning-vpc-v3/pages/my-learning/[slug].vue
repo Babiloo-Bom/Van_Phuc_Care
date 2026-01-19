@@ -597,7 +597,7 @@
 
 <script setup lang="ts">
 import { ref, computed, onMounted, onUnmounted, watch, nextTick } from "vue";
-import { useRoute } from "vue-router";
+import { useRoute, useRouter } from "vue-router";
 import { useCoursesStore } from "~/stores/courses";
 import { useAuthStore } from "~/stores/auth";
 import NavCourse from "~/components/courses/NavCourse.vue";
@@ -617,6 +617,7 @@ definePageMeta({
 });
 
 const route = useRoute();
+const router = useRouter();
 const coursesStore = useCoursesStore();
 const progressTracking = useProgressTracking();
 const authStore = useAuthStore();
@@ -1559,6 +1560,34 @@ watch(
   { immediate: false }
 );
 
+// Tìm lesson index của quiz trong chapter
+const findQuizLessonIndex = (chapter: Chapter | null, fromLessonIndex: number): number => {
+  if (!chapter?.lessons || chapter.lessons.length === 0) return fromLessonIndex;
+  
+  // Tìm lesson có type='quiz' sau lesson hiện tại
+  for (let i = fromLessonIndex + 1; i < chapter.lessons.length; i++) {
+    const lesson = chapter.lessons[i];
+    if (lesson?.type === 'quiz') {
+      return i;
+    }
+  }
+  
+  // Nếu không tìm thấy sau lesson hiện tại, tìm bất kỳ lesson nào có type='quiz' trong chapter
+  const quizIndex = chapter.lessons.findIndex((lesson: any) => lesson?.type === 'quiz');
+  if (quizIndex >= 0) {
+    return quizIndex;
+  }
+  
+  // Nếu lesson hiện tại có quiz property, dùng lesson đó
+  const currentLesson = chapter.lessons[fromLessonIndex];
+  if (currentLesson && (currentLesson.quiz || currentLesson.quizId || currentLesson.hasQuiz)) {
+    return fromLessonIndex;
+  }
+  
+  // Fallback: dùng lesson hiện tại
+  return fromLessonIndex;
+};
+
 // Watch route query changes
 watch(
   () => route.query,
@@ -1567,7 +1596,40 @@ watch(
       currentChapterIndex.value = parseInt(query.chapter as string) || 0;
     }
     if (query.lesson !== undefined) {
-      currentLessonIndex.value = parseInt(query.lesson as string) || 0;
+      const lessonIndex = parseInt(query.lesson as string) || 0;
+      
+      // Nếu có quiz=true, tìm lesson index đúng của quiz
+      if (query.quiz === 'true') {
+        // Đợi course load xong để có currentChapter
+        nextTick(() => {
+          const chapter = course.value?.chapters?.[currentChapterIndex.value];
+          if (chapter) {
+            const quizLessonIndex = findQuizLessonIndex(chapter, lessonIndex);
+            if (quizLessonIndex !== lessonIndex) {
+              console.log('🔄 [Route Watch] Quiz detected, adjusting lesson index:', {
+                from: lessonIndex,
+                to: quizLessonIndex
+              });
+              currentLessonIndex.value = quizLessonIndex;
+              // Update URL với lesson index đúng và lưu originalLesson để quay lại
+              router.replace({
+                query: {
+                  ...route.query,
+                  lesson: quizLessonIndex.toString(),
+                  originalLesson: lessonIndex.toString() // Lưu lesson gốc
+                }
+              });
+            } else {
+              currentLessonIndex.value = lessonIndex;
+              // Nếu quiz là property của lesson, không cần lưu originalLesson
+            }
+          } else {
+            currentLessonIndex.value = lessonIndex;
+          }
+        });
+      } else {
+        currentLessonIndex.value = lessonIndex;
+      }
     }
     isQuiz.value = query.quiz === 'true' ? true : false;
     // Khi vào chế độ review, load lại course để đảm bảo tất cả bài hiển thị đúng trạng thái

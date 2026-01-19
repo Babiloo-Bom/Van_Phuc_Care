@@ -36,6 +36,9 @@
 </template>
 
 <script setup lang="ts">
+import { watch } from 'vue'
+import type { IQuizResult } from '~/stores/quiz'
+
 interface Props {
   visible: boolean
   title?: string
@@ -45,16 +48,23 @@ interface Props {
   onSubmit: () => void
 }
 
-
 const props = withDefaults(defineProps<Props>(), {
   title: 'Xin chúc mừng, bạn đã vượt qua bài kiểm tra!!!',
   description: 'Làm tốt lắm, hãy tiếp tục phát huy lần sau nhé!',
 })
+
+// Watch visible để debug
+watch(() => props.visible, (newVal) => {
+  console.log('🔍 [QuizFinishModal] visible changed:', newVal, 'quizResult:', props.quizResult)
+}, { immediate: true })
+
 const backQuiz = () => {
+  console.log('🔍 [QuizFinishModal] backQuiz called')
   props?.onClose();
 }
 
-const handleShowQuiz = () =>{
+const handleShowQuiz = () => {
+  console.log('🔍 [QuizFinishModal] handleShowQuiz called')
   props?.onSubmit()
 }
 
