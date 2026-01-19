@@ -135,15 +135,15 @@ const SAVED_PASSWORD_KEY = "elearning_saved_password";
 
 // SEO
 useHead({
-  title: "Đăng nhập - Vạn Phúc Care E-Learning",
+  title: "Trang Đăng nhập",
   meta: [
     {
       name: "description",
-      content: "Đăng nhập vào hệ thống Vạn Phúc Care E-Learning để truy cập các khóa học trực tuyến và dịch vụ chăm sóc sức khỏe Mẹ và Bé",
+      content: "Đăng nhập và học tập thật đơn giản tại website cung cấp khóa học trực tuyến cả Vạn Phúc Care.",
     },
     {
       name: "keywords",
-      content: "đăng nhập, login, Vạn Phúc Care, e-learning, khóa học trực tuyến, chăm sóc sức khỏe mẹ và bé",
+      content: "Khóa học trực tuyến, Vạn Phúc Care, Trang đăng nhập tài khoản",
     },
   ],
 });

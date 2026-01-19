@@ -104,26 +104,31 @@
 // Set page meta
 definePageMeta({
   layout: "default",
-  title: "Quyền Lợi & Quy Định Của Học Viên - Van Phuc Care",
+  title: "Quyền Lợi và Quy Định Của Học Viên",
 });
 
 // SEO
 useHead({
-  title: "Quyền Lợi & Quy Định Của Học Viên - Van Phuc Care",
+  title: "Quyền Lợi và Quy Định Của Học Viên",
   meta: [
     {
       name: "description",
       content:
-        "Quyền lợi và quy định của học viên tại Van Phuc Care. Tìm hiểu về các đặc quyền khi học tập và trách nhiệm cần tuân thủ để đảm bảo môi trường học tập hiệu quả.",
+        "Tìm hiểu về các đặc quyền khi học tập và trách nhiệm cần tuân thủ để đảm bảo môi trường học tập hiệu quả tại website khóa học trực tuyến của chúng tôi.",
+    },
+    {
+      name: "keywords",
+      content:
+        "Khóa học trực tuyến, Vạn Phúc Care, Quyền Lợi và Quy Định Của Học Viên",
     },
     {
       property: "og:title",
-      content: "Quyền Lợi & Quy Định Của Học Viên - Van Phuc Care",
+      content: "Quyền Lợi và Quy Định Của Học Viên",
     },
     {
       property: "og:description",
       content:
-        "Quyền lợi và quy định của học viên tại Van Phuc Care. Tìm hiểu về các đặc quyền và trách nhiệm của học viên.",
+        "Tìm hiểu về các đặc quyền khi học tập và trách nhiệm cần tuân thủ để đảm bảo môi trường học tập hiệu quả tại website khóa học trực tuyến của chúng tôi.",
     },
   ],
 });

@@ -1,7 +1,7 @@
 <template>
   <div class="">
     <!-- H1 Title for SEO -->
-    <h1 class="sr-only">Tất cả khóa học - Van Phuc Care E-Learning</h1>
+    <h1 class="sr-only">Trang Tất Cả Khóa Học</h1>
     
     <!-- Banner Section -->
     <BannerSlider
@@ -379,137 +379,30 @@ definePageMeta({
   layout: "default",
 });
 
-// SEO Configuration for SPA mode
-
-// Use direct DOM manipulation for SPA mode
-if (process.client) {
-  // Update document title
-  document.title = "Tất Cả Khóa Học - Van Phuc Care E-Learning";
-
-  // Update meta description
-  const metaDescription = document.querySelector('meta[name="description"]');
-  if (metaDescription) {
-    metaDescription.setAttribute(
-      "content",
-      "Khám phá các khóa học trực tuyến chất lượng cao tại Van Phuc Care. Từ lập trình, marketing, thiết kế đến khoa học dữ liệu - học mọi lúc, mọi nơi với giáo viên chuyên nghiệp."
-    );
-  }
-
-  // Add Open Graph tags
-  const addMetaTag = (property: string, content: string) => {
-    let meta = document.querySelector(`meta[property="${property}"]`);
-    if (!meta) {
-      meta = document.createElement("meta");
-      meta.setAttribute("property", property);
-      document.head.appendChild(meta);
-    }
-    meta.setAttribute("content", content);
-  };
-
-  const addMetaName = (name: string, content: string) => {
-    let meta = document.querySelector(`meta[name="${name}"]`);
-    if (!meta) {
-      meta = document.createElement("meta");
-      meta.setAttribute("name", name);
-      document.head.appendChild(meta);
-    }
-    meta.setAttribute("content", content);
-  };
-
-  // Open Graph tags
-  addMetaTag("og:title", "Tất Cả Khóa Học - Van Phuc Care E-Learning");
-  addMetaTag(
-    "og:description",
-    "Khám phá các khóa học trực tuyến chất lượng cao tại Van Phuc Care. Từ lập trình, marketing, thiết kế đến khoa học dữ liệu - học mọi lúc, mọi nơi với giáo viên chuyên nghiệp."
-  );
-  addMetaTag("og:url", "https://vanphuccare.com/courses");
-  addMetaTag("og:image", "https://vanphuccare.com/images/og-courses.jpg");
-
-  // Twitter Card tags
-  addMetaName("twitter:card", "summary_large_image");
-  addMetaName("twitter:title", "Tất Cả Khóa Học - Van Phuc Care E-Learning");
-  addMetaName(
-    "twitter:description",
-    "Khám phá các khóa học trực tuyến chất lượng cao tại Van Phuc Care. Từ lập trình, marketing, thiết kế đến khoa học dữ liệu - học mọi lúc, mọi nơi với giáo viên chuyên nghiệp."
-  );
-  addMetaName("twitter:image", "https://vanphuccare.com/images/og-courses.jpg");
-
-  // Keywords
-  addMetaName(
-    "keywords",
-    "khóa học trực tuyến, e-learning, lập trình, marketing, thiết kế, khoa học dữ liệu, học online, Van Phuc Care"
-  );
-
-  // Canonical URL - Removed to allow proper indexing
-  // let canonical = document.querySelector('link[rel="canonical"]');
-  // if (!canonical) {
-  //   canonical = document.createElement("link");
-  //   canonical.setAttribute("rel", "canonical");
-  //   document.head.appendChild(canonical);
-  // }
-  // canonical.setAttribute("href", "https://vanphuccare.com/courses");
-}
-
-// Also use useHead as fallback
+// SEO
 useHead({
-  title: "Tất Cả Khóa Học - Van Phuc Care E-Learning",
+  title: "Trang Tất Cả Khóa Học",
   meta: [
     {
       name: "description",
       content:
-        "Khám phá các khóa học trực tuyến chất lượng cao tại Van Phuc Care. Từ lập trình, marketing, thiết kế đến khoa học dữ liệu - học mọi lúc, mọi nơi với giáo viên chuyên nghiệp.",
+        "Khám phá các khóa học trực tuyến về chăm sóc sức khỏe gia đình. Được hướng dẫn từ đội ngũ chuyên gia trong lĩnh vực sản nhi giàu kinh nghiệm.",
     },
     {
       name: "keywords",
       content:
-        "khóa học trực tuyến, e-learning, lập trình, marketing, thiết kế, khoa học dữ liệu, học online, Van Phuc Care",
+        "Khóa học trực tuyến, Vạn Phúc Care, Trang Tất Cả Khóa Học",
     },
     {
       property: "og:title",
-      content: "Tất Cả Khóa Học - Van Phuc Care E-Learning",
+      content: "Trang Tất Cả Khóa Học",
     },
     {
       property: "og:description",
       content:
-        "Khám phá các khóa học trực tuyến chất lượng cao tại Van Phuc Care. Từ lập trình, marketing, thiết kế đến khoa học dữ liệu - học mọi lúc, mọi nơi với giáo viên chuyên nghiệp.",
-    },
-    {
-      property: "og:type",
-      content: "website",
-    },
-    {
-      property: "og:url",
-      content: "https://vanphuccare.com/courses",
-    },
-    {
-      property: "og:image",
-      content: "https://vanphuccare.com/images/og-courses.jpg",
-    },
-    {
-      name: "twitter:card",
-      content: "summary_large_image",
-    },
-    {
-      name: "twitter:title",
-      content: "Tất Cả Khóa Học - Van Phuc Care E-Learning",
-    },
-    {
-      name: "twitter:description",
-      content:
-        "Khám phá các khóa học trực tuyến chất lượng cao tại Van Phuc Care. Từ lập trình, marketing, thiết kế đến khoa học dữ liệu - học mọi lúc, mọi nơi với giáo viên chuyên nghiệp.",
-    },
-    {
-      name: "twitter:image",
-      content: "https://vanphuccare.com/images/og-courses.jpg",
+        "Khám phá các khóa học trực tuyến về chăm sóc sức khỏe gia đình. Được hướng dẫn từ đội ngũ chuyên gia trong lĩnh vực sản nhi giàu kinh nghiệm.",
     },
   ],
-  // Canonical removed to allow proper indexing
-  // link: [
-  //   {
-  //     rel: "canonical",
-  //     href: "https://vanphuccare.com/courses",
-  //   },
-  // ],
 });
 
 // Schema.org markup for Course List (temporarily disabled for testing)

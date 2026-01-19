@@ -266,14 +266,9 @@
   
   .course-thumbnail {
     position: relative;
-    height: 180px;
+    width: 100%;
+    aspect-ratio: 16 / 9;
     overflow: hidden;
-  }
-
-  @media (min-width: 640px) {
-    .course-thumbnail {
-      height: 200px;
-    }
   }
   
   .thumbnail-image {

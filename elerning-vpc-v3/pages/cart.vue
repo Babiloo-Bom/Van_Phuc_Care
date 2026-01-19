@@ -34,7 +34,7 @@
                 <!-- Mobile: Vertical Layout -->
                 <div class="md:hidden">
                   <!-- Course Thumbnail - Full Width Top -->
-                  <div class="relative w-full h-[200px]">
+                  <div class="relative w-full aspect-[16/9]">
                     <img
                       class="w-full h-full object-cover"
                       :src="(course as any).course?.thumbnail || (course as any).thumbnail || '/images/courses/python-course.jpg'"
@@ -119,9 +119,9 @@
                 </div>
 
                 <!-- Desktop: Horizontal Layout -->
-                <div class="hidden md:flex" style="width: 100%; height: 185.45px;">
+                <div class="hidden md:flex" style="width: 100%;">
                   <!-- Course Thumbnail - Left Section (40%) -->
-                  <div class="w-[40%] flex-shrink-0 relative">
+                  <div class="w-[40%] flex-shrink-0 relative aspect-[16/9]">
                     <img
                       class="w-full h-full object-cover"
                       :src="(course as any).course?.thumbnail || (course as any).thumbnail || '/images/courses/python-course.jpg'"
@@ -1080,7 +1080,7 @@ const processVnPay = async () => {
 
 // SEO
 useHead({
-  title: "Giỏ hàng - Van Phuc Care E-Learning",
+  title: "Trang Giỏ hàng",
   meta: [
     {
       name: "description",
@@ -1090,7 +1090,7 @@ useHead({
     {
       name: "keywords",
       content:
-        "giỏ hàng, cart, Vạn Phúc Care, e-learning, khóa học trực tuyến, thanh toán, chăm sóc sức khỏe mẹ và bé",
+        "Khóa học trực tuyến, Vạn Phúc Care, Trang Giỏ hàng, Trang thanh toán",
     },
   ],
 });

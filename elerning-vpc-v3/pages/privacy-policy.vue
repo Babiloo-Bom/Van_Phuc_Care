@@ -251,26 +251,31 @@ Bằng việc truy cập hoặc sử dụng Dịch vụ, Người dùng xác nh�
 // Set page meta
 definePageMeta({
   layout: "default",
-  title: "Chính Sách Bảo Mật & Quyền Riêng Tư - Van Phuc Care",
+  title: "Chính sách Bảo mật và Quyền riêng tư",
 });
 
 // SEO
 useHead({
-  title: "Chính Sách Bảo Mật & Quyền Riêng Tư - Van Phuc Care",
+  title: "Chính sách Bảo mật và Quyền riêng tư",
   meta: [
     {
       name: "description",
       content:
-        "Chính sách bảo mật và quyền riêng tư của Van Phuc Care. Cam kết bảo vệ thông tin cá nhân và dữ liệu của học viên theo tiêu chuẩn cao nhất.",
+        "Chính sách Quyền riêng tư này mô tả cách chúng tôi thu thập, sử dụng, bảo vệ và xử lý thông tin cá nhân của Người dùng khi truy cập và sử dụng các sản phẩm/ dịch vụ trực tuyến của chúng tôi.",
+    },
+    {
+      name: "keywords",
+      content:
+        "Khóa học trực tuyến, Vạn Phúc Care, Chính sách Bảo mật và Quyền riêng tư",
     },
     {
       property: "og:title",
-      content: "Chính Sách Bảo Mật & Quyền Riêng Tư - Van Phuc Care",
+      content: "Chính sách Bảo mật và Quyền riêng tư",
     },
     {
       property: "og:description",
       content:
-        "Chính sách bảo mật và quyền riêng tư của Van Phuc Care. Cam kết bảo vệ thông tin cá nhân và dữ liệu của học viên.",
+        "Chính sách Quyền riêng tư này mô tả cách chúng tôi thu thập, sử dụng, bảo vệ và xử lý thông tin cá nhân của Người dùng khi truy cập và sử dụng các sản phẩm/ dịch vụ trực tuyến của chúng tôi.",
     },
   ],
 });
@@ -305,7 +310,7 @@ useHead({
   line-height: 1.44;
   color: #000;
   margin-bottom: 0;
-  font-weight: 500;
+  font-weight: 400;
 }
 
 .section-text {

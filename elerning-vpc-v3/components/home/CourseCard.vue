@@ -7,7 +7,7 @@
     >
       <div class="relative">
         <div class="relative">
-          <img class="rounded-t-md h-[201px] w-[100%] object-cover" :src="course.thumbnail" :alt="course.slug">
+          <img class="rounded-t-md w-[100%] aspect-[16/9] object-cover" :src="course.thumbnail" :alt="course.slug">
           
           <!-- Status Badge -->
           <div v-if="courseStatus !== 'not_purchased'" class="absolute top-2 right-2">

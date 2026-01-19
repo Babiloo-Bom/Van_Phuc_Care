@@ -105,11 +105,15 @@ definePageMeta({
 
 // SEO
 useHead({
-  title: "Quên mật khẩu - Van Phuc Care E-Learning",
+  title: "Trang Quên mật khẩu",
   meta: [
     {
       name: "description",
       content: "Lấy lại mật khẩu tại Van Phuc Care E-Learning",
+    },
+    {
+      name: "keywords",
+      content: "Khóa học trực tuyến, Vạn Phúc Care, Trang Quên mật khẩu",
     },
   ],
 });

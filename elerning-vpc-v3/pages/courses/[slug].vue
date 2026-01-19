@@ -94,7 +94,7 @@
                     :poster="
                       (course as any)?.introVideoThumbnail || course?.thumbnail
                     "
-                    class="w-full h-auto min-h-[200px] sm:min-h-[300px] md:min-h-[400px] lg:min-h-[500px] object-cover rounded-[8px] sm:rounded-[12px] video-element"
+                    class="w-full aspect-[16/9] object-cover rounded-[8px] sm:rounded-[12px] video-element"
                     preload="none"
                     playsinline
                     controlslist="nodownload noplaybackrate"
@@ -111,7 +111,7 @@
                     v-else-if="
                       course?.introVideo || (course as any)?.introVideoHlsUrl
                     "
-                    class="relative w-full h-[200px] sm:h-[300px] md:h-[400px] lg:h-[500px] rounded-[8px] sm:rounded-[12px] overflow-hidden cursor-pointer group"
+                    class="relative w-full aspect-[16/9] rounded-[8px] sm:rounded-[12px] overflow-hidden cursor-pointer group"
                     @click="playIntroVideo"
                   >
                     <img
@@ -144,7 +144,7 @@
                   <!-- Fallback: Demo video hoặc thumbnail nếu không có intro video -->
                   <img
                     v-else
-                    class="h-[200px] sm:h-[300px] md:h-[400px] lg:h-[500px] w-full object-cover rounded-[8px] sm:rounded-md"
+                    class="w-full aspect-[16/9] object-cover rounded-[8px] sm:rounded-md"
                     :src="
                       course?.thumbnail || '/images/courses/python-course.jpg'
                     "

@@ -108,21 +108,26 @@
 <script setup lang="ts">
 // SEO Meta tags
 useHead({
-  title: "Chính Sách Dành Cho Đối Tác Nội Dung - Vạn Phúc Care",
+  title: "Chính Sách Dành Cho Đối Tác Nội Dung",
   meta: [
     {
       name: "description",
       content:
-        "Chính sách quy định các quyền và trách nhiệm của các đối tác cung cấp nội dung khóa học trực tuyến trên nền tảng học tập Vạn Phúc Care.",
+        "Chính sách dành cho đối tác nội dung quy định các nguyên tắc bắt buộc dành cho các Đối tác (Giảng viên, Bác sĩ, Điều dưỡng, Chuyên gia y tế, Cộng tác viên) khi đăng tải hoặc đăng duyệt nội dung chuyên môn trên hệ thống khóa học, đào tạo trực tuyến của chúng tôi.",
+    },
+    {
+      name: "keywords",
+      content:
+        "Khóa học trực tuyến, Vạn Phúc Care, Chính Sách Dành Cho Đối Tác Nội Dung",
     },
     {
       property: "og:title",
-      content: "Chính Sách Dành Cho Đối Tác Nội Dung - Vạn Phúc Care",
+      content: "Chính Sách Dành Cho Đối Tác Nội Dung",
     },
     {
       property: "og:description",
       content:
-        "Chính sách quy định các quyền và trách nhiệm của các đối tác cung cấp nội dung khóa học trực tuyến trên nền tảng học tập Vạn Phúc Care.",
+        "Chính sách dành cho đối tác nội dung quy định các nguyên tắc bắt buộc dành cho các Đối tác (Giảng viên, Bác sĩ, Điều dưỡng, Chuyên gia y tế, Cộng tác viên) khi đăng tải hoặc đăng duyệt nội dung chuyên môn trên hệ thống khóa học, đào tạo trực tuyến của chúng tôi.",
     },
   ],
 });

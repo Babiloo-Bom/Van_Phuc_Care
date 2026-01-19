@@ -94,25 +94,30 @@
 // Set page meta
 definePageMeta({
   layout: "default",
-  title: "Quy Trình Tiếp Nhận & Giải Quyết Khiếu Nại - Van Phuc Care",
+  title: "Quy Trình Tiếp Nhận và Giải Quyết Khiếu Nại",
 });
 
 // SEO
 useHead({
-  title: "Quy Trình Tiếp Nhận & Giải Quyết Khiếu Nại - Van Phuc Care",
+  title: "Quy Trình Tiếp Nhận và Giải Quyết Khiếu Nại",
   meta: [
     {
       name: "description",
       content:
-        "Quy trình tiếp nhận và giải quyết khiếu nại của học viên tại Van Phuc Care. Cam kết xử lý minh bạch, công bằng và kịp thời mọi phản ánh từ học viên.",
+        "Quy trình tiếp nhận và giải quyết khiếu nại của học viên tại Van Phuc Care. Chúng tôi cam kết xử lý minh bạch, công bằng và kịp thời mọi phản ánh từ học viên.",
+    },
+    {
+      name: "keywords",
+      content:
+        "Khóa học trực tuyến, Vạn Phúc Care, Quy Trình Tiếp Nhận và Giải Quyết Khiếu Nại",
     },
     {
       property: "og:title",
-      content: "Quy Trình Tiếp Nhận & Giải Quyết Khiếu Nại - Van Phuc Care",
+      content: "Quy Trình Tiếp Nhận và Giải Quyết Khiếu Nại",
     },
     {
       property: "og:description",
-      content: "Quy trình tiếp nhận và giải quyết khiếu nại của học viên tại Van Phuc Care.",
+      content: "Quy trình tiếp nhận và giải quyết khiếu nại của học viên tại Van Phuc Care. Chúng tôi cam kết xử lý minh bạch, công bằng và kịp thời mọi phản ánh từ học viên.",
     },
   ],
 });

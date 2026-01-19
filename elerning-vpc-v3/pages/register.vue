@@ -207,15 +207,15 @@ definePageMeta({
 
 // SEO
 useHead({
-  title: "Đăng ký - Van Phuc Care E-Learning",
+  title: "Trang Đăng Ký",
   meta: [
     {
       name: "description",
-      content: "Đăng ký tài khoản mới tại Van Phuc Care E-Learning để truy cập các khóa học trực tuyến và dịch vụ chăm sóc sức khỏe Mẹ và Bé",
+      content: "Đăng ký tài khoản mới tại Van Phuc Care E-Learning để truy cập các khóa học chăm sóc sức khỏe Mẹ và Bé tiến tiến nhất.",
     },
     {
       name: "keywords",
-      content: "đăng ký, register, tạo tài khoản, Vạn Phúc Care, e-learning, khóa học trực tuyến, chăm sóc sức khỏe mẹ và bé",
+      content: "Khóa học trực tuyến, Vạn Phúc Care, Trang đăng ký tài khoản",
     },
   ],
 });

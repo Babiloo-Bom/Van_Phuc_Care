@@ -210,26 +210,31 @@
 // Set page meta
 definePageMeta({
   layout: "default",
-  title: "Điều Khoản Sử Dụng - Van Phuc Care",
+  title: "Điều Khoản Sử Dụng",
 });
 
 // SEO
 useHead({
-  title: "Điều Khoản Sử Dụng - Van Phuc Care",
+  title: "Điều Khoản Sử Dụng",
   meta: [
     {
       name: "description",
       content:
-        "Điều khoản sử dụng và quy định chung khi sử dụng nền tảng học tập trực tuyến Van Phuc Care. Bảo vệ quyền lợi học viên và đảm bảo trải nghiệm học tập tốt nhất.",
+        "Điều khoản sử dụng và quy định chung khi sử dụng nền tảng học tập trực tuyến tại Vạn Phúc Care. Chúng tôi luôn bảo vệ quyền lợi học viên và đảm bảo trải nghiệm học tập tốt nhất.",
+    },
+    {
+      name: "keywords",
+      content:
+        "Khóa học trực tuyến, Vạn Phúc Care, Điều Khoản Sử Dụng",
     },
     {
       property: "og:title",
-      content: "Điều Khoản Sử Dụng - Van Phuc Care",
+      content: "Điều Khoản Sử Dụng",
     },
     {
       property: "og:description",
       content:
-        "Điều khoản sử dụng và quy định chung khi sử dụng nền tảng học tập trực tuyến Van Phuc Care.",
+        "Điều khoản sử dụng và quy định chung khi sử dụng nền tảng học tập trực tuyến tại Vạn Phúc Care. Chúng tôi luôn bảo vệ quyền lợi học viên và đảm bảo trải nghiệm học tập tốt nhất.",
     },
   ],
 });

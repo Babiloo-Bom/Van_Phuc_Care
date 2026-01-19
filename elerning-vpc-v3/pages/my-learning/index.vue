@@ -98,17 +98,17 @@ import BannerSlider from "~/components/banners/BannerSlider.vue";
 
 // SEO
 useHead({
-  title: "Khóa học của tôi - Van Phuc Care E-Learning",
+  title: "Trang Khóa học của tôi",
   meta: [
     {
       name: "description",
       content:
-        "Quản lý và học các khóa học đã đăng ký tại Van Phuc Care E-Learning. Truy cập vào các khóa học trực tuyến về chăm sóc sức khỏe Mẹ và Bé",
+        "Dễ dàng quản lý và truy cập các khóa học đã mua.",
     },
     {
       name: "keywords",
       content:
-        "khóa học của tôi, my courses, Vạn Phúc Care, e-learning, khóa học trực tuyến, chăm sóc sức khỏe mẹ và bé",
+        "Khóa học trực tuyến, Vạn Phúc Care, Trang Khóa học của tôi",
     },
   ],
 });
