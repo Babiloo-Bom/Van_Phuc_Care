@@ -219,7 +219,10 @@ const handleSubmit = async (e?: Event) => {
       
       // Show toast with delay to ensure it displays
       setTimeout(() => {
-        message.error(msg);
+        message.error({
+          content: msg,
+          duration: 5
+        });
       }, 100);
     }
   } catch (error: any) {
@@ -259,7 +262,10 @@ const handleSubmit = async (e?: Event) => {
     
     // Show toast with delay to ensure it displays
     setTimeout(() => {
-      message.error(msg);
+      message.error({
+        content: msg,
+        duration: 5
+      });
     }, 100);
   } finally {
     loading.value = false;
