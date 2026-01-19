@@ -149,6 +149,12 @@ export const useAuthApi = () => {
         const url = `${fullApiBase}/sessions/login`
         console.log('🔍 Login URL:', url)
         console.log('🔍 Login payload:', { username, hasPassword: !!password, remindAccount })
+
+        // Determine origin dynamically (avoid hard-coded domain which can break production auth)
+        const origin =
+          process.client && typeof window !== 'undefined'
+            ? window.location.hostname
+            : (config.public.baseUrl ? new URL(config.public.baseUrl).hostname : '')
         
         const response = await withRetry(() => 
           fetchWithTimeout(url, {
@@ -160,7 +166,7 @@ export const useAuthApi = () => {
               username,
               password,
               remindAccount,
-              origin: 'vanphuccare.gensi.vn'
+              origin
             }
           })
         )
