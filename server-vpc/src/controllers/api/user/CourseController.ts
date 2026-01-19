@@ -1197,6 +1197,8 @@ class CourseController {
               )
             : null;
 
+          const priceInfo = CourseController.calculateEffectivePrice(courseData);
+
           return {
             _id: courseData._id.toString(),
             title: courseData.title,
