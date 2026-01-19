@@ -42,7 +42,6 @@ export default defineNuxtPlugin(async nuxtApp => {
       if (error?.name === 'AbortError' || String(error?.message).includes('aborted')) {
         return
       }
-      console.error('Request error:', error);
     },
     onResponseError({ request, response }) {
       // Handle 401 - unauthorized
@@ -54,13 +53,11 @@ export default defineNuxtPlugin(async nuxtApp => {
         
         // Don't logout if user is not authenticated (nothing to logout from)
         if (!authStore.isAuthenticated && !authStore.token) {
-          console.warn('[Auth] 401 but user not authenticated, skipping logout');
           return;
         }
         
         // Don't logout immediately after login
         if (authStore.justLoggedIn) {
-          console.warn('[Auth] 401 immediately after login, skipping logout');
           return;
         }
         
@@ -70,7 +67,6 @@ export default defineNuxtPlugin(async nuxtApp => {
           ? Date.now() - authStore.loginTimestamp 
           : (authStore.justLoggedIn ? 0 : Infinity); // If justLoggedIn but no timestamp, treat as just logged in
         if (timeSinceLogin < 30000) {
-          console.warn('[Auth] 401 but login was recent (', timeSinceLogin, 'ms ago), skipping logout');
           return;
         }
         
@@ -80,7 +76,6 @@ export default defineNuxtPlugin(async nuxtApp => {
             const { checkSSOCookie } = require('~/utils/sso');
             const hasSSOCookie = checkSSOCookie();
             if (hasSSOCookie) {
-              console.warn('[Auth] 401 but SSO cookie exists, skipping logout (SSO in progress)');
               // Set justLoggedIn to protect against further 401s
               if (!authStore.justLoggedIn) {
                 authStore.justLoggedIn = true;
@@ -98,14 +93,12 @@ export default defineNuxtPlugin(async nuxtApp => {
         
         // Don't logout on profile refresh errors - session might still be valid
         if (isProfileRequest) {
-          console.warn('[Auth] 401 on profile request, skipping logout (non-critical)');
           return;
         }
         
         // Don't logout on courses request if login was very recent (might be SSO in progress)
         // Increase grace period for courses request to 60 seconds
         if (isCoursesRequest && timeSinceLogin < 60000) {
-          console.warn('[Auth] 401 on courses request but login was recent (', timeSinceLogin, 'ms ago), skipping logout');
           return;
         }
         
@@ -114,9 +107,6 @@ export default defineNuxtPlugin(async nuxtApp => {
           return;
         }
         
-        console.warn('[Auth] Unauthorized (401), logging out...');
-        console.warn('[Auth] Request URL:', requestUrl);
-        console.warn('[Auth] Time since login:', timeSinceLogin, 'ms');
         authStore.logout();
       }
     },

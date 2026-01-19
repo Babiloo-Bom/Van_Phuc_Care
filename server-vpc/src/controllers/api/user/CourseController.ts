@@ -86,6 +86,14 @@ const courseSchema = new mongoose.Schema(
       type: Number,
       default: 0,
     },
+    promotionStartDate: {
+      type: Date,
+      default: null,
+    },
+    promotionEndDate: {
+      type: Date,
+      default: null,
+    },
     instructor: {
       name: {
         type: String,
@@ -159,6 +167,71 @@ const courseSchema = new mongoose.Schema(
 const Course = mongoose.models.Course || mongoose.model("Course", courseSchema);
 
 class CourseController {
+  /**
+   * Calculate effective price based on promotion period
+   * Returns promotion price if within promotion period, otherwise returns original price
+   */
+  private static calculateEffectivePrice(courseData: any): {
+    price: number;
+    originalPrice: number;
+    isPromotionActive: boolean;
+    daysRemaining?: number;
+  } {
+    const now = new Date();
+    const promotionStartDate = courseData.promotionStartDate
+      ? new Date(courseData.promotionStartDate)
+      : null;
+    const promotionEndDate = courseData.promotionEndDate
+      ? new Date(courseData.promotionEndDate)
+      : null;
+
+    const isPromotionActive =
+      promotionStartDate &&
+      promotionEndDate &&
+      now >= promotionStartDate &&
+      now <= promotionEndDate;
+
+    let daysRemaining: number | undefined;
+    if (isPromotionActive && promotionEndDate) {
+      const diffTime = promotionEndDate.getTime() - now.getTime();
+      daysRemaining = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+      if (daysRemaining < 0) daysRemaining = 0;
+    }
+
+    // Prefer explicit originalPrice if available; fallback to derive from discount if possible
+    let originalPrice =
+      courseData.originalPrice && courseData.originalPrice > 0
+        ? courseData.originalPrice
+        : courseData.price || 0;
+
+    // If we have a discount percent and originalPrice looks missing, try to derive it
+    if (
+      (!courseData.originalPrice || courseData.originalPrice <= 0) &&
+      courseData.discount &&
+      courseData.discount > 0 &&
+      courseData.discount < 100 &&
+      courseData.price
+    ) {
+      const derived = Math.round(
+        courseData.price / (1 - courseData.discount / 100)
+      );
+      if (Number.isFinite(derived) && derived > 0) {
+        originalPrice = derived;
+      }
+    }
+
+    const effectivePrice = isPromotionActive
+      ? (courseData.price || originalPrice || 0)
+      : (originalPrice || courseData.price || 0);
+
+    return {
+      price: effectivePrice,
+      originalPrice,
+      isPromotionActive: !!isPromotionActive,
+      daysRemaining,
+    };
+  }
+
   /**
    * Get all courses with full statistics
    * Includes isPurchased field if user is authenticated
@@ -270,6 +343,8 @@ class CourseController {
               )
             : null;
 
+          const priceInfo = CourseController.calculateEffectivePrice(courseData);
+
           return {
             _id: courseData._id.toString(),
             title: courseData.title,
@@ -278,9 +353,13 @@ class CourseController {
             shortDescription: courseData.shortDescription,
             thumbnail: courseData.thumbnail,
             introVideo: convertedIntroVideo,
-            price: courseData.price,
-            originalPrice: courseData.originalPrice || courseData.price,
+            price: priceInfo.price,
+            originalPrice: priceInfo.originalPrice,
             discount: courseData.discount || 0,
+            promotionStartDate: courseData.promotionStartDate || null,
+            promotionEndDate: courseData.promotionEndDate || null,
+            isPromotionActive: priceInfo.isPromotionActive,
+            promotionDaysRemaining: priceInfo.daysRemaining,
             instructor: courseData.instructor,
             category: courseData.category,
             level: courseData.level,
@@ -360,6 +439,7 @@ class CourseController {
       // Get lessons for each chapter
       const LessonsModel = (await import("@mongodb/lessons")).default;
       const courseData = course.toObject();
+      const priceInfo = CourseController.calculateEffectivePrice(courseData);
 
       // Get user's progress and quiz attempts if authenticated
       const LessonProgress = mongoose.model("LessonProgress");
@@ -1126,9 +1206,13 @@ class CourseController {
             thumbnail: courseData.thumbnail,
             banner: courseData.banner || '',
             introVideo: convertedIntroVideo,
-            price: courseData.price,
-            originalPrice: courseData.originalPrice || courseData.price,
+            price: priceInfo.price,
+            originalPrice: priceInfo.originalPrice,
             discount: courseData.discount || 0,
+            promotionStartDate: courseData.promotionStartDate || null,
+            promotionEndDate: courseData.promotionEndDate || null,
+            isPromotionActive: priceInfo.isPromotionActive,
+            promotionDaysRemaining: priceInfo.daysRemaining,
             instructor: courseData.instructor,
             category: courseData.category,
             level: courseData.level,

@@ -183,7 +183,6 @@ const loadSavedCredentials = () => {
       form.remember = true;
     }
   } catch (error) {
-    console.error("Error loading saved credentials:", error);
     // Clear corrupted data
     clearSavedCredentials();
   }
@@ -196,7 +195,6 @@ const saveCredentials = () => {
     localStorage.setItem(SAVED_EMAIL_KEY, btoa(form.email)); // Encode to base64
     localStorage.setItem(SAVED_PASSWORD_KEY, btoa(form.password)); // Encode to base64
   } catch (error) {
-    console.error("Error saving credentials:", error);
   }
 };
 

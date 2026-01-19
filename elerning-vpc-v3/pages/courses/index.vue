@@ -291,7 +291,6 @@ const fetchCourses = async () => {
     loading.value = true;
     await courseStore.fetchAll();
   } catch (error) {
-    console.error("Error fetching courses:", error);
   } finally {
     loading.value = false;
   }
@@ -299,7 +298,6 @@ const fetchCourses = async () => {
 
 const handleAddToCart = async (course: any) => {
   if (!course._id) {
-    console.error("❌ Course ID is missing!");
     return;
   }
 
@@ -360,7 +358,6 @@ const handleViewDetail = (course: any) => {
     // Chưa mua -> trang chi tiết khóa học
     navigateTo(`/courses/${course.slug}`);
   } catch (error) {
-    console.error("❌ Error viewing detail:", error);
   }
 };
 

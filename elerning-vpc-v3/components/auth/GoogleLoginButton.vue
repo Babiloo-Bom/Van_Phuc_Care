@@ -33,7 +33,6 @@ const handleGoogleLogin = async () => {
   try {
     if (!isGoogleConfigured.value) {
       const errorMsg = 'Google OAuth chưa được cấu hình. Vui lòng kiểm tra NUXT_PUBLIC_GOOGLE_CLIENT_ID trong .env'
-      console.error('❌', errorMsg)
       message.error(errorMsg)
       emit('error', errorMsg)
       return
@@ -49,11 +48,9 @@ const handleGoogleLogin = async () => {
     }
 
     // Redirect to Google OAuth
-    console.log('🔐 Redirecting to Google OAuth...')
     window.location.href = authUrl
 
   } catch (error: any) {
-    console.error('❌ Google login error:', error)
     const errorMsg = error.message || 'Không thể kết nối với Google. Vui lòng thử lại sau.'
     message.error(errorMsg)
     emit('error', errorMsg)

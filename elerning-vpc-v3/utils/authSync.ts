@@ -47,14 +47,12 @@ export function setLogoutSyncCookie() {
     expires.setMinutes(expires.getMinutes() + 3);
     const cookieValue = Date.now().toString();
     
-    console.log('[LogoutSync] Setting logout sync cookie, value:', cookieValue);
     
     const site = getSiteType();
     if (site === 'admin') {
       // Admin: use localStorage only
       const syncKey = 'auth_logout_sync_' + Date.now();
       localStorage.setItem(syncKey, 'true');
-      console.log('[LogoutSync] (admin) Set logout sync key in localStorage:', syncKey);
       // Clean up old sync keys
       Object.keys(localStorage).forEach(key => {
         if (key.startsWith('auth_logout_sync_') && key !== syncKey) {
@@ -74,20 +72,16 @@ export function setLogoutSyncCookie() {
       const cookieStringBase = `${LOGOUT_SYNC_COOKIE}=${cookieValue}; expires=${expires.toUTCString()}; path=/; SameSite=Lax`;
       const cookieString = domain ? cookieStringBase + `; domain=${domain}` : cookieStringBase;
       document.cookie = cookieString;
-      console.log('[LogoutSync] Set logout sync cookie with domain:', domain, 'value:', cookieValue);
       // Verify cookie was set
       setTimeout(() => {
         const wasSet = checkLogoutSyncCookie();
         if (!wasSet) {
-          console.warn('[LogoutSync] Cookie may not have been set with domain, trying without domain');
           document.cookie = cookieStringBase;
         }
       }, 100);
     } catch (e) {
-      console.error('[LogoutSync] Error setting cookie with domain:', e);
       // Fallback if domain setting fails
       document.cookie = `${LOGOUT_SYNC_COOKIE}=${cookieValue}; expires=${expires.toUTCString()}; path=/; SameSite=Lax`;
-      console.log('[LogoutSync] Set logout sync cookie without domain (fallback)');
     }
   }
 }
@@ -108,7 +102,6 @@ export function checkLogoutSyncCookie(): boolean {
         const timestamp = parts[3] ? parseInt(parts[3]) : 0;
         // Check if sync key is recent (within 3 minutes)
         if (timestamp && Date.now() - timestamp < 180000) {
-          console.log('[LogoutSync] (admin) Found logout sync key in localStorage:', key);
           return true;
         }
       }
@@ -137,23 +130,19 @@ export function checkLogoutSyncCookie(): boolean {
           const age = Date.now() - timestamp;
           // Cookie should be within 3 minutes (180000ms)
           if (age >= 0 && age < 180000) {
-            console.log('[LogoutSync] Found valid logout sync cookie, age:', age, 'ms');
             return true;
           } else {
-            console.log('[LogoutSync] Found expired logout sync cookie, age:', age, 'ms');
             // Clear expired cookie
             clearLogoutSyncCookie();
             return false;
           }
         } else {
           // If value is not a timestamp, treat as valid (backward compatibility)
-          console.log('[LogoutSync] Found logout sync cookie with non-timestamp value');
           return true;
         }
       }
     }
   } catch (e) {
-    console.error('[LogoutSync] Error checking cookie:', e);
     return false;
   }
   return false;
@@ -164,13 +153,11 @@ export function checkLogoutSyncCookie(): boolean {
  */
 export function clearLogoutSyncCookie() {
   if (process.client) {
-    console.log('[LogoutSync] Clearing logout sync cookie');
     if (isLocalhost()) {
       // Clear all localStorage sync keys
       const keys = Object.keys(localStorage).filter(key => key.startsWith('auth_logout_sync_'));
       keys.forEach(key => {
         localStorage.removeItem(key);
-        console.log('[LogoutSync] Removed localStorage key:', key);
       });
     } else {
       // Production: Clear cookie (try both with and without domain)
@@ -179,9 +166,7 @@ export function clearLogoutSyncCookie() {
         document.cookie = `${LOGOUT_SYNC_COOKIE}=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/; domain=${COOKIE_DOMAIN}; SameSite=Lax`;
         // Also clear without domain (in case it was set without domain)
         document.cookie = `${LOGOUT_SYNC_COOKIE}=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/; SameSite=Lax`;
-        console.log('[LogoutSync] Cleared logout sync cookie');
       } catch (e) {
-        console.error('[LogoutSync] Error clearing cookie:', e);
         // Fallback
         document.cookie = `${LOGOUT_SYNC_COOKIE}=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/; SameSite=Lax`;
       }

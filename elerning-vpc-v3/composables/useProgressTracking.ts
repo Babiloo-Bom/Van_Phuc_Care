@@ -198,7 +198,6 @@ export const useProgressTracking = () => {
         await markCourseCompleted(courseId);
       }
     } catch (err: any) {
-      console.error("Error updating course progress:", err);
     }
   };
 
@@ -219,7 +218,6 @@ export const useProgressTracking = () => {
         await coursesStore.fetchAll();
       }
     } catch (err: any) {
-      console.error("Error marking course as completed:", err);
     }
   };
 
@@ -234,7 +232,6 @@ export const useProgressTracking = () => {
         },
       });
     } catch (err: any) {
-      console.error("Error saving progress to backend:", err);
     }
   };
 
@@ -252,7 +249,6 @@ export const useProgressTracking = () => {
         courseProgress.value = response.data.courseProgress || [];
       }
     } catch (err: any) {
-      console.error("Error loading progress from backend:", err);
     } finally {
       loading.value = false;
     }
@@ -282,7 +278,6 @@ export const useProgressTracking = () => {
         );
       }
     } catch (err: any) {
-      console.error("Error resetting progress:", err);
     }
   };
 

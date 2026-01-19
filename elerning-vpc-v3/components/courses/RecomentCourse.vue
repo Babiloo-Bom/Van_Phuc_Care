@@ -64,7 +64,6 @@ const fetchCourses = async () => {
     loading.value = true
     await coursesStore.fetchAll()
   } catch (error) {
-    console.error('❌ RecomentCourse: Error fetching courses:', error)
   } finally {
     loading.value = false
   }

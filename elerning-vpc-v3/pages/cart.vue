@@ -590,7 +590,6 @@ const handleRemoveFromCart = async (course: any) => {
     const courseId = course.courseId || course.course?._id || course._id
     await cartStore.removeFromCart(courseId)
   } catch (error) {
-    console.error('Error removing from cart:', error)
   }
 }
 
@@ -692,7 +691,6 @@ const startQrStatusPolling = (orderId: string) => {
         try {
           await coursesStore.fetchMyCourses()
         } catch (e) {
-          console.warn('Không thể tải danh sách khóa học sau thanh toán QR:', e)
         }
 
         // Lấy thông tin khóa học từ order để chuyển thẳng sang trang học
@@ -714,7 +712,6 @@ const startQrStatusPolling = (orderId: string) => {
         return
       }
     } catch (error) {
-      console.error('❌ Check QR payment status failed (cart):', error)
       consecutiveFailures++
       // increase interval with exponential backoff and jitter
       currentInterval = Math.min(maxInterval, Math.pow(2, consecutiveFailures) * baseInterval)
@@ -866,7 +863,6 @@ const processQrOrder = async () => {
     startQrStatusPolling(order.orderId)
 
   } catch (error: any) {
-    console.error('❌ Error processing QR order:', error)
     const errorMsg = error.data?.message || error.message || 'Có lỗi xảy ra khi tạo thanh toán QR'
     message.error({
       content: errorMsg,
@@ -954,7 +950,6 @@ const processBypassOrder = async () => {
     try {
       await coursesStore.fetchMyCourses()
     } catch (e) {
-      console.warn('Không thể tải danh sách khóa học sau thanh toán:', e)
     }
     
     // Show success message
@@ -970,7 +965,6 @@ const processBypassOrder = async () => {
     await navigateTo(`/my-learning/`)
     
   } catch (error: any) {
-    console.error('❌ Error processing bypass order:', error)
     // Show error message to user
     const errorMsg = error.data?.message || error.message || 'Có lỗi xảy ra khi xử lý đơn hàng'
     message.error({
@@ -1063,7 +1057,6 @@ const processVnPay = async () => {
     }
     
   } catch (error: any) {
-    console.error('❌ Error processing bypass order:', error)
     // Show error message to user
     const errorMsg = error.data?.message || error.message || 'Có lỗi xảy ra khi xử lý đơn hàng'
     message.error({

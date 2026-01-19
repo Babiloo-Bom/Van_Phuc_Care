@@ -260,7 +260,6 @@ const viewDocument = async (doc: Document, index: number) => {
         const text = await response.text()
         textContent.value[docKey] = text
       } catch (error) {
-        console.error('Error loading text file:', error)
         textContent.value[docKey] = 'Không thể tải nội dung file.'
       }
     }
@@ -286,7 +285,6 @@ const downloadDocument = async (doc: Document, index: number) => {
     window.document.body.removeChild(link)
     
   } catch (error) {
-    console.error('Error downloading document:', error)
   } finally {
     const docKey = `${doc.fileName}-${index}`
     downloading.value[docKey] = false

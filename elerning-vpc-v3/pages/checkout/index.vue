@@ -436,7 +436,6 @@ const startQRStatusPolling = (orderId: string) => {
         }
       }
     } catch (error) {
-      console.error('❌ Check QR payment status failed:', error)
     }
   }, 5000)
 }
@@ -520,7 +519,6 @@ const handleSubmit = async (e?: Event) => {
         // Bắt đầu kiểm tra trạng thái thanh toán định kỳ
         startQRStatusPolling(order.orderId)
       } catch (error) {
-        console.error('❌ Create QR code failed:', error)
       } finally {
         loading.value = false
         isSubmitting.value = false
@@ -595,7 +593,6 @@ const handleSubmit = async (e?: Event) => {
     }
     
   } catch (error) {
-    console.error('❌ Checkout failed:', error)
   } finally {
     loading.value = false
     isSubmitting.value = false

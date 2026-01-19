@@ -993,13 +993,12 @@ const loadVideoWithHls = async () => {
       hlsInstance.on(Hls.Events.MANIFEST_PARSED, () => {
         // Video ready to play
   if (videoRef.value) {
-          videoRef.value.play().catch(console.error);
+          videoRef.value.play().catch(() => {});
           playerState.value.playing = true;
         }
       });
 
       hlsInstance.on(Hls.Events.ERROR, (event: string, data: any) => {
-        console.error('HLS error:', data);
         if (data.fatal) {
           switch (data.type) {
             case Hls.ErrorTypes.NETWORK_ERROR:
@@ -1018,15 +1017,14 @@ const loadVideoWithHls = async () => {
     } else if (videoRef.value.canPlayType('application/vnd.apple.mpegurl')) {
       // Safari native HLS support
       videoRef.value.src = currentVideoUrl.value;
-      videoRef.value.play().catch(console.error);
+      videoRef.value.play().catch(() => {});
       playerState.value.playing = true;
     } else {
-      console.error('HLS is not supported in this browser');
     }
   } else {
     // MP4: Use native video element (streamed via proxy)
     videoRef.value.src = currentVideoUrl.value;
-    videoRef.value.play().catch(console.error);
+    videoRef.value.play().catch(() => {});
     playerState.value.playing = true;
   }
 };
@@ -1178,7 +1176,6 @@ const fetchCourseDetail = async () => {
     }
     
   } catch (error) {
-    console.error('Error fetching course detail:', error);
     navigateTo("/my-learning");
   } finally {
     loading.value = false;
@@ -1429,7 +1426,6 @@ const getVideoToken = async () => {
     const data = await response.json();
     videoToken.value = data.data?.token || null;
   } catch (error) {
-    console.error('❌ Error getting video token:', error);
     videoToken.value = null;
   } finally {
     videoTokenLoading.value = false;
@@ -1545,10 +1541,8 @@ watch(
         try {
           await coursesStore.fetchAll();
         } catch (e) {
-          console.warn('Failed to sync courses cache:', e);
         }
       } catch (error) {
-        console.error('Error marking lesson completed:', error);
       } finally {
         markingCompleted.value = false;
       }
@@ -1606,10 +1600,6 @@ watch(
           if (chapter) {
             const quizLessonIndex = findQuizLessonIndex(chapter, lessonIndex);
             if (quizLessonIndex !== lessonIndex) {
-              console.log('🔄 [Route Watch] Quiz detected, adjusting lesson index:', {
-                from: lessonIndex,
-                to: quizLessonIndex
-              });
               currentLessonIndex.value = quizLessonIndex;
               // Update URL với lesson index đúng và lưu originalLesson để quay lại
               router.replace({

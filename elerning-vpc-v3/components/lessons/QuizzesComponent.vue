@@ -5,7 +5,7 @@
         <template v-if="!quizResult?.quizCompleted">
       <!-- Quiz Content -->
       <div v-if="quiz && quiz?.questions.length > 0" class="quiz-content">
-        <div class="w-full mx-auto lg:w-[723px]">
+        <div class="w-full mx-auto px-[18px] lg:w-[723px] lg:px-0">
           <div class="grid grid-cols-1 gap-5">
             <div v-for="(question, index) in quiz.questions" class="w-full text-[#798894] rounded-lg border bg-white border-[#317BC4] lg:px-16 lg:py-8 p-4">
               <div class="flex text-sm font-semibold justify-between items-center mb-1">
@@ -64,7 +64,7 @@
       </div>
 
       <!-- Quiz exists but has no questions -->
-      <div v-if="quiz && (!quiz.questions || !Array.isArray(quiz.questions) || quiz.questions.length === 0) && !loading" class="text-center py-8 w-full mx-auto lg:w-[723px] bg-white rounded-lg">
+      <div v-if="quiz && (!quiz.questions || !Array.isArray(quiz.questions) || quiz.questions.length === 0) && !loading" class="text-center py-8 w-full mx-auto px-[18px] lg:w-[723px] lg:px-0 bg-white rounded-lg">
         <div class="w-16 h-16 mx-auto mb-4 bg-gray-100 rounded-full flex items-center justify-center">
           <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" class="fill-none stroke-gray-400">
             <path d="M9 12l2 2 4-4" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
@@ -82,7 +82,7 @@
       </div>
 
       <!-- No Quiz State -->
-      <div v-if="!quiz && !loading" class="text-center py-8 w-full mx-auto lg:w-[723px] bg-white rounded-lg">
+      <div v-if="!quiz && !loading" class="text-center py-8 w-full mx-auto px-[18px] lg:w-[723px] lg:px-0 bg-white rounded-lg">
         <div class="w-16 h-16 mx-auto mb-4 bg-gray-100 rounded-full flex items-center justify-center">
           <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" class="fill-none stroke-gray-400">
             <path d="M9 12l2 2 4-4" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
@@ -95,7 +95,7 @@
     </template>
     <template v-if="quizResult?.quizCompleted && isShowQuizResult">
       <div v-if="quiz && quiz?.questions.length > 0" class="quiz-content">
-        <div class="w-full mx-auto lg:w-[723px]">
+        <div class="w-full mx-auto px-[18px] lg:w-[723px] lg:px-0">
           <div class="grid grid-cols-1 gap-5">
             <div v-for="(question, index) in quiz.questions" class="w-full text-[#798894] rounded-lg border bg-white border-[#317BC4] lg:px-16 lg:py-8 p-4">
               <div class="flex text-sm font-semibold justify-between items-center mb-1">
@@ -294,11 +294,6 @@ const getOptionStatus = (questionId: string, option: any) => {
 }
 // Methods
 const init = async () => {
-  console.log('🔄 [Quiz Component] Initializing quiz for:', {
-    courseId: props.courseId,
-    chapterId: props.chapterId,
-    lessonId: props.lessonId
-  })
   // Reset state trước khi fetch quiz mới để tránh hiển thị quiz cũ
   quizStore.resetState()
   isShowQuizResult.value = false
@@ -313,11 +308,6 @@ const init = async () => {
   // Kiểm tra quiz sau khi fetch
   await nextTick()
   const fetchedQuiz = quizStore.currentQuiz
-  console.log('📋 [Quiz Component] Fetched quiz:', {
-    hasQuiz: !!fetchedQuiz,
-    questionsCount: fetchedQuiz?.questions?.length || 0,
-    quizId: fetchedQuiz?._id
-  })
   
   // Ở chế độ review, nếu quiz đã hoàn thành thì tự động hiển thị kết quả
   if (props.isReviewMode && props.quizComplete && quizResult.value?.quizCompleted) {
@@ -366,12 +356,9 @@ const submitQuiz = async () => {
 
 watch(quizResult,
   (value, oldValue) => {
-    console.log('🔍 [Quiz Watch] quizResult changed:', { value, oldValue, isReviewMode: props.isReviewMode })
     if (!value) return;
     if (value.quizCompleted) {
-      console.log('✅ [Quiz Watch] Quiz completed, showing modal/result')
       // Luôn hiển thị popup khi quizCompleted (kể cả review)
-      console.log('📢 [Quiz Watch] Setting isVisibleModal to true')
       isVisibleModal.value = true;
     }
   },
@@ -399,13 +386,9 @@ watch(
 // Watch lessonId để reset và fetch quiz mới khi chuyển lesson
 watch(
   () => props.lessonId,
-  (newLessonId, oldLessonId) => {
-    if (newLessonId && newLessonId !== oldLessonId) {
-      console.log('🔄 [Quiz Component] Lesson changed, resetting quiz:', {
-        oldLessonId,
-        newLessonId
-      })
-      // Reset state khi lesson thay đổi
+    (newLessonId, oldLessonId) => {
+      if (newLessonId && newLessonId !== oldLessonId) {
+        // Reset state khi lesson thay đổi
       quizStore.resetState()
       isShowQuizResult.value = false
       isVisibleModal.value = false

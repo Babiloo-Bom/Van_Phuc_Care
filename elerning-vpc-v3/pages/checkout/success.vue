@@ -208,11 +208,9 @@ const updateUserCourseRegister = async () => {
       authStore.user.courseRegister = response.data.user.courseRegister
       authStore.saveAuth()
     } else {
-      console.error('❌ Failed to update courseRegister via API:', response)
     }
     
   } catch (error) {
-    console.error('❌ Error updating courseRegister:', error)
   }
 }
 
@@ -222,7 +220,6 @@ const refreshAuthStore = async () => {
     // Re-initialize authStore to pick up latest data from localStorage
     authStore.initAuth()
   } catch (error) {
-    console.error('❌ Error refreshing authStore:', error)
   }
 }
 
@@ -250,7 +247,6 @@ const fetchOrderDetails = async () => {
       error.value = 'Không tìm thấy thông tin đơn hàng'
     }
   } catch (err: any) {
-    console.error('❌ Error fetching order details:', err)
     error.value = 'Có lỗi xảy ra khi tải thông tin đơn hàng'
   } finally {
     loading.value = false

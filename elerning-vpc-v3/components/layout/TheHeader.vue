@@ -514,7 +514,6 @@ const handleLogout = async () => {
     await authStore.logout();
     navigateTo("/");
   } catch (error) {
-    console.error("❌ Logout failed:", error);
   }
 };
 

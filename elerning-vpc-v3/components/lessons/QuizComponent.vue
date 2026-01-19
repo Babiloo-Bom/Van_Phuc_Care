@@ -324,7 +324,6 @@ const fetchQuiz = async () => {
       }
     }
   } catch (error) {
-    console.error('Error fetching quiz:', error)
   } finally {
     loading.value = false
   }
@@ -414,7 +413,6 @@ const submitQuiz = async () => {
       emit('completed', quizResult.value)
     }
   } catch (error) {
-    console.error('Error submitting quiz:', error)
   } finally {
     submitting.value = false
   }

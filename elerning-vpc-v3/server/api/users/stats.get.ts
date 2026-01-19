@@ -22,8 +22,6 @@ export default defineEventHandler(async event => {
     };
 
   } catch (error: any) {
-    console.error('❌ Get user stats from backend failed:', error);
-    
     // Fallback to mock service
     try {
       const { MockUserService } = await import('~/server/services/MockUserService');
@@ -34,7 +32,6 @@ export default defineEventHandler(async event => {
         data: stats,
       };
     } catch (mockError: any) {
-      console.error('❌ Mock service also failed:', mockError);
       
       return {
         success: false,

@@ -345,7 +345,6 @@ export const useCoursesStore = defineStore('courses', {
             }
           }
         } catch (e) {
-          console.warn('Không thể đồng bộ courseRegister vào authStore:', e)
         }
       } catch (error) {
         throw error
@@ -443,18 +442,8 @@ export const useCoursesStore = defineStore('courses', {
         const { apiAdmin } = useApiBase()
         const response: any = await $fetch(`${apiAdmin}/reviews/course/${courseId}`)
         const reviews = response.data?.reviews || response.reviews || []
-        // Debug: Log reviews data (only on client side)
-        if (import.meta.client) {
-          console.log('🔍 [Fetch Reviews] Response:', response);
-          console.log('🔍 [Fetch Reviews] Reviews:', reviews);
-          if (reviews.length > 0) {
-            console.log('🔍 [Fetch Reviews] First review:', reviews[0]);
-            console.log('🔍 [Fetch Reviews] First review rating:', reviews[0]?.rating);
-          }
-        }
         this.reviews = reviews
       } catch (error) {
-        console.error('❌ [Fetch Reviews] Error:', error);
         throw error
       }
     },

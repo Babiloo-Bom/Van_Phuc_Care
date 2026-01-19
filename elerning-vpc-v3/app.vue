@@ -37,12 +37,10 @@ async function checkLogoutSync() {
         : Infinity;
       // Only skip logout if login was VERY recent (within 2 seconds)
       if (timeSinceLogin >= 2000) {
-        console.log('[App] Logout sync cookie detected on check, logging out');
         await authStore.logout();
       }
     }
   } catch (error) {
-    console.error('[App] Error checking logout sync:', error);
   }
 }
 
@@ -72,7 +70,6 @@ onMounted(async () => {
       const { handleSSOLogin } = await import('~/utils/sso');
       await handleSSOLogin();
     } catch (error) {
-      console.error('[SSO] Error handling SSO login:', error);
     }
     
     // Start monitoring SSO cookie periodically
@@ -82,7 +79,6 @@ onMounted(async () => {
         await handleSSOLogin();
       });
     } catch (error) {
-      console.error('[SSO] Error starting SSO monitor:', error);
     }
     
     // Start monitoring logout sync cookie from CRM site
@@ -91,7 +87,6 @@ onMounted(async () => {
       const { startLogoutSyncMonitor } = await import('~/utils/authSync');
       // Use 500ms interval for faster detection
       stopLogoutMonitor = startLogoutSyncMonitor(async () => {
-        console.log('[App] Logout sync cookie detected');
         // Logout if sync cookie detected, but not immediately after SSO login
         if (authStore.isAuthenticated) {
           const timeSinceLogin = authStore.loginTimestamp 
@@ -100,16 +95,11 @@ onMounted(async () => {
           // Only skip logout if login was VERY recent (within 2 seconds) - this protects against SSO race conditions
           // But allow logout sync for normal logouts from other site
           if (timeSinceLogin >= 2000) { // Only skip if login was less than 2 seconds ago
-            console.log('[App] Logging out due to logout sync cookie, timeSinceLogin:', timeSinceLogin, 'ms');
             await authStore.logout();
-          } else {
-            console.log('[App] Skipping logout sync (login was too recent):', timeSinceLogin, 'ms');
           }
         }
       }, 500); // Check every 500ms for faster detection
-      console.log('[App] Started logout sync monitor (500ms interval)');
     } catch (error) {
-      console.error('[App] Error starting logout sync monitor:', error);
     }
     
     // Cleanup event listeners on unmount

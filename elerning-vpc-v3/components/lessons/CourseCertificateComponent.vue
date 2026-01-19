@@ -196,7 +196,6 @@ const fetchCourses = async () => {
     loading.value = true;
     await courseStore.fetchAll();
   } catch (error) {
-    console.error("Error fetching courses:", error);
   } finally {
     loading.value = false;
   }
@@ -216,7 +215,6 @@ const fetchCoupons = async () => {
     }
     coupon.value = rawCoupon;
   } catch (error) {
-    console.error("Error fetching coupons:", error);
   } finally {
     loading.value = false;
   }
@@ -256,7 +254,6 @@ const handleCopyCoupon = async () => {
 
 const handleAddToCart = async (course: any) => {
   if (!course._id) {
-    console.error("❌ Course ID is missing!");
     return;
   }
 
@@ -291,7 +288,6 @@ const handleViewDetail = (course: any) => {
   try {
     navigateTo(`/courses/${course.slug}`)
   } catch (error) {
-    console.error("❌ Error viewing detail:", error);
   }
 };
 

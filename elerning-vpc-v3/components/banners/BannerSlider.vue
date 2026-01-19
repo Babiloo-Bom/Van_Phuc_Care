@@ -227,21 +227,14 @@ const handleBannerClick = (banner: Banner) => {
 
 const fetchBanners = async () => {
   loading.value = true
-  console.log('[BannerSlider] Fetching banners for pageType:', props.pageType)
   try {
     const data = await getBanners(props.pageType)
-    console.log('[BannerSlider] Received banners:', data)
     if (Array.isArray(data) && data.length > 0) {
       banners.value = data
-      console.log('[BannerSlider] banners.value set to:', banners.value.length, 'items')
-      // Log first banner image for debugging
-      console.log('[BannerSlider] First banner image URL:', banners.value[0]?.image)
     } else {
       banners.value = []
-      console.log('[BannerSlider] No banners received, using fallback')
     }
   } catch (error) {
-    console.error('[BannerSlider] Error:', error)
     banners.value = []
   } finally {
     loading.value = false

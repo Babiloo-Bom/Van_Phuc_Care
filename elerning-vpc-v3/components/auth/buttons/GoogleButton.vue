@@ -25,7 +25,6 @@ const handleGoogleLogin = async () => {
     window.location.href = authUrl
     
   } catch (error: any) {
-    console.error('Google login error:', error)
     message.error(error.message || 'Lỗi đăng nhập Google')
   }
 }

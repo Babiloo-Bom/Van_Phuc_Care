@@ -407,9 +407,7 @@ export async function buildSSOUrl(baseUrl: string, path: string): Promise<string
   try {
     const { clearLogoutSyncCookie } = await import('~/utils/authSync');
     clearLogoutSyncCookie();
-    console.log('[SSO] Cleared logout sync cookie before setting SSO cookie');
   } catch (e) {
-    console.warn('[SSO] Failed to clear logout sync cookie:', e);
   }
   
   // Set SSO cookie before navigation

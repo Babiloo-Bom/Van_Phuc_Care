@@ -76,33 +76,18 @@ export const useQuizStore = defineStore('quiz', {
       try {
         const quizApi = useQuizApi()
         const response: any = await quizApi.getQuizz(params)
-        console.log('📥 [Quiz Store] API response:', {
-          hasData: !!response.data,
-          hasQuiz: !!response.data?.quiz,
-          questionsCount: response.data?.quiz?.questions?.length || 0
-        })
         if (response.data && response.data.quiz) {
           const quizData = response.data.quiz
           // Kiểm tra nếu quiz không có câu hỏi hoặc câu hỏi rỗng, set currentQuiz = null
           if (!quizData.questions || !Array.isArray(quizData.questions) || quizData.questions.length === 0) {
-            console.warn('⚠️ [Quiz Store] Quiz has no questions, setting currentQuiz to null', {
-              quizId: quizData._id,
-              quizTitle: quizData.title
-            })
             this.currentQuiz = null
           } else {
-            console.log('✅ [Quiz Store] Quiz loaded successfully:', {
-              quizId: quizData._id,
-              questionsCount: quizData.questions.length
-            })
             this.currentQuiz = quizData
           }
         } else {
-          console.log('ℹ️ [Quiz Store] No quiz data in response')
           this.currentQuiz = null
         }
       } catch (error) {
-        console.error('❌ [Quiz Store] Error fetching quiz:', error)
         this.currentQuiz = null
       } finally {
         this.loading = false;
@@ -137,7 +122,6 @@ export const useQuizStore = defineStore('quiz', {
             percentage: response.data.quizAttempt?.percentage || 0,
             attemptsLeft: this.currentQuiz.attempts - (response.data.quizAttempt?.attemptNumber || 1)
           }
-          console.log('✅ [Quiz Store] Setting quizResult:', quizResultData)
           this.quizResult = quizResultData
           return this.quizResult;
         }

@@ -598,7 +598,6 @@ const handleViewDetail = (course: any) => {
     }
     navigateTo(`/courses/${course.slug}`);
   } catch (error) {
-    console.error("❌ Error viewing detail: ", error);
   }
 };
 
@@ -607,7 +606,6 @@ const fetchData = async () => {
     loading.value = true;
     await coursesStore.fetchAll();
   } catch (error) {
-    console.error("Error fetching courses:", error);
   } finally {
     loading.value = false;
   }

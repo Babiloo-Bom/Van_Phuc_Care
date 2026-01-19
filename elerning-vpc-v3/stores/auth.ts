@@ -27,7 +27,8 @@ function setCookie(name: string, value: string, expiresIso?: string) {
 function getCookie(name: string): string | null {
   if (!process.client) return null;
   const match = document.cookie.match(new RegExp('(^|;)\\s*' + name + '=([^;]+)'));
-  return match ? decodeURIComponent(match[2]) : null;
+  const raw = match?.[2];
+  return raw ? decodeURIComponent(raw) : null;
 }
 function removeCookie(name: string) {
   if (!process.client) return;
@@ -126,10 +127,8 @@ export const useAuthStore = defineStore("auth", {
         // Set justLoggedIn flag to prevent auto-logout for 30 seconds
         this.justLoggedIn = true;
         this.loginTimestamp = Date.now();
-        console.log('[Login] Set justLoggedIn flag, timestamp:', this.loginTimestamp);
         setTimeout(() => {
           this.justLoggedIn = false;
-          console.log('[Login] Cleared justLoggedIn flag after 30 seconds');
         }, 30000); // 30 seconds grace period (increased from 15)
 
         // Persist auth using cookies (Elearning uses cookie-only persistence)
@@ -156,15 +155,12 @@ export const useAuthStore = defineStore("auth", {
           // Clear logout sync cookie on successful login
           const { clearLogoutSyncCookie } = await import('~/utils/authSync');
           clearLogoutSyncCookie();
-          console.log('[Login] Cleared logout sync cookie');
           
           // Set SSO cookie to sync login with other sites
           try {
             const { setSSOCookie } = await import('~/utils/sso');
             await setSSOCookie(token);
-            console.log('[Login] Set SSO cookie for cross-site login sync');
           } catch (e) {
-            console.warn('[Login] Failed to set SSO cookie:', e);
           }
         }
 
@@ -222,9 +218,7 @@ export const useAuthStore = defineStore("auth", {
           try {
             const { setSSOCookie } = await import('~/utils/sso');
             await setSSOCookie(token);
-            console.log('[LoginAfterVerify] Set SSO cookie for cross-site login sync');
           } catch (e) {
-            console.warn('[LoginAfterVerify] Failed to set SSO cookie:', e);
           }
         }
 
@@ -270,7 +264,6 @@ export const useAuthStore = defineStore("auth", {
         }
         return false;
       } catch (error) {
-        console.error("❌ Error updating course register:", error);
         return false;
       }
     },
@@ -307,7 +300,6 @@ export const useAuthStore = defineStore("auth", {
           this.saveAuth()
         }
       } catch (error) {
-        console.error("❌ Error refreshing user data:", error);
       }
     },
 
@@ -543,7 +535,6 @@ export const useAuthStore = defineStore("auth", {
         // Redirect to login
         navigateTo("/login");
       } catch (error) {
-        console.error("Logout error:", error);
       } finally {
         this.isLoading = false;
       }
@@ -563,7 +554,6 @@ export const useAuthStore = defineStore("auth", {
           }
           setCookie('authData', JSON.stringify(authData), this.tokenExpireAt || undefined)
         } catch (error) {
-          console.error("❌ Error saving auth data:", error);
         }
       }
     },
@@ -582,16 +572,13 @@ export const useAuthStore = defineStore("auth", {
           const hasSSOCookie = checkSSOCookie();
           
           if (hasSSOCookie) {
-            console.log('[InitAuth] SSO cookie detected, attempting SSO login first');
             const { handleSSOLogin } = await import('~/utils/sso');
             const ssoResult = await handleSSOLogin();
             if (ssoResult) {
-              console.log('✅ [InitAuth] SSO login successful');
               // Clear logout sync cookie if it exists (SSO login takes priority)
               try {
                 const { clearLogoutSyncCookie } = await import('~/utils/authSync');
                 clearLogoutSyncCookie();
-                console.log('[InitAuth] Cleared logout sync cookie after SSO login');
               } catch (e) {
                 // Ignore errors
               }
@@ -599,7 +586,6 @@ export const useAuthStore = defineStore("auth", {
             }
           }
         } catch (e) {
-          console.warn('⚠️ [InitAuth] Error checking SSO cookie:', e);
         }
         
         // SECOND: Check logout sync cookie - if exists, don't restore auth and clear it
@@ -607,21 +593,17 @@ export const useAuthStore = defineStore("auth", {
         try {
           const { checkLogoutSyncCookie, clearLogoutSyncCookie } = await import('~/utils/authSync');
           const hasLogoutSync = checkLogoutSyncCookie();
-          console.log('[InitAuth] Checking logout sync cookie:', hasLogoutSync);
           
           if (hasLogoutSync) {
-            console.log('⚠️ [InitAuth] Logout sync cookie detected, clearing auth state');
             clearLogoutSyncCookie();
             // Clear local auth state
             this.user = null;
             this.token = null;
             this.isAuthenticated = false;
             // Don't restore from localStorage if logout sync cookie exists
-            console.log('ℹ️ [InitAuth] Staying logged out due to logout sync cookie');
             return;
           }
         } catch (e) {
-          console.warn('⚠️ [InitAuth] Error checking logout sync cookie:', e);
         }
         
         // Skip if already authenticated (might be from a fresh login)
@@ -657,10 +639,8 @@ export const useAuthStore = defineStore("auth", {
                     const timeSinceLogin = Date.now() - this.loginTimestamp;
                     if (timeSinceLogin < 30000) {
                       this.justLoggedIn = true;
-                      console.log('[InitAuth] Restored loginTimestamp from authData, timeSinceLogin:', timeSinceLogin, 'ms');
                       setTimeout(() => {
                         this.justLoggedIn = false;
-                        console.log('[InitAuth] Cleared justLoggedIn flag after grace period');
                       }, 30000 - timeSinceLogin);
                     }
                   }
@@ -711,10 +691,8 @@ export const useAuthStore = defineStore("auth", {
                 const timeSinceLogin = Date.now() - this.loginTimestamp;
                 if (timeSinceLogin < 30000) {
                   this.justLoggedIn = true;
-                  console.log('[InitAuth] Restored justLoggedIn flag, timeSinceLogin:', timeSinceLogin, 'ms');
                   setTimeout(() => {
                     this.justLoggedIn = false;
-                    console.log('[InitAuth] Cleared justLoggedIn flag after grace period');
                   }, 30000 - timeSinceLogin);
                 }
               }
@@ -753,10 +731,8 @@ export const useAuthStore = defineStore("auth", {
                 const timeSinceLogin = Date.now() - this.loginTimestamp;
                 if (timeSinceLogin < 30000) {
                   this.justLoggedIn = true;
-                  console.log('[InitAuth] Restored justLoggedIn flag from login_timestamp, timeSinceLogin:', timeSinceLogin, 'ms');
                   setTimeout(() => {
                     this.justLoggedIn = false;
-                    console.log('[InitAuth] Cleared justLoggedIn flag after grace period');
                   }, 30000 - timeSinceLogin);
                 }
               }
@@ -782,18 +758,14 @@ export const useAuthStore = defineStore("auth", {
                 await this.refreshUserData();
               } catch (error) {
                 // Don't logout on refresh error - session might still be valid
-                console.warn('⚠️ Failed to refresh user data during initAuth, but keeping session:', error);
               }
             } else {
-              console.log('ℹ️ Skipping refreshUserData during initAuth (login was', timeSinceLogin, 'ms ago)');
             }
           } catch (error) {
             // Clear corrupted data only if it's a critical error
-            console.error('❌ Critical error in initAuth:', error);
             this.logout();
           }
         } else {
-          console.log("ℹ️ No auth data found in localStorage");
         }
       }
     },
@@ -920,10 +892,8 @@ export const useAuthStore = defineStore("auth", {
         // Set justLoggedIn flag to prevent auto-logout for 30 seconds
         this.justLoggedIn = true;
         this.loginTimestamp = Date.now();
-        console.log('[Google Login] Set justLoggedIn flag, timestamp:', this.loginTimestamp);
         setTimeout(() => {
           this.justLoggedIn = false;
-          console.log('[Google Login] Cleared justLoggedIn flag after 30 seconds');
         }, 30000); // 30 seconds grace period (increased from 15)
 
           // Save to cookies (E-Learning uses cookie-based persistence for SSO)
@@ -947,15 +917,11 @@ export const useAuthStore = defineStore("auth", {
             // Clear logout sync cookie on successful login
             const { clearLogoutSyncCookie } = await import('~/utils/authSync');
             clearLogoutSyncCookie();
-            console.log('[Google Login] Cleared logout sync cookie');
-            
             // Set SSO cookie to sync login with other sites
             try {
               const { setSSOCookie } = await import('~/utils/sso');
               await setSSOCookie(accessToken);
-              console.log('[Google Login] Set SSO cookie for cross-site login sync');
             } catch (e) {
-              console.warn('[Google Login] Failed to set SSO cookie:', e);
             }
           }
 

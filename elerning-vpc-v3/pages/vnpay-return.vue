@@ -31,7 +31,6 @@ const params = ref({});
 
 const verifyPayment = async () => {
   params.value = Object.fromEntries(new URLSearchParams(route.query));
-  console.log('params.value', params.value)
 
   try {
     loading.value = true;

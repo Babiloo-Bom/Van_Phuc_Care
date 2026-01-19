@@ -140,7 +140,6 @@ const handleSubmit = async () => {
       message.error(result.error || "Không thể lấy lại mật khẩu");
     }
   } catch (error: any) {
-    console.error("Forgot password error:", error);
     message.error("Không thể lấy lại mật khẩu");
   } finally {
     loading.value = false;

@@ -423,7 +423,6 @@ export const useCartStore = defineStore("cart", {
 
     // Legacy compatibility method
     loadCart() {
-      console.warn("⚠️ loadCart() is deprecated, use fetchCart() instead");
       this.loadCartFromCache();
     },
 

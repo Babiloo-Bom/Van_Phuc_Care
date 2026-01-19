@@ -772,7 +772,7 @@
                     Miễn phí
                   </h3>
                   <h4
-                    v-if="course?.priceSale || course?.originalPrice"
+                    v-if="((course as any)?.isPromotionActive || (promotionDaysRemaining !== null && promotionDaysRemaining > 0)) && course?.originalPrice && Number(course.originalPrice) > Number(course.price || 0)"
                     class="text-lg sm:text-xl md:text-2xl italic mb-0 line-through"
                     style="color: #999999"
                   >
@@ -1547,15 +1547,6 @@ useHead({
 // ])
 const reviews = computed(() => {
   const reviewsData = coursesStore.reviews;
-  // Debug: Log reviews data to check structure (only on client side)
-  if (import.meta.client && reviewsData && reviewsData.length > 0) {
-    console.log("🔍 [Reviews Debug] Reviews data:", reviewsData);
-    console.log("🔍 [Reviews Debug] First review:", reviewsData[0]);
-    console.log(
-      "🔍 [Reviews Debug] First review rating:",
-      reviewsData[0]?.rating,
-    );
-  }
   return reviewsData;
 });
 
@@ -1578,12 +1569,6 @@ const calculatedRating = computed(() => {
   const total = reviews.value.length;
   const sum = reviews.value.reduce((acc: number, review: any) => {
     const rating = Number(review.rating) || 0;
-    console.log(
-      "🔍 [Rating Debug] Review rating:",
-      review.rating,
-      "Parsed:",
-      rating,
-    );
     return acc + rating;
   }, 0);
   const average = total > 0 ? sum / total : 0;
@@ -1670,7 +1655,6 @@ const getIntroVideoToken = async () => {
     const data = await response.json();
     introVideoToken.value = data.data?.token || null;
   } catch (error) {
-    console.error("❌ Error getting intro video token:", error);
     introVideoToken.value = null;
   } finally {
     introVideoTokenLoading.value = false;
@@ -1714,12 +1698,11 @@ const loadIntroVideoWithHls = async () => {
       introHlsInstance.on(Hls.Events.MANIFEST_PARSED, () => {
         // Video ready to play
         if (videoRef.value) {
-          videoRef.value.play().catch(console.error);
+          videoRef.value.play().catch(() => {});
         }
       });
 
       introHlsInstance.on(Hls.Events.ERROR, (event: string, data: any) => {
-        console.error("HLS error:", data);
         if (data.fatal) {
           switch (data.type) {
             case Hls.ErrorTypes.NETWORK_ERROR:
@@ -1738,14 +1721,13 @@ const loadIntroVideoWithHls = async () => {
     } else if (videoRef.value.canPlayType("application/vnd.apple.mpegurl")) {
       // Safari native HLS support
       videoRef.value.src = currentVideoUrl.value;
-      videoRef.value.play().catch(console.error);
+      videoRef.value.play().catch(() => {});
     } else {
-      console.error("HLS is not supported in this browser");
     }
   } else {
     // MP4: Use native video element (streamed via proxy)
     videoRef.value.src = currentVideoUrl.value;
-    videoRef.value.play().catch(console.error);
+    videoRef.value.play().catch(() => {});
   }
 };
 
@@ -1825,7 +1807,6 @@ const addToCart = async () => {
       userId: String(authStore?.user?.id),
     } as AddToCartData);
   } catch (error) {
-    console.error("Error adding to cart:", error);
   }
 };
 
@@ -1853,7 +1834,6 @@ const toggleCourse = async () => {
       } as AddToCartData);
     }
   } catch (error) {
-    console.error("Error toggling course in cart:", error);
   }
 };
 
@@ -1873,7 +1853,6 @@ const redirectCheckout = async () => {
     // Đi tới màn cart (không phải checkout)
     router.push("/cart");
   } catch (error) {
-    console.error("Error adding to cart:", error);
   }
 };
 
@@ -1926,7 +1905,6 @@ const handleTabChange = async (key: string) => {
       loadingReview.value = true;
       await coursesStore.fetchReviews(course.value?._id || "");
     } catch (error) {
-      console.error("Error fetching reviews:", error);
     } finally {
       loadingReview.value = false;
     }
@@ -2054,30 +2032,11 @@ const fetchData = async () => {
     // Fetch reviews to calculate rating
     if (course.value?._id) {
       try {
-        console.log(
-          "🔍 [Fetch Data] Fetching reviews for course:",
-          course.value._id,
-        );
         await coursesStore.fetchReviews(course.value._id);
-        console.log("✅ [Fetch Data] Reviews fetched:", coursesStore.reviews);
-        console.log(
-          "✅ [Fetch Data] Reviews count:",
-          coursesStore.reviews.length,
-        );
-        if (coursesStore.reviews.length > 0) {
-          console.log(
-            "✅ [Fetch Data] First review rating:",
-            coursesStore.reviews[0]?.rating,
-          );
-        }
       } catch (error) {
-        console.error("❌ [Fetch Data] Error fetching reviews:", error);
       }
-    } else {
-      console.warn("⚠️ [Fetch Data] Course ID not found, cannot fetch reviews");
     }
   } catch (error) {
-    console.error("❌ Error fetching course detail:", error);
     // Redirect to home if course not found
     router.push("/");
   }

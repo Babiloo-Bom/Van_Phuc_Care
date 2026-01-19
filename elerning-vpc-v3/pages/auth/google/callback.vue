@@ -132,7 +132,6 @@ const handleGoogleCallback = async () => {
       throw new Error(response.error || "Đăng nhập Google thất bại");
     }
   } catch (error: any) {
-    console.error("❌ Google callback failed:", error);
     // Extract detailed error message
     const detailedError = error?.data?.message || error?.data?.error || error?.message || "Đăng nhập Google thất bại";
     
@@ -173,7 +172,6 @@ const getRedirectPath = (): string => {
       }
     }
   } catch (error) {
-    console.warn("⚠️ Invalid state parameter:", error);
   }
 
   return "/";

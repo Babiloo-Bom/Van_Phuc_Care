@@ -37,7 +37,6 @@ export function useSecureVideo() {
       const data = await response.json();
       return data.data?.token || null;
     } catch (err) {
-      console.error('❌ Error getting video token:', err);
       return null;
     }
   };
@@ -87,7 +86,6 @@ export function useSecureVideo() {
       return currentBlobUrl;
 
     } catch (err: any) {
-      console.error('❌ Error loading secure video:', err);
       error.value = err.message;
       blobUrl.value = null;
       return null;
