@@ -24,6 +24,10 @@
 
         <!-- Login Form -->
         <form @submit.prevent="handleSubmit" class="login-form">
+          <!-- Inline error (always visible, avoids silent reload if toast fails) -->
+          <div v-if="errorText" class="login-error">
+            {{ errorText }}
+          </div>
           <!-- Email Field -->
           <div class="form-group">
             <label for="email" class="form-label">Email</label>
@@ -143,6 +147,7 @@ const form = reactive({
 
 // Loading state
 const loading = ref(false);
+const errorText = ref("");
 
 // Load saved credentials on mount
 const loadSavedCredentials = () => {
@@ -173,6 +178,7 @@ onMounted(() => {
 const handleSubmit = async () => {
   try {
     loading.value = true;
+    errorText.value = "";
 
     const result = await authStore.login(form.email, form.password, form.remember);
 
@@ -198,7 +204,9 @@ const handleSubmit = async () => {
         await navigateTo(redirectPath)
       }
     } else {
-      message.error(result.error || "Đăng nhập thất bại");
+      const msg = result.error || "Đăng nhập thất bại";
+      errorText.value = msg;
+      message.error(msg);
     }
   } catch (error: any) {
     console.error("Login error:", error);
@@ -207,7 +215,9 @@ const handleSubmit = async () => {
       error?.data?.error?.message ||
       error?.data?.message ||
       "Tên đăng nhập hoặc mật khẩu không chính xác";
-    message.error(typeof rawMessage === "string" ? rawMessage : String(rawMessage));
+    const msg = typeof rawMessage === "string" ? rawMessage : String(rawMessage);
+    errorText.value = msg;
+    message.error(msg);
   } finally {
     loading.value = false;
   }
@@ -215,6 +225,15 @@ const handleSubmit = async () => {
 </script>
 
 <style scoped>
+.login-error {
+  width: 100%;
+  padding: 12px 14px;
+  border: 1px solid #fecaca;
+  background: #fef2f2;
+  color: #991b1b;
+  border-radius: 12px;
+  font-weight: 600;
+}
 .login-container {
   position: relative;
   width: 100vw;
