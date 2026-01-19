@@ -52,7 +52,8 @@ class SessionController {
       
       if (!admin) {
         console.warn('⚠️ Admin not found or inactive:', username);
-        return sendError(res, 404, BadAuthentication);
+        // Return clearer message for login failures
+        return sendError(res, 401, { code: 215, message: 'Email hoặc mật khẩu không chính xác' });
       }
       
       // Double check isActive field explicitly
@@ -72,14 +73,14 @@ class SessionController {
       
       if (!storedPassword || typeof storedPassword !== 'string') {
         console.warn('⚠️ Admin has no password or password is not a string');
-        return sendError(res, 404, BadAuthentication);
+        return sendError(res, 401, { code: 215, message: 'Tài khoản chưa thiết lập mật khẩu. Vui lòng dùng chức năng "Quên mật khẩu".' });
       }
       
       // Compare password
       const isPasswordValid = await bcrypt.compare(passwordStr, storedPassword);
       if (!isPasswordValid) {
         console.warn('⚠️ Password mismatch for:', username);
-        return sendError(res, 404, BadAuthentication);
+        return sendError(res, 401, { code: 215, message: 'Email hoặc mật khẩu không chính xác' });
       }
       
       console.log('✅ Login successful for:', username);
