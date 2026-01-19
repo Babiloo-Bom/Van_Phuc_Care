@@ -177,6 +177,14 @@ export const useAuthStore = defineStore('auth', {
       } catch (error: any) {
         console.error('❌ Login error:', error)
         console.error('❌ Error stack:', error.stack)
+        console.error('❌ Error details:', {
+          message: error.message,
+          code: error.code,
+          data: error.data,
+          status: error.status,
+          statusCode: error.statusCode
+        })
+        
         this.isLoading = false
         this.isAuthenticated = false
         this.token = null
@@ -189,9 +197,39 @@ export const useAuthStore = defineStore('auth', {
           localStorage.removeItem('user')
         }
         
+        // Extract error message properly
+        let errorMessage = 'Đăng nhập thất bại. Vui lòng thử lại.'
+        
+        if (error?.message) {
+          // If message is a string, use it
+          if (typeof error.message === 'string') {
+            errorMessage = error.message
+          } 
+          // If message is an object with .message property
+          else if (error.message?.message && typeof error.message.message === 'string') {
+            errorMessage = error.message.message
+          }
+        }
+        
+        // Try to get message from error.data
+        if (!errorMessage || errorMessage === 'Đăng nhập thất bại. Vui lòng thử lại.') {
+          if (error?.data?.error?.message && typeof error.data.error.message === 'string') {
+            errorMessage = error.data.error.message
+          } else if (error?.data?.error && typeof error.data.error === 'string') {
+            errorMessage = error.data.error
+          } else if (error?.data?.message && typeof error.data.message === 'string') {
+            errorMessage = error.data.message
+          }
+        }
+        
+        // Fallback to Vietnamese message based on error code
+        if (error?.code === 215 || error?.data?.error?.code === 215) {
+          errorMessage = 'Email hoặc mật khẩu không chính xác'
+        }
+        
         return {
           success: false,
-          error: error.message || 'Đăng nhập thất bại. Vui lòng thử lại.'
+          error: errorMessage
         }
       } finally {
         this.isLoading = false

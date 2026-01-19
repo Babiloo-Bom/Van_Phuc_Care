@@ -175,12 +175,20 @@ onMounted(() => {
 });
 
 // Handle form submission
-const handleSubmit = async () => {
+const handleSubmit = async (e?: Event) => {
+  // Prevent default form submission to avoid page reload
+  if (e) {
+    e.preventDefault();
+    e.stopPropagation();
+  }
+  
   try {
     loading.value = true;
     errorText.value = "";
 
+    console.log('🔍 [Login] Starting login attempt...');
     const result = await authStore.login(form.email, form.password, form.remember);
+    console.log('🔍 [Login] Login result:', result);
 
     if (result.success) {
       message.success("Đăng nhập thành công!");
@@ -204,20 +212,55 @@ const handleSubmit = async () => {
         await navigateTo(redirectPath)
       }
     } else {
+      // Login failed - show error
       const msg = result.error || "Đăng nhập thất bại";
+      console.error('❌ [Login] Login failed:', msg);
       errorText.value = msg;
-      message.error(msg);
+      
+      // Show toast with delay to ensure it displays
+      setTimeout(() => {
+        message.error(msg);
+      }, 100);
     }
   } catch (error: any) {
-    console.error("Login error:", error);
-    const rawMessage =
-      error?.message ||
-      error?.data?.error?.message ||
-      error?.data?.message ||
-      "Tên đăng nhập hoặc mật khẩu không chính xác";
-    const msg = typeof rawMessage === "string" ? rawMessage : String(rawMessage);
+    console.error("❌ [Login] Login exception:", error);
+    console.error("❌ [Login] Error details:", {
+      message: error?.message,
+      code: error?.code,
+      data: error?.data,
+      stack: error?.stack
+    });
+    
+    // Extract error message with multiple fallbacks
+    let rawMessage = null;
+    
+    if (error?.message) {
+      if (typeof error.message === 'string') {
+        rawMessage = error.message;
+      } else if (error.message?.message && typeof error.message.message === 'string') {
+        rawMessage = error.message.message;
+      }
+    }
+    
+    if (!rawMessage) {
+      if (error?.data?.error?.message && typeof error.data.error.message === 'string') {
+        rawMessage = error.data.error.message;
+      } else if (error?.data?.error && typeof error.data.error === 'string') {
+        rawMessage = error.data.error;
+      } else if (error?.data?.message && typeof error.data.message === 'string') {
+        rawMessage = error.data.message;
+      }
+    }
+    
+    const msg = rawMessage || "Tên đăng nhập hoặc mật khẩu không chính xác";
+    console.error('❌ [Login] Final error message:', msg);
+    
     errorText.value = msg;
-    message.error(msg);
+    
+    // Show toast with delay to ensure it displays
+    setTimeout(() => {
+      message.error(msg);
+    }, 100);
   } finally {
     loading.value = false;
   }
