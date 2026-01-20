@@ -14,7 +14,7 @@
                 </div>
                 <span>{{ index + 1 }}/{{ quiz.questions.length }}</span>
               </div>
-              <div class="mb-4 leading-6 text-sm font-semibold">
+              <div class="mb-4 leading-6 text-[13px] font-semibold">
                 {{ question.question }}
               </div>
               <div v-if="question.options && question.options.length > 0" class="grid grid-cols-1 gap-3 md:gap-[15px]">
@@ -104,7 +104,7 @@
                 </div>
                 <span>{{ index + 1 }}/{{ quiz.questions.length }}</span>
               </div>
-              <div class="mb-4 leading-6 text-sm font-semibold">
+              <div class="mb-4 leading-6 text-[13px] font-semibold">
                 {{ question.question }}
               </div>
               <div v-if="question.options && question.options.length > 0" class="grid grid-cols-1 gap-3 md:gap-[15px]">
