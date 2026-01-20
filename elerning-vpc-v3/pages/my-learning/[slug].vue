@@ -182,12 +182,17 @@
                 <!-- Custom Controls -->
                 <div
                   v-show="isMounted && currentVideoUrl && videoReady && (showControls || !playerState.playing)"
-                  :class="[ 'absolute inset-x-0 bottom-0 bg-black bg-opacity-60 px-4 py-3 flex items-center gap-3 transition-opacity duration-200', showControls || !playerState.playing ? 'opacity-100 pointer-events-auto' : 'opacity-0 pointer-events-none' ]"
+                  class="video-controls absolute inset-x-0 bottom-0 bg-black bg-opacity-60 px-4 py-3 flex items-center gap-3 transition-opacity duration-200"
+                  :class="[ showControls || !playerState.playing ? 'opacity-100 pointer-events-auto' : 'opacity-0 pointer-events-none' ]"
+                  @touchstart.stop
+                  @touchend.stop
                 >
                   <!-- Play / Pause -->
                   <button
                     class="w-8 h-8 flex items-center justify-center rounded-full bg-white bg-opacity-90 hover:bg-opacity-100 transition"
                     @click.stop="togglePlay"
+                    @touchstart.stop
+                    @touchend.stop
                   >
                     <svg
                       v-if="!playerState.playing"
@@ -215,6 +220,8 @@
                   <button
                     class="w-9 h-9 flex items-center justify-center rounded-full bg-white bg-opacity-90 hover:bg-opacity-100 transition z-20"
                     @click.stop="skipBackward"
+                    @touchstart.stop
+                    @touchend.stop
                     title="Tua lại 15 giây"
                   >
                     <div class="flex items-center gap-0.5">
@@ -246,6 +253,8 @@
                   <button
                     class="w-9 h-9 flex items-center justify-center rounded-full bg-white bg-opacity-90 hover:bg-opacity-100 transition z-20"
                     @click.stop="skipForward"
+                    @touchstart.stop
+                    @touchend.stop
                     title="Tua tới 15 giây"
                   >
                     <div class="flex items-center gap-0.5">
@@ -295,8 +304,10 @@
                         step="0.1"
                         v-model.number="playerState.currentTime"
                         @input.stop="onSeek"
+                        @touchstart.stop
+                        @touchend.stop
                         class="absolute inset-0 w-full h-2 opacity-0 cursor-pointer z-10"
-                        style="-webkit-appearance: none; appearance: none;"
+                        style="-webkit-appearance: none; appearance: none; touch-action: none;"
                       />
                     </div>
                     <span class="text-xs text-gray-200 whitespace-nowrap min-w-[45px]">
@@ -308,6 +319,8 @@
                   <button
                     class="w-8 h-8 flex items-center justify-center rounded-full bg-white bg-opacity-90 hover:bg-opacity-100 transition"
                     @click.stop="toggleFullscreen"
+                    @touchstart.stop
+                    @touchend.stop
                     title="Mở rộng màn hình"
                   >
                     <svg
@@ -1280,6 +1293,19 @@ function handleMouseLeave() {
 function handleTouchStart(e: TouchEvent) {
   // On mobile, toggle controls visible on touch
   // But don't toggle when tapping on control buttons (they have stopPropagation)
+  const target = e.target as HTMLElement;
+  // Kiểm tra xem touch có phải trên control area không
+  const isControlArea = target.closest('.video-controls') || 
+                        target.closest('button') || 
+                        target.closest('input[type="range"]') ||
+                        target.tagName === 'BUTTON' ||
+                        target.tagName === 'INPUT';
+  
+  // Nếu touch vào control area, không toggle
+  if (isControlArea) {
+    return;
+  }
+  
   showControls.value = !showControls.value;
   if (showControls.value && playerState.value.playing) {
     hideControlsAfterDelay();

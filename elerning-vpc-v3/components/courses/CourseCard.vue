@@ -21,16 +21,22 @@
     <div class="course-content">
       <h3 class="course-title">{{ course.title }}</h3>
       <div class="course-price" v-if="!isPurchased">
-        <div class="price-current">{{ formatPrice(course.price) }}</div>
+        <!-- Hiển thị giá khuyến mãi nếu đang trong thời gian khuyến mãi -->
+        <div class="price-current" v-if="isPromotionActive && course.originalPrice && course.originalPrice > course.price">
+          {{ formatPrice(course.price) }}
+        </div>
+        <!-- Hiển thị giá gốc nếu không có khuyến mãi hoặc giá gốc = giá bán -->
+        <div class="price-current" v-else>
+          {{ formatPrice(course.originalPrice || course.price) }}
+        </div>
+        <!-- Hiển thị giá gốc bị gạch khi có khuyến mãi -->
         <div
           class="price-original"
-          v-if="
-            course.originalPrice != null && course.originalPrice > course.price
-          "
+          v-if="isPromotionActive && course.originalPrice && course.originalPrice > course.price"
         >
-          {{ formatPrice(course.originalPrice ?? 0) }}
+          {{ formatPrice(course.originalPrice) }}
         </div>
-        <div class="price-discount" v-if="(course.discount ?? 0) > 0">
+        <div class="price-discount" v-if="isPromotionActive && (course.discount ?? 0) > 0">
           -{{ course.discount ?? 0 }}%
         </div>
       </div>
@@ -302,6 +308,32 @@ const handleCardClick = () => {
   // các hành động "Học ngay", "Đã hoàn thành" dùng nút riêng.
   emit("viewDetail", { ...props.course, _forceDetail: true } as any);
 };
+
+// Check if promotion is still active
+const isPromotionActive = computed(() => {
+  const course = props.course as any;
+  
+  // Check isPromotionActive flag from backend
+  if (course?.isPromotionActive === true) {
+    return true;
+  }
+  
+  // Check promotionDaysRemaining from backend
+  if (course?.promotionDaysRemaining !== undefined && course.promotionDaysRemaining > 0) {
+    return true;
+  }
+  
+  // Fallback: calculate from promotionEndDate
+  const promotionEndDate = course?.promotionEndDate;
+  if (!promotionEndDate) return false;
+  
+  const endDate = new Date(promotionEndDate);
+  const now = new Date();
+  const diffTime = endDate.getTime() - now.getTime();
+  const daysRemaining = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+  
+  return daysRemaining > 0;
+});
 </script>
 
 <style scoped>

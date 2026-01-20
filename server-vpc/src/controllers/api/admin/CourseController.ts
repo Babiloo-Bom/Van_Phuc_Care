@@ -803,7 +803,7 @@ class CourseController {
               chapterId: chapter._id,
               status: "active",
             })
-            .sort({ index: 1 });
+            .sort({ order: 1, index: 1 }); // Sort by order first, then by index as fallback
           
           // Deduplicate lessons by _id (keep the most recent one if duplicates exist)
           const lessonMap = new Map();
@@ -1374,6 +1374,7 @@ class CourseController {
                     documents: lessonData.documents || [],
                     duration: lessonData.duration || 0,
                     status: lessonData.status || "active",
+                    order: typeof lessonData.order === "number" ? lessonData.order : (typeof lessonData.index === "number" ? lessonData.index : 0),
                   },
                   { new: true }
                 );
@@ -1393,6 +1394,7 @@ class CourseController {
                     documents: lessonData.documents || [],
                     duration: lessonData.duration || 0,
                     status: lessonData.status || "active",
+                    order: typeof lessonData.order === "number" ? lessonData.order : (typeof lessonData.index === "number" ? lessonData.index : 0),
                   });
                 }
               } else {
@@ -1409,6 +1411,7 @@ class CourseController {
                   documents: lessonData.documents || [],
                   duration: lessonData.duration || 0,
                   status: lessonData.status || "active",
+                  order: typeof lessonData.order === "number" ? lessonData.order : (typeof lessonData.index === "number" ? lessonData.index : 0),
                 });
               }
 

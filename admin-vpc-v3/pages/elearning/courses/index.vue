@@ -338,6 +338,7 @@
                     :parser="value => value!.replace(/\$\s?|(,*)/g, '')"
                     style="width: 100%"
                     placeholder="0"
+                    @change="calculatePrice"
                   />
                 </a-form-item>
               </a-col>
@@ -349,6 +350,7 @@
                     :max="100"
                     style="width: 100%"
                     placeholder="0"
+                    @change="calculatePrice"
                   />
                   <div style="color: #8c8c8c; font-size: 12px; margin-top: 4px;">
                     Giá = Giá gốc × (100 - Giảm giá) / 100
@@ -672,9 +674,29 @@
               <div v-for="(chapter, chapterIndex) in formData.chapters" :key="chapterIndex" class="chapter-item" style="margin-bottom: 24px; padding: 16px; border: 1px solid #d9d9d9; border-radius: 4px;">
                 <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px;">
                   <h4>Phần {{ chapterIndex + 1 }}: {{ chapter.title || 'Chưa có tiêu đề' }}</h4>
-                  <a-button type="text" danger @click="removeChapter(chapterIndex)">
-                    <DeleteOutlined /> Xóa phần
-                  </a-button>
+                  <div style="display: flex; align-items: center; gap: 8px;">
+                    <a-button 
+                      type="text" 
+                      size="small"
+                      :disabled="chapterIndex === 0"
+                      @click="moveChapterUp(chapterIndex)"
+                      title="Di chuyển lên trên"
+                    >
+                      <ArrowUpOutlined />
+                    </a-button>
+                    <a-button 
+                      type="text" 
+                      size="small"
+                      :disabled="chapterIndex === formData.chapters.length - 1"
+                      @click="moveChapterDown(chapterIndex)"
+                      title="Di chuyển xuống dưới"
+                    >
+                      <ArrowDownOutlined />
+                    </a-button>
+                    <a-button type="text" danger @click="removeChapter(chapterIndex)">
+                      <DeleteOutlined /> Xóa phần
+                    </a-button>
+                  </div>
                 </div>
                 <a-row :gutter="16">
                   <a-col :span="24">
@@ -707,6 +729,24 @@
                           <strong>B{{ lessonIndex + 1 }}: {{ lesson.title || 'Chưa có tiêu đề' }}</strong>
                         </div>
                         <div style="display: flex; align-items: center; gap: 8px;">
+                          <a-button 
+                            type="text" 
+                            size="small"
+                            :disabled="lessonIndex === 0"
+                            @click="moveLessonUp(chapterIndex, lessonIndex)"
+                            title="Di chuyển lên trên"
+                          >
+                            <ArrowUpOutlined />
+                          </a-button>
+                          <a-button 
+                            type="text" 
+                            size="small"
+                            :disabled="lessonIndex === chapter.lessons.length - 1"
+                            @click="moveLessonDown(chapterIndex, lessonIndex)"
+                            title="Di chuyển xuống dưới"
+                          >
+                            <ArrowDownOutlined />
+                          </a-button>
                           <a-button 
                             type="text" 
                             size="small" 
@@ -1403,6 +1443,8 @@ import {
   TagsOutlined,
   UpOutlined,
   DownOutlined,
+  ArrowUpOutlined,
+  ArrowDownOutlined,
 } from '@ant-design/icons-vue'
 import { useUploadsApi } from '~/composables/api/useUploadsApi'
 import { useUsersApi } from '~/composables/api/useUsersApi'
@@ -2693,6 +2735,70 @@ const removeLesson = (chapterIndex: number, lessonIndex: number) => {
   formData.chapters[chapterIndex].lessons.splice(lessonIndex, 1)
 }
 
+// Move chapter up
+const moveChapterUp = (chapterIndex: number) => {
+  if (chapterIndex === 0) return
+  
+  const chapters = formData.chapters
+  const temp = chapters[chapterIndex]
+  chapters[chapterIndex] = chapters[chapterIndex - 1]
+  chapters[chapterIndex - 1] = temp
+  
+  // Re-index
+  chapters.forEach((ch, idx) => {
+    ch.index = idx
+  })
+}
+
+// Move chapter down
+const moveChapterDown = (chapterIndex: number) => {
+  if (chapterIndex === formData.chapters.length - 1) return
+  
+  const chapters = formData.chapters
+  const temp = chapters[chapterIndex]
+  chapters[chapterIndex] = chapters[chapterIndex + 1]
+  chapters[chapterIndex + 1] = temp
+  
+  // Re-index
+  chapters.forEach((ch, idx) => {
+    ch.index = idx
+  })
+}
+
+// Move lesson up
+const moveLessonUp = (chapterIndex: number, lessonIndex: number) => {
+  if (lessonIndex === 0) return
+  
+  const lessons = formData.chapters[chapterIndex].lessons
+  const temp = lessons[lessonIndex]
+  lessons[lessonIndex] = lessons[lessonIndex - 1]
+  lessons[lessonIndex - 1] = temp
+  
+  // Re-index order if exists
+  lessons.forEach((lesson: any, idx: number) => {
+    if (lesson.order !== undefined) {
+      lesson.order = idx
+    }
+  })
+}
+
+// Move lesson down
+const moveLessonDown = (chapterIndex: number, lessonIndex: number) => {
+  const lessons = formData.chapters[chapterIndex].lessons
+  if (lessonIndex === lessons.length - 1) return
+  
+  const temp = lessons[lessonIndex]
+  lessons[lessonIndex] = lessons[lessonIndex + 1]
+  lessons[lessonIndex + 1] = temp
+  
+  // Re-index order if exists
+  lessons.forEach((lesson: any, idx: number) => {
+    if (lesson.order !== undefined) {
+      lesson.order = idx
+    }
+  })
+}
+
 const addQuestion = (chapterIndex: number, lessonIndex: number) => {
   const lesson = formData.chapters[chapterIndex].lessons[lessonIndex]
   if (!lesson.quiz.questions) {
@@ -2910,13 +3016,28 @@ const editCourse = async (course: Course) => {
 
       // Load chapters and lessons từ API response
       if (courseData.chapters && Array.isArray(courseData.chapters)) {
-        formData.chapters = courseData.chapters.map((chapter: any) => ({
-          _id: chapter._id,
-          title: chapter.title || '',
-          description: chapter.description || '',
-          index: chapter.index || 0,
-          status: chapter.status || 'active',
-          lessons: (chapter.lessons || []).map((lesson: any) => {
+        // Sắp xếp chapters theo index
+        const sortedChapters = [...courseData.chapters].sort((a: any, b: any) => {
+          const indexA = a.index !== undefined ? a.index : 0
+          const indexB = b.index !== undefined ? b.index : 0
+          return indexA - indexB
+        })
+        
+        formData.chapters = sortedChapters.map((chapter: any) => {
+          // Sắp xếp lessons theo order
+          const sortedLessons = [...(chapter.lessons || [])].sort((a: any, b: any) => {
+            const orderA = a.order !== undefined ? a.order : (a.index !== undefined ? a.index : 0)
+            const orderB = b.order !== undefined ? b.order : (b.index !== undefined ? b.index : 0)
+            return orderA - orderB
+          })
+          
+          return {
+            _id: chapter._id,
+            title: chapter.title || '',
+            description: chapter.description || '',
+            index: chapter.index !== undefined ? chapter.index : 0,
+            status: chapter.status || 'active',
+            lessons: sortedLessons.map((lesson: any) => {
             // Fix video status: if video has URL, it should be 'ready' (regardless of stored status)
             const videos = (lesson.videos || []).map((video: any) => {
               if (video && (video.videoUrl || video.hlsUrl)) {
@@ -2933,28 +3054,29 @@ const editCourse = async (course: Course) => {
               }
             })
             
-            return {
-              _id: lesson._id,
-              title: lesson.title || '',
-              description: lesson.description || '',
-              content: lesson.content || '',
-              type: lesson.type || 'video',
-              isPreview: lesson.isPreview || false,
-              status: lesson.status || 'active',
-              videos: videos,
-              documents: lesson.documents || [],
-              videoFileList: [],
-              documentFileList: [],
-              videoThumbnailFileList: lesson.videoThumbnail ? [{
-                uid: '-1',
-                name: 'video-thumbnail',
-                status: 'done',
-                url: lesson.videoThumbnail,
-              }] : [],
-              videoThumbnail: lesson.videoThumbnail || (videos.length > 0 && videos[0].thumbnail ? videos[0].thumbnail : ''),
-              uploadingVideo: false,
-              uploadingDocument: false,
-              quiz: lesson.quiz ? {
+              return {
+                _id: lesson._id,
+                title: lesson.title || '',
+                description: lesson.description || '',
+                content: lesson.content || '',
+                type: lesson.type || 'video',
+                isPreview: lesson.isPreview || false,
+                status: lesson.status || 'active',
+                order: lesson.order !== undefined ? lesson.order : (lesson.index !== undefined ? lesson.index : 0), // Lưu order
+                videos: videos,
+                documents: lesson.documents || [],
+                videoFileList: [],
+                documentFileList: [],
+                videoThumbnailFileList: lesson.videoThumbnail ? [{
+                  uid: '-1',
+                  name: 'video-thumbnail',
+                  status: 'done',
+                  url: lesson.videoThumbnail,
+                }] : [],
+                videoThumbnail: lesson.videoThumbnail || (videos.length > 0 && videos[0].thumbnail ? videos[0].thumbnail : ''),
+                uploadingVideo: false,
+                uploadingDocument: false,
+                quiz: lesson.quiz ? {
               title: lesson.quiz.title || '',
               description: lesson.quiz.description || '',
               questions: Array.isArray(lesson.quiz.questions) ? lesson.quiz.questions.map((q: any) => {
@@ -3002,8 +3124,9 @@ const editCourse = async (course: Course) => {
               attempts: 3,
             },
           }
-          }),
-        }))
+            })
+          }
+        })
       }
 
       // Set thumbnail file list if exists
@@ -3133,6 +3256,11 @@ const editCourse = async (course: Course) => {
   if (editingCourse.value?._id) {
     await fetchCourseReviews(editingCourse.value._id)
   }
+  
+  // Tính lại giá bán sau khi load dữ liệu
+  nextTick(() => {
+    calculatePrice()
+  })
   
   modalVisible.value = true
   activeTab.value = 'basic' // Reset về tab đầu tiên
@@ -3546,7 +3674,7 @@ const handleModalOk = async () => {
       chapters: formData.chapters.map((ch, idx) => ({
         ...ch,
         index: idx,
-        lessons: ch.lessons?.map((lesson: any) => {
+        lessons: ch.lessons?.map((lesson: any, lessonIdx: number) => {
           const lessonData: any = {
             // CRITICAL: Include _id if lesson exists (for update, not create)
             ...(lesson._id ? { _id: lesson._id } : {}),
@@ -3557,6 +3685,7 @@ const handleModalOk = async () => {
             type: lesson.type || 'video',
             isPreview: lesson.isPreview || false,
             status: lesson.status || 'active',
+            order: lessonIdx, // Lưu thứ tự bài học
             videos: lesson.videos || [],
             documents: lesson.documents || [],
             videoThumbnail: lesson.videoThumbnail || '',
@@ -3814,16 +3943,21 @@ const ensureLessonProperties = (lesson: any) => {
   return true
 }
 
-// Thêm vào script setup, sau phần khai báo reactive
+// Hàm tính giá bán tự động
+const calculatePrice = () => {
+  const originalPrice = formData.originalPrice || 0
+  const discountPercent = formData.discount || 0
+  // Tính giá bán: Giá gốc × (100 - Giảm giá) / 100
+  formData.price = Math.round(originalPrice * (100 - discountPercent) / 100)
+}
+
 // Watch originalPrice và discount để tự động tính giá
 watch(
   () => [formData.originalPrice, formData.discount],
-  ([originalPrice, discount]) => {
-    const price = originalPrice || 0
-    const discountPercent = discount || 0
-    formData.price = Math.round(price * (100 - discountPercent) / 100)
+  () => {
+    calculatePrice()
   },
-  { immediate: false }
+  { immediate: true } // Chạy ngay khi component mount để tính giá ban đầu
 )
 
 // Watch instructor.name để clear validation khi thay đổi

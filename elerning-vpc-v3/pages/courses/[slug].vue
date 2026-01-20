@@ -757,12 +757,21 @@
                   v-if="!course?.isPurchased"
                   class="flex items-end gap-2 sm:gap-3 mb-3 sm:mb-4"
                 >
+                  <!-- Hiển thị giá khuyến mãi nếu đang trong thời gian khuyến mãi -->
                   <h3
-                    v-if="course?.price"
+                    v-if="((course as any)?.isPromotionActive || (promotionDaysRemaining !== null && promotionDaysRemaining > 0)) && course?.originalPrice && Number(course.originalPrice) > Number(course.price || 0)"
                     class="text-2xl sm:text-3xl md:text-4xl font-bold mb-0"
                     style="color: #2176ff"
                   >
-                    {{ Number(course.price).toLocaleString("vi-VN") }}₫
+                    {{ Number(course.price || 0).toLocaleString("vi-VN") }}₫
+                  </h3>
+                  <!-- Hiển thị giá gốc nếu không có khuyến mãi -->
+                  <h3
+                    v-else-if="course?.price || course?.originalPrice"
+                    class="text-2xl sm:text-3xl md:text-4xl font-bold mb-0"
+                    style="color: #2176ff"
+                  >
+                    {{ Number(course.originalPrice || course.price || 0).toLocaleString("vi-VN") }}₫
                   </h3>
                   <h3
                     v-else
@@ -771,16 +780,13 @@
                   >
                     Miễn phí
                   </h3>
+                  <!-- Hiển thị giá gốc bị gạch khi có khuyến mãi -->
                   <h4
                     v-if="((course as any)?.isPromotionActive || (promotionDaysRemaining !== null && promotionDaysRemaining > 0)) && course?.originalPrice && Number(course.originalPrice) > Number(course.price || 0)"
                     class="text-lg sm:text-xl md:text-2xl italic mb-0 line-through"
                     style="color: #999999"
                   >
-                    {{
-                      Number(
-                        course.priceSale || course.originalPrice,
-                      ).toLocaleString("vi-VN")
-                    }}₫
+                    {{ Number(course.originalPrice).toLocaleString("vi-VN") }}₫
                   </h4>
                 </div>
 

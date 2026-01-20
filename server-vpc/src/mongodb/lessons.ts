@@ -158,6 +158,10 @@ class Lessons {
         enum: ['active', 'inactive'],
         default: 'active',
       },
+      order: {
+        type: Number,
+        default: 0,
+      },
     }, {
       timestamps: true,
       toJSON: { virtuals: true },

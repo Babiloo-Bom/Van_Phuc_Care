@@ -20,7 +20,7 @@
           >
             {{ formatPrice(course.originalPrice ?? 0) }}
           </div>
-          <div class="price-discount" v-if="(course.discount ?? 0) > 0">
+          <div class="price-discount" v-if="isPromotionActive && (course.discount ?? 0) > 0">
             -{{ course.discount ?? 0 }}%
           </div>
         </div>
@@ -243,6 +243,32 @@
     if (!props.course?.slug) return;
     router.push(`/my-learning/${props.course.slug}`);
   };
+
+  // Check if promotion is still active
+  const isPromotionActive = computed(() => {
+    const course = props.course as any;
+    
+    // Check isPromotionActive flag from backend
+    if (course?.isPromotionActive === true) {
+      return true;
+    }
+    
+    // Check promotionDaysRemaining from backend
+    if (course?.promotionDaysRemaining !== undefined && course.promotionDaysRemaining > 0) {
+      return true;
+    }
+    
+    // Fallback: calculate from promotionEndDate
+    const promotionEndDate = course?.promotionEndDate;
+    if (!promotionEndDate) return false;
+    
+    const endDate = new Date(promotionEndDate);
+    const now = new Date();
+    const diffTime = endDate.getTime() - now.getTime();
+    const daysRemaining = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+    
+    return daysRemaining > 0;
+  });
   </script>
   
   <style scoped>

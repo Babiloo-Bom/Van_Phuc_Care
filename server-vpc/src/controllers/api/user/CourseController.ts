@@ -434,7 +434,7 @@ class CourseController {
           courseId: course._id,
           status: "active",
         })
-        .sort({ index: 1 });
+        .sort({ index: 1, order: 1 }); // Sort by index first (for chapters), order is for lessons
 
       // Get lessons for each chapter
       const LessonsModel = (await import("@mongodb/lessons")).default;
@@ -556,7 +556,7 @@ class CourseController {
               status: "active",
             })
             .populate("quiz")
-            .sort({ createdAt: 1 });
+            .sort({ order: 1, index: 1, createdAt: 1 }); // Sort by order first, then by index, then by createdAt as fallback
 
           if (prevLessons.length > 0) {
             const lastPrevLesson: any = prevLessons[prevLessons.length - 1];
@@ -584,7 +584,7 @@ class CourseController {
               status: "active",
             })
             .populate("quiz")
-            .sort({ createdAt: 1 });
+            .sort({ order: 1, index: 1, createdAt: 1 }); // Sort by order first, then by index, then by createdAt as fallback
 
           const transformedLessons = await Promise.all(
             lessons.map(async (lesson: any, lessonIndex: number) => {
@@ -1300,7 +1300,7 @@ class CourseController {
           courseId: course._id,
           status: "active",
         })
-        .sort({ index: 1 });
+        .sort({ index: 1, order: 1 }); // Sort by index first (for chapters), order is for lessons
 
       // Get lessons for each chapter
       const LessonsModel = (await import("@mongodb/lessons")).default;
@@ -1388,7 +1388,7 @@ class CourseController {
               status: "active",
             })
             .populate("quiz")
-            .sort({ createdAt: 1 });
+            .sort({ order: 1, index: 1, createdAt: 1 }); // Sort by order first, then by index, then by createdAt as fallback
 
           if (prevLessons.length > 0) {
             const lastPrevLesson: any = prevLessons[prevLessons.length - 1];
@@ -1415,7 +1415,7 @@ class CourseController {
               status: "active",
             })
             .populate("quiz")
-            .sort({ createdAt: 1 });
+            .sort({ order: 1, index: 1, createdAt: 1 }); // Sort by order first, then by index, then by createdAt as fallback
 
           const transformedLessons = await Promise.all(
             lessons.map(async (lesson: any, lessonIndex: number) => {
