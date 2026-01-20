@@ -1376,33 +1376,66 @@ const skipForward = () => {
   playerState.value.currentTime = newTime;
 };
 
-const toggleFullscreen = () => {
+const toggleFullscreen = async () => {
   if (!videoRef.value) return;
   
-  const videoWrapper = videoRef.value.closest('.video-wrapper') || videoRef.value.parentElement;
-  if (!videoWrapper) return;
-
-  if (!isFullscreen.value) {
-    // Enter fullscreen
-    if (videoWrapper.requestFullscreen) {
-      videoWrapper.requestFullscreen();
-    } else if ((videoWrapper as any).webkitRequestFullscreen) {
-      (videoWrapper as any).webkitRequestFullscreen();
-    } else if ((videoWrapper as any).mozRequestFullScreen) {
-      (videoWrapper as any).mozRequestFullScreen();
-    } else if ((videoWrapper as any).msRequestFullscreen) {
-      (videoWrapper as any).msRequestFullscreen();
+  // Kiểm tra xem có phải mobile không
+  const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
+  
+  try {
+    if (!isFullscreen.value) {
+      // Enter fullscreen
+      if (isMobile && (videoRef.value as any).webkitEnterFullscreen) {
+        // iOS Safari - phải dùng video element trực tiếp
+        (videoRef.value as any).webkitEnterFullscreen();
+        return;
+      }
+      
+      // Desktop hoặc Android - dùng wrapper
+      const videoWrapper = videoRef.value.closest('.video-wrapper') as HTMLElement;
+      if (!videoWrapper) {
+        // Fallback: dùng div chứa video
+        const parent = videoRef.value.parentElement;
+        if (parent) {
+          if (parent.requestFullscreen) {
+            await parent.requestFullscreen();
+          } else if ((parent as any).webkitRequestFullscreen) {
+            await (parent as any).webkitRequestFullscreen();
+          } else if ((parent as any).mozRequestFullScreen) {
+            await (parent as any).mozRequestFullScreen();
+          } else if ((parent as any).msRequestFullscreen) {
+            await (parent as any).msRequestFullscreen();
+          }
+        }
+        return;
+      }
+      
+      // Thử các phương thức fullscreen
+      if (videoWrapper.requestFullscreen) {
+        await videoWrapper.requestFullscreen();
+      } else if ((videoWrapper as any).webkitRequestFullscreen) {
+        await (videoWrapper as any).webkitRequestFullscreen();
+      } else if ((videoWrapper as any).mozRequestFullScreen) {
+        await (videoWrapper as any).mozRequestFullScreen();
+      } else if ((videoWrapper as any).msRequestFullscreen) {
+        await (videoWrapper as any).msRequestFullscreen();
+      }
+    } else {
+      // Exit fullscreen
+      if (document.exitFullscreen) {
+        await document.exitFullscreen();
+      } else if ((document as any).webkitExitFullscreen) {
+        await (document as any).webkitExitFullscreen();
+      } else if ((document as any).mozCancelFullScreen) {
+        await (document as any).mozCancelFullScreen();
+      } else if ((document as any).msExitFullscreen) {
+        await (document as any).msExitFullscreen();
+      }
     }
-  } else {
-    // Exit fullscreen
-    if (document.exitFullscreen) {
-      document.exitFullscreen();
-    } else if ((document as any).webkitExitFullscreen) {
-      (document as any).webkitExitFullscreen();
-    } else if ((document as any).mozCancelFullScreen) {
-      (document as any).mozCancelFullScreen();
-    } else if ((document as any).msExitFullscreen) {
-      (document as any).msExitFullscreen();
+  } catch (error: any) {
+    // Nếu requestFullscreen thất bại, thử dùng video element trực tiếp (iOS)
+    if (!isFullscreen.value && isMobile && (videoRef.value as any).webkitEnterFullscreen) {
+      (videoRef.value as any).webkitEnterFullscreen();
     }
   }
 };
