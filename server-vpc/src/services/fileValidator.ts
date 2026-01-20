@@ -93,6 +93,18 @@ export function validateFileByMagicBytes(
     return { isValid: false, error: 'File buffer is empty' };
   }
 
+  // Special-case: Some PDFs may contain leading whitespace/BOM before "%PDF"
+  // To avoid false negatives while still being strict, search for "%PDF" within the first 1KB.
+  if (expectedMimeType === 'application/pdf') {
+    const needle = Buffer.from([0x25, 0x50, 0x44, 0x46]); // %PDF
+    const haystack = buffer.subarray(0, Math.min(buffer.length, 1024));
+    const idx = haystack.indexOf(needle);
+    if (idx !== -1) {
+      return { isValid: true, detectedType: expectedMimeType };
+    }
+    // If not found, continue with generic signature matching below to produce detailed errors
+  }
+
   // Lấy danh sách magic bytes cho MIME type mong đợi
   const expectedSignatures = MAGIC_BYTES[expectedMimeType];
   

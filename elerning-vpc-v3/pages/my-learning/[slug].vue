@@ -63,8 +63,7 @@
           <div v-if="(currentVideoUrl || currentThumbnail || hasVideo) && currentLesson" class="mb-4 md:mb-6">
             <div class="video-wrapper">
               <div
-                class="relative w-full rounded-lg overflow-hidden shadow-lg bg-gray-900"
-                :style="{ aspectRatio: '16/9' }"
+                class="video-aspect rounded-lg overflow-hidden shadow-lg bg-gray-900"
                 @mousemove="handleMouseMove"
                 @mouseenter="handleMouseEnter"
                 @mouseleave="handleMouseLeave"
@@ -1894,6 +1893,43 @@ onUnmounted(() => {
   width: 100%;
   margin-bottom: 1rem;
   position: relative;
+}
+
+/* 16:9 aspect ratio fallback (for browsers that don't support aspect-ratio) */
+.video-aspect {
+  position: relative;
+  width: 100%;
+  background: #111827; /* gray-900 */
+}
+
+/* Fallback technique: padding-top 56.25% = 9/16 */
+.video-aspect::before {
+  content: "";
+  display: block;
+  padding-top: 56.25%;
+}
+
+/* Keep all inner layers (video, overlays, controls) inside the 16:9 box */
+.video-aspect > * {
+  position: absolute;
+  inset: 0;
+}
+
+/* Prefer native aspect-ratio when supported */
+@supports (aspect-ratio: 16 / 9) {
+  .video-aspect {
+    aspect-ratio: 16 / 9;
+  }
+
+  .video-aspect::before {
+    display: none;
+    padding-top: 0;
+  }
+
+  .video-aspect > * {
+    position: absolute;
+    inset: 0;
+  }
 }
 
 @media (max-width: 640px) {

@@ -74,13 +74,13 @@
 
             <!-- Document Info -->
             <div class="flex-1 min-w-0">
-              <div class="flex items-start justify-between">
-                <div class="flex-1">
+              <div class="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3">
+                <div class="flex-1 min-w-0">
                   <h4 class="text-lg font-semibold text-gray-800 mb-1">
                     {{ document.title }}
                   </h4>
                   
-                  <div class="flex items-center gap-4 text-sm text-gray-500">
+                  <div class="flex flex-wrap items-center gap-x-4 gap-y-2 text-sm text-gray-500">
                     <span class="flex items-center gap-1">
                       <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" class="fill-none stroke-current">
                         <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
@@ -105,10 +105,10 @@
                 </div>
 
                 <!-- Action Buttons -->
-                <div class="flex-shrink-0 ml-4 flex gap-2">
+                <div class="flex-shrink-0 sm:ml-4 flex flex-col sm:flex-row gap-2 w-full sm:w-auto">
                   <a-button 
                     @click="viewDocument(document, index)"
-                    class="!flex items-center gap-2"
+                    class="!flex items-center gap-2 w-full sm:w-auto justify-center"
                   >
                     <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" class="fill-none stroke-current">
                       <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
@@ -121,7 +121,7 @@
                     type="primary"
                     @click="downloadDocument(document, index)"
                     :loading="downloading[`${document.fileName}-${index}`]"
-                    class="!flex items-center gap-2"
+                    class="!flex items-center gap-2 w-full sm:w-auto justify-center"
                   >
                     <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" class="fill-none stroke-current">
                       <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>

@@ -7,7 +7,7 @@
       <div v-if="quiz && quiz?.questions.length > 0" class="quiz-content">
         <div class="w-full mx-auto px-[18px] lg:w-[723px] lg:px-0">
           <div class="grid grid-cols-1 gap-5">
-            <div v-for="(question, index) in quiz.questions" class="w-full text-[#798894] rounded-lg border bg-white border-[#317BC4] lg:px-16 lg:py-8 p-4">
+            <div v-for="(question, index) in quiz.questions" class="w-full text-[#393939] rounded-lg border bg-white border-[#317BC4] lg:px-16 lg:py-8 p-4">
               <div class="flex text-sm font-semibold justify-between items-center mb-1">
                 <div>
                   Câu hỏi {{ index + 1 }}
@@ -22,7 +22,7 @@
                   v-for="option in question.options"
                   :key="option.id"
                   @click="() => handleChoose(question.id, option.id)"
-                  :class="['border border-[#798894] text-[#798894] font-medium rounded-md flex items-center md:gap-4 gap-3 md:px-8 py-2 px-4 cursor-pointer', {'active': answers[question.id] === option.id}]"
+                  :class="['border border-[#798894] text-[#393939] font-medium rounded-md flex items-center md:gap-4 gap-3 md:px-8 py-2 px-4 cursor-pointer', {'active': answers[question.id] === option.id}]"
                 >
                   <a-radio
                     :value="option.id"
@@ -30,7 +30,7 @@
                     @change="() => handleChoose(question.id, option.id)"
                     class="custom-radio"
                   />
-                  <span class="text-[11px] word-spacing-4 leading-4">
+                  <span class="text-xs word-spacing-4 leading-4">
                     {{ option.text }}
                   </span>
                 </div>
@@ -97,7 +97,7 @@
       <div v-if="quiz && quiz?.questions.length > 0" class="quiz-content">
         <div class="w-full mx-auto px-[18px] lg:w-[723px] lg:px-0">
           <div class="grid grid-cols-1 gap-5">
-            <div v-for="(question, index) in quiz.questions" class="w-full text-[#798894] rounded-lg border bg-white border-[#317BC4] lg:px-16 lg:py-8 p-4">
+            <div v-for="(question, index) in quiz.questions" class="w-full text-[#393939] rounded-lg border bg-white border-[#317BC4] lg:px-16 lg:py-8 p-4">
               <div class="flex text-sm font-semibold justify-between items-center mb-1">
                 <div>
                   Câu hỏi {{ index + 1 }}
@@ -130,7 +130,7 @@
                     <circle cx="10" cy="10" r="9.5" stroke="#798894"/>
                   </svg>
 
-                  <span class="text-[11px] word-spacing-4 leading-4">
+                  <span class="text-xs word-spacing-4 leading-4">
                     {{ option.text }}
                   </span>
                 </div>

@@ -699,13 +699,13 @@
               class="bg-white rounded-md px-3 sm:px-4 pt-3 pb-5 z-[2] shadow-xl mt-4 lg:-mt-[100%] lg:sticky lg:top-[90px]"
             >
               <div class="pb-3 sm:pb-4 rounded-md overflow-hidden">
-                <img
-                  class="w-full h-[150px] sm:h-[180px] md:h-[200px] object-cover"
-                  :src="
-                    course?.thumbnail || '/images/courses/python-course.jpg'
-                  "
-                  alt="/"
-                />
+                <div class="course-thumbnail-16x9">
+                  <img
+                    class="w-full h-full object-cover"
+                    :src="course?.thumbnail || '/images/courses/python-course.jpg'"
+                    alt="/"
+                  />
+                </div>
               </div>
               <!-- Pricing and Action Section -->
               <div class="mb-4">
@@ -2891,5 +2891,34 @@ div.course-description-content :deep(ul li) {
 
 .course-description-content :deep(a:hover) {
   color: #155a8f;
+}
+
+/* 16:9 thumbnail (fallback for browsers without aspect-ratio) */
+.course-thumbnail-16x9 {
+  position: relative;
+  width: 100%;
+  background: #f3f4f6; /* gray-100 placeholder */
+}
+
+.course-thumbnail-16x9::before {
+  content: "";
+  display: block;
+  padding-top: 56.25%; /* 9/16 */
+}
+
+.course-thumbnail-16x9 > img {
+  position: absolute;
+  inset: 0;
+}
+
+@supports (aspect-ratio: 16 / 9) {
+  .course-thumbnail-16x9 {
+    aspect-ratio: 16 / 9;
+  }
+
+  .course-thumbnail-16x9::before {
+    display: none;
+    padding-top: 0;
+  }
 }
 </style>

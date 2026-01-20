@@ -949,13 +949,14 @@
                               v-model:file-list="lesson.documentFileList"
                               :before-upload="() => false"
                               accept=".pdf,.doc,.docx,.xls,.xlsx,.ppt,.pptx"
-                              @remove="() => { lesson.documentFileList = []; lesson.documentUrl = ''; }"
+                              @change="(info: any) => handleLessonDocumentChange(chapterIndex, lessonIndex, info)"
+                              @remove="() => { lesson.documentFileList = []; lesson.documentUrl = ''; lesson.documents = []; }"
                             >
-                              <a-button>
+                              <a-button :loading="lesson.uploadingDocument">
                                 <UploadOutlined /> Chọn tài liệu
                               </a-button>
                             </a-upload>
-                            <div v-if="lesson.documentUrl && !lesson.documentFileList?.length" style="margin-top: 8px;">
+                            <div v-if="(lesson.documentUrl || (lesson.documents && lesson.documents.length > 0)) && !lesson.documentFileList?.length" style="margin-top: 8px;">
                               <a-tag color="green">Tài liệu đã tải lên</a-tag>
                             </div>
                           </a-form-item>
@@ -2714,6 +2715,7 @@ const addLesson = (chapterIndex: number) => {
     status: 'active',
     videos: [],
     documents: [],
+    documentUrl: '',
     videoFileList: [],
     documentFileList: [],
     videoThumbnailFileList: [],
@@ -3924,6 +3926,12 @@ const ensureLessonProperties = (lesson: any) => {
   if (!lesson.documentFileList) {
     lesson.documentFileList = []
   }
+  if (lesson.documentUrl === undefined) {
+    lesson.documentUrl = ''
+  }
+  if (lesson.uploadingDocument === undefined) {
+    lesson.uploadingDocument = false
+  }
   if (lesson.isPreview === undefined) {
     lesson.isPreview = false // Đảm bảo có giá trị mặc định
   }
@@ -4613,6 +4621,8 @@ const handleLessonDocumentChange = async (chapterIndex: number, lessonIndex: num
     try {
       // Upload document to MinIO
       const documentUrl = await uploadFileToMinIO(file, `courses/documents/${Date.now()}`)
+      // Backward-compatible field used in UI
+      lesson.documentUrl = documentUrl
       
       // Lưu vào lesson.documents
       if (!lesson.documents) {
@@ -4634,12 +4644,15 @@ const handleLessonDocumentChange = async (chapterIndex: number, lessonIndex: num
       message.error('Upload tài liệu thất bại: ' + (error.message || 'Unknown error'))
       // Xóa file khỏi fileList nếu upload thất bại
       lesson.documentFileList = []
+      lesson.documentUrl = ''
+      lesson.documents = []
     } finally {
       lesson.uploadingDocument = false
     }
   } else {
     // File removed
     lesson.documents = []
+    lesson.documentUrl = ''
   }
 }
 </script>
