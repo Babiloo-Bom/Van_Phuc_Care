@@ -949,6 +949,7 @@
                               v-model:file-list="lesson.documentFileList"
                               :before-upload="() => false"
                               accept=".pdf,.doc,.docx,.xls,.xlsx,.ppt,.pptx"
+                              :max-count="1"
                               @change="(info: any) => handleLessonDocumentChange(chapterIndex, lessonIndex, info)"
                               @remove="() => { lesson.documentFileList = []; lesson.documentUrl = ''; lesson.documents = []; }"
                             >
@@ -956,8 +957,14 @@
                                 <UploadOutlined /> Chọn tài liệu
                               </a-button>
                             </a-upload>
-                            <div v-if="(lesson.documentUrl || (lesson.documents && lesson.documents.length > 0)) && !lesson.documentFileList?.length" style="margin-top: 8px;">
+                            <div
+                              v-if="(lesson.documentUrl || (lesson.documents && lesson.documents.length > 0) || (lesson.documentFileList && lesson.documentFileList.length > 0))"
+                              style="margin-top: 8px;"
+                            >
                               <a-tag color="green">Tài liệu đã tải lên</a-tag>
+                              <div style="font-size: 12px; color: #595959; margin-top: 4px;">
+                                {{ lesson.documentFileList?.[0]?.name || lesson.documents?.[0]?.fileName || lesson.documents?.[0]?.title }}
+                              </div>
                             </div>
                           </a-form-item>
                         </a-col>
@@ -4611,6 +4618,8 @@ const pollLessonVideoJobStatus = async (chapterIndex: number, lessonIndex: numbe
 const handleLessonDocumentChange = async (chapterIndex: number, lessonIndex: number, info: any) => {
   const lesson = formData.chapters[chapterIndex].lessons[lessonIndex]
   const { fileList } = info
+  // Always keep only the latest file (max 1)
+  lesson.documentFileList = fileList && fileList.length > 0 ? [fileList[fileList.length - 1]] : []
   
   if (fileList.length > 0 && fileList[0].originFileObj) {
     const file = fileList[0].originFileObj as File

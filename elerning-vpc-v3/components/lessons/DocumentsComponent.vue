@@ -140,11 +140,15 @@
         <div v-if="expandedDoc === `${document.fileName}-${index}`" class="document-viewer border-t border-gray-200">
           <!-- PDF Viewer -->
           <div v-if="isPDF(document.fileType)" class="pdf-viewer bg-gray-50">
-            <iframe 
-              :src="`https://docs.google.com/viewer?url=${encodeURIComponent(document.fileUrl)}&embedded=true`"
+            <!-- Use native PDF embed first (works for localhost/private MinIO). Google Viewer often fails and shows "No preview". -->
+            <iframe
+              :src="getPdfEmbedUrl(document.fileUrl)"
               class="w-full h-[600px]"
               frameborder="0"
             ></iframe>
+            <div class="px-6 py-3 text-xs text-gray-500">
+              Nếu không xem được trực tiếp, vui lòng bấm <strong>Tải xuống</strong> hoặc mở bằng ứng dụng PDF trên thiết bị.
+            </div>
           </div>
 
           <!-- Google Docs Viewer for Office files -->
@@ -264,6 +268,14 @@ const viewDocument = async (doc: Document, index: number) => {
       }
     }
   }
+}
+
+const getPdfEmbedUrl = (url: string) => {
+  if (!url) return ''
+  // Keep existing hash/query if present; append basic viewer params when possible
+  // Most browsers support "#toolbar=0" to hide toolbar (optional)
+  if (url.includes('#')) return url
+  return `${url}#toolbar=0&navpanes=0&view=FitH`
 }
 
 const downloadDocument = async (doc: Document, index: number) => {
