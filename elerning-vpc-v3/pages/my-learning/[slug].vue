@@ -558,7 +558,7 @@
 
                 <!-- NavCourse Component -->
                 <div class="bg-white rounded-lg shadow-sm">
-                  <NavCourse :chapters="((course?.chapters || []) as any)" />
+              <NavCourse :chapters="(normalizedChapters as any)" />
                 </div>
               </a-tab-pane>
 
@@ -597,7 +597,7 @@
           :class="['hidden lg:block lg:w-[35%] lg:sticky lg:top-6 lg:self-start', isQuiz && !currentLesson?.isCompleted ? '!hidden' : '']"
         >
           <NavCourse 
-            :chapters="((course?.chapters || []) as any)" 
+            :chapters="(normalizedChapters as any)" 
             :force-review-mode="showCertificate"
             :course-slug="course?.slug || ''"
           />
@@ -674,6 +674,19 @@ const isFullscreen = ref(false);
 
 // Computed
 const course = computed<Course | null>(() => coursesStore.course);
+// Normalize chapters/lessons order to keep indexes stable across UI/navigation
+const normalizedChapters = computed(() => {
+  const chapters = course.value?.chapters || [];
+  return [...chapters]
+    .map((ch: any) => ({
+      ...ch,
+      lessons: [...(ch?.lessons || [])].sort(
+        (a: any, b: any) =>
+          (a?.order ?? a?.index ?? 0) - (b?.order ?? b?.index ?? 0),
+      ),
+    }))
+    .sort((a: any, b: any) => (a?.index ?? 0) - (b?.index ?? 0));
+});
 const isRepeat = computed<boolean>(() => coursesStore.isRepeatLearn);
 const slug = computed(() => route.params.slug as string);
 
@@ -706,11 +719,10 @@ const showCertificate = computed(() => {
   return certQuery && hasCertificate.value;
 });
 const currentChapter = computed<Chapter | null>(() => {
-  if (!course.value?.chapters || course.value.chapters.length === 0)
-    return null;
+  if (!normalizedChapters.value.length) return null;
   const chapter =
-    course.value.chapters[currentChapterIndex.value] ||
-    course.value.chapters[0];
+    normalizedChapters.value[currentChapterIndex.value] ||
+    normalizedChapters.value[0];
   return chapter || null;
 });
 
@@ -733,9 +745,9 @@ const isFirstLesson = computed(() => {
 
 // Kiểm tra xem có phải bài học cuối cùng không
 const isLastLesson = computed(() => {
-  if (!course.value?.chapters || course.value.chapters.length === 0) return true;
+  if (!normalizedChapters.value.length) return true;
   
-  const chapters = course.value.chapters;
+  const chapters = normalizedChapters.value;
   const lastChapterIndex = chapters.length - 1;
   const lastChapter = chapters[lastChapterIndex];
   
@@ -899,7 +911,7 @@ const goToCourseHome = () => {
 
 // Điều hướng đến bài học trước đó
 const goToPreviousLesson = () => {
-  if (isFirstLesson.value || !course.value?.chapters) return;
+  if (isFirstLesson.value || !normalizedChapters.value.length) return;
   
   let newChapterIndex = currentChapterIndex.value;
   let newLessonIndex = currentLessonIndex.value - 1;
@@ -908,7 +920,7 @@ const goToPreviousLesson = () => {
   if (newLessonIndex < 0) {
     newChapterIndex--;
     if (newChapterIndex >= 0) {
-      const prevChapter = course.value.chapters[newChapterIndex];
+      const prevChapter = normalizedChapters.value[newChapterIndex];
       newLessonIndex = (prevChapter?.lessons?.length || 1) - 1;
     } else {
       return; // Đã ở bài đầu tiên
@@ -932,9 +944,9 @@ const goToPreviousLesson = () => {
 
 // Điều hướng đến bài học tiếp theo
 const goToNextLesson = () => {
-  if (isLastLesson.value || !course.value?.chapters) return;
+  if (isLastLesson.value || !normalizedChapters.value.length) return;
   
-  const currentChapterData = course.value.chapters[currentChapterIndex.value];
+  const currentChapterData = normalizedChapters.value[currentChapterIndex.value];
   const currentChapterLessonsCount = currentChapterData?.lessons?.length || 0;
   
   let newChapterIndex = currentChapterIndex.value;
@@ -946,7 +958,7 @@ const goToNextLesson = () => {
     newLessonIndex = 0;
     
     // Kiểm tra xem chapter mới có tồn tại không
-    if (newChapterIndex >= course.value.chapters.length) {
+    if (newChapterIndex >= normalizedChapters.value.length) {
       return; // Đã ở bài cuối cùng
     }
   }
@@ -1076,9 +1088,9 @@ const canMarkLessonCompleted = (
   chapterIndex: number,
   lessonIndex: number
 ): boolean => {
-  if (!course.value?.chapters) return false;
+  if (!normalizedChapters.value.length) return false;
 
-  const chapters = course.value.chapters;
+  const chapters = normalizedChapters.value;
   const currentChapter = chapters[chapterIndex];
 
   if (!currentChapter?.lessons) return false;
@@ -1108,11 +1120,11 @@ const findValidLesson = (): {
   chapterIndex: number;
   lessonIndex: number;
 } | null => {
-  if (!course.value?.chapters || course.value.chapters.length === 0) {
+  if (!normalizedChapters.value.length) {
     return null;
   }
 
-  const chapters = course.value.chapters;
+  const chapters = normalizedChapters.value;
 
   for (let chIdx = 0; chIdx < chapters.length; chIdx++) {
     const chapter = chapters[chIdx];
@@ -1180,7 +1192,7 @@ const fetchCourseDetail = async () => {
     }
 
     // Set lại chapter và lesson index sau khi fetch
-    if (chapterParam === undefined && course.value?.chapters && course.value.chapters.length > 0) {
+    if (chapterParam === undefined && normalizedChapters.value.length > 0) {
       currentChapterIndex.value = 0;
     }
     if (lessonParam === undefined && currentChapter.value?.lessons && currentChapter.value.lessons.length > 0) {
@@ -1654,7 +1666,7 @@ watch(
       if (query.quiz === 'true') {
         // Đợi course load xong để có currentChapter
         nextTick(() => {
-          const chapter = course.value?.chapters?.[currentChapterIndex.value];
+          const chapter = normalizedChapters.value?.[currentChapterIndex.value];
           if (chapter) {
             const quizLessonIndex = findQuizLessonIndex(chapter, lessonIndex);
             if (quizLessonIndex !== lessonIndex) {
