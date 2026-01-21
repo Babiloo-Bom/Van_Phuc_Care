@@ -23,8 +23,7 @@ const options = {
 };
 
 // Increase timeout for large file uploads (video uploads can take up to 2 hours)
-// This must be set before routes
-app.timeout = 7200000; // 2 hours in milliseconds
+// Note: Timeout is set on the HTTP server instance, not on Express app
 
 app.use(express.json({ limit: '5gb' })); // Middleware để parse JSON - tăng limit cho video metadata
 app.use(express.urlencoded({ extended: true, limit: '5gb' })); // Middleware để parse form data
