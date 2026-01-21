@@ -59,8 +59,8 @@ export default class HlsConverter {
 
     try {
       // Convert MP4 to HLS using FFmpeg
-      const ffmpegCommand = `ffmpeg -i "${inputPath}" \
-        -c:v libx264 -c:a aac \
+    const ffmpegCommand = `ffmpeg -i "${inputPath}" \
+        -c:v libx264 -preset veryfast -c:a aac \
         -hls_time ${this.SEGMENT_DURATION} \
         -hls_list_size 0 \
         -hls_segment_filename "${segmentPattern}" \
@@ -122,7 +122,7 @@ export default class HlsConverter {
       console.log(`⏳ [HLS Converter] Starting conversion for ${originalFilename || 'video'} (${fileSizeMB.toFixed(2)}MB), timeout: ${timeoutMs / 1000 / 60} minutes`);
       
       const ffmpegCommand = `ffmpeg -i "${tempInputPath}" \
-        -c:v libx264 -c:a aac \
+        -c:v libx264 -preset veryfast -c:a aac \
         -hls_time ${this.SEGMENT_DURATION} \
         -hls_list_size 0 \
         -hls_segment_filename "${segmentPattern}" \

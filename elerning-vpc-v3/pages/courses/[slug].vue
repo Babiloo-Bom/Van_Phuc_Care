@@ -269,7 +269,7 @@
 
                       <!-- Main Content -->
                       <div
-                        v-if="course?.chapters && course.chapters.length > 0"
+                        v-if="normalizedChapters.length > 0"
                       >
                         <h3
                           class="text-xl sm:text-2xl font-bold text-[#1A75BB] mb-1 uppercase"
@@ -279,8 +279,8 @@
 
                         <div class="space-y-0">
                           <div
-                            v-for="(chapter, chapterIndex) in course.chapters"
-                            :key="`chapter-${chapterIndex}`"
+                            v-for="(chapter, chapterIndex) in normalizedChapters"
+                            :key="chapter._id || chapter.slug || chapter._clientId || `chapter-${chapterIndex}`"
                             class="border-b border-gray-200"
                           >
                             <!-- Chapter Header -->
@@ -347,7 +347,7 @@
                             >
                               <div
                                 v-for="(lesson, lessonIndex) in chapter.lessons"
-                                :key="`lesson-${chapterIndex}-${lessonIndex}`"
+                                :key="lesson._id || lesson.slug || lesson._clientId || `lesson-${chapterIndex}-${lessonIndex}`"
                                 class="flex items-center justify-between py-2 gap-2 cursor-pointer hover:bg-gray-50 rounded transition-colors"
                                 @click="
                                   handleLessonNavigate(
@@ -1250,6 +1250,18 @@ watch(
 const expandedChapters = ref<Record<number, boolean>>({}); // Ban đầu collapse hết
 const videoRef = ref<any>(null);
 const course = computed(() => coursesStore.course);
+const normalizedChapters = computed(() => {
+  const chapters = course.value?.chapters || [];
+  return [...chapters]
+    .map((ch: any) => ({
+      ...ch,
+      lessons: [...(ch?.lessons || [])].sort(
+        (a: any, b: any) =>
+          (a?.order ?? a?.index ?? 0) - (b?.order ?? b?.index ?? 0),
+      ),
+    }))
+    .sort((a: any, b: any) => (a?.index ?? 0) - (b?.index ?? 0));
+});
 
 // Calculate promotion days remaining
 const promotionDaysRemaining = computed(() => {

@@ -28,8 +28,8 @@
         </div>
       </template>
       <a-collapse-panel
-        v-for="(chapter, chapterIndex) in chapters"
-        :key="`chapter_${chapterIndex}`"
+        v-for="(chapter, chapterIndex) in normalizedChapters"
+        :key="chapter._id || chapter.slug || chapter._clientId || `chapter_${chapterIndex}`"
         class="nav-chapter-panel !rounded-lg shadow-lg p-4 md:p-8"
       >
         <template #header>
@@ -43,7 +43,7 @@
           </div>
         </template>
         <div class="flex flex-col">
-          <template v-for="(lesson, lessonIndex) in chapter.lessons" :key="`lesson_${chapterIndex}_${lessonIndex}`">
+          <template v-for="(lesson, lessonIndex) in chapter.lessons" :key="lesson._id || lesson.slug || lesson._clientId || `lesson_${chapterIndex}_${lessonIndex}`">
             <!-- Chỉ hiển thị lesson, không hiển thị quiz trong menu -->
             <div 
               v-if="!hasQuiz(lesson)"
@@ -146,6 +146,18 @@ const coursesStore = useCoursesStore()
 const authStore = useAuthStore()
 
 const activeKey = ref<string | string[]>('chapter_0')
+
+const normalizedChapters = computed(() => {
+  const list = props.chapters || []
+  return [...list]
+    .map((ch: any) => ({
+      ...ch,
+      lessons: [...(ch?.lessons || [])].sort(
+        (a: any, b: any) => (a?.order ?? a?.index ?? 0) - (b?.order ?? b?.index ?? 0)
+      ),
+    }))
+    .sort((a: any, b: any) => (a?.index ?? 0) - (b?.index ?? 0))
+})
 
 // Computed
 const course = computed(() => coursesStore.course)

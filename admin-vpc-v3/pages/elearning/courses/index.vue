@@ -671,7 +671,7 @@
           <!-- Tab 2: Nội dung khóa học -->
           <a-tab-pane key="chapters" tab="Nội dung khóa học">
             <div class="chapters-section">
-              <div v-for="(chapter, chapterIndex) in formData.chapters" :key="chapterIndex" class="chapter-item" style="margin-bottom: 24px; padding: 16px; border: 1px solid #d9d9d9; border-radius: 4px;">
+              <div v-for="(chapter, chapterIndex) in formData.chapters" :key="chapter._id || chapter._clientId || chapterIndex" class="chapter-item" style="margin-bottom: 24px; padding: 16px; border: 1px solid #d9d9d9; border-radius: 4px;">
                 <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px;">
                   <h4>Phần {{ chapterIndex + 1 }}: {{ chapter.title || 'Chưa có tiêu đề' }}</h4>
                   <div style="display: flex; align-items: center; gap: 8px;">
@@ -723,7 +723,7 @@
                     </a-button>
                   </div>
                   <div v-show="!isChapterLessonsCollapsed(chapterIndex)">
-                    <div v-for="(lesson, lessonIndex) in chapter.lessons" :key="lessonIndex" style="margin-top: 12px; padding: 16px; background: #f5f5f5; border-radius: 4px; border: 1px solid #d9d9d9;">
+                    <div v-for="(lesson, lessonIndex) in chapter.lessons" :key="lesson._id || lesson._clientId || lessonIndex" style="margin-top: 12px; padding: 16px; background: #f5f5f5; border-radius: 4px; border: 1px solid #d9d9d9;">
                       <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px;">
                         <div style="display: flex; align-items: center; gap: 8px; flex: 1;">
                           <strong>B{{ lessonIndex + 1 }}: {{ lesson.title || 'Chưa có tiêu đề' }}</strong>
@@ -973,7 +973,7 @@
                       <template v-if="lesson.type === 'quiz'">
                         <a-col :span="24">
                           <div style="margin-top: 16px; padding: 16px; background: #fff; border: 1px solid #e8e8e8; border-radius: 4px;">
-                            <div v-for="(question, questionIndex) in (lesson.quiz?.questions || [])" :key="questionIndex" style="margin-bottom: 16px; padding: 12px; background: #fafafa; border-radius: 4px;">
+                            <div v-for="(question, questionIndex) in (lesson.quiz?.questions || [])" :key="question.id || question._id || questionIndex" style="margin-bottom: 16px; padding: 12px; background: #fafafa; border-radius: 4px;">
                               <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
                                 <strong>Câu hỏi {{ questionIndex + 1 }}:</strong>
                                 <a-button type="text" danger size="small" @click="removeQuestion(chapterIndex, lessonIndex, questionIndex)">
@@ -2687,9 +2687,13 @@ const formatTimeRemaining = (seconds: number): string => {
   }
 }
 
+// Stable client-side ids to keep Vue rendering consistent when reordering/removing items
+const makeClientId = (prefix: string) => `${prefix}-${Date.now()}-${Math.random().toString(36).slice(2, 10)}`
+
 // Chapter & Lesson management
 const addChapter = () => {
   formData.chapters.push({
+    _clientId: makeClientId('chapter'),
     title: '',
     description: '',
     index: formData.chapters.length,
@@ -2713,6 +2717,7 @@ const addLesson = (chapterIndex: number) => {
     formData.chapters[chapterIndex].lessons = []
   }
   formData.chapters[chapterIndex].lessons.push({
+    _clientId: makeClientId('lesson'),
     title: '',
     description: '',
     content: '',
@@ -2814,14 +2819,14 @@ const addQuestion = (chapterIndex: number, lessonIndex: number) => {
     lesson.quiz.questions = []
   }
   
-  const questionId = `q-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`
+  const questionId = makeClientId('q')
   lesson.quiz.questions.push({
     id: questionId,
     question: '',
     type: 'multiple-choice', // Mặc định luôn là Trắc nghiệm
     options: [
-      { id: `opt-${Date.now()}-1-${Math.random().toString(36).substr(2, 9)}`, text: '', isCorrect: false },
-      { id: `opt-${Date.now()}-2-${Math.random().toString(36).substr(2, 9)}`, text: '', isCorrect: false },
+      { id: `opt-${questionId}-0`, text: '', isCorrect: false },
+      { id: `opt-${questionId}-1`, text: '', isCorrect: false },
     ],
     correctAnswer: '',
     points: 1,
@@ -2837,8 +2842,13 @@ const addOption = (chapterIndex: number, lessonIndex: number, questionIndex: num
   if (!question.options) {
     question.options = []
   }
+  const baseQuestionId = question.id || question._id || makeClientId('q')
+  // If question had no id before, persist it so UI stays stable
+  if (!question.id) {
+    question.id = baseQuestionId
+  }
   question.options.push({
-    id: `opt-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
+    id: `opt-${baseQuestionId}-${question.options.length}`,
     text: '',
     isCorrect: false,
   })
@@ -3033,6 +3043,7 @@ const editCourse = async (course: Course) => {
         })
         
         formData.chapters = sortedChapters.map((chapter: any) => {
+          const chapterStableId = chapter._id?.toString?.() || chapter._id || makeClientId('chapter')
           // Sắp xếp lessons theo order
           const sortedLessons = [...(chapter.lessons || [])].sort((a: any, b: any) => {
             const orderA = a.order !== undefined ? a.order : (a.index !== undefined ? a.index : 0)
@@ -3042,11 +3053,13 @@ const editCourse = async (course: Course) => {
           
           return {
             _id: chapter._id,
+            _clientId: chapter._clientId || chapterStableId,
             title: chapter.title || '',
             description: chapter.description || '',
             index: chapter.index !== undefined ? chapter.index : 0,
             status: chapter.status || 'active',
             lessons: sortedLessons.map((lesson: any) => {
+            const lessonStableId = lesson._id?.toString?.() || lesson._id || makeClientId('lesson')
             // Fix video status: if video has URL, it should be 'ready' (regardless of stored status)
             const videos = (lesson.videos || []).map((video: any) => {
               if (video && (video.videoUrl || video.hlsUrl)) {
@@ -3065,6 +3078,7 @@ const editCourse = async (course: Course) => {
             
               return {
                 _id: lesson._id,
+                _clientId: lesson._clientId || lessonStableId,
                 title: lesson.title || '',
                 description: lesson.description || '',
                 content: lesson.content || '',
@@ -3088,10 +3102,11 @@ const editCourse = async (course: Course) => {
                 quiz: lesson.quiz ? {
               title: lesson.quiz.title || '',
               description: lesson.quiz.description || '',
-              questions: Array.isArray(lesson.quiz.questions) ? lesson.quiz.questions.map((q: any) => {
+              questions: Array.isArray(lesson.quiz.questions) ? lesson.quiz.questions.map((q: any, qIdx: number) => {
+                const questionStableId = q.id || q._id?.toString?.() || q._id || `q-${lessonStableId}-${qIdx}`
                 // Map options first
                 const mappedOptions = Array.isArray(q.options) ? q.options.map((opt: any, optIdx: number) => ({
-                  id: opt.id || opt._id?.toString() || `opt-${Date.now()}-${optIdx}-${Math.random()}`,
+                  id: opt.id || opt._id?.toString?.() || opt._id || `opt-${questionStableId}-${optIdx}`,
                   text: opt.text || '',
                   isCorrect: opt.isCorrect || false,
                 })) : []
@@ -3113,7 +3128,7 @@ const editCourse = async (course: Course) => {
                 }
                 
                 return {
-                  id: q.id || q._id?.toString() || `q-${Date.now()}-${Math.random()}`,
+                  id: questionStableId,
                   question: q.question || '',
                   type: q.type || 'multiple-choice',
                   options: mappedOptions,
@@ -3706,10 +3721,11 @@ const handleModalOk = async () => {
             // Filter out incomplete questions before sending
             // A question is valid if it has both question text and a correctAnswer
             const validQuestions = (lesson.quiz.questions || [])
-              .map((q: any) => {
+              .map((q: any, qIdx: number) => {
+                const stableQuestionId = q.id || q._id?.toString?.() || q._id || `q-${lesson._id || lesson._clientId || lessonIdx}-${qIdx}`
                 // Map options first to ensure all have ids
                 const mappedOptions = (q.options || []).map((opt: any, optIdx: number) => ({
-                  id: opt.id || `opt-${Date.now()}-${optIdx}`,
+                  id: opt.id || opt._id?.toString?.() || opt._id || `opt-${stableQuestionId}-${optIdx}`,
                   text: opt.text || '',
                   isCorrect: opt.isCorrect || false,
                 }))
@@ -3742,7 +3758,7 @@ const handleModalOk = async () => {
                 }
                 
                 return {
-                  id: q.id || q._id?.toString() || `q-${Date.now()}-${Math.random()}`,
+                  id: stableQuestionId,
                   question: q.question || q.text || '', // Support both 'question' and 'text' properties
                   type: q.type || 'multiple-choice',
                   options: mappedOptions,
@@ -4282,7 +4298,9 @@ const pollIntroVideoJobStatus = async (jobId: string) => {
   
   const uploadsApi = useUploadsApi()
   let pollCount = 0
-  const maxPolls = 120 // Poll for up to 10 minutes (5 seconds * 120 = 600 seconds)
+  // Poll for up to 10 hours (5 seconds * 7200 = 36,000 seconds ~ 10h)
+  // Lý do: video dài + convert HLS có thể vượt 10 phút, tránh tự dừng quá sớm
+  const maxPolls = 7200
   
   introVideoPollInterval.value = setInterval(async () => {
     try {
@@ -4453,7 +4471,9 @@ const pollLessonVideoJobStatus = async (chapterIndex: number, lessonIndex: numbe
   }
   
   let pollCount = 0
-  const maxPolls = 120 // Poll for up to 10 minutes
+  // Poll for up to 10 hours (5 seconds * 7200 = 36,000 seconds ~ 10h)
+  // Đủ cho video dài/convert lâu, tránh dừng polling sớm làm thanh tiến trình biến mất
+  const maxPolls = 7200
   
   lessonVideoPollIntervals.value[progressKey] = setInterval(async () => {
     try {
