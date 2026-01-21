@@ -297,7 +297,7 @@ export const useApiClient = () => {
         body: formData,
         baseURL: useBaseURL ? baseURL : undefined,
         headers,
-        timeout: options.timeout || 60000, // 60s for uploads
+        timeout: options.timeout || 7200000, // Default 2 hours for large uploads
       });
 
       return {

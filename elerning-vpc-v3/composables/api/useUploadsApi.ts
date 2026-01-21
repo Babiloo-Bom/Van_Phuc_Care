@@ -89,11 +89,11 @@ export const useUploadsApi = () => {
       }
 
       const formData = new FormData();
-      formData.append('video', file);
+      formData.append('file', file); // Backend expects 'file', not 'video'
 
-      return apiClient.upload<UploadResponse>('/api/uploaders/video', formData, {
+      return apiClient.upload<UploadResponse>('/api/uploads/video', formData, {
         errorMessage: 'Không thể upload video',
-        timeout: 300000, // 5 minutes for large videos
+        timeout: 7200000, // 2 hours for large videos
       });
     },
 

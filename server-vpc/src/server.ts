@@ -22,8 +22,12 @@ const options = {
   honorCipherOrder: true,
 };
 
-app.use(express.json()); // Middleware để parse JSON
-app.use(express.urlencoded({ extended: true })); // Middleware để parse form data
+// Increase timeout for large file uploads (video uploads can take up to 2 hours)
+// This must be set before routes
+app.timeout = 7200000; // 2 hours in milliseconds
+
+app.use(express.json({ limit: '5gb' })); // Middleware để parse JSON - tăng limit cho video metadata
+app.use(express.urlencoded({ extended: true, limit: '5gb' })); // Middleware để parse form data
 
 // Cấu hình CORS tường minh
 const allowedOrigins = [
@@ -86,6 +90,11 @@ app.use((req, res) => {
 const server = app.listen(process.env.PORT || 3000, () => {
   console.log(`Server is running on port ${process.env.PORT || 3000}`);
 });
+
+// Set server timeout for long-running requests (video uploads)
+server.timeout = 7200000; // 2 hours
+server.keepAliveTimeout = 7200000; // 2 hours
+server.headersTimeout = 7200000; // 2 hours
 
 //const server: any = https.createServer(options, app);
 

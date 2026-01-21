@@ -422,11 +422,15 @@ export const useApiClient = () => {
 
       // Don't set Content-Type for FormData (browser will set it with boundary)
       const fullUrl = buildUrl(url)
+      
+      // Use the timeout from options, or default to 2 hours for video uploads
+      const uploadTimeout = options.timeout || 7200000 // Default 2 hours for large uploads
+      
       const response = await $fetch(fullUrl, {
         method: 'POST',
         body: formData,
         headers,
-        timeout: options.timeout || 60000, // 60s for uploads
+        timeout: uploadTimeout,
       })
 
       return {
