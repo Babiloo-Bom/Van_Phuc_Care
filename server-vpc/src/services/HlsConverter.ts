@@ -17,6 +17,24 @@ export default class HlsConverter {
   private static readonly TEMP_DIR = path.join(os.tmpdir(), 'hls-conversions');
   
   /**
+   * Timeout config (minutes)
+   * - HLS_CONVERT_TIMEOUT_MIN: minimum timeout (default 10)
+   * - HLS_CONVERT_TIMEOUT_MAX: maximum timeout (default 180)
+   * - HLS_CONVERT_TIMEOUT_MIN_PER_100MB: minutes per 100MB (default 2)
+   *
+   * Reason: large videos (1GB+) often need > 30 minutes depending on CPU/IO.
+   */
+  private static getTimeoutMs(fileSizeMB: number): number {
+    const minMinutes = Number(process.env.HLS_CONVERT_TIMEOUT_MIN || 10);
+    const maxMinutes = Number(process.env.HLS_CONVERT_TIMEOUT_MAX || 180);
+    const minutesPer100MB = Number(process.env.HLS_CONVERT_TIMEOUT_MIN_PER_100MB || 2);
+
+    const computedMinutes = (fileSizeMB / 100) * minutesPer100MB;
+    const finalMinutes = Math.max(minMinutes, Math.min(maxMinutes, computedMinutes));
+    return Math.round(finalMinutes * 60 * 1000);
+  }
+  
+  /**
    * Convert MP4 to HLS format
    * @param inputPath Path to MP4 file (local or URL)
    * @param outputDir Directory to save HLS files
@@ -98,10 +116,8 @@ export default class HlsConverter {
     const segmentPattern = path.join(outputDir, 'segment_%03d.ts');
 
     try {
-      // Convert MP4 to HLS using FFmpeg with timeout (30 minutes max for large videos)
-      // Calculate timeout based on file size: ~1 minute per 100MB, minimum 5 minutes, maximum 30 minutes
       const fileSizeMB = inputBuffer.length / (1024 * 1024);
-      const timeoutMs = Math.max(5 * 60 * 1000, Math.min(30 * 60 * 1000, (fileSizeMB / 100) * 60 * 1000));
+      const timeoutMs = this.getTimeoutMs(fileSizeMB);
       
       console.log(`⏳ [HLS Converter] Starting conversion for ${originalFilename || 'video'} (${fileSizeMB.toFixed(2)}MB), timeout: ${timeoutMs / 1000 / 60} minutes`);
       
@@ -204,8 +220,10 @@ export default class HlsConverter {
         }
       });
       
+      // IMPORTANT: clear timeout when conversion finishes to avoid false timeouts
+      let timeoutHandle: NodeJS.Timeout | null = null;
       const timeoutPromise = new Promise<void>((_, reject) => {
-        setTimeout(() => {
+        timeoutHandle = setTimeout(() => {
           if (ffmpegProcess) {
             console.error(`⏰ [HLS Converter] FFmpeg timeout, killing process...`);
             try {
@@ -218,7 +236,12 @@ export default class HlsConverter {
         }, timeoutMs);
       });
 
-      await Promise.race([execPromise, timeoutPromise]);
+      await Promise.race([execPromise, timeoutPromise]).finally(() => {
+        if (timeoutHandle) {
+          clearTimeout(timeoutHandle);
+          timeoutHandle = null;
+        }
+      });
 
       // Read all segment files
       const segmentPaths: string[] = [];

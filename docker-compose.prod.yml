@@ -133,6 +133,12 @@ services:
       - REDIS_PORT=${REDIS_PORT:-6379}
       - REDIS_PASSWORD=${REDIS_PASSWORD:-}
       - REDIS_DB=${REDIS_DB:-0}
+      # HLS Conversion Timeout Configuration (for video processing)
+      # Timeout tính bằng phút: minimum timeout, maximum timeout, và phút per 100MB
+      # Ví dụ: video 1GB sẽ có timeout = max(15, min(240, (1000/100) * 3)) = max(15, min(240, 30)) = 30 phút
+      - HLS_CONVERT_TIMEOUT_MIN=${HLS_CONVERT_TIMEOUT_MIN:-15}
+      - HLS_CONVERT_TIMEOUT_MAX=${HLS_CONVERT_TIMEOUT_MAX:-240}
+      - HLS_CONVERT_TIMEOUT_MIN_PER_100MB=${HLS_CONVERT_TIMEOUT_MIN_PER_100MB:-3}
       # Base url for email verification links
       - BASE_URL_ELEARNING=https://edu.vanphuccare.vn
       - BASE_URL_CRM=https://my.vanphuccare.vn

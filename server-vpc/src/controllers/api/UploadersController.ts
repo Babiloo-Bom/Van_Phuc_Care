@@ -203,32 +203,46 @@ class UploadController {
       // Status progression: uploading -> queueing -> processing -> ready
       // Use Bull queue to process video with concurrency = 2
       
-      // Save file buffer to temporary file for queue processing
-      const tempUploadDir = path.join(os.tmpdir(), 'video-uploads');
-      if (!fs.existsSync(tempUploadDir)) {
-        fs.mkdirSync(tempUploadDir, { recursive: true });
+      // NEW APPROACH: Upload source video to R2 first (avoids /tmp issues between containers)
+      // Upload to temporary folder - worker will download from R2 to convert
+      const sourceFolder = `${folder}/source`;
+      console.log(`📤 [Video Upload] Uploading source video to R2 folder: ${sourceFolder}`);
+      
+      let sourceObjectKey: string;
+      let sourceUrl: string;
+      try {
+        sourceObjectKey = await CloudflareService.uploadFile(
+          file.buffer,
+          file.originalname,
+          file.mimetype,
+          sourceFolder
+        );
+        sourceUrl = CloudflareService.getPublicUrl(sourceObjectKey);
+        console.log(`✅ [Video Upload] Source video uploaded to R2: ${sourceObjectKey}`);
+        console.log(`✅ [Video Upload] Source URL: ${sourceUrl}`);
+      } catch (uploadError: any) {
+        console.error(`❌ [Video Upload] Failed to upload source to R2:`, uploadError);
+        throw new Error(`Failed to upload source video to R2: ${uploadError.message}`);
       }
       
       const jobId = `video-${Date.now()}-${Math.random().toString(36).substring(7)}`;
-      const tempFilePath = path.join(tempUploadDir, `${jobId}-${file.originalname}`);
-      
-      // Write file buffer to temporary file
-      fs.writeFileSync(tempFilePath, file.buffer as any);
       
       // Extract lessonId from query if provided (for lesson videos)
       const lessonId = req.query.lessonId as string | undefined;
       console.log(`📋 [Video Upload] Received lessonId: ${lessonId || 'none'}`);
       
-      // Create job data
+      // Create job data with sourceObjectKey (preferred) instead of filePath
       const jobData: VideoJobData = {
         jobId,
-        filePath: tempFilePath,
+        sourceObjectKey, // R2 object key - worker will download from here
+        sourceUrl, // R2 public URL (for reference)
         fileName: `${jobId}-${file.originalname}`,
         originalName: file.originalname,
         folder,
         fileSize: file.size,
         mimetype: file.mimetype,
         lessonId: lessonId || undefined, // Add lessonId if provided
+        // Note: filePath is no longer used - worker downloads from R2
       };
       
       console.log(`📋 [Video Upload] Job data created with lessonId: ${jobData.lessonId || 'none'}`);
@@ -392,10 +406,10 @@ class UploadController {
         console.log(`🗑️ [Video Upload] Job ${jobId} already completed, cleaning up files`);
       }
 
-      // Cleanup temp files
+      // Cleanup temp files and R2 source
       const tempFiles: string[] = [];
       
-      // 1. Cleanup uploaded temp file
+      // 1. Cleanup uploaded temp file (legacy - if using filePath)
       if (jobData.filePath && fs.existsSync(jobData.filePath)) {
         tempFiles.push(jobData.filePath);
       }
@@ -419,6 +433,16 @@ class UploadController {
           }
         } catch (error: any) {
           console.warn(`⚠️ [Video Upload] Failed to delete temp file ${filePath}:`, error.message);
+        }
+      }
+      
+      // 3. Cleanup source video from R2 (if using sourceObjectKey)
+      if (jobData.sourceObjectKey) {
+        try {
+          await CloudflareService.deleteFile(jobData.sourceObjectKey);
+          console.log(`🗑️ [Video Upload] Deleted source video from R2: ${jobData.sourceObjectKey}`);
+        } catch (error: any) {
+          console.warn(`⚠️ [Video Upload] Failed to delete source from R2 ${jobData.sourceObjectKey}:`, error.message);
         }
       }
 

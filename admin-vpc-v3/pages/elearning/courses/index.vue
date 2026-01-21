@@ -518,16 +518,16 @@
                         <div style="display: flex; justify-content: space-between; align-items: center;">
                           <span>
                             <span v-if="introVideoUploadProgress.stage === 'uploading'">
-                              {{ formatFileSize(introVideoUploadProgress.uploaded) }} / {{ formatFileSize(introVideoUploadProgress.total) }}
+                              Đang upload video lên R2: {{ formatFileSize(introVideoUploadProgress.uploaded) }} / {{ formatFileSize(introVideoUploadProgress.total) }}
                             </span>
                             <span v-else-if="introVideoUploadProgress.stage === 'queueing'">
-                              Đang chờ xử lý...
+                              Đang chờ xử lý (video đã upload xong)...
                             </span>
                             <span v-else-if="introVideoUploadProgress.stage === 'processing'">
-                              Đang convert video sang HLS...
+                              Đang convert video sang HLS (có thể mất vài phút)...
                             </span>
                             <span v-else-if="introVideoUploadProgress.stage === 'uploading-r2'">
-                              Đang upload lên R2/CDN...
+                              Đang upload HLS segments lên R2/CDN...
                             </span>
                             <span v-if="introVideoUploadProgress.speed > 0 && introVideoUploadProgress.stage === 'uploading'" style="margin-left: 8px; color: #52c41a;">
                               ({{ formatFileSize(introVideoUploadProgress.speed) }}/s)
@@ -824,16 +824,16 @@
                                 <div style="display: flex; justify-content: space-between; align-items: center;">
                                   <span>
                                     <span v-if="lessonVideoUploadProgress[`chapter-${chapterIndex}-lesson-${lessonIndex}`].stage === 'uploading'">
-                                      {{ formatFileSize(lessonVideoUploadProgress[`chapter-${chapterIndex}-lesson-${lessonIndex}`].uploaded) }} / {{ formatFileSize(lessonVideoUploadProgress[`chapter-${chapterIndex}-lesson-${lessonIndex}`].total) }}
+                                      Đang upload video lên R2: {{ formatFileSize(lessonVideoUploadProgress[`chapter-${chapterIndex}-lesson-${lessonIndex}`].uploaded) }} / {{ formatFileSize(lessonVideoUploadProgress[`chapter-${chapterIndex}-lesson-${lessonIndex}`].total) }}
                                     </span>
                                     <span v-else-if="lessonVideoUploadProgress[`chapter-${chapterIndex}-lesson-${lessonIndex}`].stage === 'queueing'">
-                                      Đang chờ xử lý...
+                                      Đang chờ xử lý (video đã upload xong)...
                                     </span>
                                     <span v-else-if="lessonVideoUploadProgress[`chapter-${chapterIndex}-lesson-${lessonIndex}`].stage === 'processing'">
-                                      Đang convert video sang HLS...
+                                      Đang convert video sang HLS (có thể mất vài phút)...
                                     </span>
                                     <span v-else-if="lessonVideoUploadProgress[`chapter-${chapterIndex}-lesson-${lessonIndex}`].stage === 'uploading-r2'">
-                                      Đang upload lên R2/CDN...
+                                      Đang upload HLS segments lên R2/CDN...
                                     </span>
                                     <span v-if="lessonVideoUploadProgress[`chapter-${chapterIndex}-lesson-${lessonIndex}`].speed > 0 && lessonVideoUploadProgress[`chapter-${chapterIndex}-lesson-${lessonIndex}`].stage === 'uploading'" style="margin-left: 8px; color: #52c41a;">
                                       ({{ formatFileSize(lessonVideoUploadProgress[`chapter-${chapterIndex}-lesson-${lessonIndex}`].speed) }}/s)
@@ -1740,10 +1740,10 @@ const getStatusColor = (status: string) => {
 
 const getStatusText = (status: string) => {
   const texts: Record<string, string> = {
-    uploading: 'Đang upload',
+    uploading: 'Đang upload video lên R2',
     queueing: 'Đang chờ xử lý',
-    processing: 'Đang xử lý',
-    'uploading-r2': 'Đang upload lên R2',
+    processing: 'Đang convert video sang HLS',
+    'uploading-r2': 'Đang upload HLS lên R2/CDN',
     ready: 'Sẵn sàng',
     error: 'Lỗi',
   }

@@ -42,7 +42,9 @@ export const videoQueue = new Queue('video-processing', {
 // Job data interface
 export interface VideoJobData {
   jobId: string;
-  filePath: string; // Temporary file path
+  filePath?: string; // Temporary file path (legacy, optional for backward compatibility)
+  sourceObjectKey?: string; // R2 object key for source video (preferred - avoids /tmp issues)
+  sourceUrl?: string; // R2 public URL for source video (optional, for reference)
   fileName: string;
   originalName: string;
   folder: string;
@@ -55,7 +57,7 @@ export interface VideoJobData {
  * Process video job: Convert to HLS and upload to R2
  */
 export async function processVideoJob(job: Queue.Job<VideoJobData>) {
-  const { filePath, fileName, originalName, folder, fileSize, mimetype } = job.data;
+  const { filePath, sourceObjectKey, sourceUrl, fileName, originalName, folder, fileSize, mimetype } = job.data;
   const tempHlsDir = path.join(os.tmpdir(), 'hls-uploads', job.id.toString());
 
   try {
@@ -63,11 +65,34 @@ export async function processVideoJob(job: Queue.Job<VideoJobData>) {
     await job.progress(50);
     console.log(`🔄 [Video Queue] Processing job ${job.id}: ${originalName}`);
 
-    // Read file buffer
-    if (!fs.existsSync(filePath)) {
-      throw new Error(`File not found: ${filePath}`);
+    // Read file buffer - prefer R2 source over local filePath
+    let fileBuffer: Buffer;
+    
+    if (sourceObjectKey) {
+      // NEW: Download from R2 (preferred - avoids /tmp issues between containers)
+      console.log(`📥 [Video Queue] Downloading source video from R2: ${sourceObjectKey}`);
+      try {
+        const downloadedBuffer = await CloudflareService.getFile(sourceObjectKey);
+        if (!downloadedBuffer) {
+          throw new Error(`Failed to download source video from R2: ${sourceObjectKey}`);
+        }
+        fileBuffer = downloadedBuffer;
+        console.log(`✅ [Video Queue] Downloaded ${fileBuffer.length} bytes from R2`);
+      } catch (downloadError: any) {
+        console.error(`❌ [Video Queue] Failed to download from R2:`, downloadError.message);
+        throw new Error(`Failed to download source video from R2: ${downloadError.message}`);
+      }
+    } else if (filePath) {
+      // LEGACY: Read from local filePath (backward compatibility)
+      console.log(`📥 [Video Queue] Reading from local filePath: ${filePath}`);
+      if (!fs.existsSync(filePath)) {
+        throw new Error(`File not found: ${filePath}`);
+      }
+      fileBuffer = fs.readFileSync(filePath);
+      console.log(`✅ [Video Queue] Read ${fileBuffer.length} bytes from local file`);
+    } else {
+      throw new Error(`No source available: neither sourceObjectKey nor filePath provided`);
     }
-    const fileBuffer = fs.readFileSync(filePath);
 
     // Validate file by magic bytes to prevent malicious file extension spoofing
     const validation = FileValidator.validateVideoFile(fileBuffer, mimetype);
@@ -155,9 +180,20 @@ export async function processVideoJob(job: Queue.Job<VideoJobData>) {
         console.warn(`⚠️ [Video Queue] Thumbnail extraction error (fallback, non-fatal):`, thumbError.message);
       }
 
-      // Cleanup temp file
-      if (fs.existsSync(filePath)) {
+      // Cleanup temp file (only if using legacy filePath)
+      if (filePath && fs.existsSync(filePath)) {
         fs.unlinkSync(filePath);
+      }
+      
+      // Cleanup source from R2 after successful HLS conversion (to save storage space)
+      if (sourceObjectKey) {
+        try {
+          await CloudflareService.deleteFile(sourceObjectKey);
+          console.log(`🗑️ [Video Queue] Deleted source video from R2: ${sourceObjectKey}`);
+        } catch (deleteError: any) {
+          console.warn(`⚠️ [Video Queue] Failed to delete source from R2:`, deleteError.message);
+          // Don't throw - HLS conversion succeeded, source cleanup failure is non-critical
+        }
       }
 
       return {
@@ -196,7 +232,58 @@ export async function processVideoJob(job: Queue.Job<VideoJobData>) {
     } catch (error: any) {
       const conversionDuration = ((Date.now() - conversionStartTime) / 1000).toFixed(2);
       console.error(`❌ [Video Queue] HLS conversion failed after ${conversionDuration}s:`, error.message);
-      throw error;
+      
+      // Fallback: upload MP4 directly so lesson still has a playable video
+      // This prevents "video disappears" when FFmpeg times out or fails.
+      console.warn(`⚠️ [Video Queue] Falling back to direct MP4 upload for ${originalName}`);
+      
+      const objectName = await CloudflareService.uploadFile(
+        fileBuffer,
+        fileName,
+        mimetype,
+        folder
+      );
+      const publicUrl = CloudflareService.getPublicUrl(objectName);
+      
+      let qualityMetadata = {
+        resolution: '',
+        bitrate: '',
+        codec: '',
+        fps: 0,
+        segments: 0,
+      };
+      try {
+        const metadata = await HlsConverter.getVideoMetadataFromBuffer(fileBuffer, originalName);
+        qualityMetadata = {
+          ...metadata,
+          segments: 0,
+        };
+      } catch (metaError) {
+        // ignore
+      }
+      
+      // Cleanup temp files
+      if (fs.existsSync(tempHlsDir)) {
+        fs.rmSync(tempHlsDir, { recursive: true, force: true });
+      }
+      if (fs.existsSync(filePath)) {
+        try { fs.unlinkSync(filePath); } catch (e) {}
+      }
+      
+      return {
+        filename: originalName,
+        url: publicUrl,
+        hlsUrl: '', // no HLS in fallback
+        thumbnail: '', // thumbnail remains admin-uploaded in this project
+        objectName,
+        segments: 0,
+        size: fileSize,
+        type: mimetype,
+        uploadedAt: new Date().toISOString(),
+        status: 'ready',
+        qualityMetadata,
+        errorMessage: `HLS conversion failed, using direct video file: ${error?.message || 'unknown error'}`,
+      };
     }
     const { playlistPath, segmentPaths } = result;
 
@@ -317,8 +404,19 @@ export async function processVideoJob(job: Queue.Job<VideoJobData>) {
     if (fs.existsSync(tempHlsDir)) {
       fs.rmSync(tempHlsDir, { recursive: true, force: true });
     }
-    if (fs.existsSync(filePath)) {
+    if (filePath && fs.existsSync(filePath)) {
       fs.unlinkSync(filePath);
+    }
+    
+    // Cleanup source video from R2 after successful HLS conversion (to save storage space)
+    if (sourceObjectKey) {
+      try {
+        await CloudflareService.deleteFile(sourceObjectKey);
+        console.log(`🗑️ [Video Queue] Deleted source video from R2: ${sourceObjectKey}`);
+      } catch (deleteError: any) {
+        console.warn(`⚠️ [Video Queue] Failed to delete source from R2:`, deleteError.message);
+        // Don't throw - HLS conversion succeeded, source cleanup failure is non-critical
+      }
     }
 
     console.log(`✅ [Video Queue] Job ${job.id} completed: ${originalName}`);
@@ -379,7 +477,7 @@ export async function processVideoJob(job: Queue.Job<VideoJobData>) {
     if (fs.existsSync(tempHlsDir)) {
       fs.rmSync(tempHlsDir, { recursive: true, force: true });
     }
-    if (fs.existsSync(filePath)) {
+    if (filePath && fs.existsSync(filePath)) {
       try {
         fs.unlinkSync(filePath);
       } catch (e) {
