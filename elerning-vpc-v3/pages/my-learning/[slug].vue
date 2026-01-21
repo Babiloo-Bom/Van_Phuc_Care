@@ -997,14 +997,12 @@ const hasVideo = computed(() => {
   return false;
 });
 
-// Check if chapter has quiz (kiểm tra bất kỳ lesson nào trong chapter có quiz)
+// Check if chapter has quiz (chỉ kiểm tra lesson có type='quiz')
 const hasQuizInChapter = (chapter: any) => {
   if (!chapter?.lessons) return false;
 
-  // Tìm lesson có quiz trong chapter
-  return chapter.lessons.some((lesson: any) => {
-    return lesson?.type === "quiz" || lesson?.quizId || lesson?.quiz;
-  });
+  // Chỉ tìm lesson có type='quiz' (quiz độc lập)
+  return chapter.lessons.some((lesson: any) => lesson?.type === "quiz");
 };
 
 // Get video URL - Stream trực tiếp từ proxy (token ẩn URL gốc)
@@ -1828,40 +1826,25 @@ watch(
 );
 
 // Tìm lesson index của quiz trong chapter
-// Logic: Mỗi chapter có thể có quiz đính kèm vào lesson (qua quizId/quiz) hoặc quiz độc lập (type='quiz')
-// Ưu tiên: lesson hiện tại có quiz -> giữ nguyên, không thay đổi
+// Chỉ tìm lesson có type='quiz' (quiz độc lập)
 const findQuizLessonIndex = (
   chapter: Chapter | null,
   fromLessonIndex: number,
 ): number => {
   if (!chapter?.lessons || chapter.lessons.length === 0) return fromLessonIndex;
 
-  // Ưu tiên 1: Nếu lesson hiện tại có quiz (dù là quizId, quiz object, hoặc hasQuiz), trả về nó
+  // Nếu lesson hiện tại là quiz (type='quiz'), trả về nó
   const currentLesson = chapter.lessons[fromLessonIndex];
-  if (
-    currentLesson &&
-    (currentLesson.quiz ||
-      currentLesson.quizId ||
-      currentLesson.hasQuiz ||
-      currentLesson.type === "quiz")
-  ) {
+  if (currentLesson?.type === "quiz") {
     return fromLessonIndex;
   }
 
-  // Ưu tiên 2: Tìm lesson có type='quiz' (quiz độc lập) trong chapter
+  // Tìm lesson có type='quiz' trong chapter
   const quizIndex = chapter.lessons.findIndex(
     (lesson: any) => lesson?.type === "quiz",
   );
   if (quizIndex >= 0) {
     return quizIndex;
-  }
-
-  // Ưu tiên 3: Tìm bất kỳ lesson nào có quiz trong chapter
-  const lessonWithQuizIndex = chapter.lessons.findIndex(
-    (lesson: any) => lesson?.quiz || lesson?.quizId || lesson?.hasQuiz,
-  );
-  if (lessonWithQuizIndex >= 0) {
-    return lessonWithQuizIndex;
   }
 
   // Fallback: dùng lesson hiện tại

@@ -98,43 +98,32 @@ const isLocked = computed(() => {
   return !firstLesson?.isPreview || firstLesson?.isLocked || false
 })
 
-// Kiểm tra chapter có quiz không (tìm quiz trong bất kỳ lesson nào của chapter)
+// Kiểm tra chapter có quiz không (chỉ tìm lesson có type='quiz')
 const hasQuiz = computed(() => {
   if (!props.chapter?.lessons) return false
   
-  // Tìm lesson có quiz trong chapter
-  return props.chapter.lessons.some((lesson: any) => {
-    return lesson?.type === 'quiz' || lesson?.quizId || lesson?.quiz
-  })
+  // Chỉ tìm lesson có type='quiz'
+  return props.chapter.lessons.some((lesson: any) => lesson?.type === 'quiz')
 })
 
-// Tìm quiz trong chapter (lấy quiz từ lesson đầu tiên có quiz)
+// Tìm quiz trong chapter (chỉ lấy từ lesson có type='quiz')
 const chapterQuiz = computed(() => {
   if (!props.chapter?.lessons) return null
   
-  // Tìm lesson có quiz trong chapter
-  const lessonWithQuiz = props.chapter.lessons.find((lesson: any) => {
-    return lesson?.type === 'quiz' || lesson?.quizId || lesson?.quiz
-  })
+  // Chỉ tìm lesson có type='quiz'
+  const quizLesson = props.chapter.lessons.find((lesson: any) => lesson?.type === 'quiz')
   
-  if (!lessonWithQuiz) return null
+  if (!quizLesson) return null
   
-  // Trả về quiz từ lesson
-  if (lessonWithQuiz.type === 'quiz') {
-    // Nếu lesson là quiz type, trả về quiz object từ lesson
-    return lessonWithQuiz.quiz || null
-  }
-  
-  return lessonWithQuiz.quiz || null
+  // Trả về quiz object từ lesson
+  return quizLesson.quiz || null
 })
 
-// Tìm lesson index có quiz trong chapter
+// Tìm lesson index có quiz trong chapter (chỉ tìm type='quiz')
 const quizLessonIndex = computed(() => {
   if (!props.chapter?.lessons) return 0
   
-  const index = props.chapter.lessons.findIndex((lesson: any) => {
-    return lesson?.type === 'quiz' || lesson?.quizId || lesson?.quiz
-  })
+  const index = props.chapter.lessons.findIndex((lesson: any) => lesson?.type === 'quiz')
   
   return index >= 0 ? index : 0
 })
