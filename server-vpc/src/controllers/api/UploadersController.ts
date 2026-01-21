@@ -347,6 +347,13 @@ class UploadController {
       const progress = job.progress();
       const result = job.returnvalue;
       const failedReason = job.failedReason;
+      const toIsoOrNull = (value?: number | string | null): string | null => {
+        if (value === undefined || value === null) return null;
+        const num = typeof value === 'string' ? Number(value) : value;
+        if (!Number.isFinite(num) || num <= 0) return null;
+        const d = new Date(num);
+        return Number.isFinite(d.getTime()) ? d.toISOString() : null;
+      };
 
       let status = 'queueing';
       if (state === 'completed') {
@@ -366,9 +373,9 @@ class UploadController {
         state,
         result: result || null,
         errorMessage: failedReason || null,
-        createdAt: new Date(job.timestamp).toISOString(),
-        processedAt: job.processedOn ? new Date(job.processedOn).toISOString() : null,
-        finishedAt: job.finishedOn ? new Date(job.finishedOn).toISOString() : null,
+        createdAt: toIsoOrNull(job.timestamp as number),
+        processedAt: toIsoOrNull(job.processedOn as number | null),
+        finishedAt: toIsoOrNull(job.finishedOn as number | null),
       });
     } catch (error: any) {
       console.error('Get video job status error:', error);
