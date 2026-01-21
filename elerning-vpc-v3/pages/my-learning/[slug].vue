@@ -1,5 +1,6 @@
 <template>
-  <div class="my-learning-detail">
+  <ClientOnly>
+  <div class="my-learning-detail" v-if="isMounted">
     <!-- Header Bar (màu xanh) -->
     <div class="my-learning-detail-head">
       <div class="container mx-auto">
@@ -605,6 +606,7 @@
       </div>
     </div>
   </div>
+  </ClientOnly>
 </template>
 
 <script setup lang="ts">
