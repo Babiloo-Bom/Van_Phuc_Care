@@ -44,9 +44,9 @@
         </template>
         <div class="flex flex-col">
           <template v-for="(lesson, lessonIndex) in chapter.lessons" :key="lesson._id || lesson.slug || lesson._clientId || `lesson_${chapterIndex}_${lessonIndex}`">
-            <!-- Chỉ hiển thị lesson, không hiển thị quiz trong menu -->
+            <!-- Chỉ hiển thị lesson thường (video/document), không hiển thị quiz độc lập (type='quiz') trong menu -->
             <div 
-              v-if="!hasQuiz(lesson)"
+              v-if="!isQuizLesson(lesson)"
               class="flex items-center gap-3 py-3 lesson-item border-b border-dotted border-gray-300"
             >
               <!-- Icon section -->
@@ -150,13 +150,27 @@ const activeKey = ref<string | string[]>('chapter_0')
 const normalizedChapters = computed(() => {
   const list = props.chapters || []
   return [...list]
-    .map((ch: any) => ({
+    .map((ch: any, chapterOriginalIndex: number) => ({
       ...ch,
-      lessons: [...(ch?.lessons || [])].sort(
-        (a: any, b: any) => (a?.order ?? a?.index ?? 0) - (b?.order ?? b?.index ?? 0)
+      _originalIndex: chapterOriginalIndex,
+      lessons: [...(ch?.lessons || [])].map((lesson: any, lessonOriginalIndex: number) => ({
+        ...lesson,
+        _originalIndex: lessonOriginalIndex
+      })).sort(
+        (a: any, b: any) => {
+          // Ưu tiên order, sau đó index, cuối cùng là vị trí gốc trong array
+          const orderA = a?.order ?? a?.index ?? a?._originalIndex ?? 0
+          const orderB = b?.order ?? b?.index ?? b?._originalIndex ?? 0
+          return orderA - orderB
+        }
       ),
     }))
-    .sort((a: any, b: any) => (a?.index ?? 0) - (b?.index ?? 0))
+    .sort((a: any, b: any) => {
+      // Ưu tiên order (cho chapters), sau đó index, cuối cùng là vị trí gốc
+      const orderA = a?.order ?? a?.index ?? a?._originalIndex ?? 0
+      const orderB = b?.order ?? b?.index ?? b?._originalIndex ?? 0
+      return orderA - orderB
+    })
 })
 
 // Computed
@@ -190,8 +204,10 @@ const isLessonLocked = (chapterIndex: number, lessonIndex: number) => {
   return !lesson?.isPreview || lesson?.isLocked || false;
 }
 
-const hasQuiz = (lesson: any) => {
-  return lesson.type === 'quiz' || lesson.quizId || lesson.quiz
+// Kiểm tra xem lesson có phải là quiz độc lập hay không
+// CHỈ kiểm tra type='quiz', KHÔNG kiểm tra quizId/quiz vì bài học thường (video/document) cũng có thể có quiz đính kèm
+const isQuizLesson = (lesson: any) => {
+  return lesson.type === 'quiz'
 }
 
 const getQuizTitle = (lesson: any) => {
@@ -213,8 +229,8 @@ const getQuizTitle = (lesson: any) => {
 
 const getTotalLessons = (chapter: any) => {
   if (!chapter.lessons) return 0
-  // Chỉ đếm lesson, không đếm quiz (quiz không hiển thị trong menu nữa)
-  return chapter.lessons.filter((lesson: any) => !hasQuiz(lesson)).length
+  // Chỉ đếm lesson thường (video/document), không đếm quiz độc lập (type='quiz')
+  return chapter.lessons.filter((lesson: any) => !isQuizLesson(lesson)).length
 }
 
 const handlePanelClick = (chapter: number, event?: Event) => {

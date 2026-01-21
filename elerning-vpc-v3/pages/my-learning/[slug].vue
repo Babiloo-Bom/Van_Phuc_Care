@@ -1,435 +1,675 @@
 <template>
   <ClientOnly>
-  <div class="my-learning-detail" v-if="isMounted">
-    <!-- Header Bar (màu xanh) -->
-    <div class="my-learning-detail-head">
-      <div class="container mx-auto">
-        <div
-          class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 sm:gap-4"
-        >
-          <!-- Course Topic (bên trái) -->
-          <div class="flex-1 min-w-0 flex flex-col md:flex-row  items-center md:gap-3">
-            <div v-if="isQuiz==true" class="bg-transparent md:border flex gap-1 md:border-white rounded-lg px-3 py-1 md:py-[7px] text-[#1A75BB] text-xl font-semibold md:text-white md:text-base md:font-medium whitespace-nowrap">
-              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" class="hidden md:inline-block">
-                <path d="M12 15.5C11.7374 15.5005 11.4772 15.449 11.2346 15.3486C10.9919 15.2483 10.7715 15.1009 10.586 14.915L5.29297 9.62103L6.70697 8.20703L12 13.5L17.293 8.20703L18.707 9.62103L13.414 14.914C13.2285 15.1001 13.0081 15.2476 12.7655 15.3482C12.5228 15.4488 12.2626 15.5004 12 15.5Z" fill="white"/>
-              </svg>
-              <span>Trắc nghiệm</span>
-            </div>
-            <h2
-              :class="['truncate mb-0', {
-                'md:text-white text-sm md:text-xl md:font-semibold': isQuiz,
-                'text-left text-xl font-bold': !isQuiz,
-                'hidden md:block': course?.progress?.isCompleted === true 
-              }]"
-              :style="!isQuiz ? { color: '#1A75BB' } : {}"
-            >
-              {{ currentChapter?.title || "Chưa có chủ đề" }}
-            </h2>
-          </div>
-
-          <!-- Nút Trang chủ khóa học (bên phải) -->
-          <button
-            class="hidden md:flex items-center justify-center sm:justify-start gap-2 bg-[#F48283] border-0 rounded-lg px-3 py-2 sm:px-4 text-[#FFFFFF] hover:bg-[#e06d6e] transition-colors font-medium text-xs sm:text-sm md:text-base whitespace-nowrap flex-shrink-0"
-            @click="goToCourseHome"
+    <div class="my-learning-detail" v-if="isMounted">
+      <!-- Header Bar (màu xanh) -->
+      <div class="my-learning-detail-head">
+        <div class="container mx-auto">
+          <div
+            class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 sm:gap-4"
           >
-            <img
-              src="../../public/images/svg/store.svg"
-              alt="store-icon"
-              class="w-3 h-3 sm:w-4 sm:h-4"
-            />
-            <span class="hidden sm:inline">Trang chủ khóa học</span>
-            <span class="sm:hidden">Trang chủ</span>
-          </button>
+            <!-- Course Topic (bên trái) -->
+            <div
+              class="flex-1 min-w-0 flex flex-col md:flex-row items-center md:gap-3"
+            >
+              <div
+                v-if="isQuiz == true"
+                class="bg-transparent md:border flex gap-1 md:border-white rounded-lg px-3 py-1 md:py-[7px] text-[#1A75BB] text-xl font-semibold md:text-white md:text-base md:font-medium whitespace-nowrap"
+              >
+                <svg
+                  width="24"
+                  height="24"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  xmlns="http://www.w3.org/2000/svg"
+                  class="hidden md:inline-block"
+                >
+                  <path
+                    d="M12 15.5C11.7374 15.5005 11.4772 15.449 11.2346 15.3486C10.9919 15.2483 10.7715 15.1009 10.586 14.915L5.29297 9.62103L6.70697 8.20703L12 13.5L17.293 8.20703L18.707 9.62103L13.414 14.914C13.2285 15.1001 13.0081 15.2476 12.7655 15.3482C12.5228 15.4488 12.2626 15.5004 12 15.5Z"
+                    fill="white"
+                  />
+                </svg>
+                <span>Trắc nghiệm</span>
+              </div>
+              <h2
+                :class="[
+                  'truncate mb-0',
+                  {
+                    'md:text-white text-sm md:text-xl md:font-semibold': isQuiz,
+                    'text-left text-xl font-bold': !isQuiz,
+                    'hidden md:block': course?.progress?.isCompleted === true,
+                  },
+                ]"
+                :style="!isQuiz ? { color: '#1A75BB' } : {}"
+              >
+                {{ currentChapter?.title || "Chưa có chủ đề" }}
+              </h2>
+            </div>
+
+            <!-- Nút Trang chủ khóa học (bên phải) -->
+            <button
+              class="hidden md:flex items-center justify-center sm:justify-start gap-2 bg-[#F48283] border-0 rounded-lg px-3 py-2 sm:px-4 text-[#FFFFFF] hover:bg-[#e06d6e] transition-colors font-medium text-xs sm:text-sm md:text-base whitespace-nowrap flex-shrink-0"
+              @click="goToCourseHome"
+            >
+              <img
+                src="../../public/images/svg/store.svg"
+                alt="store-icon"
+                class="w-3 h-3 sm:w-4 sm:h-4"
+              />
+              <span class="hidden sm:inline">Trang chủ khóa học</span>
+              <span class="sm:hidden">Trang chủ</span>
+            </button>
+          </div>
         </div>
       </div>
-    </div>
 
-    <!-- Main Content Area -->
-    <div class="container mx-auto py-4 md:py-6">
-      <div class="flex flex-col lg:flex-row gap-4 lg:gap-6">
-        <div v-if="!isQuiz && !showCertificate" class="flex-1 lg:w-[65%] bg-white rounded-lg shadow-lg p-4 md:p-8">
-          <!-- Lesson Title -->
-          <h1
-            class="text-xl md:text-2xl lg:text-3xl font-bold mb-4"
-            style="color: #1A75BB;"
+      <!-- Main Content Area -->
+      <div class="container mx-auto py-4 md:py-6">
+        <div class="flex flex-col lg:flex-row gap-4 lg:gap-6">
+          <div
+            v-if="!isQuiz && !showCertificate"
+            class="flex-1 lg:w-[65%] bg-white rounded-lg shadow-lg p-4 md:p-8"
           >
-            {{ currentLesson?.title || "Chưa có bài học" }}
-          </h1>
+            <!-- Lesson Title -->
+            <h1
+              class="text-xl md:text-2xl lg:text-3xl font-bold mb-4"
+              style="color: #1a75bb"
+            >
+              {{ currentLesson?.title || "Chưa có bài học" }}
+            </h1>
 
-          <!-- Progress Bar -->
-          <div class="mb-6">
-            <ProgressBar :percentage="courseProgress" />
-          </div>
-          <!-- Video Player - Chỉ hiển thị nếu lesson có video -->
-          <div v-if="(currentVideoUrl || currentThumbnail || hasVideo) && currentLesson" class="mb-4 md:mb-6">
-            <div class="video-wrapper">
-              <div
-                class="video-aspect rounded-lg overflow-hidden shadow-lg bg-gray-900"
-                @mousemove="handleMouseMove"
-                @mouseenter="handleMouseEnter"
-                @mouseleave="handleMouseLeave"
-                @touchstart.passive="handleTouchStart"
-              >
-                <!-- Loading indicator khi đang lấy video token -->
+            <!-- Progress Bar -->
+            <div class="mb-6">
+              <ProgressBar :percentage="courseProgress" />
+            </div>
+            <!-- Video Player - Chỉ hiển thị nếu lesson có video -->
+            <div
+              v-if="
+                (currentVideoUrl || currentThumbnail || hasVideo) &&
+                currentLesson
+              "
+              class="mb-4 md:mb-6"
+            >
+              <div class="video-wrapper">
                 <div
-                  v-if="hasVideo && videoTokenLoading"
-                  class="absolute inset-0 flex items-center justify-center bg-gray-900 z-10"
+                  class="video-aspect rounded-lg overflow-hidden shadow-lg bg-gray-900 relative"
+                  @mousemove="handleMouseMove"
+                  @mouseenter="handleMouseEnter"
+                  @mouseleave="handleMouseLeave"
+                  @touchstart.passive="handleTouchStart"
                 >
-                  <div class="flex flex-col items-center gap-3">
-                    <div class="w-10 h-10 border-4 border-blue-500 border-t-transparent rounded-full animate-spin"></div>
-                    <span class="text-white text-sm">Đang xác thực video...</span>
-                  </div>
-                </div>
-
-                <!-- Video Element với chặn tải xuống và context menu -->
-                <!-- Stream qua HLS (hls.js) để stream theo chunks - chống download tốt hơn -->
-                <!-- CHỈ render khi video ready và component đã mounted để tránh hydration mismatch -->
-                <video
-                  v-if="isMounted && currentVideoUrl && !videoTokenLoading && videoReady"
-                  ref="videoRef"
-                  :poster="currentThumbnail || undefined"
-                  class="w-full h-full object-cover video-element"
-                  preload="none"
-                  playsinline
-                  controlslist="nodownload noplaybackrate"
-                  disablePictureInPicture
-                  :controls="false"
-                  @timeupdate="onTimeUpdate"
-                  @loadedmetadata="onLoadedMetadata"
-                  @ended="handleEnded"
-                  @contextmenu.prevent
-                  @dragstart.prevent
-                  @selectstart.prevent
-                  @copy.prevent
-                ></video>
-                
-                <!-- Watermark Overlay -->
-                <div
-                  v-if="isMounted && currentVideoUrl && !videoTokenLoading && videoReady"
-                  class="absolute top-4 right-4 pointer-events-none select-none"
-                  style="user-select: none; -webkit-user-select: none;"
-                >
-                  <div class="bg-black bg-opacity-50 text-white px-3 py-1 rounded text-xs font-semibold">
-                    {{ authStore.user?.email || 'Van Phuc Care' }}
-                  </div>
-                </div>
-
-                <!-- Thumbnail với nút Play (nếu có video nhưng chưa click play) -->
-                <div
-                  v-else-if="hasVideo && !videoTokenLoading"
-                  class="relative w-full h-full"
-                >
-                  <!-- Hiển thị thumbnail nếu có -->
-                  <img
-                    v-if="currentThumbnail"
-                    :src="currentThumbnail"
-                    :alt="currentLesson?.title || 'Video'"
-                    class="w-full h-full object-cover"
-                  />
-                  <!-- Background đen nếu không có thumbnail -->
-                  <div v-else class="w-full h-full bg-gray-900"></div>
-                  <!-- Play Button Overlay -->
+                  <!-- Loading indicator khi đang lấy video token -->
                   <div
-                    class="absolute inset-0 flex items-center justify-center bg-black bg-opacity-30 cursor-pointer hover:bg-opacity-40 transition-all"
-                    @click="playVideo"
+                    v-if="hasVideo && videoTokenLoading"
+                    class="absolute inset-x-0 bottom-0 flex items-center justify-center bg-gray-900 z-10"
+                  >
+                    <div class="flex flex-col items-center gap-3">
+                      <div
+                        class="w-10 h-10 border-4 border-blue-500 border-t-transparent rounded-full animate-spin"
+                      ></div>
+                      <span class="text-white text-sm"
+                        >Đang xác thực video...</span
+                      >
+                    </div>
+                  </div>
+
+                  <!-- Video Element với chặn tải xuống và context menu -->
+                  <!-- Stream qua HLS (hls.js) để stream theo chunks - chống download tốt hơn -->
+                  <!-- CHỈ render khi video ready và component đã mounted để tránh hydration mismatch -->
+                  <video
+                    v-if="
+                      isMounted &&
+                      currentVideoUrl &&
+                      !videoTokenLoading &&
+                      videoReady
+                    "
+                    ref="videoRef"
+                    :poster="currentThumbnail || undefined"
+                    class="w-full h-full object-cover video-element"
+                    preload="none"
+                    playsinline
+                    controlslist="nodownload noplaybackrate"
+                    disablePictureInPicture
+                    :controls="false"
+                    @timeupdate="onTimeUpdate"
+                    @loadedmetadata="onLoadedMetadata"
+                    @ended="handleEnded"
+                    @contextmenu.prevent
+                    @dragstart.prevent
+                    @selectstart.prevent
+                    @copy.prevent
+                  ></video>
+
+                  <!-- Watermark Overlay -->
+                  <div
+                    v-if="
+                      isMounted &&
+                      currentVideoUrl &&
+                      !videoTokenLoading &&
+                      videoReady
+                    "
+                    class="absolute top-4 right-4 pointer-events-none select-none"
+                    style="user-select: none; -webkit-user-select: none"
                   >
                     <div
-                      class="w-24 h-24 bg-white rounded-full flex items-center justify-center shadow-2xl hover:scale-110 transition-transform"
+                      class="bg-black bg-opacity-50 text-white px-3 py-1 rounded text-xs font-semibold"
                     >
+                      {{ authStore.user?.email || "Van Phuc Care" }}
+                    </div>
+                  </div>
+
+                  <!-- Thumbnail với nút Play (nếu có video nhưng chưa click play) -->
+                  <div
+                    v-else-if="hasVideo && !videoTokenLoading"
+                    class="relative w-full h-full"
+                  >
+                    <!-- Hiển thị thumbnail nếu có -->
+                    <img
+                      v-if="currentThumbnail"
+                      :src="currentThumbnail"
+                      :alt="currentLesson?.title || 'Video'"
+                      class="w-full h-full object-cover"
+                    />
+                    <!-- Background đen nếu không có thumbnail -->
+                    <div v-else class="w-full h-full bg-gray-900"></div>
+                    <!-- Play Button Overlay -->
+                    <div
+                      class="absolute inset-0 flex items-center justify-center bg-black bg-opacity-30 cursor-pointer hover:bg-opacity-40 transition-all"
+                      @click="playVideo"
+                    >
+                      <div
+                        class="w-24 h-24 bg-white rounded-full flex items-center justify-center shadow-2xl hover:scale-110 transition-transform"
+                      >
+                        <svg
+                          xmlns="http://www.w3.org/2000/svg"
+                          width="48"
+                          height="48"
+                          viewBox="0 0 24 24"
+                          class="fill-gray-800 ml-1"
+                        >
+                          <path d="M8 5v14l11-7z" />
+                        </svg>
+                      </div>
+                    </div>
+                  </div>
+
+                  <!-- Placeholder nếu không có video -->
+                  <div
+                    v-else-if="!hasVideo"
+                    class="w-full h-full bg-gray-800 flex items-center justify-center"
+                  >
+                    <div class="text-center text-white">
                       <svg
                         xmlns="http://www.w3.org/2000/svg"
-                        width="48"
-                        height="48"
+                        width="64"
+                        height="64"
                         viewBox="0 0 24 24"
-                        class="fill-gray-800 ml-1"
+                        class="fill-none stroke-white mx-auto mb-4"
+                      >
+                        <path
+                          d="M23 7l-7 5 7 5V7z"
+                          stroke-width="1.5"
+                          stroke-linecap="round"
+                          stroke-linejoin="round"
+                        />
+                        <path
+                          d="M14 5H3a2 2 0 0 0-2 2v10a2 2 0 0 0 2 2h11"
+                          stroke-width="1.5"
+                          stroke-linecap="round"
+                          stroke-linejoin="round"
+                        />
+                      </svg>
+                      <p class="text-lg font-semibold">Không có video</p>
+                    </div>
+                  </div>
+
+                  <!-- Custom Controls -->
+                  <div
+                    v-show="
+                      isMounted &&
+                      currentVideoUrl &&
+                      videoReady &&
+                      (showControls || !playerState.playing)
+                    "
+                    class="video-controls absolute inset-x-0 bottom-0 bg-black bg-opacity-60 px-4 py-3 flex items-center gap-3 transition-opacity duration-200"
+                    :class="[
+                      showControls || !playerState.playing
+                        ? 'opacity-100 pointer-events-auto'
+                        : 'opacity-0 pointer-events-none',
+                    ]"
+                    @touchstart.stop
+                    @touchend.stop
+                  >
+                    <!-- Play / Pause -->
+                    <button
+                      class="w-8 h-8 flex items-center justify-center rounded-full bg-white bg-opacity-90 hover:bg-opacity-100 transition"
+                      @click.stop="togglePlay"
+                      @touchstart.stop
+                      @touchend.stop
+                    >
+                      <svg
+                        v-if="!playerState.playing"
+                        xmlns="http://www.w3.org/2000/svg"
+                        width="18"
+                        height="18"
+                        viewBox="0 0 24 24"
+                        class="fill-gray-800 ml-0.5"
                       >
                         <path d="M8 5v14l11-7z" />
                       </svg>
+                      <svg
+                        v-else
+                        xmlns="http://www.w3.org/2000/svg"
+                        width="18"
+                        height="18"
+                        viewBox="0 0 24 24"
+                        class="fill-gray-800"
+                      >
+                        <path d="M6 5h4v14H6zM14 5h4v14h-4z" />
+                      </svg>
+                    </button>
+
+                    <!-- Rewind 15s -->
+                    <button
+                      class="w-9 h-9 flex items-center justify-center rounded-full bg-white bg-opacity-90 hover:bg-opacity-100 transition z-20"
+                      @click.stop="skipBackward"
+                      @touchstart.stop
+                      @touchend.stop
+                      title="Tua lại 15 giây"
+                    >
+                      <div class="flex items-center gap-0.5">
+                        <svg
+                          xmlns="http://www.w3.org/2000/svg"
+                          width="16"
+                          height="16"
+                          viewBox="0 0 24 24"
+                          fill="currentColor"
+                          class="text-gray-800"
+                        >
+                          <path
+                            d="M15.41 7.41L14 6l-6 6 6 6 1.41-1.41L10.83 12z"
+                          />
+                        </svg>
+                        <svg
+                          xmlns="http://www.w3.org/2000/svg"
+                          width="16"
+                          height="16"
+                          viewBox="0 0 24 24"
+                          fill="currentColor"
+                          class="text-gray-800"
+                        >
+                          <path
+                            d="M15.41 7.41L14 6l-6 6 6 6 1.41-1.41L10.83 12z"
+                          />
+                        </svg>
+                      </div>
+                      <span
+                        class="absolute -bottom-0.5 text-[8px] font-bold text-gray-800"
+                        >15</span
+                      >
+                    </button>
+
+                    <!-- Forward 15s -->
+                    <button
+                      class="w-9 h-9 flex items-center justify-center rounded-full bg-white bg-opacity-90 hover:bg-opacity-100 transition z-20"
+                      @click.stop="skipForward"
+                      @touchstart.stop
+                      @touchend.stop
+                      title="Tua tới 15 giây"
+                    >
+                      <div class="flex items-center gap-0.5">
+                        <svg
+                          xmlns="http://www.w3.org/2000/svg"
+                          width="16"
+                          height="16"
+                          viewBox="0 0 24 24"
+                          fill="currentColor"
+                          class="text-gray-800"
+                        >
+                          <path
+                            d="M10 6L8.59 7.41 13.17 12l-4.58 4.59L10 18l6-6z"
+                          />
+                        </svg>
+                        <svg
+                          xmlns="http://www.w3.org/2000/svg"
+                          width="16"
+                          height="16"
+                          viewBox="0 0 24 24"
+                          fill="currentColor"
+                          class="text-gray-800"
+                        >
+                          <path
+                            d="M10 6L8.59 7.41 13.17 12l-4.58 4.59L10 18l6-6z"
+                          />
+                        </svg>
+                      </div>
+                      <span
+                        class="absolute -bottom-0.5 text-[8px] font-bold text-gray-800"
+                        >15</span
+                      >
+                    </button>
+
+                    <!-- Progress / Seek bar -->
+                    <div class="flex-1 flex items-center gap-3">
+                      <span
+                        class="text-xs text-gray-200 whitespace-nowrap min-w-[45px] text-right"
+                      >
+                        {{ formatTime(playerState.currentTime) }}
+                      </span>
+                      <div class="flex-1 relative">
+                        <!-- Progress bar background -->
+                        <div
+                          class="w-full h-2 bg-gray-600 rounded-full overflow-hidden"
+                        >
+                          <!-- Progress fill (phần đã xem) -->
+                          <div
+                            class="h-full bg-[#15CF74] rounded-full transition-all duration-150"
+                            :style="{
+                              width:
+                                playerState.duration > 0
+                                  ? `${(playerState.currentTime / playerState.duration) * 100}%`
+                                  : '0%',
+                            }"
+                          ></div>
+                        </div>
+                        <!-- Seek input (invisible, chỉ để handle click) -->
+                        <input
+                          type="range"
+                          min="0"
+                          :max="playerState.duration || 0"
+                          step="0.1"
+                          v-model.number="playerState.currentTime"
+                          @input.stop="onSeek"
+                          @touchstart.stop
+                          @touchend.stop
+                          class="absolute inset-0 w-full h-2 opacity-0 cursor-pointer z-10"
+                          style="
+                            -webkit-appearance: none;
+                            appearance: none;
+                            touch-action: none;
+                          "
+                        />
+                      </div>
+                      <span
+                        class="text-xs text-gray-200 whitespace-nowrap min-w-[45px]"
+                      >
+                        {{ formatTime(playerState.duration) }}
+                      </span>
                     </div>
+
+                    <!-- Fullscreen -->
+                    <button
+                      class="w-8 h-8 flex items-center justify-center rounded-full bg-white bg-opacity-90 hover:bg-opacity-100 transition"
+                      @click.stop="toggleFullscreen"
+                      @touchstart.stop
+                      @touchend.stop
+                      title="Mở rộng màn hình"
+                    >
+                      <svg
+                        v-if="!isFullscreen"
+                        xmlns="http://www.w3.org/2000/svg"
+                        width="18"
+                        height="18"
+                        viewBox="0 0 24 24"
+                        class="fill-gray-800"
+                      >
+                        <path
+                          d="M7 14H5v5h5v-2H7v-3zm-2-4h2V7h3V5H5v5zm12 7h-3v2h5v-5h-2v3zM14 5v2h3v3h2V5h-5z"
+                        />
+                      </svg>
+                      <svg
+                        v-else
+                        xmlns="http://www.w3.org/2000/svg"
+                        width="18"
+                        height="18"
+                        viewBox="0 0 24 24"
+                        class="fill-gray-800"
+                      >
+                        <path
+                          d="M5 16h3v3h2v-5H5v2zm3-8H5v2h5V5H8v3zm6 11h2v-3h3v-2h-5v5zm2-11V5h-2v5h5V8h-3z"
+                        />
+                      </svg>
+                    </button>
                   </div>
                 </div>
+              </div>
+            </div>
 
-                <!-- Placeholder nếu không có video -->
+            <!-- Desktop: Content without tabs -->
+            <div class="hidden lg:block">
+              <!-- Documents Section -->
+              <div v-if="currentLesson" class="space-y-6 mb-6">
+                <!-- Documents Component (if documents exist) -->
+                <div class="mt-6">
+                  <DocumentsComponent
+                    :course-id="course?._id || ''"
+                    :chapter-id="currentChapter?._id || ''"
+                    :lesson-id="currentLesson?._id || ''"
+                  />
+                </div>
                 <div
-                  v-else-if="!hasVideo"
-                  class="w-full h-full bg-gray-800 flex items-center justify-center"
+                  class="bg-white rounded-lg border border-gray-200 p-4 md:p-6"
                 >
-                  <div class="text-center text-white">
-                    <svg
-                      xmlns="http://www.w3.org/2000/svg"
-                      width="64"
-                      height="64"
-                      viewBox="0 0 24 24"
-                      class="fill-none stroke-white mx-auto mb-4"
-                    >
-                      <path
-                        d="M23 7l-7 5 7 5V7z"
-                        stroke-width="1.5"
-                        stroke-linecap="round"
-                        stroke-linejoin="round"
-                      />
-                      <path
-                        d="M14 5H3a2 2 0 0 0-2 2v10a2 2 0 0 0 2 2h11"
-                        stroke-width="1.5"
-                        stroke-linecap="round"
-                        stroke-linejoin="round"
-                      />
-                    </svg>
-                    <p class="text-lg font-semibold">Không có video</p>
-                  </div>
+                  <!-- Document 2: Text Content -->
+                  <h3
+                    class="text-lg md:text-xl font-bold mb-4"
+                    style="color: #1a75bb"
+                  >
+                    {{ currentLesson?.title || "Chưa có bài học" }}
+                  </h3>
+                  <div
+                    class="course-description-content prose max-w-none text-gray-700 leading-relaxed text-sm md:text-base"
+                    v-html="
+                      normalizedLessonContent ||
+                      currentLesson?.content ||
+                      'Chưa có nội dung'
+                    "
+                  ></div>
                 </div>
 
-                <!-- Custom Controls -->
+                <!-- Quiz Card (Desktop) - Hiển thị ở cuối lesson nếu chapter có quiz -->
                 <div
-                  v-show="isMounted && currentVideoUrl && videoReady && (showControls || !playerState.playing)"
-                  class="video-controls absolute inset-x-0 bottom-0 bg-black bg-opacity-60 px-4 py-3 flex items-center gap-3 transition-opacity duration-200"
-                  :class="[ showControls || !playerState.playing ? 'opacity-100 pointer-events-auto' : 'opacity-0 pointer-events-none' ]"
-                  @touchstart.stop
-                  @touchend.stop
+                  v-if="currentChapter && hasQuizInChapter(currentChapter)"
+                  class="mt-6"
                 >
-                  <!-- Play / Pause -->
+                  <QuizCard
+                    :chapter="currentChapter"
+                    :chapter-index="currentChapterIndex"
+                    :course-slug="slug"
+                  />
+                </div>
+
+                <!-- Navigation Buttons: Bài trước / Bài tiếp theo (Desktop) -->
+                <div class="flex justify-center gap-4 mt-8">
                   <button
-                    class="w-8 h-8 flex items-center justify-center rounded-full bg-white bg-opacity-90 hover:bg-opacity-100 transition"
-                    @click.stop="togglePlay"
-                    @touchstart.stop
-                    @touchend.stop
+                    :disabled="isFirstLesson"
+                    :class="[
+                      'flex items-center gap-2 px-6 py-3 rounded-lg border-2 font-semibold transition-all',
+                      isFirstLesson
+                        ? 'border-gray-300 text-gray-400 cursor-not-allowed bg-gray-50'
+                        : 'border-[#1A75BB] text-[#1A75BB] hover:bg-[#1A75BB] hover:text-white cursor-pointer',
+                    ]"
+                    @click="goToPreviousLesson"
                   >
                     <svg
-                      v-if="!playerState.playing"
                       xmlns="http://www.w3.org/2000/svg"
-                      width="18"
-                      height="18"
+                      width="20"
+                      height="20"
                       viewBox="0 0 24 24"
-                      class="fill-gray-800 ml-0.5"
+                      fill="none"
+                      stroke="currentColor"
+                      stroke-width="2"
+                      stroke-linecap="round"
+                      stroke-linejoin="round"
                     >
-                      <path d="M8 5v14l11-7z" />
+                      <path d="M19 12H5M12 19l-7-7 7-7" />
                     </svg>
+                    <span>Bài trước</span>
+                  </button>
+                  <button
+                    :disabled="isLastLesson"
+                    :class="[
+                      'flex items-center gap-2 px-6 py-3 rounded-lg border-2 font-semibold transition-all',
+                      isLastLesson
+                        ? 'border-gray-300 text-gray-400 cursor-not-allowed bg-gray-50'
+                        : 'border-[#1A75BB] text-[#1A75BB] hover:bg-[#1A75BB] hover:text-white cursor-pointer',
+                    ]"
+                    @click="goToNextLesson"
+                  >
+                    <span>Bài tiếp theo</span>
                     <svg
-                      v-else
                       xmlns="http://www.w3.org/2000/svg"
-                      width="18"
-                      height="18"
+                      width="20"
+                      height="20"
                       viewBox="0 0 24 24"
-                      class="fill-gray-800"
+                      fill="none"
+                      stroke="currentColor"
+                      stroke-width="2"
+                      stroke-linecap="round"
+                      stroke-linejoin="round"
                     >
-                      <path d="M6 5h4v14H6zM14 5h4v14h-4z" />
+                      <path d="M5 12h14M12 5l7 7-7 7" />
                     </svg>
                   </button>
+                </div>
+              </div>
+            </div>
 
-                  <!-- Rewind 15s -->
-                  <button
-                    class="w-9 h-9 flex items-center justify-center rounded-full bg-white bg-opacity-90 hover:bg-opacity-100 transition z-20"
-                    @click.stop="skipBackward"
-                    @touchstart.stop
-                    @touchend.stop
-                    title="Tua lại 15 giây"
-                  >
-                    <div class="flex items-center gap-0.5">
-                      <svg
-                        xmlns="http://www.w3.org/2000/svg"
-                        width="16"
-                        height="16"
-                        viewBox="0 0 24 24"
-                        fill="currentColor"
-                        class="text-gray-800"
+            <!-- Mobile/Tablet: Tabs -->
+            <div class="lg:hidden bg-white rounded-lg shadow-sm mb-4 md:mb-6">
+              <a-tabs
+                v-model:activeKey="activeTab"
+                type="line"
+                class="course-tabs"
+                @change="handleTabChange"
+              >
+                <a-tab-pane key="content" tab="Nội dung bài học">
+                  <!-- Lesson Content -->
+                  <div class="py-4 md:py-6">
+                    <!-- Progress Section -->
+                    <div class="bg-white rounded-lg shadow-sm p-4 md:p-6 mb-4">
+                      <h3 class="text-lg font-semibold text-gray-800 mb-4">
+                        Tiến trình
+                      </h3>
+                      <div class="flex items-center gap-4">
+                        <div class="flex-1">
+                          <div
+                            class="w-full bg-gray-200 rounded-full h-2.5 overflow-hidden"
+                          >
+                            <div
+                              class="h-full bg-gradient-to-r from-[#15CF74] to-[#15CF74] rounded-full transition-all duration-500 ease-out"
+                              :style="{ width: `${courseProgress}%` }"
+                            />
+                          </div>
+                        </div>
+                        <span
+                          class="text-sm font-medium text-gray-700 whitespace-nowrap"
+                          >{{ courseProgress }}%</span
+                        >
+                      </div>
+                      <div
+                        v-if="course?.progress"
+                        class="mt-2 text-sm text-gray-600"
                       >
-                        <path d="M15.41 7.41L14 6l-6 6 6 6 1.41-1.41L10.83 12z"/>
-                      </svg>
-                      <svg
-                        xmlns="http://www.w3.org/2000/svg"
-                        width="16"
-                        height="16"
-                        viewBox="0 0 24 24"
-                        fill="currentColor"
-                        class="text-gray-800"
-                      >
-                        <path d="M15.41 7.41L14 6l-6 6 6 6 1.41-1.41L10.83 12z"/>
-                      </svg>
+                        <span>{{ course.progress.completedLessons }}</span> /
+                        <span>{{ course.progress.totalLessons }}</span> bài học
+                        đã hoàn thành
+                      </div>
                     </div>
-                    <span class="absolute -bottom-0.5 text-[8px] font-bold text-gray-800">15</span>
-                  </button>
 
-                  <!-- Forward 15s -->
-                  <button
-                    class="w-9 h-9 flex items-center justify-center rounded-full bg-white bg-opacity-90 hover:bg-opacity-100 transition z-20"
-                    @click.stop="skipForward"
-                    @touchstart.stop
-                    @touchend.stop
-                    title="Tua tới 15 giây"
-                  >
-                    <div class="flex items-center gap-0.5">
-                      <svg
-                        xmlns="http://www.w3.org/2000/svg"
-                        width="16"
-                        height="16"
-                        viewBox="0 0 24 24"
-                        fill="currentColor"
-                        class="text-gray-800"
+                    <!-- Documents Section -->
+                    <div v-if="currentLesson" class="space-y-6">
+                      <!-- Document 2: Text Content -->
+                      <div
+                        class="bg-white rounded-lg border border-gray-200 p-4 md:p-6"
                       >
-                        <path d="M10 6L8.59 7.41 13.17 12l-4.58 4.59L10 18l6-6z"/>
-                      </svg>
-                      <svg
-                        xmlns="http://www.w3.org/2000/svg"
-                        width="16"
-                        height="16"
-                        viewBox="0 0 24 24"
-                        fill="currentColor"
-                        class="text-gray-800"
-                      >
-                        <path d="M10 6L8.59 7.41 13.17 12l-4.58 4.59L10 18l6-6z"/>
-                      </svg>
-                    </div>
-                    <span class="absolute -bottom-0.5 text-[8px] font-bold text-gray-800">15</span>
-                  </button>
-
-                  <!-- Progress / Seek bar -->
-                  <div class="flex-1 flex items-center gap-3">
-                    <span class="text-xs text-gray-200 whitespace-nowrap min-w-[45px] text-right">
-                      {{ formatTime(playerState.currentTime) }}
-                    </span>
-                    <div class="flex-1 relative">
-                      <!-- Progress bar background -->
-                      <div class="w-full h-2 bg-gray-600 rounded-full overflow-hidden">
-                        <!-- Progress fill (phần đã xem) -->
-                        <div 
-                          class="h-full bg-[#15CF74] rounded-full transition-all duration-150"
-                          :style="{ width: playerState.duration > 0 ? `${(playerState.currentTime / playerState.duration) * 100}%` : '0%' }"
+                        <h3
+                          class="text-base md:text-lg font-bold mb-4"
+                          style="color: #1a75bb"
+                        >
+                          {{ currentLesson?.title || "Chưa có bài học" }}
+                        </h3>
+                        <div
+                          class="course-description-content prose max-w-none text-gray-700 leading-relaxed text-sm md:text-base"
+                          v-html="
+                            normalizedLessonContent ||
+                            currentLesson?.content ||
+                            'Chưa có nội dung'
+                          "
                         ></div>
                       </div>
-                      <!-- Seek input (invisible, chỉ để handle click) -->
-                      <input
-                        type="range"
-                        min="0"
-                        :max="playerState.duration || 0"
-                        step="0.1"
-                        v-model.number="playerState.currentTime"
-                        @input.stop="onSeek"
-                        @touchstart.stop
-                        @touchend.stop
-                        class="absolute inset-0 w-full h-2 opacity-0 cursor-pointer z-10"
-                        style="-webkit-appearance: none; appearance: none; touch-action: none;"
-                      />
+
+                      <!-- Quiz Card (Mobile) - Hiển thị ở cuối lesson nếu chapter có quiz -->
+                      <div
+                        v-if="
+                          currentChapter && hasQuizInChapter(currentChapter)
+                        "
+                        class="mt-6"
+                      >
+                        <QuizCard
+                          :chapter="currentChapter"
+                          :chapter-index="currentChapterIndex"
+                          :course-slug="slug"
+                        />
+                      </div>
+
+                      <!-- Navigation Buttons: Bài trước / Bài tiếp theo (Mobile) -->
+                      <div class="flex justify-center gap-3 mt-6">
+                        <button
+                          :disabled="isFirstLesson"
+                          :class="[
+                            'flex items-center gap-2 px-4 py-2.5 rounded-lg border-2 font-semibold text-sm transition-all',
+                            isFirstLesson
+                              ? 'border-gray-300 text-gray-400 cursor-not-allowed bg-gray-50'
+                              : 'border-[#1A75BB] text-[#1A75BB] hover:bg-[#1A75BB] hover:text-white cursor-pointer',
+                          ]"
+                          @click="goToPreviousLesson"
+                        >
+                          <svg
+                            xmlns="http://www.w3.org/2000/svg"
+                            width="18"
+                            height="18"
+                            viewBox="0 0 24 24"
+                            fill="none"
+                            stroke="currentColor"
+                            stroke-width="2"
+                            stroke-linecap="round"
+                            stroke-linejoin="round"
+                          >
+                            <path d="M19 12H5M12 19l-7-7 7-7" />
+                          </svg>
+                          <span>Bài trước</span>
+                        </button>
+                        <button
+                          :disabled="isLastLesson"
+                          :class="[
+                            'flex items-center gap-2 px-4 py-2.5 rounded-lg border-2 font-semibold text-sm transition-all',
+                            isLastLesson
+                              ? 'border-gray-300 text-gray-400 cursor-not-allowed bg-gray-50'
+                              : 'border-[#1A75BB] text-[#1A75BB] hover:bg-[#1A75BB] hover:text-white cursor-pointer',
+                          ]"
+                          @click="goToNextLesson"
+                        >
+                          <span>Bài tiếp theo</span>
+                          <svg
+                            xmlns="http://www.w3.org/2000/svg"
+                            width="18"
+                            height="18"
+                            viewBox="0 0 24 24"
+                            fill="none"
+                            stroke="currentColor"
+                            stroke-width="2"
+                            stroke-linecap="round"
+                            stroke-linejoin="round"
+                          >
+                            <path d="M5 12h14M12 5l7 7-7 7" />
+                          </svg>
+                        </button>
+                      </div>
                     </div>
-                    <span class="text-xs text-gray-200 whitespace-nowrap min-w-[45px]">
-                      {{ formatTime(playerState.duration) }}
-                    </span>
                   </div>
+                </a-tab-pane>
 
-                  <!-- Fullscreen -->
-                  <button
-                    class="w-8 h-8 flex items-center justify-center rounded-full bg-white bg-opacity-90 hover:bg-opacity-100 transition"
-                    @click.stop="toggleFullscreen"
-                    @touchstart.stop
-                    @touchend.stop
-                    title="Mở rộng màn hình"
-                  >
-                    <svg
-                      v-if="!isFullscreen"
-                      xmlns="http://www.w3.org/2000/svg"
-                      width="18"
-                      height="18"
-                      viewBox="0 0 24 24"
-                      class="fill-gray-800"
-                    >
-                      <path d="M7 14H5v5h5v-2H7v-3zm-2-4h2V7h3V5H5v5zm12 7h-3v2h5v-5h-2v3zM14 5v2h3v3h2V5h-5z"/>
-                    </svg>
-                    <svg
-                      v-else
-                      xmlns="http://www.w3.org/2000/svg"
-                      width="18"
-                      height="18"
-                      viewBox="0 0 24 24"
-                      class="fill-gray-800"
-                    >
-                      <path d="M5 16h3v3h2v-5H5v2zm3-8H5v2h5V5H8v3zm6 11h2v-3h3v-2h-5v5zm2-11V5h-2v5h5V8h-3z"/>
-                    </svg>
-                  </button>
-                </div>
-              </div>
-            </div>
-          </div>
-
-          <!-- Desktop: Content without tabs -->
-          <div class="hidden lg:block">
-            <!-- Documents Section -->
-            <div v-if="currentLesson" class="space-y-6 mb-6">
-              <!-- Documents Component (if documents exist) -->
-              <div class="mt-6">
-                <DocumentsComponent
-                  :course-id="course?._id || ''"
-                  :chapter-id="currentChapter?._id || ''"
-                  :lesson-id="currentLesson?._id || ''"
-                />
-              </div>
-              <div
-                class="bg-white rounded-lg border border-gray-200 p-4 md:p-6"
-              >
-                <!-- Document 2: Text Content -->
-                <h3 class="text-lg md:text-xl font-bold mb-4" style="color: #1A75BB;">
-                  {{ currentLesson?.title || "Chưa có bài học" }}
-                </h3>
-                <div 
-                  class="course-description-content prose max-w-none text-gray-700 leading-relaxed text-sm md:text-base"
-                  v-html="normalizedLessonContent || currentLesson?.content || 'Chưa có nội dung'"
-                ></div>
-              </div>
-
-              <!-- Quiz Card (Desktop) - Hiển thị ở cuối lesson nếu chapter có quiz -->
-              <div v-if="currentChapter && hasQuizInChapter(currentChapter)" class="mt-6">
-                <QuizCard
-                  :chapter="currentChapter"
-                  :chapter-index="currentChapterIndex"
-                  :course-slug="slug"
-                />
-              </div>
-
-              <!-- Navigation Buttons: Bài trước / Bài tiếp theo (Desktop) -->
-              <div class="flex justify-center gap-4 mt-8">
-                <button
-                  :disabled="isFirstLesson"
-                  :class="[
-                    'flex items-center gap-2 px-6 py-3 rounded-lg border-2 font-semibold transition-all',
-                    isFirstLesson 
-                      ? 'border-gray-300 text-gray-400 cursor-not-allowed bg-gray-50' 
-                      : 'border-[#1A75BB] text-[#1A75BB] hover:bg-[#1A75BB] hover:text-white cursor-pointer'
-                  ]"
-                  @click="goToPreviousLesson"
-                >
-                  <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                    <path d="M19 12H5M12 19l-7-7 7-7"/>
-                  </svg>
-                  <span>Bài trước</span>
-                </button>
-                <button
-                  :disabled="isLastLesson"
-                  :class="[
-                    'flex items-center gap-2 px-6 py-3 rounded-lg border-2 font-semibold transition-all',
-                    isLastLesson 
-                      ? 'border-gray-300 text-gray-400 cursor-not-allowed bg-gray-50' 
-                      : 'border-[#1A75BB] text-[#1A75BB] hover:bg-[#1A75BB] hover:text-white cursor-pointer'
-                  ]"
-                  @click="goToNextLesson"
-                >
-                  <span>Bài tiếp theo</span>
-                  <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                    <path d="M5 12h14M12 5l7 7-7 7"/>
-                  </svg>
-                </button>
-              </div>
-            </div>
-          </div>
-
-          <!-- Mobile/Tablet: Tabs -->
-          <div class="lg:hidden bg-white rounded-lg shadow-sm mb-4 md:mb-6">
-            <a-tabs
-              v-model:activeKey="activeTab"
-              type="line"
-              class="course-tabs"
-              @change="handleTabChange"
-            >
-              <a-tab-pane key="content" tab="Nội dung bài học">
-                <!-- Lesson Content -->
-                <div class="py-4 md:py-6">
+                <a-tab-pane key="modules" tab="Học phần">
                   <!-- Progress Section -->
                   <div class="bg-white rounded-lg shadow-sm p-4 md:p-6 mb-4">
                     <h3 class="text-lg font-semibold text-gray-800 mb-4">
@@ -461,151 +701,61 @@
                     </div>
                   </div>
 
-                  <!-- Documents Section -->
-                  <div v-if="currentLesson" class="space-y-6">
-                    <!-- Document 2: Text Content -->
-                    <div
-                      class="bg-white rounded-lg border border-gray-200 p-4 md:p-6"
-                    >
-                      <h3
-                        class="text-base md:text-lg font-bold mb-4"
-                        style="color: #1A75BB;"
-                      >
-                        {{ currentLesson?.title || "Chưa có bài học" }}
-                      </h3>
-                      <div 
-                        class="course-description-content prose max-w-none text-gray-700 leading-relaxed text-sm md:text-base"
-                        v-html="normalizedLessonContent || currentLesson?.content || 'Chưa có nội dung'"
-                      ></div>
-                    </div>
-
-                    <!-- Quiz Card (Mobile) - Hiển thị ở cuối lesson nếu chapter có quiz -->
-                    <div v-if="currentChapter && hasQuizInChapter(currentChapter)" class="mt-6">
-                      <QuizCard
-                        :chapter="currentChapter"
-                        :chapter-index="currentChapterIndex"
-                        :course-slug="slug"
-                      />
-                    </div>
-
-                    <!-- Navigation Buttons: Bài trước / Bài tiếp theo (Mobile) -->
-                    <div class="flex justify-center gap-3 mt-6">
-                      <button
-                        :disabled="isFirstLesson"
-                        :class="[
-                          'flex items-center gap-2 px-4 py-2.5 rounded-lg border-2 font-semibold text-sm transition-all',
-                          isFirstLesson 
-                            ? 'border-gray-300 text-gray-400 cursor-not-allowed bg-gray-50' 
-                            : 'border-[#1A75BB] text-[#1A75BB] hover:bg-[#1A75BB] hover:text-white cursor-pointer'
-                        ]"
-                        @click="goToPreviousLesson"
-                      >
-                        <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                          <path d="M19 12H5M12 19l-7-7 7-7"/>
-                        </svg>
-                        <span>Bài trước</span>
-                      </button>
-                      <button
-                        :disabled="isLastLesson"
-                        :class="[
-                          'flex items-center gap-2 px-4 py-2.5 rounded-lg border-2 font-semibold text-sm transition-all',
-                          isLastLesson 
-                            ? 'border-gray-300 text-gray-400 cursor-not-allowed bg-gray-50' 
-                            : 'border-[#1A75BB] text-[#1A75BB] hover:bg-[#1A75BB] hover:text-white cursor-pointer'
-                        ]"
-                        @click="goToNextLesson"
-                      >
-                        <span>Bài tiếp theo</span>
-                        <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                          <path d="M5 12h14M12 5l7 7-7 7"/>
-                        </svg>
-                      </button>
-                    </div>
+                  <!-- NavCourse Component -->
+                  <div class="bg-white rounded-lg shadow-sm">
+                    <NavCourse :chapters="normalizedChapters as any" />
                   </div>
-                </div>
-              </a-tab-pane>
+                </a-tab-pane>
 
-              <a-tab-pane key="modules" tab="Học phần">
-                <!-- Progress Section -->
-                <div class="bg-white rounded-lg shadow-sm p-4 md:p-6 mb-4">
-                  <h3 class="text-lg font-semibold text-gray-800 mb-4">
-                    Tiến trình
-                  </h3>
-                  <div class="flex items-center gap-4">
-                    <div class="flex-1">
-                      <div
-                        class="w-full bg-gray-200 rounded-full h-2.5 overflow-hidden"
-                      >
-                        <div
-                          class="h-full bg-gradient-to-r from-[#15CF74] to-[#15CF74] rounded-full transition-all duration-500 ease-out"
-                          :style="{ width: `${courseProgress}%` }"
-                        />
-                      </div>
-                    </div>
-                    <span
-                      class="text-sm font-medium text-gray-700 whitespace-nowrap"
-                      >{{ courseProgress }}%</span
-                    >
+                <a-tab-pane key="documents" tab="Tài liệu">
+                  <div class="p-4 md:p-6">
+                    <DocumentsComponent
+                      :course-id="course?._id || ''"
+                      :chapter-id="currentChapter?._id || ''"
+                      :lesson-id="currentLesson?._id || ''"
+                    />
                   </div>
-                  <div
-                    v-if="course?.progress"
-                    class="mt-2 text-sm text-gray-600"
-                  >
-                    <span>{{ course.progress.completedLessons }}</span> /
-                    <span>{{ course.progress.totalLessons }}</span> bài học đã
-                    hoàn thành
-                  </div>
-                </div>
-
-                <!-- NavCourse Component -->
-                <div class="bg-white rounded-lg shadow-sm">
-              <NavCourse :chapters="(normalizedChapters as any)" />
-                </div>
-              </a-tab-pane>
-
-              <a-tab-pane key="documents" tab="Tài liệu">
-                <div class="p-4 md:p-6">
-                  <DocumentsComponent
-                    :course-id="course?._id || ''"
-                    :chapter-id="currentChapter?._id || ''"
-                    :lesson-id="currentLesson?._id || ''"
-                  />
-                </div>
-              </a-tab-pane>
-            </a-tabs>
+                </a-tab-pane>
+              </a-tabs>
+            </div>
           </div>
-        </div>
-        <div v-if="isQuiz && (!course?.progress?.isCompleted || isReviewMode)" class="flex-1">
-          <QuizzesComponent
-            v-if="currentLesson?._id"
-            :course-id="course?._id || ''"
-            :chapter-id="currentChapter?._id || ''"
-            :lesson-id="currentLesson?._id || ''"
-            :quiz-complete="currentLesson?.isCompleted || false"
-            :is-review-mode="isReviewMode"
-            @completed="(quizResult) => handleFinishQuiz(quizResult)"
-          />
-        </div>
-        <div v-if="showCertificate" class="flex-1">
-          <CourseCertificateComponent
-            :course="course"
-            @is-repeating="handleRepeat"
-          />
-        </div>
+          <div
+            v-if="isQuiz && (!course?.progress?.isCompleted || isReviewMode)"
+            class="flex-1"
+          >
+            <QuizzesComponent
+              v-if="currentLesson?._id"
+              :course-id="course?._id || ''"
+              :chapter-id="currentChapter?._id || ''"
+              :lesson-id="currentLesson?._id || ''"
+              :quiz-complete="currentLesson?.isCompleted || false"
+              :is-review-mode="isReviewMode"
+              @completed="(quizResult) => handleFinishQuiz(quizResult)"
+            />
+          </div>
+          <div v-if="showCertificate" class="flex-1">
+            <CourseCertificateComponent
+              :course="course"
+              @is-repeating="handleRepeat"
+            />
+          </div>
 
-        <!-- Right: Sidebar Navigation (Desktop only) -->
-        <div
-          :class="['hidden lg:block lg:w-[35%] lg:sticky lg:top-6 lg:self-start', isQuiz && !currentLesson?.isCompleted ? '!hidden' : '']"
-        >
-          <NavCourse 
-            :chapters="(normalizedChapters as any)" 
-            :force-review-mode="showCertificate"
-            :course-slug="course?.slug || ''"
-          />
+          <!-- Right: Sidebar Navigation (Desktop only) -->
+          <div
+            :class="[
+              'hidden lg:block lg:w-[35%] lg:sticky lg:top-6 lg:self-start',
+              isQuiz && !currentLesson?.isCompleted ? '!hidden' : '',
+            ]"
+          >
+            <NavCourse
+              :chapters="normalizedChapters as any"
+              :force-review-mode="showCertificate"
+              :course-slug="course?.slug || ''"
+            />
+          </div>
         </div>
       </div>
     </div>
-  </div>
   </ClientOnly>
 </template>
 
@@ -624,7 +774,7 @@ import type { Course, Chapter, Lesson } from "~/stores/courses";
 import { useProgressTracking } from "~/composables/useProgressTracking";
 import { useApiBase } from "~/composables/useApiBase";
 // @ts-ignore - hls.js types
-import Hls from 'hls.js';
+import Hls from "hls.js";
 
 definePageMeta({
   middleware: "auth",
@@ -680,14 +830,27 @@ const course = computed<Course | null>(() => coursesStore.course);
 const normalizedChapters = computed(() => {
   const chapters = course.value?.chapters || [];
   return [...chapters]
-    .map((ch: any) => ({
+    .map((ch: any, chapterOriginalIndex: number) => ({
       ...ch,
-      lessons: [...(ch?.lessons || [])].sort(
-        (a: any, b: any) =>
-          (a?.order ?? a?.index ?? 0) - (b?.order ?? b?.index ?? 0),
-      ),
+      _originalIndex: chapterOriginalIndex,
+      lessons: [...(ch?.lessons || [])]
+        .map((lesson: any, lessonOriginalIndex: number) => ({
+          ...lesson,
+          _originalIndex: lessonOriginalIndex,
+        }))
+        .sort((a: any, b: any) => {
+          // Ưu tiên order, sau đó index, cuối cùng là vị trí gốc trong array
+          const orderA = a?.order ?? a?.index ?? a?._originalIndex ?? 0;
+          const orderB = b?.order ?? b?.index ?? b?._originalIndex ?? 0;
+          return orderA - orderB;
+        }),
     }))
-    .sort((a: any, b: any) => (a?.index ?? 0) - (b?.index ?? 0));
+    .sort((a: any, b: any) => {
+      // Ưu tiên order (cho chapters), sau đó index, cuối cùng là vị trí gốc
+      const orderA = a?.order ?? a?.index ?? a?._originalIndex ?? 0;
+      const orderB = b?.order ?? b?.index ?? b?._originalIndex ?? 0;
+      return orderA - orderB;
+    });
 });
 const isRepeat = computed<boolean>(() => coursesStore.isRepeatLearn);
 const slug = computed(() => route.params.slug as string);
@@ -704,7 +867,7 @@ const hasCertificate = computed(() => {
 const isPurchasedOrCompleted = computed(() => {
   if (!course.value) return false;
   const courseId = course.value._id?.toString();
-  
+
   return (
     course.value.isPurchased === true ||
     course.value.progress?.isCompleted === true ||
@@ -748,38 +911,41 @@ const isFirstLesson = computed(() => {
 // Kiểm tra xem có phải bài học cuối cùng không
 const isLastLesson = computed(() => {
   if (!normalizedChapters.value.length) return true;
-  
+
   const chapters = normalizedChapters.value;
   const lastChapterIndex = chapters.length - 1;
   const lastChapter = chapters[lastChapterIndex];
-  
+
   if (!lastChapter?.lessons || lastChapter.lessons.length === 0) return true;
-  
+
   const lastLessonIndex = lastChapter.lessons.length - 1;
-  
-  return currentChapterIndex.value === lastChapterIndex && currentLessonIndex.value === lastLessonIndex;
+
+  return (
+    currentChapterIndex.value === lastChapterIndex &&
+    currentLessonIndex.value === lastLessonIndex
+  );
 });
 
 // Normalize lesson content HTML to ensure ul displays as bullets
 // Convert <ol> without type/start attributes to <ul> (likely bullet lists created incorrectly)
 const normalizedLessonContent = computed(() => {
-  if (!currentLesson.value?.content) return '';
-  
+  if (!currentLesson.value?.content) return "";
+
   let html = currentLesson.value.content;
-  
+
   // If running on client side, use DOM parser for more accurate conversion
-  if (process.client && typeof DOMParser !== 'undefined') {
+  if (process.client && typeof DOMParser !== "undefined") {
     try {
       const parser = new DOMParser();
-      const doc = parser.parseFromString(html, 'text/html');
-      
+      const doc = parser.parseFromString(html, "text/html");
+
       // Find all <ol> elements without type or start attributes
-      const olElements = doc.querySelectorAll('ol:not([type]):not([start])');
+      const olElements = doc.querySelectorAll("ol:not([type]):not([start])");
       olElements.forEach((ol) => {
-        const ul = doc.createElement('ul');
+        const ul = doc.createElement("ul");
         // Copy all attributes except type and start
         Array.from(ol.attributes).forEach((attr) => {
-          if (attr.name !== 'type' && attr.name !== 'start') {
+          if (attr.name !== "type" && attr.name !== "start") {
             ul.setAttribute(attr.name, attr.value);
           }
         });
@@ -790,23 +956,22 @@ const normalizedLessonContent = computed(() => {
         // Replace ol with ul
         ol.parentNode?.replaceChild(ul, ol);
       });
-      
+
       html = doc.body.innerHTML;
     } catch (e) {
       // Fallback to regex if DOM parsing fails
-      html = html.replace(/<ol(?![^>]*\s(type|start)=[^>]*)>/gi, '<ul>');
-      html = html.replace(/<\/ol>/gi, '</ul>');
+      html = html.replace(/<ol(?![^>]*\s(type|start)=[^>]*)>/gi, "<ul>");
+      html = html.replace(/<\/ol>/gi, "</ul>");
     }
   } else {
     // Server-side or fallback: use regex
     // Convert <ol> without type/start to <ul> - these are likely bullet lists created incorrectly
-    html = html.replace(/<ol(?![^>]*\s(type|start)=[^>]*)>/gi, '<ul>');
-    html = html.replace(/<\/ol>/gi, '</ul>');
+    html = html.replace(/<ol(?![^>]*\s(type|start)=[^>]*)>/gi, "<ul>");
+    html = html.replace(/<\/ol>/gi, "</ul>");
   }
-  
+
   return html;
 });
-
 
 // Check if lesson has video (any video - R2 or external)
 // Backend trả về videoUrl: null và needsProxy: true để ẩn URL gốc
@@ -825,21 +990,21 @@ const hasVideo = computed(() => {
     // Có video object trong array = có video (videoUrl có thể null nhưng vẫn có video)
     return true;
   }
-  
+
   // Legacy: check videoUrl (có thể là external URL chưa được migrate)
   if (currentLesson.value.videoUrl) return true;
-  
+
   return false;
 });
 
 // Check if chapter has quiz (kiểm tra bất kỳ lesson nào trong chapter có quiz)
 const hasQuizInChapter = (chapter: any) => {
-  if (!chapter?.lessons) return false
-  
+  if (!chapter?.lessons) return false;
+
   // Tìm lesson có quiz trong chapter
   return chapter.lessons.some((lesson: any) => {
-    return lesson?.type === 'quiz' || lesson?.quizId || lesson?.quiz
-  })
+    return lesson?.type === "quiz" || lesson?.quizId || lesson?.quiz;
+  });
 };
 
 // Get video URL - Stream trực tiếp từ proxy (token ẩn URL gốc)
@@ -880,7 +1045,10 @@ const currentThumbnail = computed(() => {
   }
 
   // Chỉ trả về course thumbnail nếu lesson có video
-  if (currentLesson.value.videoUrl || (currentLesson.value.videos && currentLesson.value.videos.length > 0)) {
+  if (
+    currentLesson.value.videoUrl ||
+    (currentLesson.value.videos && currentLesson.value.videos.length > 0)
+  ) {
     return course.value?.thumbnail || null;
   }
 
@@ -914,10 +1082,10 @@ const goToCourseHome = () => {
 // Điều hướng đến bài học trước đó
 const goToPreviousLesson = () => {
   if (isFirstLesson.value || !normalizedChapters.value.length) return;
-  
+
   let newChapterIndex = currentChapterIndex.value;
   let newLessonIndex = currentLessonIndex.value - 1;
-  
+
   // Nếu đang ở bài đầu của chapter, chuyển về bài cuối của chapter trước
   if (newLessonIndex < 0) {
     newChapterIndex--;
@@ -928,16 +1096,16 @@ const goToPreviousLesson = () => {
       return; // Đã ở bài đầu tiên
     }
   }
-  
+
   // Giữ lại query review nếu đang ở chế độ review
   const query: Record<string, string> = {
     chapter: String(newChapterIndex),
     lesson: String(newLessonIndex),
   };
   if (isReviewMode.value) {
-    query.review = 'true';
+    query.review = "true";
   }
-  
+
   navigateTo({
     path: `/my-learning/${slug.value}`,
     query,
@@ -947,33 +1115,34 @@ const goToPreviousLesson = () => {
 // Điều hướng đến bài học tiếp theo
 const goToNextLesson = () => {
   if (isLastLesson.value || !normalizedChapters.value.length) return;
-  
-  const currentChapterData = normalizedChapters.value[currentChapterIndex.value];
+
+  const currentChapterData =
+    normalizedChapters.value[currentChapterIndex.value];
   const currentChapterLessonsCount = currentChapterData?.lessons?.length || 0;
-  
+
   let newChapterIndex = currentChapterIndex.value;
   let newLessonIndex = currentLessonIndex.value + 1;
-  
+
   // Nếu đang ở bài cuối của chapter, chuyển sang bài đầu của chapter tiếp theo
   if (newLessonIndex >= currentChapterLessonsCount) {
     newChapterIndex++;
     newLessonIndex = 0;
-    
+
     // Kiểm tra xem chapter mới có tồn tại không
     if (newChapterIndex >= normalizedChapters.value.length) {
       return; // Đã ở bài cuối cùng
     }
   }
-  
+
   // Giữ lại query review nếu đang ở chế độ review
   const query: Record<string, string> = {
     chapter: String(newChapterIndex),
     lesson: String(newLessonIndex),
   };
   if (isReviewMode.value) {
-    query.review = 'true';
+    query.review = "true";
   }
-  
+
   navigateTo({
     path: `/my-learning/${slug.value}`,
     query,
@@ -996,7 +1165,8 @@ const loadVideoWithHls = async () => {
 
   // Check if video is HLS format
   const firstVideo = currentLesson.value?.videos?.[0];
-  const isHls = firstVideo?.isHls || currentVideoUrl.value.endsWith('.m3u8') || false;
+  const isHls =
+    firstVideo?.isHls || currentVideoUrl.value.endsWith(".m3u8") || false;
 
   if (isHls) {
     // HLS: Use hls.js to load HLS manifest (.m3u8)
@@ -1018,7 +1188,7 @@ const loadVideoWithHls = async () => {
 
       hlsInstance.on(Hls.Events.MANIFEST_PARSED, () => {
         // Video ready to play
-  if (videoRef.value) {
+        if (videoRef.value) {
           videoRef.value.play().catch(() => {});
           playerState.value.playing = true;
         }
@@ -1040,7 +1210,7 @@ const loadVideoWithHls = async () => {
           }
         }
       });
-    } else if (videoRef.value.canPlayType('application/vnd.apple.mpegurl')) {
+    } else if (videoRef.value.canPlayType("application/vnd.apple.mpegurl")) {
       // Safari native HLS support
       videoRef.value.src = currentVideoUrl.value;
       videoRef.value.play().catch(() => {});
@@ -1059,24 +1229,24 @@ const playVideo = async () => {
   // Set flag để cho phép lấy token
   userClickedPlay.value = true;
   videoReady.value = false; // Reset video ready state
-  
+
   // Lấy token ngay khi user click play
   await getVideoToken();
   startTokenRefresh();
-  
+
   // Đợi token được set
   await nextTick();
-  
+
   // Delay một chút trước khi set video src để tránh Cốc Cốc bắt được
   // Cốc Cốc thường scan Network tab ngay khi page load, delay này giúp tránh bị bắt
-  await new Promise(resolve => setTimeout(resolve, 500)); // 500ms delay
-  
+  await new Promise((resolve) => setTimeout(resolve, 500)); // 500ms delay
+
   // Sau delay, set video ready để video URL được tạo và video element được render
   videoReady.value = true;
-  
+
   // Đợi video element được render
   await nextTick();
-  
+
   // Load video qua HLS (stream theo chunks - chống download tốt hơn)
   await loadVideoWithHls();
 };
@@ -1088,7 +1258,7 @@ const handleTabChange = (key: string) => {
 // Cho phép nhảy cóc: chỉ chặn mark completed cho quiz hoặc bài đã hoàn thành
 const canMarkLessonCompleted = (
   chapterIndex: number,
-  lessonIndex: number
+  lessonIndex: number,
 ): boolean => {
   if (!normalizedChapters.value.length) return false;
 
@@ -1103,7 +1273,8 @@ const canMarkLessonCompleted = (
   if (!currentLesson) return false;
 
   // Không tự động mark cho quiz
-  const hasQuiz = currentLesson.hasQuiz || !!currentLesson.quizId || !!currentLesson.quiz;
+  const hasQuiz =
+    currentLesson.hasQuiz || !!currentLesson.quizId || !!currentLesson.quiz;
   if (hasQuiz) return false;
 
   // Không mark lại bài đã hoàn thành
@@ -1116,7 +1287,7 @@ const handleRepeat = async () => {
   // Chế độ Review: chỉ điều hướng về bài học đầu tiên với query review=true
   // Không reset progress, không reset chứng chỉ
   await navigateTo(`/my-learning/${slug.value}?chapter=0&lesson=0&review=true`);
-}
+};
 // Tìm bài học đầu tiên chưa hoàn thành (không cần check khóa hay bài trước)
 const findValidLesson = (): {
   chapterIndex: number;
@@ -1155,7 +1326,7 @@ const findValidLesson = (): {
 const fetchCourseDetail = async () => {
   try {
     loading.value = true;
-    
+
     const chapterParam = route.query.chapter;
     const lessonParam = route.query.lesson;
 
@@ -1170,37 +1341,54 @@ const fetchCourseDetail = async () => {
     // Nếu user đã mua, dùng API my-courses để lấy thông tin đầy đủ với progress
     try {
       await coursesStore.fetchDetail(slug.value);
-      
+
       // Sau khi fetch, kiểm tra lại isPurchased hoặc đã hoàn thành
       if (!isPurchasedOrCompleted.value) {
         // Nếu chưa mua, chỉ cho phép xem bài preview
-        if (currentLesson.value && (!currentLesson.value.isPreview || currentLesson.value.isLocked)) {
+        if (
+          currentLesson.value &&
+          (!currentLesson.value.isPreview || currentLesson.value.isLocked)
+        ) {
           // Redirect về trang chi tiết khóa học với query parameter để tự động hiện popup
           navigateTo(`/courses/${slug.value}?showPurchaseModal=true`);
           return;
         }
       } else {
         // Nếu đã mua, fetch lại bằng my-courses để có progress đầy đủ
-        await coursesStore.fetchMyCourseBySlug(slug.value, currentChapterIndex.value, currentLessonIndex.value);
+        await coursesStore.fetchMyCourseBySlug(
+          slug.value,
+          currentChapterIndex.value,
+          currentLessonIndex.value,
+        );
       }
     } catch (error: any) {
       // Nếu API public cũng fail, thử dùng my-courses (có thể user đã mua nhưng API public có vấn đề)
-      if (error?.statusCode === 403 || error?.data?.error?.includes('chưa mua')) {
+      if (
+        error?.statusCode === 403 ||
+        error?.data?.error?.includes("chưa mua")
+      ) {
         // User chưa mua, redirect về trang chi tiết
         navigateTo(`/courses/${slug.value}`);
         return;
       }
-      await coursesStore.fetchMyCourseBySlug(slug.value, currentChapterIndex.value, currentLessonIndex.value);
+      await coursesStore.fetchMyCourseBySlug(
+        slug.value,
+        currentChapterIndex.value,
+        currentLessonIndex.value,
+      );
     }
 
     // Set lại chapter và lesson index sau khi fetch
     if (chapterParam === undefined && normalizedChapters.value.length > 0) {
       currentChapterIndex.value = 0;
     }
-    if (lessonParam === undefined && currentChapter.value?.lessons && currentChapter.value.lessons.length > 0) {
+    if (
+      lessonParam === undefined &&
+      currentChapter.value?.lessons &&
+      currentChapter.value.lessons.length > 0
+    ) {
       currentLessonIndex.value = 0;
     }
-    
   } catch (error) {
     navigateTo("/my-learning");
   } finally {
@@ -1208,12 +1396,11 @@ const fetchCourseDetail = async () => {
   }
 };
 
-
 const handleFinishQuiz = async (quizResult: any) => {
   const chapterParam = route.query.chapter;
   const lessonParam = route.query.lesson;
   navigateTo(
-    `/my-learning/${slug.value}?chapter=${chapterParam || 0}&lesson=${lessonParam || 0}`
+    `/my-learning/${slug.value}?chapter=${chapterParam || 0}&lesson=${lessonParam || 0}`,
   );
   await fetchCourseDetail();
   // Đồng bộ cache courses để trang /courses cập nhật đúng trạng thái
@@ -1242,7 +1429,10 @@ const togglePlay = () => {
     playerState.value.playing = false;
     // When paused, always show controls
     showControls.value = true;
-    if (hideControlsTimer) { clearTimeout(hideControlsTimer); hideControlsTimer = null; }
+    if (hideControlsTimer) {
+      clearTimeout(hideControlsTimer);
+      hideControlsTimer = null;
+    }
   } else {
     videoRef.value.play();
     playerState.value.playing = true;
@@ -1252,7 +1442,10 @@ const togglePlay = () => {
 };
 
 function clearHideTimer() {
-  if (hideControlsTimer) { clearTimeout(hideControlsTimer); hideControlsTimer = null; }
+  if (hideControlsTimer) {
+    clearTimeout(hideControlsTimer);
+    hideControlsTimer = null;
+  }
 }
 
 function hideControlsAfterDelay() {
@@ -1274,8 +1467,8 @@ function showControlsTemporarily() {
 
 function handleMouseMove(e: MouseEvent) {
   // Only react on desktop devices
-  if (('ontouchstart' in window) && navigator.maxTouchPoints > 0) return;
-  const target = (e.currentTarget as HTMLElement);
+  if ("ontouchstart" in window && navigator.maxTouchPoints > 0) return;
+  const target = e.currentTarget as HTMLElement;
   if (!target) return;
   const rect = target.getBoundingClientRect();
   const y = e.clientY;
@@ -1308,17 +1501,18 @@ function handleTouchStart(e: TouchEvent) {
   // But don't toggle when tapping on control buttons (they have stopPropagation)
   const target = e.target as HTMLElement;
   // Kiểm tra xem touch có phải trên control area không
-  const isControlArea = target.closest('.video-controls') || 
-                        target.closest('button') || 
-                        target.closest('input[type="range"]') ||
-                        target.tagName === 'BUTTON' ||
-                        target.tagName === 'INPUT';
-  
+  const isControlArea =
+    target.closest(".video-controls") ||
+    target.closest("button") ||
+    target.closest('input[type="range"]') ||
+    target.tagName === "BUTTON" ||
+    target.tagName === "INPUT";
+
   // Nếu touch vào control area, không toggle
   if (isControlArea) {
     return;
   }
-  
+
   showControls.value = !showControls.value;
   if (showControls.value && playerState.value.playing) {
     hideControlsAfterDelay();
@@ -1358,7 +1552,7 @@ watch(
       showControls.value = true;
       clearHideTimer();
     }
-  }
+  },
 );
 
 // Clean up timer on unmount
@@ -1384,17 +1578,20 @@ const skipBackward = () => {
 
 const skipForward = () => {
   if (!videoRef.value) return;
-  const newTime = Math.min(videoRef.value.duration, videoRef.value.currentTime + 15);
+  const newTime = Math.min(
+    videoRef.value.duration,
+    videoRef.value.currentTime + 15,
+  );
   videoRef.value.currentTime = newTime;
   playerState.value.currentTime = newTime;
 };
 
 const toggleFullscreen = async () => {
   if (!videoRef.value) return;
-  
+
   // Kiểm tra xem có phải mobile không
   const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
-  
+
   try {
     if (!isFullscreen.value) {
       // Enter fullscreen
@@ -1403,9 +1600,11 @@ const toggleFullscreen = async () => {
         (videoRef.value as any).webkitEnterFullscreen();
         return;
       }
-      
+
       // Desktop hoặc Android - dùng wrapper
-      const videoWrapper = videoRef.value.closest('.video-wrapper') as HTMLElement;
+      const videoWrapper = videoRef.value.closest(
+        ".video-wrapper",
+      ) as HTMLElement;
       if (!videoWrapper) {
         // Fallback: dùng div chứa video
         const parent = videoRef.value.parentElement;
@@ -1422,7 +1621,7 @@ const toggleFullscreen = async () => {
         }
         return;
       }
-      
+
       // Thử các phương thức fullscreen
       if (videoWrapper.requestFullscreen) {
         await videoWrapper.requestFullscreen();
@@ -1447,7 +1646,11 @@ const toggleFullscreen = async () => {
     }
   } catch (error: any) {
     // Nếu requestFullscreen thất bại, thử dùng video element trực tiếp (iOS)
-    if (!isFullscreen.value && isMobile && (videoRef.value as any).webkitEnterFullscreen) {
+    if (
+      !isFullscreen.value &&
+      isMobile &&
+      (videoRef.value as any).webkitEnterFullscreen
+    ) {
       (videoRef.value as any).webkitEnterFullscreen();
     }
   }
@@ -1462,7 +1665,6 @@ const handleFullscreenChange = () => {
     (document as any).msFullscreenElement
   );
 };
-
 
 // Get video token for proxy streaming - CHỈ lấy khi user click play
 const getVideoToken = async () => {
@@ -1480,10 +1682,10 @@ const getVideoToken = async () => {
   try {
     videoTokenLoading.value = true;
     const response = await fetch(`${apiUser}/video/token`, {
-      method: 'POST',
+      method: "POST",
       headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${authStore.token}`,
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${authStore.token}`,
       },
       body: JSON.stringify({
         lessonId: currentLesson.value._id,
@@ -1507,7 +1709,7 @@ const getVideoToken = async () => {
 // Start/Stop token refresh interval
 const startTokenRefresh = () => {
   stopTokenRefresh(); // Clear existing interval
-  
+
   if (!hasVideo.value || !currentLesson.value || !course.value) {
     return;
   }
@@ -1537,22 +1739,22 @@ watch(
     videoReady.value = false; // Reset video ready state
     videoToken.value = null;
     stopTokenRefresh();
-    
+
     // Cleanup HLS instance
     if (hlsInstance) {
       hlsInstance.destroy();
       hlsInstance = null;
     }
-    
+
     // Clear video src để ẩn URL khỏi Cốc Cốc
     if (videoRef.value) {
-      videoRef.value.src = '';
+      videoRef.value.src = "";
       videoRef.value.load();
       playerState.value.playing = false;
       playerState.value.currentTime = 0;
     }
   },
-  { immediate: false }
+  { immediate: false },
 );
 
 // Watch videoReady để tự động load HLS khi ready
@@ -1563,7 +1765,7 @@ watch(
       await loadVideoWithHls();
     }
   },
-  { immediate: false }
+  { immediate: false },
 );
 
 watch(
@@ -1600,20 +1802,19 @@ watch(
           course.value._id,
           currentChapter.value._id,
           lesson._id,
-          0
+          0,
         );
         // Reload course để cập nhật UI (tick, progress %)
         await coursesStore.fetchMyCourseBySlug(
           slug.value,
           currentChapterIndex.value,
-          currentLessonIndex.value
+          currentLessonIndex.value,
         );
-        
+
         // Đồng bộ cache courses để trang /courses cập nhật đúng trạng thái
         try {
           await coursesStore.fetchAll();
-        } catch (e) {
-        }
+        } catch (e) {}
       } catch (error) {
       } finally {
         markingCompleted.value = false;
@@ -1623,33 +1824,46 @@ watch(
     // Nhưng vẫn cho phép mark completed nếu bài chưa hoàn thành (nhảy cóc)
     return;
   },
-  { immediate: false }
+  { immediate: false },
 );
 
 // Tìm lesson index của quiz trong chapter
-const findQuizLessonIndex = (chapter: Chapter | null, fromLessonIndex: number): number => {
+// Logic: Mỗi chapter có thể có quiz đính kèm vào lesson (qua quizId/quiz) hoặc quiz độc lập (type='quiz')
+// Ưu tiên: lesson hiện tại có quiz -> giữ nguyên, không thay đổi
+const findQuizLessonIndex = (
+  chapter: Chapter | null,
+  fromLessonIndex: number,
+): number => {
   if (!chapter?.lessons || chapter.lessons.length === 0) return fromLessonIndex;
-  
-  // Tìm lesson có type='quiz' sau lesson hiện tại
-  for (let i = fromLessonIndex + 1; i < chapter.lessons.length; i++) {
-    const lesson = chapter.lessons[i];
-    if (lesson?.type === 'quiz') {
-      return i;
-    }
+
+  // Ưu tiên 1: Nếu lesson hiện tại có quiz (dù là quizId, quiz object, hoặc hasQuiz), trả về nó
+  const currentLesson = chapter.lessons[fromLessonIndex];
+  if (
+    currentLesson &&
+    (currentLesson.quiz ||
+      currentLesson.quizId ||
+      currentLesson.hasQuiz ||
+      currentLesson.type === "quiz")
+  ) {
+    return fromLessonIndex;
   }
-  
-  // Nếu không tìm thấy sau lesson hiện tại, tìm bất kỳ lesson nào có type='quiz' trong chapter
-  const quizIndex = chapter.lessons.findIndex((lesson: any) => lesson?.type === 'quiz');
+
+  // Ưu tiên 2: Tìm lesson có type='quiz' (quiz độc lập) trong chapter
+  const quizIndex = chapter.lessons.findIndex(
+    (lesson: any) => lesson?.type === "quiz",
+  );
   if (quizIndex >= 0) {
     return quizIndex;
   }
-  
-  // Nếu lesson hiện tại có quiz property, dùng lesson đó
-  const currentLesson = chapter.lessons[fromLessonIndex];
-  if (currentLesson && (currentLesson.quiz || currentLesson.quizId || currentLesson.hasQuiz)) {
-    return fromLessonIndex;
+
+  // Ưu tiên 3: Tìm bất kỳ lesson nào có quiz trong chapter
+  const lessonWithQuizIndex = chapter.lessons.findIndex(
+    (lesson: any) => lesson?.quiz || lesson?.quizId || lesson?.hasQuiz,
+  );
+  if (lessonWithQuizIndex >= 0) {
+    return lessonWithQuizIndex;
   }
-  
+
   // Fallback: dùng lesson hiện tại
   return fromLessonIndex;
 };
@@ -1657,33 +1871,34 @@ const findQuizLessonIndex = (chapter: Chapter | null, fromLessonIndex: number): 
 // Watch route query changes
 watch(
   () => route.query,
-  (query) => {
+  (query, oldQuery) => {
     if (query.chapter !== undefined) {
       currentChapterIndex.value = parseInt(query.chapter as string) || 0;
     }
     if (query.lesson !== undefined) {
       const lessonIndex = parseInt(query.lesson as string) || 0;
-      
+
       // Nếu có quiz=true, tìm lesson index đúng của quiz
-      if (query.quiz === 'true') {
+      if (query.quiz === "true") {
         // Đợi course load xong để có currentChapter
         nextTick(() => {
           const chapter = normalizedChapters.value?.[currentChapterIndex.value];
           if (chapter) {
             const quizLessonIndex = findQuizLessonIndex(chapter, lessonIndex);
-            if (quizLessonIndex !== lessonIndex) {
+            // Chỉ update URL nếu thực sự cần thay đổi VÀ chưa được update trước đó
+            // Tránh loop vô hạn bằng cách kiểm tra nếu query.originalLesson đã tồn tại
+            if (quizLessonIndex !== lessonIndex && !query.originalLesson) {
               currentLessonIndex.value = quizLessonIndex;
               // Update URL với lesson index đúng và lưu originalLesson để quay lại
               router.replace({
                 query: {
                   ...route.query,
                   lesson: quizLessonIndex.toString(),
-                  originalLesson: lessonIndex.toString() // Lưu lesson gốc
-                }
+                  originalLesson: lessonIndex.toString(), // Lưu lesson gốc
+                },
               });
             } else {
               currentLessonIndex.value = lessonIndex;
-              // Nếu quiz là property của lesson, không cần lưu originalLesson
             }
           } else {
             currentLessonIndex.value = lessonIndex;
@@ -1693,13 +1908,13 @@ watch(
         currentLessonIndex.value = lessonIndex;
       }
     }
-    isQuiz.value = query.quiz === 'true' ? true : false;
+    isQuiz.value = query.quiz === "true" ? true : false;
     // Khi vào chế độ review, load lại course để đảm bảo tất cả bài hiển thị đúng trạng thái
-    if (query.review === 'true') {
+    if (query.review === "true" && oldQuery?.review !== "true") {
       fetchCourseDetail();
     }
   },
-  { immediate: true }
+  { immediate: true },
 );
 
 // Video Security: Block keyboard shortcuts and DevTools
@@ -1709,43 +1924,43 @@ const setupVideoSecurity = () => {
   // Block common keyboard shortcuts
   const blockShortcuts = (e: KeyboardEvent) => {
     // Block F12 (DevTools)
-    if (e.key === 'F12') {
+    if (e.key === "F12") {
       e.preventDefault();
       return false;
     }
-    
+
     // Block Ctrl+Shift+I (DevTools)
-    if (e.ctrlKey && e.shiftKey && e.key === 'I') {
+    if (e.ctrlKey && e.shiftKey && e.key === "I") {
       e.preventDefault();
       return false;
     }
-    
+
     // Block Ctrl+Shift+J (Console)
-    if (e.ctrlKey && e.shiftKey && e.key === 'J') {
+    if (e.ctrlKey && e.shiftKey && e.key === "J") {
       e.preventDefault();
       return false;
     }
-    
+
     // Block Ctrl+U (View Source)
-    if (e.ctrlKey && e.key === 'u') {
+    if (e.ctrlKey && e.key === "u") {
       e.preventDefault();
       return false;
     }
-    
+
     // Block Ctrl+S (Save Page)
-    if (e.ctrlKey && e.key === 's') {
+    if (e.ctrlKey && e.key === "s") {
       e.preventDefault();
       return false;
     }
-    
+
     // Block Ctrl+P (Print)
-    if (e.ctrlKey && e.key === 'p') {
+    if (e.ctrlKey && e.key === "p") {
       e.preventDefault();
       return false;
     }
-    
+
     // Block Ctrl+Shift+C (Inspect Element)
-    if (e.ctrlKey && e.shiftKey && e.key === 'C') {
+    if (e.ctrlKey && e.shiftKey && e.key === "C") {
       e.preventDefault();
       return false;
     }
@@ -1754,7 +1969,7 @@ const setupVideoSecurity = () => {
   // Block right-click context menu globally (already handled on video element)
   const blockContextMenu = (e: MouseEvent) => {
     const target = e.target as HTMLElement;
-    if (target?.closest('.video-wrapper') || target?.tagName === 'VIDEO') {
+    if (target?.closest(".video-wrapper") || target?.tagName === "VIDEO") {
       e.preventDefault();
       return false;
     }
@@ -1766,21 +1981,21 @@ const setupVideoSecurity = () => {
       const selection = window.getSelection();
       if (selection && selection.toString().length > 0) {
         const target = selection.anchorNode?.parentElement;
-        if (target?.closest('.video-wrapper') || target?.tagName === 'VIDEO') {
+        if (target?.closest(".video-wrapper") || target?.tagName === "VIDEO") {
           selection.removeAllRanges();
         }
       }
     }
   };
 
-  document.addEventListener('keydown', blockShortcuts);
-  document.addEventListener('contextmenu', blockContextMenu);
-  document.addEventListener('selectstart', blockSelection);
+  document.addEventListener("keydown", blockShortcuts);
+  document.addEventListener("contextmenu", blockContextMenu);
+  document.addEventListener("selectstart", blockSelection);
 
   return () => {
-    document.removeEventListener('keydown', blockShortcuts);
-    document.removeEventListener('contextmenu', blockContextMenu);
-    document.removeEventListener('selectstart', blockSelection);
+    document.removeEventListener("keydown", blockShortcuts);
+    document.removeEventListener("contextmenu", blockContextMenu);
+    document.removeEventListener("selectstart", blockSelection);
   };
 };
 
@@ -1791,29 +2006,32 @@ onMounted(async () => {
   isMounted.value = true; // Set mounted flag để tránh hydration mismatch
   await fetchCourseDetail();
   securityCleanup = setupVideoSecurity() || null;
-  
+
   // Add fullscreen change event listeners
-  document.addEventListener('fullscreenchange', handleFullscreenChange);
-  document.addEventListener('webkitfullscreenchange', handleFullscreenChange);
-  document.addEventListener('mozfullscreenchange', handleFullscreenChange);
-  document.addEventListener('MSFullscreenChange', handleFullscreenChange);
+  document.addEventListener("fullscreenchange", handleFullscreenChange);
+  document.addEventListener("webkitfullscreenchange", handleFullscreenChange);
+  document.addEventListener("mozfullscreenchange", handleFullscreenChange);
+  document.addEventListener("MSFullscreenChange", handleFullscreenChange);
 });
 
 onUnmounted(() => {
   stopTokenRefresh(); // Cleanup token refresh interval
-  
+
   // Cleanup HLS instance
   if (hlsInstance) {
     hlsInstance.destroy();
     hlsInstance = null;
   }
-  
+
   // Remove fullscreen event listeners
-  document.removeEventListener('fullscreenchange', handleFullscreenChange);
-  document.removeEventListener('webkitfullscreenchange', handleFullscreenChange);
-  document.removeEventListener('mozfullscreenchange', handleFullscreenChange);
-  document.removeEventListener('MSFullscreenChange', handleFullscreenChange);
-  
+  document.removeEventListener("fullscreenchange", handleFullscreenChange);
+  document.removeEventListener(
+    "webkitfullscreenchange",
+    handleFullscreenChange,
+  );
+  document.removeEventListener("mozfullscreenchange", handleFullscreenChange);
+  document.removeEventListener("MSFullscreenChange", handleFullscreenChange);
+
   securityCleanup?.();
   coursesStore.setIsRepeatLearn(false);
 });
@@ -1826,7 +2044,7 @@ onUnmounted(() => {
 }
 .my-learning-detail-head {
   background: #1a75bb;
-  padding: 16px 0px ;
+  padding: 16px 0px;
 }
 @media screen and (max-width: 768px) {
   .my-learning-detail-head {
@@ -1926,7 +2144,8 @@ onUnmounted(() => {
 /* Keep all inner layers (video, overlays, controls) inside the 16:9 box */
 .video-aspect > * {
   position: absolute;
-  inset: 0;
+  inset-inline: 0;
+  bottom: 0;
 }
 
 /* Prefer native aspect-ratio when supported */
@@ -1942,7 +2161,8 @@ onUnmounted(() => {
 
   .video-aspect > * {
     position: absolute;
-    inset: 0;
+    inset-inline: 0;
+    bottom: 0;
   }
 }
 
@@ -1995,7 +2215,7 @@ onUnmounted(() => {
 .custom-range::-webkit-slider-thumb {
   -webkit-appearance: none;
   appearance: none;
-  background: #15CF74;
+  background: #15cf74;
   height: 16px;
   width: 16px;
   border-radius: 50%;
@@ -2017,7 +2237,7 @@ onUnmounted(() => {
 }
 
 .custom-range::-moz-range-thumb {
-  background: #15CF74;
+  background: #15cf74;
   height: 16px;
   width: 16px;
   border-radius: 50%;
@@ -2136,7 +2356,7 @@ onUnmounted(() => {
   background-color: #f3f4f6;
   padding: 0.2em 0.4em;
   border-radius: 0.25rem;
-  font-family: 'Courier New', monospace;
+  font-family: "Courier New", monospace;
   font-size: 0.9em;
 }
 
@@ -2188,7 +2408,7 @@ div.course-description-content :deep(ul li) {
 
 /* Use ::marker for proper bullet display */
 .course-description-content :deep(ul li::marker) {
-  content: '• ' !important;
+  content: "• " !important;
   color: #333 !important;
   font-weight: bold !important;
 }
@@ -2262,7 +2482,7 @@ div.course-description-content :deep(ul li) {
 }
 
 .course-description-content :deep(ol:not([type]):not([start]) li::marker) {
-  content: '• ' !important;
+  content: "• " !important;
   color: #333 !important;
   font-weight: bold !important;
 }
@@ -2302,7 +2522,7 @@ div.course-description-content :deep(ul li) {
 }
 
 .course-description-content :deep(a) {
-  color: #317BC4;
+  color: #317bc4;
   text-decoration: underline;
 }
 
