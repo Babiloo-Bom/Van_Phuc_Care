@@ -519,6 +519,7 @@ videoQueue.on('completed', async (job, result) => {
   try {
     const jobId = job.id.toString();
     const { lessonId } = job.data;
+    const originalName = job.data.originalName;
     
     console.log(`🔍 [Video Queue] Looking for lesson - jobId: ${jobId}, lessonId: ${lessonId || 'none'}`);
     
@@ -565,26 +566,36 @@ videoQueue.on('completed', async (job, result) => {
         });
         
         console.log(`✅ [Video Queue] Auto-updated lesson ${lesson._id} video ${videoIndex} with hlsUrl: ${result.hlsUrl}`);
-      } else if (lessonId && videos.length > 0) {
-        // Video not found by jobId but lessonId exists - update first video and add jobId (thumbnail sẽ được upload thủ công)
-        videos[0] = {
-          ...videos[0],
-          videoUrl: result.url || videos[0].videoUrl,
-          hlsUrl: result.hlsUrl || videos[0].hlsUrl,
-          // Không tự động update thumbnail - admin sẽ upload thủ công
-          status: 'ready',
-          jobId: jobId, // Ensure jobId is saved
-          qualityMetadata: result.qualityMetadata || videos[0].qualityMetadata,
-          errorMessage: '',
-        };
-        
-        await LessonsModel.model.findByIdAndUpdate(lesson._id, {
-          videos: videos
-        });
-        
-        console.log(`✅ [Video Queue] Auto-updated lesson ${lesson._id} video 0 with hlsUrl: ${result.hlsUrl} (added jobId: ${jobId})`);
       } else {
-        console.log(`⚠️ [Video Queue] Video with jobId ${jobId} not found in lesson videos array`);
+        // If we know the lesson, but can't find the matching video entry by jobId,
+        // create one so the UI has the link + status instead of staying "processing".
+        // This is important when the lesson was saved/updated while the job was running
+        // and the videos array no longer contains the temporary jobId.
+        const newVideo = {
+          title: originalName || 'Video',
+          videoUrl: result.url || '',
+          thumbnail: '', // Admin uploads thumbnail manually in this project
+          duration: 0,
+          fileSize: job.data.fileSize || 0,
+          quality: '720',
+          index: videos.length,
+          status: 'ready',
+          hlsUrl: result.hlsUrl || result.url || '',
+          jobId,
+          errorMessage: '',
+          qualityMetadata: result.qualityMetadata || {
+            resolution: '',
+            bitrate: '',
+            codec: '',
+            fps: 0,
+            segments: 0,
+          },
+        };
+
+        videos.push(newVideo);
+
+        await LessonsModel.model.findByIdAndUpdate(lesson._id, { videos });
+        console.log(`✅ [Video Queue] Auto-added new video entry to lesson ${lesson._id} with hlsUrl: ${newVideo.hlsUrl}`);
       }
     } else {
       console.log(`⚠️ [Video Queue] No lesson found - jobId: ${jobId}, lessonId: ${lessonId || 'none'}`);
