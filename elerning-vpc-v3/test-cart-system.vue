@@ -184,7 +184,6 @@ const handleRefreshCart = async () => {
 
 // Initialize on mount
 onMounted(async () => {
-  console.log('🧪 Cart System Test Page Loaded')
   await refreshCart()
 })
 </script>

@@ -1272,10 +1272,9 @@ const canMarkLessonCompleted = (
 
   if (!currentLesson) return false;
 
-  // Không tự động mark cho quiz
-  const hasQuiz =
-    currentLesson.hasQuiz || !!currentLesson.quizId || !!currentLesson.quiz;
-  if (hasQuiz) return false;
+  // Không tự động mark cho quiz độc lập (type='quiz')
+  // Lesson thường (video/text) có quiz đính kèm vẫn được mark completed
+  if (currentLesson.type === 'quiz') return false;
 
   // Không mark lại bài đã hoàn thành
   if (currentLesson.isCompleted) return false;
@@ -1794,8 +1793,9 @@ watch(
     // Nếu đã mua khóa học, cho phép nhảy cóc - bỏ qua check bài trước
     // Chỉ mark completed nếu chưa hoàn thành (kể cả khi ở chế độ review/jump ahead)
     // Điều này đảm bảo khi nhảy cóc vẫn tính tiến độ
-    const hasQuiz = lesson.hasQuiz || !!lesson.quizId || !!lesson.quiz;
-    if (!hasQuiz && !lesson.isCompleted) {
+    // Chỉ quiz độc lập (type='quiz') mới không auto mark, lesson có quiz đính kèm vẫn được mark
+    const isQuizLesson = lesson.type === 'quiz';
+    if (!isQuizLesson && !lesson.isCompleted) {
       try {
         markingCompleted.value = true;
         await progressTracking.markLessonCompleted(

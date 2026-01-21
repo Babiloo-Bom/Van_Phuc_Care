@@ -229,8 +229,8 @@ const getQuizTitle = (lesson: any) => {
 
 const getTotalLessons = (chapter: any) => {
   if (!chapter.lessons) return 0
-  // Chỉ đếm lesson thường (video/document), không đếm quiz độc lập (type='quiz')
-  return chapter.lessons.filter((lesson: any) => !isQuizLesson(lesson)).length
+  // Đếm tất cả lessons bao gồm cả quiz
+  return chapter.lessons.length
 }
 
 const handlePanelClick = (chapter: number, event?: Event) => {
