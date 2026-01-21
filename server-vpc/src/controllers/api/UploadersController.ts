@@ -343,7 +343,7 @@ class UploadController {
         });
       }
 
-      const state = await job.getState();
+      let state = await job.getState();
       const progress = job.progress();
       const result = job.returnvalue;
       const failedReason = job.failedReason;
@@ -362,8 +362,22 @@ class UploadController {
         status = 'error';
       } else if (state === 'active') {
         status = 'processing';
-      } else if (state === 'waiting' || state === 'delayed') {
+      } else if (state === 'waiting' || state === 'delayed' || state === 'stuck') {
         status = 'queueing';
+      }
+
+      // Bull edge case: job thực tế đã hoàn tất (progress 100, HLS xong, DB đã update)
+      // nhưng Bull báo lỗi "Missing lock for job ... finished" và state = stuck/failed.
+      // Trong trường hợp này, ta coi như job completed để FE không kẹt ở trạng thái queueing.
+      if (
+        typeof progress === 'number' &&
+        progress >= 100 &&
+        failedReason &&
+        failedReason.includes('Missing lock for job') &&
+        (state === 'failed' || state === 'stuck' || state === 'delayed')
+      ) {
+        status = 'ready';
+        state = 'completed' as any;
       }
 
       sendSuccess(res, {
