@@ -436,39 +436,41 @@
 
             <!-- Desktop: Content without tabs -->
             <div class="hidden lg:block">
-              <!-- Documents Section -->
-              <div v-if="showTextSection" class="space-y-6 mb-6">
-                <!-- Documents Component (if documents exist) -->
-                <div class="mt-6">
-                  <DocumentsComponent
-                    :course-id="course?._id || ''"
-                    :chapter-id="currentChapter?._id || ''"
-                    :lesson-id="currentLesson?._id || ''"
-                  />
-                </div>
-                <div
-                  class="bg-white rounded-lg border border-gray-200 p-4 md:p-6"
-                >
-                  <!-- Document 2: Text Content -->
-                  <h3
-                    class="text-lg md:text-xl font-bold mb-4"
-                    style="color: #1a75bb"
-                  >
-                    {{ currentLesson?.title || "Chưa có bài học" }}
-                  </h3>
+              <div class="space-y-6 mb-6">
+                <!-- Documents and Text Content (only for text/document types) -->
+                <div v-if="showTextSection">
+                  <!-- Documents Component (if documents exist) -->
+                  <div class="mt-6">
+                    <DocumentsComponent
+                      :course-id="course?._id || ''"
+                      :chapter-id="currentChapter?._id || ''"
+                      :lesson-id="currentLesson?._id || ''"
+                    />
+                  </div>
                   <div
-                    class="course-description-content prose max-w-none text-gray-700 leading-relaxed text-sm md:text-base"
-                    v-html="
-                      normalizedLessonContent ||
-                      currentLesson?.content ||
-                      'Chưa có nội dung'
-                    "
-                  ></div>
+                    class="bg-white rounded-lg border border-gray-200 p-4 md:p-6"
+                  >
+                    <!-- Document 2: Text Content -->
+                    <h3
+                      class="text-lg md:text-xl font-bold mb-4"
+                      style="color: #1a75bb"
+                    >
+                      {{ currentLesson?.title || "Chưa có bài học" }}
+                    </h3>
+                    <div
+                      class="course-description-content prose max-w-none text-gray-700 leading-relaxed text-sm md:text-base"
+                      v-html="
+                        normalizedLessonContent ||
+                        currentLesson?.content ||
+                        'Chưa có nội dung'
+                      "
+                    ></div>
+                  </div>
                 </div>
 
                 <!-- Quiz Card (Desktop) - Hiển thị ở cuối lesson nếu chapter có quiz -->
                 <div
-                  v-if="currentChapter && hasQuizInChapter(currentChapter) && currentLesson?.type !== 'quiz'"
+                  v-if="currentChapter && hasQuizInChapter(currentChapter)"
                   class="mt-6"
                 >
                   <QuizCard
@@ -577,32 +579,32 @@
                     </div>
 
                     <!-- Documents Section -->
-                    <div v-if="showTextSection" class="space-y-6">
-                      <!-- Document 2: Text Content -->
-                      <div
-                        class="bg-white rounded-lg border border-gray-200 p-4 md:p-6"
-                      >
-                        <h3
-                          class="text-base md:text-lg font-bold mb-4"
-                          style="color: #1a75bb"
-                        >
-                          {{ currentLesson?.title || "Chưa có bài học" }}
-                        </h3>
+                    <div v-if="currentLesson" class="space-y-6">
+                      <div v-if="showTextSection">
+                        <!-- Document 2: Text Content -->
                         <div
-                          class="course-description-content prose max-w-none text-gray-700 leading-relaxed text-sm md:text-base"
-                          v-html="
-                            normalizedLessonContent ||
-                            currentLesson?.content ||
-                            'Chưa có nội dung'
-                          "
-                        ></div>
+                          class="bg-white rounded-lg border border-gray-200 p-4 md:p-6"
+                        >
+                          <h3
+                            class="text-base md:text-lg font-bold mb-4"
+                            style="color: #1a75bb"
+                          >
+                            {{ currentLesson?.title || "Chưa có bài học" }}
+                          </h3>
+                          <div
+                            class="course-description-content prose max-w-none text-gray-700 leading-relaxed text-sm md:text-base"
+                            v-html="
+                              normalizedLessonContent ||
+                              currentLesson?.content ||
+                              'Chưa có nội dung'
+                            "
+                          ></div>
+                        </div>
                       </div>
 
                       <!-- Quiz Card (Mobile) - Hiển thị ở cuối lesson nếu chapter có quiz -->
                       <div
-                        v-if="
-                          currentChapter && hasQuizInChapter(currentChapter) && currentLesson?.type !== 'quiz'
-                        "
+                        v-if="currentChapter && hasQuizInChapter(currentChapter)"
                         class="mt-6"
                       >
                         <QuizCard
