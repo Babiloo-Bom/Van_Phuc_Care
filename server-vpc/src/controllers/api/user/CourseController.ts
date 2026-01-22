@@ -722,6 +722,11 @@ class CourseController {
                 showText: lessonData.showText ?? false,
                 showDocument: lessonData.showDocument ?? false,
                 showQuiz: lessonData.showQuiz ?? false,
+                // Section names
+                videoSectionName: lessonData.videoSectionName ?? '',
+                textSectionName: lessonData.textSectionName ?? '',
+                documentSectionName: lessonData.documentSectionName ?? '',
+                quizSectionName: lessonData.quizSectionName ?? '',
               };
             })
           );
@@ -1558,6 +1563,11 @@ class CourseController {
                 showText: lessonData.showText ?? false,
                 showDocument: lessonData.showDocument ?? false,
                 showQuiz: lessonData.showQuiz ?? false,
+                // Section names
+                videoSectionName: lessonData.videoSectionName ?? '',
+                textSectionName: lessonData.textSectionName ?? '',
+                documentSectionName: lessonData.documentSectionName ?? '',
+                quizSectionName: lessonData.quizSectionName ?? '',
               };
             })
           );

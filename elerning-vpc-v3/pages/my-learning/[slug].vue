@@ -81,11 +81,12 @@
             <div class="mb-6">
               <ProgressBar :percentage="courseProgress" />
             </div>
-            <!-- Video Player - Chỉ hiển thị nếu lesson có video -->
+            <!-- Video Player - Chỉ hiển thị nếu lesson có video VÀ showVideo = true -->
             <div
               v-if="
                 (currentVideoUrl || currentThumbnail || hasVideo) &&
-                currentLesson
+                currentLesson &&
+                currentLesson.showVideo
               "
               class="mb-4 md:mb-6"
             >
@@ -438,8 +439,8 @@
             <div class="hidden lg:block">
               <!-- Documents Section -->
               <div v-if="currentLesson" class="space-y-6 mb-6">
-                <!-- Documents Component (show for document type, or if documents exist) -->
-                <div v-if="currentLesson && (currentLesson.type === 'document' || (currentLesson.documents && currentLesson.documents.length > 0))" class="mt-6">
+                <!-- Documents Component (show if showDocument = true AND documents exist) -->
+                <div v-if="currentLesson && currentLesson.showDocument && (currentLesson.documents && currentLesson.documents.length > 0)" class="mt-6">
                   <DocumentsComponent
                     :course-id="course?._id || ''"
                     :chapter-id="currentChapter?._id || ''"
@@ -451,12 +452,12 @@
                   v-if="showLessonContent"
                   class="bg-white rounded-lg border border-gray-200 p-4 md:p-6"
                 >
-                  <!-- Document 2: Text Content -->
+                  <!-- Text Content Section -->
                   <h3
                     class="text-lg md:text-xl font-bold mb-4"
                     style="color: #1a75bb"
                   >
-                    {{ currentLesson?.title || "Chưa có bài học" }}
+                    {{ currentLesson?.textSectionName || currentLesson?.title || "Nội dung" }}
                   </h3>
                   <div
                     class="course-description-content prose max-w-none text-gray-700 leading-relaxed text-sm md:text-base"
@@ -580,8 +581,8 @@
 
                     <!-- Documents Section -->
                     <div v-if="currentLesson" class="space-y-6">
-                      <!-- Documents Component (mobile): show for document type, or if documents exist -->
-                      <div v-if="currentLesson && (currentLesson.type === 'document' || (currentLesson.documents && currentLesson.documents.length > 0))" class="mb-4 p-4 md:p-6">
+                      <!-- Documents Component (mobile): show if showDocument = true AND documents exist -->
+                      <div v-if="currentLesson && currentLesson.showDocument && (currentLesson.documents && currentLesson.documents.length > 0)" class="mb-4 p-4 md:p-6">
                         <DocumentsComponent
                           :course-id="course?._id || ''"
                           :chapter-id="currentChapter?._id || ''"
@@ -1009,12 +1010,12 @@ const hasVideo = computed(() => {
   return false;
 });
 
-// Check if chapter has quiz (chỉ kiểm tra lesson có type='quiz')
+// Check if chapter has quiz (check lesson có showQuiz = true)
 const hasQuizInChapter = (chapter: any) => {
   if (!chapter?.lessons) return false;
 
-  // Chỉ tìm lesson có type='quiz' (quiz độc lập)
-  return chapter.lessons.some((lesson: any) => lesson?.type === "quiz");
+  // Tìm lesson có showQuiz = true
+  return chapter.lessons.some((lesson: any) => lesson?.showQuiz === true);
 };
 
 // Get video URL - Stream trực tiếp từ proxy (token ẩn URL gốc)
@@ -1065,22 +1066,17 @@ const currentThumbnail = computed(() => {
   return null;
 });
 
-// Whether to show the lesson content block (respect lesson.type but keep quiz legacy display)
+// Whether to show the lesson content block (check showText flag)
 const showLessonContent = computed(() => {
   if (!currentLesson.value) return false;
-  const t = (currentLesson.value as any).type;
 
-  // Keep legacy behavior for quizzes (do not change quiz display)
-  if (t === 'quiz') return true;
+  // Show text content if showText flag is true AND content exists
+  if ((currentLesson.value as any).showText && currentLesson.value.content) {
+    return true;
+  }
 
-  // Text and Document types should show the content area
-  if (t === 'text' || t === 'document') return true;
-
-  // For video: never show textual content (video should only render the player)
-  if (t === 'video') return false;
-
-  // Fallback: show content if any content exists
-  return !!(currentLesson.value.content && currentLesson.value.content.length > 0);
+  // Fallback: don't show
+  return false;
 });
 
 // Course progress percentage from backend (capped at 100%)
@@ -1821,8 +1817,8 @@ watch(
     // Nếu đã mua khóa học, cho phép nhảy cóc - bỏ qua check bài trước
     // Chỉ mark completed nếu chưa hoàn thành (kể cả khi ở chế độ review/jump ahead)
     // Điều này đảm bảo khi nhảy cóc vẫn tính tiến độ
-    // Chỉ quiz độc lập (type='quiz') mới không auto mark, lesson có quiz đính kèm vẫn được mark
-    const isQuizLesson = lesson.type === 'quiz';
+    // Chỉ quiz độc lập (showQuiz=true và các section khác=false) mới không auto mark
+    const isQuizLesson = lesson.showQuiz && !lesson.showVideo && !lesson.showText && !lesson.showDocument;
     if (!isQuizLesson && !lesson.isCompleted) {
       try {
         markingCompleted.value = true;

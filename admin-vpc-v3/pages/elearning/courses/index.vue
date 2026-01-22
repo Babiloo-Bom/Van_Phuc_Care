@@ -791,7 +791,44 @@
                           </a-space>
                         </a-form-item>
                       </a-col>
+                      <!-- Section Names -->
                       <a-col :span="12">
+                        <a-form-item label="Tên phần Video">
+                          <a-input
+                            v-model:value="lesson.videoSectionName"
+                            placeholder="VD: Video bài giảng"
+                            :disabled="!lesson.showVideo"
+                          />
+                        </a-form-item>
+                      </a-col>
+                      <a-col :span="12">
+                        <a-form-item label="Tên phần Văn bản">
+                          <a-input
+                            v-model:value="lesson.textSectionName"
+                            placeholder="VD: Nội dung chi tiết"
+                            :disabled="!lesson.showText"
+                          />
+                        </a-form-item>
+                      </a-col>
+                      <a-col :span="12">
+                        <a-form-item label="Tên phần Tài liệu">
+                          <a-input
+                            v-model:value="lesson.documentSectionName"
+                            placeholder="VD: Tài liệu tham khảo"
+                            :disabled="!lesson.showDocument"
+                          />
+                        </a-form-item>
+                      </a-col>
+                      <a-col :span="12">
+                        <a-form-item label="Tên phần Quiz">
+                          <a-input
+                            v-model:value="lesson.quizSectionName"
+                            placeholder="VD: Bài kiểm tra"
+                            :disabled="!lesson.showQuiz"
+                          />
+                        </a-form-item>
+                      </a-col>
+                      <a-col :span="24">
                         <a-form-item label="Cho phép học thử">
                           <a-switch 
                             v-model:checked="lesson.isPreview" 
@@ -2759,6 +2796,11 @@ const addLesson = (chapterIndex: number) => {
     showText: false,
     showDocument: false,
     showQuiz: false,
+    // Section names
+    videoSectionName: '',
+    textSectionName: '',
+    documentSectionName: '',
+    quizSectionName: '',
     quiz: {
       title: '',
       description: '',
@@ -3129,6 +3171,11 @@ const editCourse = async (course: Course) => {
                 showText: lesson.showText ?? false,
                 showDocument: lesson.showDocument ?? false,
                 showQuiz: lesson.showQuiz ?? false,
+                // Section names
+                videoSectionName: lesson.videoSectionName ?? '',
+                textSectionName: lesson.textSectionName ?? '',
+                documentSectionName: lesson.documentSectionName ?? '',
+                quizSectionName: lesson.quizSectionName ?? '',
                 quiz: lesson.quiz ? {
               title: lesson.quiz.title || '',
               description: lesson.quiz.description || '',

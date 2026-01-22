@@ -179,6 +179,23 @@ class Lessons {
         type: Boolean,
         default: false,
       },
+      // Section names - Custom names for each section
+      videoSectionName: {
+        type: String,
+        default: '',
+      },
+      textSectionName: {
+        type: String,
+        default: '',
+      },
+      documentSectionName: {
+        type: String,
+        default: '',
+      },
+      quizSectionName: {
+        type: String,
+        default: '',
+      },
     }, {
       timestamps: true,
       toJSON: { virtuals: true },
