@@ -438,15 +438,17 @@
             <div class="hidden lg:block">
               <!-- Documents Section -->
               <div v-if="currentLesson" class="space-y-6 mb-6">
-                <!-- Documents Component (if documents exist) -->
-                <div class="mt-6">
+                <!-- Documents Component (show for document type, or if documents exist) -->
+                <div v-if="currentLesson && (currentLesson.type === 'document' || (currentLesson.documents && currentLesson.documents.length > 0))" class="mt-6">
                   <DocumentsComponent
                     :course-id="course?._id || ''"
                     :chapter-id="currentChapter?._id || ''"
                     :lesson-id="currentLesson?._id || ''"
                   />
                 </div>
+                <!-- Lesson content: only show when appropriate types (text, document, quiz in legacy mode) -->
                 <div
+                  v-if="showLessonContent"
                   class="bg-white rounded-lg border border-gray-200 p-4 md:p-6"
                 >
                   <!-- Document 2: Text Content -->
@@ -578,8 +580,18 @@
 
                     <!-- Documents Section -->
                     <div v-if="currentLesson" class="space-y-6">
+                      <!-- Documents Component (mobile): show for document type, or if documents exist -->
+                      <div v-if="currentLesson && (currentLesson.type === 'document' || (currentLesson.documents && currentLesson.documents.length > 0))" class="mb-4 p-4 md:p-6">
+                        <DocumentsComponent
+                          :course-id="course?._id || ''"
+                          :chapter-id="currentChapter?._id || ''"
+                          :lesson-id="currentLesson?._id || ''"
+                        />
+                      </div>
+
                       <!-- Document 2: Text Content -->
                       <div
+                        v-if="showLessonContent"
                         class="bg-white rounded-lg border border-gray-200 p-4 md:p-6"
                       >
                         <h3
@@ -1051,6 +1063,26 @@ const currentThumbnail = computed(() => {
   }
 
   return null;
+});
+
+// Whether to show the lesson content block (respect lesson.type but keep quiz legacy display)
+const showLessonContent = computed(() => {
+  if (!currentLesson.value) return false;
+  const t = (currentLesson.value as any).type;
+
+  // Keep legacy behavior for quizzes (do not change quiz display)
+  if (t === 'quiz') return true;
+
+  // Text and Document types should show the content area
+  if (t === 'text' || t === 'document') return true;
+
+  // For video: show textual content only if explicit content exists (video has its own player)
+  if (t === 'video') {
+    return !!(currentLesson.value.content && currentLesson.value.content.length > 0);
+  }
+
+  // Fallback: show content if any content exists
+  return !!(currentLesson.value.content && currentLesson.value.content.length > 0);
 });
 
 // Course progress percentage from backend (capped at 100%)
