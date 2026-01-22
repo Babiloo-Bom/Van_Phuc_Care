@@ -33,7 +33,7 @@
         class="nav-chapter-panel !rounded-lg shadow-lg p-4 md:p-8"
       >
         <template #header>
-          <div class="chapter-header border-b border-[#ACD7F9] pb-2" @click.stop="handlePanelClick(chapterIndex, $event)">
+          <div class="chapter-header border-b border-[#ACD7F9] pb-2 cursor-pointer" @click="handlePanelClick(chapterIndex, $event)">
             <div class="chapter-title">
              P{{ chapterIndex + 1 }}: {{ chapter.title }}
             </div>
@@ -86,14 +86,14 @@
                 <h3 
                   :class="`lesson-title ${
                     lesson.isCompleted ? 'lesson-title-completed' : 'lesson-title-pending hover:!text-[#155a8f]'
-                  } ${!isPurchasedOrCompleted && isLessonLocked(chapterIndex, lessonIndex) ? 'lesson-title-locked' : ''}`"
-                  @click="handleLessonClick(chapterIndex, lessonIndex)"
-                  :style="!isPurchasedOrCompleted && isLessonLocked(chapterIndex, lessonIndex) ? { cursor: 'not-allowed', opacity: 0.6 } : { cursor: 'pointer' }"
+                  } ${!isPurchasedOrCompleted && isLessonLocked(Number(chapterIndex), Number(lessonIndex)) ? 'lesson-title-locked' : ''}`"
+                  @click="handleLessonClick(Number(chapterIndex), Number(lessonIndex), lesson)"
+                  :style="!isPurchasedOrCompleted && isLessonLocked(Number(chapterIndex), Number(lessonIndex)) ? { cursor: 'not-allowed', opacity: 0.6 } : { cursor: 'pointer' }"
                   class="flex items-center gap-2"
                 >
                   <span>{{ lesson.title }}</span>
                   <img
-                    v-if="!isPurchasedOrCompleted && isLessonLocked(chapterIndex, lessonIndex)"
+                    v-if="!isPurchasedOrCompleted && isLessonLocked(Number(chapterIndex), Number(lessonIndex))"
                     src="/images/svg/lock.svg"
                     alt="locked"
                     class="w-3 h-3 sm:w-4 sm:h-4 flex-shrink-0"
@@ -233,23 +233,37 @@ const getTotalLessons = (chapter: any) => {
   return chapter.lessons.length
 }
 
-const handlePanelClick = (chapter: number, event?: Event) => {
-  // Stop event propagation để không trigger collapse
-  if (event) {
-    event.stopPropagation()
+const handlePanelClick = (chapterIndex: number, event?: Event) => {
+  // Toggle collapse panel (mở/đóng danh sách bài học)
+  const chapterKey = `chapter_${chapterIndex}`
+  
+  if (Array.isArray(activeKey.value)) {
+    // Nếu đang mở, đóng lại; nếu đang đóng, mở ra
+    if (activeKey.value.includes(chapterKey)) {
+      activeKey.value = activeKey.value.filter(key => key !== chapterKey)
+    } else {
+      activeKey.value = [...activeKey.value, chapterKey]
+    }
+  } else {
+    // Nếu đang mở, đóng lại; nếu đang đóng, mở ra
+    if (activeKey.value === chapterKey) {
+      activeKey.value = ''
+    } else {
+      activeKey.value = chapterKey
+    }
   }
   
-  // Get the current query parameters
-  const queryParams = { ...route.query, chapter: chapter.toString() }
+  // Update route query để giữ chapter index (không bắt buộc, nhưng tốt cho UX)
+  const queryParams = { ...route.query, chapter: chapterIndex.toString() }
   
-  // Navigate with updated query
-  router.push({
+  // Navigate with updated query (chỉ update, không reload)
+  router.replace({
     path: route.path,
     query: queryParams,
   })
 }
 
-const handleLessonClick = (chapterIndex: number, lessonIndex: number) => {
+const handleLessonClick = (chapterIndex: number, lessonIndex: number, lesson?: any) => {
   // Nếu chưa mua/hoàn thành và bài không phải preview → redirect về trang chi tiết với query để tự động hiện popup
   if (!isPurchasedOrCompleted.value && isLessonLocked(chapterIndex, lessonIndex)) {
     router.push(`/courses/${route.params.slug}?showPurchaseModal=true`);
@@ -271,13 +285,58 @@ const handleLessonClick = (chapterIndex: number, lessonIndex: number) => {
   // Ưu tiên lấy slug từ prop, nếu không có thì lấy từ route
   const slug = props.courseSlug || route.params.slug
   
+  // CRITICAL FIX: Tìm lesson index thực tế trong normalizedChapters (bao gồm cả quiz)
+  // vì NavCourse filter bỏ quiz lessons khi hiển thị, nhưng index phải dựa trên array đầy đủ
+  // Chapter 4 hoạt động đúng vì không có quiz lessons xen kẽ
+  // Chapter 1 bị lỗi vì có quiz lessons xen kẽ, nên cần tìm index thực tế
+  let actualLessonIndex = lessonIndex
+  if (normalizedChapters.value[chapterIndex]?.lessons) {
+    const chapter = normalizedChapters.value[chapterIndex]
+    
+    // Ưu tiên: Nếu có lesson object với _id, tìm index thực tế của nó trong array đầy đủ
+    if (lesson && lesson._id) {
+      const foundIndex = chapter.lessons.findIndex((l: any) => l._id === lesson._id)
+      if (foundIndex >= 0) {
+        actualLessonIndex = foundIndex
+      } else {
+        // Nếu không tìm thấy bằng _id, dùng fallback logic
+        let nonQuizCount = 0
+        for (let i = 0; i < chapter.lessons.length; i++) {
+          if (isQuizLesson(chapter.lessons[i])) {
+            continue // Bỏ qua quiz lessons
+          }
+          if (nonQuizCount === lessonIndex) {
+            actualLessonIndex = i
+            break
+          }
+          nonQuizCount++
+        }
+      }
+    } else {
+      // Fallback: đếm số lesson không phải quiz trước lessonIndex
+      // để tìm index thực tế trong array đầy đủ
+      // Logic này đảm bảo hoạt động đúng cho cả chapter có quiz và không có quiz
+      let nonQuizCount = 0
+      for (let i = 0; i < chapter.lessons.length; i++) {
+        if (isQuizLesson(chapter.lessons[i])) {
+          continue // Bỏ qua quiz lessons
+        }
+        if (nonQuizCount === lessonIndex) {
+          actualLessonIndex = i
+          break
+        }
+        nonQuizCount++
+      }
+    }
+  }
+  
   // Nếu URL hiện tại đang ở chế độ review (đi vào từ nút Review / Xem lại)
   // hoặc forceReviewMode=true (dùng trong trang chứng nhận)
   // thì giữ lại review=true. Còn lại (đang học bình thường) thì KHÔNG set review,
   // để hệ thống vẫn tính tiến độ như bình thường khi nhảy cóc.
   const queryParams: any = {
     chapter: chapterIndex.toString(),
-    lesson: lessonIndex.toString()
+    lesson: actualLessonIndex.toString()
   }
   if (route.query.review === 'true' || props.forceReviewMode) {
     queryParams.review = 'true'

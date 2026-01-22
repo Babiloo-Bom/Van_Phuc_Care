@@ -106,26 +106,47 @@ const hasQuiz = computed(() => {
   return props.chapter.lessons.some((lesson: any) => lesson?.type === 'quiz')
 })
 
-// Tìm quiz trong chapter (chỉ lấy từ lesson có type='quiz')
+// Tìm quiz trong chapter từ quiz lesson gần nhất sau lesson hiện tại
 const chapterQuiz = computed(() => {
   if (!props.chapter?.lessons) return null
   
-  // Chỉ tìm lesson có type='quiz'
-  const quizLesson = props.chapter.lessons.find((lesson: any) => lesson?.type === 'quiz')
+  // Lấy lesson index hiện tại từ route query
+  const currentLessonIndex = parseInt(route.query.lesson as string) || 0
   
-  if (!quizLesson) return null
+  // Tìm quiz lesson đầu tiên sau lesson hiện tại
+  for (let i = currentLessonIndex + 1; i < props.chapter.lessons.length; i++) {
+    if (props.chapter.lessons[i]?.type === 'quiz') {
+      return props.chapter.lessons[i].quiz || null
+    }
+  }
+  
+  // Nếu không tìm thấy quiz sau lesson hiện tại, tìm quiz đầu tiên trong chapter
+  const firstQuizLesson = props.chapter.lessons.find((lesson: any) => lesson?.type === 'quiz')
+  
+  if (!firstQuizLesson) return null
   
   // Trả về quiz object từ lesson
-  return quizLesson.quiz || null
+  return firstQuizLesson.quiz || null
 })
 
-// Tìm lesson index có quiz trong chapter (chỉ tìm type='quiz')
+// Tìm lesson index có quiz gần nhất ngay sau lesson hiện tại trong cùng chapter
 const quizLessonIndex = computed(() => {
   if (!props.chapter?.lessons) return 0
   
-  const index = props.chapter.lessons.findIndex((lesson: any) => lesson?.type === 'quiz')
+  // Lấy lesson index hiện tại từ route query
+  const currentLessonIndex = parseInt(route.query.lesson as string) || 0
   
-  return index >= 0 ? index : 0
+  // Tìm quiz lesson đầu tiên sau lesson hiện tại
+  for (let i = currentLessonIndex + 1; i < props.chapter.lessons.length; i++) {
+    if (props.chapter.lessons[i]?.type === 'quiz') {
+      return i
+    }
+  }
+  
+  // Nếu không tìm thấy quiz sau lesson hiện tại, tìm quiz đầu tiên trong chapter
+  const firstQuizIndex = props.chapter.lessons.findIndex((lesson: any) => lesson?.type === 'quiz')
+  
+  return firstQuizIndex >= 0 ? firstQuizIndex : 0
 })
 
 // Lấy thông tin quiz
