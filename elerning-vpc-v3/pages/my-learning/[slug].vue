@@ -118,7 +118,7 @@
                   <video
                     v-if="
                       isMounted &&
-                      showVideoSection &&
+                      currentVideoUrl &&
                       !videoTokenLoading &&
                       videoReady
                     "
@@ -159,7 +159,7 @@
 
                   <!-- Thumbnail với nút Play (nếu có video nhưng chưa click play) -->
                   <div
-                    v-else-if="showVideoSection && !videoTokenLoading"
+                    v-else-if="hasVideo && !videoTokenLoading"
                     class="relative w-full h-full"
                   >
                     <!-- Hiển thị thumbnail nếu có -->
@@ -173,7 +173,6 @@
                     <div v-else class="w-full h-full bg-gray-900"></div>
                     <!-- Play Button Overlay -->
                     <div
-                      v-if="!(hasVideo && !videoTokenLoading && !playerState.playing)"
                       class="absolute inset-0 flex items-center justify-center bg-black bg-opacity-30 cursor-pointer hover:bg-opacity-40 transition-all"
                       @click="playVideo"
                     >
@@ -193,38 +192,31 @@
                     </div>
                   </div>
 
-                  <!-- Overlay on top of video area: Play button when has video, simple message when not -->
-                  <div class="absolute inset-0 flex items-center justify-center z-30 pointer-events-auto">
-                    <!-- Play Icon (clickable) -->
-                    <button
-                      v-if="hasVideo && !videoTokenLoading && !playerState.playing"
-                      @click.stop="playVideo"
-                      class="w-24 h-24 bg-white rounded-full flex items-center justify-center shadow-2xl hover:scale-110 transition-transform"
-                      aria-label="Play video"
-                    >
+                  <!-- Placeholder nếu không có video -->
+                  <div
+                    v-else-if="!hasVideo"
+                    class="w-full h-full bg-gray-800 flex items-center justify-center"
+                  >
+                    <div class="text-center text-white">
                       <svg
                         xmlns="http://www.w3.org/2000/svg"
-                        width="48"
-                        height="48"
+                        width="64"
+                        height="64"
                         viewBox="0 0 24 24"
-                        class="fill-gray-800 ml-1"
+                        class="fill-none stroke-white mx-auto mb-4"
                       >
-                        <path d="M8 5v14l11-7z" />
-                      </svg>
-                    </button>
-
-                    <!-- No video message (non-clickable) -->
-                    <div v-else-if="!hasVideo || (currentLesson?.type && currentLesson?.type !== 'video')" class="text-center text-white select-none">
-                      <svg
-                        xmlns="http://www.w3.org/2000/svg"
-                        width="56"
-                        height="56"
-                        viewBox="0 0 24 24"
-                        class="fill-white mx-auto mb-3"
-                        aria-hidden="true"
-                      >
-                        <path d="M3 7c0-1.1.9-2 2-2h10c.55 0 1 .45 1 1v2H4c-.55 0-1 .45-1 1v6c0 .55.45 1 1 1h12v2c0 .55-.45 1-1 1H5c-1.1 0-2-.9-2-2V7z" />
-                        <path d="M21 7l-7 5 7 5V7z" fill="#111827" />
+                        <path
+                          d="M23 7l-7 5 7 5V7z"
+                          stroke-width="1.5"
+                          stroke-linecap="round"
+                          stroke-linejoin="round"
+                        />
+                        <path
+                          d="M14 5H3a2 2 0 0 0-2 2v10a2 2 0 0 0 2 2h11"
+                          stroke-width="1.5"
+                          stroke-linecap="round"
+                          stroke-linejoin="round"
+                        />
                       </svg>
                       <p class="text-lg font-semibold">Không có video</p>
                     </div>
@@ -444,36 +436,34 @@
 
             <!-- Desktop: Content without tabs -->
             <div class="hidden lg:block">
-              <div class="space-y-6 mb-6">
-                <!-- Documents and Text Content (only for text/document types) -->
-                <div v-if="showTextSection">
-                  <!-- Documents Component (if documents exist) -->
-                  <div class="mt-6">
-                    <DocumentsComponent
-                      :course-id="course?._id || ''"
-                      :chapter-id="currentChapter?._id || ''"
-                      :lesson-id="currentLesson?._id || ''"
-                    />
-                  </div>
-                  <div
-                    class="bg-white rounded-lg border border-gray-200 p-4 md:p-6"
+              <!-- Documents Section -->
+              <div v-if="currentLesson" class="space-y-6 mb-6">
+                <!-- Documents Component (if documents exist) -->
+                <div class="mt-6">
+                  <DocumentsComponent
+                    :course-id="course?._id || ''"
+                    :chapter-id="currentChapter?._id || ''"
+                    :lesson-id="currentLesson?._id || ''"
+                  />
+                </div>
+                <div
+                  class="bg-white rounded-lg border border-gray-200 p-4 md:p-6"
+                >
+                  <!-- Document 2: Text Content -->
+                  <h3
+                    class="text-lg md:text-xl font-bold mb-4"
+                    style="color: #1a75bb"
                   >
-                    <!-- Document 2: Text Content -->
-                    <h3
-                      class="text-lg md:text-xl font-bold mb-4"
-                      style="color: #1a75bb"
-                    >
-                      {{ currentLesson?.title || "Chưa có bài học" }}
-                    </h3>
-                    <div
-                      class="course-description-content prose max-w-none text-gray-700 leading-relaxed text-sm md:text-base"
-                      v-html="
-                        normalizedLessonContent ||
-                        currentLesson?.content ||
-                        'Chưa có nội dung'
-                      "
-                    ></div>
-                  </div>
+                    {{ currentLesson?.title || "Chưa có bài học" }}
+                  </h3>
+                  <div
+                    class="course-description-content prose max-w-none text-gray-700 leading-relaxed text-sm md:text-base"
+                    v-html="
+                      normalizedLessonContent ||
+                      currentLesson?.content ||
+                      'Chưa có nội dung'
+                    "
+                  ></div>
                 </div>
 
                 <!-- Quiz Card (Desktop) - Hiển thị ở cuối lesson nếu chapter có quiz -->
@@ -588,31 +578,31 @@
 
                     <!-- Documents Section -->
                     <div v-if="currentLesson" class="space-y-6">
-                      <div v-if="showTextSection">
-                        <!-- Document 2: Text Content -->
-                        <div
-                          class="bg-white rounded-lg border border-gray-200 p-4 md:p-6"
+                      <!-- Document 2: Text Content -->
+                      <div
+                        class="bg-white rounded-lg border border-gray-200 p-4 md:p-6"
+                      >
+                        <h3
+                          class="text-base md:text-lg font-bold mb-4"
+                          style="color: #1a75bb"
                         >
-                          <h3
-                            class="text-base md:text-lg font-bold mb-4"
-                            style="color: #1a75bb"
-                          >
-                            {{ currentLesson?.title || "Chưa có bài học" }}
-                          </h3>
-                          <div
-                            class="course-description-content prose max-w-none text-gray-700 leading-relaxed text-sm md:text-base"
-                            v-html="
-                              normalizedLessonContent ||
-                              currentLesson?.content ||
-                              'Chưa có nội dung'
-                            "
-                          ></div>
-                        </div>
+                          {{ currentLesson?.title || "Chưa có bài học" }}
+                        </h3>
+                        <div
+                          class="course-description-content prose max-w-none text-gray-700 leading-relaxed text-sm md:text-base"
+                          v-html="
+                            normalizedLessonContent ||
+                            currentLesson?.content ||
+                            'Chưa có nội dung'
+                          "
+                        ></div>
                       </div>
 
                       <!-- Quiz Card (Mobile) - Hiển thị ở cuối lesson nếu chapter có quiz -->
                       <div
-                        v-if="currentChapter && hasQuizInChapter(currentChapter)"
+                        v-if="
+                          currentChapter && hasQuizInChapter(currentChapter)
+                        "
                         class="mt-6"
                       >
                         <QuizCard
@@ -718,7 +708,7 @@
                 </a-tab-pane>
 
                 <a-tab-pane key="documents" tab="Tài liệu">
-                  <div class="p-4 md:p-6" v-if="showDocumentsSection">
+                  <div class="p-4 md:p-6">
                     <DocumentsComponent
                       :course-id="course?._id || ''"
                       :chapter-id="currentChapter?._id || ''"
@@ -1069,19 +1059,6 @@ const courseProgress = computed(() => {
   const progress = course.value.progress.progressPercentage || 0;
   return Math.min(progress, 100); // Ensure never exceeds 100%
 });
-
-// Lesson type helpers - show sections only based on current lesson type
-const lessonType = computed(() => currentLesson.value?.type || null);
-const showVideoSection = computed(
-  () => lessonType.value === "video" && hasVideo.value,
-);
-const showTextSection = computed(() =>
-  ["text", "document"].includes(lessonType.value as string),
-);
-const showDocumentsSection = computed(() => showTextSection.value);
-const showQuizCard = computed(
-  () => currentLesson.value?.type !== "quiz" && currentChapter.value != null && hasQuizInChapter(currentChapter.value),
-);
 
 // SEO - Must be after all computed properties are defined
 useHead({
