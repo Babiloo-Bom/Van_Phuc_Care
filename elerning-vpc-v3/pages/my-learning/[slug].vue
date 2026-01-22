@@ -1076,10 +1076,8 @@ const showLessonContent = computed(() => {
   // Text and Document types should show the content area
   if (t === 'text' || t === 'document') return true;
 
-  // For video: show textual content only if explicit content exists (video has its own player)
-  if (t === 'video') {
-    return !!(currentLesson.value.content && currentLesson.value.content.length > 0);
-  }
+  // For video: never show textual content (video should only render the player)
+  if (t === 'video') return false;
 
   // Fallback: show content if any content exists
   return !!(currentLesson.value.content && currentLesson.value.content.length > 0);
