@@ -118,7 +118,7 @@
                   <video
                     v-if="
                       isMounted &&
-                      currentVideoUrl &&
+                      showVideoSection &&
                       !videoTokenLoading &&
                       videoReady
                     "
@@ -159,7 +159,7 @@
 
                   <!-- Thumbnail với nút Play (nếu có video nhưng chưa click play) -->
                   <div
-                    v-else-if="hasVideo && !videoTokenLoading"
+                    v-else-if="showVideoSection && !videoTokenLoading"
                     class="relative w-full h-full"
                   >
                     <!-- Hiển thị thumbnail nếu có -->
@@ -194,7 +194,7 @@
 
                   <!-- Placeholder nếu không có video -->
                   <div
-                    v-else-if="!hasVideo"
+                    v-else-if="currentLesson?.type === 'video' && !hasVideo"
                     class="w-full h-full bg-gray-800 flex items-center justify-center"
                   >
                     <div class="text-center text-white">
@@ -437,7 +437,7 @@
             <!-- Desktop: Content without tabs -->
             <div class="hidden lg:block">
               <!-- Documents Section -->
-              <div v-if="currentLesson" class="space-y-6 mb-6">
+              <div v-if="showTextSection" class="space-y-6 mb-6">
                 <!-- Documents Component (if documents exist) -->
                 <div class="mt-6">
                   <DocumentsComponent
@@ -468,7 +468,7 @@
 
                 <!-- Quiz Card (Desktop) - Hiển thị ở cuối lesson nếu chapter có quiz -->
                 <div
-                  v-if="currentChapter && hasQuizInChapter(currentChapter)"
+                  v-if="currentChapter && hasQuizInChapter(currentChapter) && currentLesson?.type !== 'quiz'"
                   class="mt-6"
                 >
                   <QuizCard
@@ -577,7 +577,7 @@
                     </div>
 
                     <!-- Documents Section -->
-                    <div v-if="currentLesson" class="space-y-6">
+                    <div v-if="showTextSection" class="space-y-6">
                       <!-- Document 2: Text Content -->
                       <div
                         class="bg-white rounded-lg border border-gray-200 p-4 md:p-6"
@@ -601,7 +601,7 @@
                       <!-- Quiz Card (Mobile) - Hiển thị ở cuối lesson nếu chapter có quiz -->
                       <div
                         v-if="
-                          currentChapter && hasQuizInChapter(currentChapter)
+                          currentChapter && hasQuizInChapter(currentChapter) && currentLesson?.type !== 'quiz'
                         "
                         class="mt-6"
                       >
@@ -708,7 +708,7 @@
                 </a-tab-pane>
 
                 <a-tab-pane key="documents" tab="Tài liệu">
-                  <div class="p-4 md:p-6">
+                  <div class="p-4 md:p-6" v-if="showDocumentsSection">
                     <DocumentsComponent
                       :course-id="course?._id || ''"
                       :chapter-id="currentChapter?._id || ''"
@@ -1059,6 +1059,19 @@ const courseProgress = computed(() => {
   const progress = course.value.progress.progressPercentage || 0;
   return Math.min(progress, 100); // Ensure never exceeds 100%
 });
+
+// Lesson type helpers - show sections only based on current lesson type
+const lessonType = computed(() => currentLesson.value?.type || null);
+const showVideoSection = computed(
+  () => lessonType.value === "video" && hasVideo.value,
+);
+const showTextSection = computed(() =>
+  ["text", "document"].includes(lessonType.value as string),
+);
+const showDocumentsSection = computed(() => showTextSection.value);
+const showQuizCard = computed(
+  () => currentLesson.value?.type !== "quiz" && currentChapter.value != null && hasQuizInChapter(currentChapter.value),
+);
 
 // SEO - Must be after all computed properties are defined
 useHead({
