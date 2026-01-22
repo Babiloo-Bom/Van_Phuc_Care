@@ -1664,7 +1664,6 @@
                                 <a-input
                                   v-model:value="lesson.textSectionName"
                                   placeholder="VD: Nội dung chi tiết"
-                                  :disabled="!lesson.showText"
                                 />
                               </a-form-item>
                               <a-form-item label="Nội dung bài học">
@@ -1682,7 +1681,6 @@
                                 <a-input
                                   v-model:value="lesson.documentSectionName"
                                   placeholder="VD: Tài liệu tham khảo"
-                                  :disabled="!lesson.showDocument"
                                 />
                               </a-form-item>
                               <a-form-item label="Tài liệu bài học">
@@ -1748,7 +1746,6 @@
                                 <a-input
                                   v-model:value="lesson.quizSectionName"
                                   placeholder="VD: Bài kiểm tra"
-                                  :disabled="!lesson.showQuiz"
                                 />
                               </a-form-item>
                               <div
