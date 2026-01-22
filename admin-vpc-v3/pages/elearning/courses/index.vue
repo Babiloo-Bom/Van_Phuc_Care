@@ -772,14 +772,23 @@
                           />
                         </a-form-item>
                       </a-col>
-                      <a-col :span="12">
-                        <a-form-item label="Nội dung bài học">
-                          <a-select v-model:value="lesson.type" style="width: 100%">
-                            <a-select-option value="video">Video</a-select-option>
-                            <a-select-option value="text">Văn bản</a-select-option>
-                            <a-select-option value="document">Tài liệu</a-select-option>
-                            <a-select-option value="quiz">Trắc Nghiệm</a-select-option>
-                          </a-select>
+                      <!-- Display Section Flags -->
+                      <a-col :span="24">
+                        <a-form-item label="Hiển thị các phần">
+                          <a-space>
+                            <a-checkbox v-model:checked="lesson.showVideo">
+                              Video
+                            </a-checkbox>
+                            <a-checkbox v-model:checked="lesson.showText">
+                              Văn bản
+                            </a-checkbox>
+                            <a-checkbox v-model:checked="lesson.showDocument">
+                              Tài liệu đính kèm
+                            </a-checkbox>
+                            <a-checkbox v-model:checked="lesson.showQuiz">
+                              Quiz
+                            </a-checkbox>
+                          </a-space>
                         </a-form-item>
                       </a-col>
                       <a-col :span="12">
@@ -791,6 +800,17 @@
                           />
                         </a-form-item>
                       </a-col>
+                      <a-col :span="12">
+                        <a-form-item label="Nội dung bài học">
+                          <a-select v-model:value="lesson.type" style="width: 100%">
+                            <a-select-option value="video">Video</a-select-option>
+                            <a-select-option value="text">Văn bản</a-select-option>
+                            <a-select-option value="document">Tài liệu</a-select-option>
+                            <a-select-option value="quiz">Trắc Nghiệm</a-select-option>
+                          </a-select>
+                        </a-form-item>
+                      </a-col>
+                      
                       <!-- Video Content -->
                       <template v-if="lesson.type === 'video'">
                         <a-col :span="24">
@@ -2734,6 +2754,11 @@ const addLesson = (chapterIndex: number) => {
     videoThumbnail: '',
     uploadingVideo: false,
     uploadingDocument: false,
+    // Display section flags - Admin can choose which sections to show
+    showVideo: false,
+    showText: false,
+    showDocument: false,
+    showQuiz: false,
     quiz: {
       title: '',
       description: '',
@@ -3099,6 +3124,11 @@ const editCourse = async (course: Course) => {
                 videoThumbnail: lesson.videoThumbnail || (videos.length > 0 && videos[0].thumbnail ? videos[0].thumbnail : ''),
                 uploadingVideo: false,
                 uploadingDocument: false,
+                // Display section flags - Admin can choose which sections to show
+                showVideo: lesson.showVideo ?? false,
+                showText: lesson.showText ?? false,
+                showDocument: lesson.showDocument ?? false,
+                showQuiz: lesson.showQuiz ?? false,
                 quiz: lesson.quiz ? {
               title: lesson.quiz.title || '',
               description: lesson.quiz.description || '',

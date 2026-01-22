@@ -717,6 +717,11 @@ class CourseController {
                 hasQuiz,
                 isCompleted: completed,
                 isLocked: locked,
+                // Display section flags
+                showVideo: lessonData.showVideo ?? false,
+                showText: lessonData.showText ?? false,
+                showDocument: lessonData.showDocument ?? false,
+                showQuiz: lessonData.showQuiz ?? false,
               };
             })
           );
@@ -1548,6 +1553,11 @@ class CourseController {
                 hasQuiz,
                 isCompleted: completed,
                 isLocked: locked,
+                // Display section flags
+                showVideo: lessonData.showVideo ?? false,
+                showText: lessonData.showText ?? false,
+                showDocument: lessonData.showDocument ?? false,
+                showQuiz: lessonData.showQuiz ?? false,
               };
             })
           );

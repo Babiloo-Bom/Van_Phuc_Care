@@ -665,6 +665,11 @@ class CourseController {
                 hasQuiz,
                 isCompleted: completed,
                 isLocked: locked,
+                // Display section flags
+                showVideo: lessonData.showVideo ?? false,
+                showText: lessonData.showText ?? false,
+                showDocument: lessonData.showDocument ?? false,
+                showQuiz: lessonData.showQuiz ?? false,
               };
             })
           );
@@ -837,6 +842,12 @@ class CourseController {
                 lessonData.quiz = null;
               }
 
+              // Ensure display section flags are returned
+              lessonData.showVideo = lessonData.showVideo ?? false;
+              lessonData.showText = lessonData.showText ?? false;
+              lessonData.showDocument = lessonData.showDocument ?? false;
+              lessonData.showQuiz = lessonData.showQuiz ?? false;
+
               return lessonData;
             })
           );
@@ -912,6 +923,11 @@ class CourseController {
                 documents: lessonData.documents || [],
                 duration: lessonData.duration || 0,
                 status: lessonData.status || "active",
+                // Display section flags
+                showVideo: lessonData.showVideo ?? false,
+                showText: lessonData.showText ?? false,
+                showDocument: lessonData.showDocument ?? false,
+                showQuiz: lessonData.showQuiz ?? false,
               });
 
               totalLessons++;
@@ -1375,6 +1391,11 @@ class CourseController {
                     duration: lessonData.duration || 0,
                     status: lessonData.status || "active",
                     order: typeof lessonData.order === "number" ? lessonData.order : (typeof lessonData.index === "number" ? lessonData.index : 0),
+                    // Display section flags
+                    showVideo: lessonData.showVideo ?? false,
+                    showText: lessonData.showText ?? false,
+                    showDocument: lessonData.showDocument ?? false,
+                    showQuiz: lessonData.showQuiz ?? false,
                   },
                   { new: true }
                 );
@@ -1395,6 +1416,11 @@ class CourseController {
                     duration: lessonData.duration || 0,
                     status: lessonData.status || "active",
                     order: typeof lessonData.order === "number" ? lessonData.order : (typeof lessonData.index === "number" ? lessonData.index : 0),
+                    // Display section flags
+                    showVideo: lessonData.showVideo ?? false,
+                    showText: lessonData.showText ?? false,
+                    showDocument: lessonData.showDocument ?? false,
+                    showQuiz: lessonData.showQuiz ?? false,
                   });
                 }
               } else {
@@ -1412,6 +1438,11 @@ class CourseController {
                   duration: lessonData.duration || 0,
                   status: lessonData.status || "active",
                   order: typeof lessonData.order === "number" ? lessonData.order : (typeof lessonData.index === "number" ? lessonData.index : 0),
+                  // Display section flags
+                  showVideo: lessonData.showVideo ?? false,
+                  showText: lessonData.showText ?? false,
+                  showDocument: lessonData.showDocument ?? false,
+                  showQuiz: lessonData.showQuiz ?? false,
                 });
               }
 

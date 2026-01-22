@@ -162,6 +162,23 @@ class Lessons {
         type: Number,
         default: 0,
       },
+      // Lesson display sections - Admin can choose which sections to show
+      showVideo: {
+        type: Boolean,
+        default: false,
+      },
+      showText: {
+        type: Boolean,
+        default: false,
+      },
+      showDocument: {
+        type: Boolean,
+        default: false,
+      },
+      showQuiz: {
+        type: Boolean,
+        default: false,
+      },
     }, {
       timestamps: true,
       toJSON: { virtuals: true },
