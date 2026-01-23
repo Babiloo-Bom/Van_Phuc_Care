@@ -187,9 +187,12 @@ export function startLogoutSyncMonitor(callback: () => void, intervalMs: number 
     const hasCookie = checkLogoutSyncCookie();
     if (hasCookie) {
       // Clear cookie AFTER calling callback to ensure it's processed
-      // But clear it to prevent multiple triggers
-      clearLogoutSyncCookie();
+      // This prevents multiple triggers while ensuring the callback runs
       callback();
+      // Clear cookie after a short delay to ensure callback has processed
+      setTimeout(() => {
+        clearLogoutSyncCookie();
+      }, 100);
     }
   }, intervalMs);
   

@@ -153,23 +153,27 @@ export function checkLogoutSyncCookie(): boolean {
  */
 export function clearLogoutSyncCookie() {
   if (process.client) {
-    if (isLocalhost()) {
-      // Clear all localStorage sync keys
+    const site = getSiteType();
+    if (site === 'admin') {
+      // Clear admin localStorage keys
       const keys = Object.keys(localStorage).filter(key => key.startsWith('auth_logout_sync_'));
       keys.forEach(key => {
         localStorage.removeItem(key);
       });
-    } else {
-      // Production: Clear cookie (try both with and without domain)
-      try {
-        // Clear with domain
-        document.cookie = `${LOGOUT_SYNC_COOKIE}=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/; domain=${COOKIE_DOMAIN}; SameSite=Lax`;
-        // Also clear without domain (in case it was set without domain)
-        document.cookie = `${LOGOUT_SYNC_COOKIE}=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/; SameSite=Lax`;
-      } catch (e) {
-        // Fallback
-        document.cookie = `${LOGOUT_SYNC_COOKIE}=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/; SameSite=Lax`;
+      return;
+    }
+
+    // CRM / Elearning: Clear cookie (try both with and without domain)
+    try {
+      const domain = getCookieDomain();
+      if (domain) {
+        document.cookie = `${LOGOUT_SYNC_COOKIE}=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/; domain=${domain}; SameSite=Lax`;
       }
+      // Also clear without domain (in case it was set without domain)
+      document.cookie = `${LOGOUT_SYNC_COOKIE}=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/; SameSite=Lax`;
+    } catch (e) {
+      // Fallback
+      document.cookie = `${LOGOUT_SYNC_COOKIE}=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/; SameSite=Lax`;
     }
   }
 }
@@ -185,9 +189,12 @@ export function startLogoutSyncMonitor(callback: () => void, intervalMs: number 
     const hasCookie = checkLogoutSyncCookie();
     if (hasCookie) {
       // Clear cookie AFTER calling callback to ensure it's processed
-      // But clear it to prevent multiple triggers
-      clearLogoutSyncCookie();
+      // This prevents multiple triggers while ensuring the callback runs
       callback();
+      // Clear cookie after a short delay to ensure callback has processed
+      setTimeout(() => {
+        clearLogoutSyncCookie();
+      }, 100);
     }
   }, intervalMs);
   
