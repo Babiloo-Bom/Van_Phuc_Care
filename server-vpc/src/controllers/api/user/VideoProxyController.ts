@@ -1140,7 +1140,7 @@ export default class VideoProxyController {
     lessonId: string
   ): Promise<boolean> {
     try {
-      // Check if user has purchased the course
+      // Check if user has purchased the course via Order
       const OrderModel = (await import('@mongodb/orders')).default;
       const completedOrder = await OrderModel.model.findOne({
         userId: userId,
@@ -1150,17 +1150,27 @@ export default class VideoProxyController {
 
       if (completedOrder) return true;
 
+      // Check if user has purchased the course via courseRegister (alternative method)
+      const UserModel = (await import('@mongodb/users')).default;
+      const user = await UserModel.model.findById(userId);
+      if (user) {
+        const courseRegister = (user as any).courseRegister || [];
+        const courseIdStr = courseId.toString();
+        const userHasPurchased = courseRegister.some(
+          (id: string) => String(id) === courseIdStr || id === courseIdStr
+        );
+        if (userHasPurchased) return true;
+
+        // Check if user is admin or has courseCompleted
+        if ((user as any).role === 'admin' || (user as any).courseCompleted?.includes(courseId)) {
+          return true;
+        }
+      }
+
       // Check if lesson is preview
       const LessonsModel = (await import('@mongodb/lessons')).default;
       const lesson = await LessonsModel.model.findById(lessonId);
       if (lesson && (lesson as any).isPreview) return true;
-
-      // Check if user is admin
-      const UserModel = (await import('@mongodb/users')).default;
-      const user = await UserModel.model.findById(userId);
-      if (user && ((user as any).role === 'admin' || (user as any).courseCompleted?.includes(courseId))) {
-        return true;
-      }
 
       return false;
     } catch (error) {
