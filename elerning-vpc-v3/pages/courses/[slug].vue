@@ -1655,6 +1655,8 @@ const getIntroVideoToken = async () => {
     const headers: Record<string, string> = {
       "Content-Type": "application/json",
     };
+
+    
     
     // Only add Authorization header if user is logged in
     if (authStore.token) {
