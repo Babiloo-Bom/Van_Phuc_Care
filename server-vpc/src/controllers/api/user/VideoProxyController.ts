@@ -114,16 +114,13 @@ export default class VideoProxyController {
   /**
    * API: Lấy video token
    * POST /api/u/video/token
-   * Body: { lessonId, courseId }
+   * Body: { lessonId, courseId, isIntroVideo }
+   * - Intro video: không cần authentication (public preview)
+   * - Lesson video: cần authentication
    */
   public static async getVideoToken(req: Request, res: Response) {
     try {
       const currentUser = (req as any).currentUser;
-      if (!currentUser) {
-        return sendError(res, 401, 'Unauthorized');
-      }
-
-      const userId = currentUser._id?.toString() || currentUser.id?.toString();
       const { lessonId, courseId, isIntroVideo } = req.body;
 
       if (!courseId) {
@@ -136,19 +133,36 @@ export default class VideoProxyController {
         return sendError(res, 400, 'Missing lessonId for lesson video');
       }
 
-      // Verify user has access to this course
+      // Intro video: không cần authentication (public preview)
       if (isIntroVideo) {
-        // For intro video, just verify course access (intro video is usually public/preview)
-        // You can add course access check here if needed
-      } else {
-        const hasAccess = await VideoProxyController.verifyUserAccess(userId, courseId, lessonId);
-        if (!hasAccess) {
-          return sendError(res, 403, 'Bạn không có quyền truy cập video này');
-        }
+        // Use anonymous userId for intro video
+        const userId = currentUser?._id?.toString() || currentUser?.id?.toString() || 'anonymous';
+        const token = VideoProxyController.generateVideoToken(courseId, userId, undefined, true);
+        
+        return res.json({
+          success: true,
+          data: {
+            token,
+            expiresIn: TOKEN_EXPIRY_SECONDS,
+          },
+        });
+      }
+
+      // Lesson video: cần authentication
+      if (!currentUser) {
+        return sendError(res, 401, 'Unauthorized - Please login to access lesson videos');
+      }
+
+      const userId = currentUser._id?.toString() || currentUser.id?.toString();
+
+      // Verify user has access to this course/lesson
+      const hasAccess = await VideoProxyController.verifyUserAccess(userId, courseId, lessonId);
+      if (!hasAccess) {
+        return sendError(res, 403, 'Bạn không có quyền truy cập video này');
       }
 
       // Generate token
-      const token = VideoProxyController.generateVideoToken(courseId, userId, lessonId, isIntroVideo);
+      const token = VideoProxyController.generateVideoToken(courseId, userId, lessonId, false);
 
       res.json({
         success: true,

@@ -12,10 +12,11 @@ export const useUploadsApi = () => {
 
   return {
     /**
-     * Upload single or multiple files to Firebase
+     * Upload single or multiple files to MinIO
      */
     async uploadFiles(files: File | File[], options?: FileUploadOptions) {
       const formData = new FormData();
+      const folder = options?.folder || 'general';
       
       if (Array.isArray(files)) {
         files.forEach(file => {
@@ -44,16 +45,16 @@ export const useUploadsApi = () => {
         formData.append('files', files);
       }
 
-      return apiClient.upload<UploadResponse>('/api/uploads', formData, {
+      return apiClient.upload<UploadResponse>(`/api/uploads/minio?folder=${folder}`, formData, {
         errorMessage: 'Không thể upload file',
         timeout: 120000, // 2 minutes for large files
       });
     },
 
     /**
-     * Upload image
+     * Upload image to MinIO
      */
-    async uploadImage(file: File) {
+    async uploadImage(file: File, folder: string = 'images') {
       // Validate image type
       const allowedTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/gif', 'image/webp'];
       if (!allowedTypes.includes(file.type)) {
@@ -66,9 +67,9 @@ export const useUploadsApi = () => {
       }
 
       const formData = new FormData();
-      formData.append('image', file);
+      formData.append('files', file);
 
-      return apiClient.upload<UploadResponse>('/api/uploaders/image', formData, {
+      return apiClient.upload<UploadResponse>(`/api/uploads/minio?folder=${folder}`, formData, {
         errorMessage: 'Không thể upload ảnh',
       });
     },

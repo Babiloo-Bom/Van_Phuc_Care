@@ -225,29 +225,47 @@ const handleUpload = async (file: File, pageType: 'all-courses' | 'my-courses') 
   // Upload to server
   uploading.value = true
   try {
-    const uploadResponse = await uploadsApi.uploadImage(file)
+    const uploadResponse = await uploadsApi.uploadImage(file, 'images')
     
     if (uploadResponse.status) {
-      // Response structure: { status: true, data: { message: '', data: { fileAttributes: [{ source: 'url' }] } } }
+      // Response structure from MinIO: { status: true, data: { message: '', data: { files: [{ url: '...' }] } } } }
+      // Response structure from Firebase: { status: true, data: { message: '', data: { fileAttributes: [{ source: '...' }] } } } }
       const responseData = uploadResponse.data as any
       let imageUrl = ''
       
-      // Try multiple possible paths for the image URL
-      // Path 1: data.data.fileAttributes[0].source (from sendSuccess wrap)
-      if (responseData?.data?.fileAttributes?.[0]?.source) {
+      // MinIO format (from sendSuccess): { message: "", data: { files: [{ url: "..." }] } }
+      // After useApiClient wrap: { status: true, data: { message: "", data: { files: [...] } } }
+      
+      // Path 1: data.data.files[0].url (MinIO - wrapped by sendSuccess + useApiClient) - PRIORITY
+      if (responseData?.data?.files?.[0]?.url) {
+        imageUrl = responseData.data.files[0].url
+      }
+      // Path 2: data.files[0].url (MinIO - direct, if not wrapped by sendSuccess)
+      else if (responseData?.files?.[0]?.url) {
+        imageUrl = responseData.files[0].url
+      }
+      // Path 3: data.data.fileAttributes[0].source (Firebase - wrapped by sendSuccess)
+      else if (responseData?.data?.fileAttributes?.[0]?.source) {
         imageUrl = responseData.data.fileAttributes[0].source
       }
-      // Path 2: data.fileAttributes[0].source (direct response)
+      // Path 4: data.fileAttributes[0].source (Firebase - direct response)
       else if (responseData?.fileAttributes?.[0]?.source) {
         imageUrl = responseData.fileAttributes[0].source
       }
-      // Path 3: Other formats
-      else if (responseData?.url) {
-        imageUrl = responseData.url
-      } else if (responseData?.data?.url) {
+      // Path 5: data.data.url (single file in data)
+      else if (responseData?.data?.url) {
         imageUrl = responseData.data.url
       }
+      // Path 6: data.url (single file response)
+      else if (responseData?.url) {
+        imageUrl = responseData.url
+      }
       
+      // Debug: Log if no URL found
+      if (!imageUrl) {
+        console.error('handleUpload - No URL found. Response:', JSON.stringify(uploadResponse, null, 2))
+        console.error('handleUpload - responseData:', JSON.stringify(responseData, null, 2))
+      }
       
       if (imageUrl) {
         const fileItem = {

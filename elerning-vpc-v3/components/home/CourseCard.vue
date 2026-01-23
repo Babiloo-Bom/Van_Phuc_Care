@@ -7,7 +7,7 @@
     >
       <div class="relative">
         <div class="relative">
-          <img class="rounded-t-md w-[100%] aspect-[16/9] object-cover" :src="course.thumbnail" :alt="course.slug">
+          <img class="rounded-t-md w-[100%] aspect-[16/9] object-cover" :src="getImageUrl(course.thumbnail, '/images/courses/default-course.jpg')" :alt="course.slug">
           
           <!-- Status Badge -->
           <div v-if="courseStatus !== 'not_purchased'" class="absolute top-2 right-2">
@@ -163,6 +163,7 @@
 import { computed } from 'vue'
 import { useAuthStore } from '~/stores/auth'
 import { useCartStore } from '~/stores/cart'
+import { useImageUrl } from '~/composables/useImageUrl'
 
 interface Course {
   _id: string
@@ -192,6 +193,7 @@ interface Props {
 
 const props = defineProps<Props>()
 const cartStore = useCartStore()
+const { getImageUrl } = useImageUrl()
 
 
 // Computed để xác định trạng thái khóa học

@@ -2570,25 +2570,38 @@ const extractImageUrl = (response: any): string => {
   const responseData = response.data as any;
   let imageUrl = "";
 
-  // Path 1: data.data.fileAttributes[0].source (from sendSuccess wrap)
-  if (responseData?.data?.fileAttributes?.[0]?.source) {
-    imageUrl = responseData.data.fileAttributes[0].source;
+  // MinIO format (from sendSuccess): { message: "", data: { files: [{ url: "..." }] } }
+  // After useApiClient wrap: { status: true, data: { message: "", data: { files: [...] } } }
+  
+  // Path 1: data.data.files[0].url (MinIO - wrapped by sendSuccess + useApiClient) - PRIORITY
+  if (responseData?.data?.files?.[0]?.url) {
+    imageUrl = responseData.data.files[0].url;
   }
-  // Path 2: data.fileAttributes[0].source (direct response)
-  else if (responseData?.fileAttributes?.[0]?.source) {
-    imageUrl = responseData.fileAttributes[0].source;
-  }
-  // Path 3: data.files[0].url
+  // Path 2: data.files[0].url (MinIO - direct, if not wrapped by sendSuccess)
   else if (responseData?.files?.[0]?.url) {
     imageUrl = responseData.files[0].url;
   }
-  // Path 4: data.url
+  // Path 3: data.data.fileAttributes[0].source (from sendSuccess wrap - Firebase)
+  else if (responseData?.data?.fileAttributes?.[0]?.source) {
+    imageUrl = responseData.data.fileAttributes[0].source;
+  }
+  // Path 4: data.fileAttributes[0].source (direct response - Firebase)
+  else if (responseData?.fileAttributes?.[0]?.source) {
+    imageUrl = responseData.fileAttributes[0].source;
+  }
+  // Path 5: data.data.url (single file in data)
+  else if (responseData?.data?.url) {
+    imageUrl = responseData.data.url;
+  }
+  // Path 6: data.url (single file response)
   else if (responseData?.url) {
     imageUrl = responseData.url;
   }
-  // Path 5: data.data.url
-  else if (responseData?.data?.url) {
-    imageUrl = responseData.data.url;
+
+  // Debug: Log if no URL found
+  if (!imageUrl) {
+    console.error("extractImageUrl - No URL found. Response:", JSON.stringify(response, null, 2));
+    console.error("extractImageUrl - responseData:", JSON.stringify(responseData, null, 2));
   }
 
   return imageUrl;
@@ -2869,17 +2882,45 @@ const handleRemoveThumbnail = () => {
   formRef.value?.clearValidate("thumbnail");
 };
 
-const handleBannerChange = (info: any) => {
+const handleBannerChange = async (info: any) => {
   const { fileList } = info;
   if (fileList.length > 0) {
     const file = fileList[0];
-    // Tạo preview URL từ file local
+    
+    // Nếu có file mới, upload ngay lên MinIO
     if (file.originFileObj) {
-      const reader = new FileReader();
-      reader.onload = (e) => {
-        formData.banner = e.target?.result as string;
-      };
-      reader.readAsDataURL(file.originFileObj);
+      try {
+        const uploadsApi = useUploadsApi();
+        const response = await uploadsApi.uploadImage(file.originFileObj as File, 'courses/banners');
+
+        if (!response.status) {
+          throw new Error(response.message || "Upload thất bại");
+        }
+
+        // Extract image URL using helper function
+        const imageUrl = extractImageUrl(response);
+
+        if (imageUrl) {
+          formData.banner = imageUrl;
+          // Cập nhật fileList với URL từ server
+          bannerFileList.value = [
+            {
+              uid: file.uid || `-${Date.now()}`,
+              name: file.name || file.originFileObj.name,
+              status: "done" as const,
+              url: imageUrl,
+            },
+          ];
+          message.success("Upload banner thành công");
+        } else {
+          message.error("Không nhận được URL ảnh từ server. Vui lòng thử lại.");
+          bannerFileList.value = [];
+        }
+      } catch (error: any) {
+        console.error("Upload banner error:", error);
+        message.error(error.message || "Upload banner thất bại");
+        bannerFileList.value = [];
+      }
     } else if (file.url) {
       // Nếu đã có URL (khi edit)
       formData.banner = file.url;
@@ -3050,7 +3091,7 @@ const handleIntroVideoThumbnailChange = async (info: any) => {
     const file = fileList[0].originFileObj as File;
     try {
       const uploadsApi = useUploadsApi();
-      const response = await uploadsApi.uploadImage(file);
+      const response = await uploadsApi.uploadImage(file, 'courses/video-thumbnails');
 
       if (!response.status) {
         throw new Error(response.message || "Upload thất bại");
@@ -3104,7 +3145,7 @@ const handleLessonVideoThumbnailChange = async (
     const file = fileList[0].originFileObj as File;
     try {
       const uploadsApi = useUploadsApi();
-      const response = await uploadsApi.uploadImage(file);
+      const response = await uploadsApi.uploadImage(file, 'courses/lesson-thumbnails');
       const imageUrl = extractImageUrl(response);
 
       if (imageUrl) {
@@ -3295,13 +3336,43 @@ const uploadFileToMinIO = async (
       },
     });
 
-    // Parse response
-    const files = response?.data?.files || response?.files || [];
+    // Parse response from sendSuccess format: { message: "", data: { files: [...] } }
+    // $fetch returns the response directly from sendSuccess
+    let files: any[] = [];
+    let fileUrl: string | null = null;
+    
+    // Path 1: response.data.files (from sendSuccess: { message: "", data: { files: [...] } })
+    if (response?.data?.files && Array.isArray(response.data.files)) {
+      files = response.data.files;
+    }
+    // Path 2: response.files (direct, if response is unwrapped)
+    else if (response?.files && Array.isArray(response.files)) {
+      files = response.files;
+    }
+    // Path 3: response.data (if files array is directly in data)
+    else if (response?.data && Array.isArray(response.data)) {
+      files = response.data;
+    }
+    // Path 4: response is directly a file object with url
+    else if (response?.url) {
+      fileUrl = response.url;
+    }
+    // Path 5: response.data.url (single file response)
+    else if (response?.data?.url) {
+      fileUrl = response.data.url;
+    }
 
-    if (files.length > 0 && files[0].url) {
+    // Get URL from files array or direct fileUrl
+    if (fileUrl) {
+      return fileUrl;
+    }
+    
+    if (files.length > 0 && files[0]?.url) {
       return files[0].url;
     }
 
+    // Debug: Log response if no URL found
+    console.error("Upload MinIO - No URL found. Response:", JSON.stringify(response, null, 2));
     throw new Error("Upload failed: No file URL in response");
   } catch (error: any) {
     throw new Error(error.message || "Upload failed");
@@ -4650,7 +4721,7 @@ const handleReviewAvatarChange = async (info: any) => {
     // Upload file
     try {
       const uploadsApi = useUploadsApi();
-      const response = await uploadsApi.uploadImage(file);
+      const response = await uploadsApi.uploadImage(file, 'avatars');
 
       if (response.status && response.data) {
         const imageUrl = extractImageUrl(response);
@@ -4903,17 +4974,19 @@ const handleModalOk = async () => {
       formData.thumbnail = thumbnailFileList.value[0].url;
     }
 
-    // Upload banner to MinIO - CHỈ KHI CÓ FILE MỚI
+    // Upload banner to MinIO - CHỈ KHI CÓ FILE MỚI VÀ CHƯA CÓ URL
+    // Nếu đã upload qua handleBannerChange thì sẽ có URL rồi, không cần upload lại
     if (
       bannerFileList.value.length > 0 &&
-      bannerFileList.value[0]?.originFileObj
+      bannerFileList.value[0]?.originFileObj &&
+      !formData.banner
     ) {
       formData.banner = await uploadFileToMinIO(
         bannerFileList.value[0].originFileObj as File,
         "courses/banners",
       );
     }
-    // Nếu không có file mới nhưng có URL (khi edit), giữ nguyên URL
+    // Nếu không có file mới nhưng có URL (khi edit hoặc đã upload), giữ nguyên URL
     else if (bannerFileList.value.length > 0 && bannerFileList.value[0]?.url) {
       formData.banner = bannerFileList.value[0].url;
     }
@@ -4955,6 +5028,7 @@ const handleModalOk = async () => {
       const uploadsApi = useUploadsApi();
       const response = await uploadsApi.uploadImage(
         introVideoThumbnailFileList.value[0].originFileObj as File,
+        'courses/video-thumbnails',
       );
       formData.introVideoThumbnail = extractImageUrl(response);
     }
@@ -5009,6 +5083,7 @@ const handleModalOk = async () => {
               // Upload new thumbnail
               const response = await uploadsApi.uploadImage(
                 lesson.videoThumbnailFileList[0].originFileObj as File,
+                'courses/lesson-thumbnails',
               );
               lesson.videoThumbnail = extractImageUrl(response);
             } else if (lesson.videoThumbnailFileList[0].url) {

@@ -1,13 +1,13 @@
 import { Router } from 'express';
 import VideoProxyController from '@controllers/api/user/VideoProxyController';
-import { userPassport } from '@middlewares/passport';
+import { optionalUserAuth } from '@middlewares/passport';
 import videoSecurityMiddleware from '@middlewares/videoSecurity';
 import { videoRateLimiter } from '@middlewares/rateLimiter';
 
 const router = Router();
 
-// Get video token (requires authentication)
-router.post('/token', userPassport.authenticate('jwt', { session: false }), VideoProxyController.getVideoToken);
+// Get video token (optional authentication - intro video doesn't require auth)
+router.post('/token', optionalUserAuth, VideoProxyController.getVideoToken);
 
 // Stream video (token-based authentication with security middleware + rate limiting)
 // Rate limit: 100 requests per minute per IP

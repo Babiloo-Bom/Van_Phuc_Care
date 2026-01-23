@@ -91,9 +91,10 @@
                       introVideoReady
                     "
                     ref="videoRef"
-                    :poster="
-                      (course as any)?.introVideoThumbnail || course?.thumbnail
-                    "
+                    :poster="getImageUrlWithPriority([
+                      (course as any)?.introVideoThumbnail,
+                      course?.thumbnail
+                    ], '/images/courses/python-course.jpg')"
                     class="w-full aspect-[16/9] object-cover rounded-[8px] sm:rounded-[12px] video-element"
                     preload="none"
                     playsinline
@@ -116,11 +117,10 @@
                   >
                     <img
                       class="w-full h-full object-cover"
-                      :src="
-                        (course as any)?.introVideoThumbnail ||
-                        course?.thumbnail ||
-                        '/images/courses/python-course.jpg'
-                      "
+                      :src="getImageUrlWithPriority([
+                        (course as any)?.introVideoThumbnail,
+                        course?.thumbnail
+                      ], '/images/courses/python-course.jpg')"
                       alt="Course thumbnail"
                     />
                     <!-- Play button overlay -->
@@ -145,9 +145,7 @@
                   <img
                     v-else
                     class="w-full aspect-[16/9] object-cover rounded-[8px] sm:rounded-md"
-                    :src="
-                      course?.thumbnail || '/images/courses/python-course.jpg'
-                    "
+                    :src="getImageUrl(course?.thumbnail, '/images/courses/python-course.jpg')"
                     alt="Course thumbnail"
                   />
                 </div>
@@ -451,8 +449,7 @@
                               <img
                                 class="w-full h-full object-cover rounded-full border-4 border-prim-100 shadow-lg"
                                 :src="
-                                  course?.instructor?.avatar ||
-                                  '/images/avatar-demo.png'
+                                  getImageUrl(course?.instructor?.avatar, '/images/avatar-demo.png')
                                 "
                                 alt="Giảng viên"
                               />
@@ -619,8 +616,7 @@
                                 <img
                                   class="w-16 h-16 object-cover rounded-full"
                                   :src="
-                                    review.userAvatar ||
-                                    '/images/avatar-demo.png'
+                                    getImageUrl(review.userAvatar, '/images/avatar-demo.png')
                                   "
                                   :alt="review.userName"
                                 />
@@ -702,7 +698,7 @@
                 <div class="course-thumbnail-16x9">
                   <img
                     class="w-full h-full object-cover"
-                    :src="course?.thumbnail || '/images/courses/python-course.jpg'"
+                    :src="getImageUrl(course?.thumbnail, '/images/courses/python-course.jpg')"
                     alt="/"
                   />
                 </div>
@@ -1212,6 +1208,7 @@ import { useAuthStore } from "~/stores/auth";
 import { message } from "ant-design-vue";
 import ContentCourse from "~/components/courses/ContentCourse.vue";
 import RecomentCourse from "~/components/courses/RecomentCourse.vue";
+import { useImageUrl } from "~/composables/useImageUrl";
 import CartToast from "~/components/cart/Toast.vue";
 import type { AddToCartData } from "~/types/cart";
 import { useApiBase } from "~/composables/useApiBase";
@@ -1224,6 +1221,7 @@ const coursesStore = useCoursesStore();
 const cartStore = useCartStore();
 const authStore = useAuthStore();
 const { apiUser } = useApiBase();
+const { getImageUrlWithPriority, getImageUrl } = useImageUrl();
 
 const activeTab = ref("1");
 const loadingReview = ref(false);
@@ -1654,12 +1652,18 @@ const getIntroVideoToken = async () => {
 
   try {
     introVideoTokenLoading.value = true;
+    const headers: Record<string, string> = {
+      "Content-Type": "application/json",
+    };
+    
+    // Only add Authorization header if user is logged in
+    if (authStore.token) {
+      headers.Authorization = `Bearer ${authStore.token}`;
+    }
+    
     const response = await fetch(`${apiUser}/video/token`, {
       method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: `Bearer ${authStore.token}`,
-      },
+      headers,
       body: JSON.stringify({
         courseId: course.value._id,
         isIntroVideo: true,

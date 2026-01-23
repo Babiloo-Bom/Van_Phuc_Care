@@ -626,60 +626,6 @@
                           :course-slug="slug"
                         />
                       </div>
-
-                      <!-- Navigation Buttons: Bài trước / Bài tiếp theo (Mobile) -->
-                      <div class="flex justify-center gap-3 mt-6">
-                        <button
-                          :disabled="isFirstLesson"
-                          :class="[
-                            'flex items-center gap-2 px-4 py-2.5 rounded-lg border-2 font-semibold text-sm transition-all',
-                            isFirstLesson
-                              ? 'border-gray-300 text-gray-400 cursor-not-allowed bg-gray-50'
-                              : 'border-[#1A75BB] text-[#1A75BB] hover:bg-[#1A75BB] hover:text-white cursor-pointer',
-                          ]"
-                          @click="goToPreviousLesson"
-                        >
-                          <svg
-                            xmlns="http://www.w3.org/2000/svg"
-                            width="18"
-                            height="18"
-                            viewBox="0 0 24 24"
-                            fill="none"
-                            stroke="currentColor"
-                            stroke-width="2"
-                            stroke-linecap="round"
-                            stroke-linejoin="round"
-                          >
-                            <path d="M19 12H5M12 19l-7-7 7-7" />
-                          </svg>
-                          <span>Bài trước</span>
-                        </button>
-                        <button
-                          :disabled="isLastLesson"
-                          :class="[
-                            'flex items-center gap-2 px-4 py-2.5 rounded-lg border-2 font-semibold text-sm transition-all',
-                            isLastLesson
-                              ? 'border-gray-300 text-gray-400 cursor-not-allowed bg-gray-50'
-                              : 'border-[#1A75BB] text-[#1A75BB] hover:bg-[#1A75BB] hover:text-white cursor-pointer',
-                          ]"
-                          @click="goToNextLesson"
-                        >
-                          <span>Bài tiếp theo</span>
-                          <svg
-                            xmlns="http://www.w3.org/2000/svg"
-                            width="18"
-                            height="18"
-                            viewBox="0 0 24 24"
-                            fill="none"
-                            stroke="currentColor"
-                            stroke-width="2"
-                            stroke-linecap="round"
-                            stroke-linejoin="round"
-                          >
-                            <path d="M5 12h14M12 5l7 7-7 7" />
-                          </svg>
-                        </button>
-                      </div>
                     </div>
                   </div>
                 </a-tab-pane>
@@ -732,6 +678,60 @@
                   </div>
                 </a-tab-pane>
               </a-tabs>
+
+              <!-- Navigation Buttons: Bài trước / Bài tiếp theo (Mobile) - Luôn hiển thị bên dưới tabs -->
+              <div v-if="!isQuiz && !showCertificate" class="flex justify-center gap-3 mt-4 pb-4">
+                <button
+                  :disabled="isFirstLesson"
+                  :class="[
+                    'flex items-center gap-2 px-4 py-2.5 rounded-lg border-2 font-semibold text-sm transition-all',
+                    isFirstLesson
+                      ? 'border-gray-300 text-gray-400 cursor-not-allowed bg-gray-50'
+                      : 'border-[#1A75BB] text-[#1A75BB] hover:bg-[#1A75BB] hover:text-white cursor-pointer',
+                  ]"
+                  @click="goToPreviousLesson"
+                >
+                  <svg
+                    xmlns="http://www.w3.org/2000/svg"
+                    width="18"
+                    height="18"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    stroke-width="2"
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                  >
+                    <path d="M19 12H5M12 19l-7-7 7-7" />
+                  </svg>
+                  <span>Bài trước</span>
+                </button>
+                <button
+                  :disabled="isLastLesson"
+                  :class="[
+                    'flex items-center gap-2 px-4 py-2.5 rounded-lg border-2 font-semibold text-sm transition-all',
+                    isLastLesson
+                      ? 'border-gray-300 text-gray-400 cursor-not-allowed bg-gray-50'
+                      : 'border-[#1A75BB] text-[#1A75BB] hover:bg-[#1A75BB] hover:text-white cursor-pointer',
+                  ]"
+                  @click="goToNextLesson"
+                >
+                  <span>Bài tiếp theo</span>
+                  <svg
+                    xmlns="http://www.w3.org/2000/svg"
+                    width="18"
+                    height="18"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    stroke-width="2"
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                  >
+                    <path d="M5 12h14M12 5l7 7-7 7" />
+                  </svg>
+                </button>
+              </div>
             </div>
           </div>
           <div

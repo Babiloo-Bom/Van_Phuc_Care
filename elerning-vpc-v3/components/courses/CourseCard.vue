@@ -2,7 +2,7 @@
   <div class="course-card" @click="goToCourseDetail">
     <div class="course-thumbnail">
       <img
-        :src="course.thumbnail || '/images/courses/default-course.jpg'"
+        :src="getImageUrl(course.thumbnail, '/images/courses/default-course.jpg')"
         :alt="course.title"
         class="thumbnail-image"
       />
@@ -184,6 +184,7 @@ import Rating from "~/components/courses/Rating.vue";
 import { useRouter } from "vue-router";
 import { computed } from "vue";
 import { useAuthStore } from "~/stores/auth";
+import { useImageUrl } from "~/composables/useImageUrl";
 
 interface Course {
   _id: string;
@@ -236,6 +237,7 @@ const emit = defineEmits<{
 
 const router = useRouter();
 const authStore = useAuthStore();
+const { getImageUrl } = useImageUrl();
 
 // % tiến trình hiện tại của khóa học (ưu tiên prop progress, fallback course.progress)
 const progressPct = computed(() => {
