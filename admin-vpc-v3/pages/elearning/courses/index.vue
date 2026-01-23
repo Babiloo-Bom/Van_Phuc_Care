@@ -1889,6 +1889,7 @@
                     </div>
                   </div>
                   <a-button
+                    v-show="!isChapterLessonsCollapsed(chapterIndex)"
                     type="dashed"
                     @click="addLesson(chapterIndex)"
                     style="width: 100%; margin-top: 16px"
