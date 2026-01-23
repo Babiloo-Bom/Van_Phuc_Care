@@ -5060,6 +5060,16 @@ const handleModalOk = async () => {
               videos: lesson.videos || [],
               documents: lesson.documents || [],
               videoThumbnail: lesson.videoThumbnail || "",
+              // Display section flags
+              showVideo: lesson.showVideo ?? false,
+              showText: lesson.showText ?? false,
+              showDocument: lesson.showDocument ?? false,
+              showQuiz: lesson.showQuiz ?? false,
+              // Section names
+              videoSectionName: lesson.videoSectionName ?? '',
+              textSectionName: lesson.textSectionName ?? '',
+              documentSectionName: lesson.documentSectionName ?? '',
+              quizSectionName: lesson.quizSectionName ?? '',
             };
 
             // Handle quiz - Always send quiz data if it exists, regardless of type
