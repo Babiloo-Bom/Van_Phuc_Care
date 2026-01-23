@@ -131,6 +131,16 @@ export const useAuthStore = defineStore("auth", {
           this.justLoggedIn = false;
         }, 30000); // 30 seconds grace period (increased from 15)
 
+        // Clear logout sync cookie when logging in successfully to prevent auto-logout
+        if (process.client) {
+          try {
+            const { clearLogoutSyncCookie } = await import('~/utils/authSync');
+            clearLogoutSyncCookie();
+          } catch (e) {
+            // Ignore errors
+          }
+        }
+
         // Persist auth using cookies (Elearning uses cookie-only persistence)
         if (process.client) {
           setCookie('auth_token', token, this.tokenExpireAt || undefined);
@@ -496,10 +506,14 @@ export const useAuthStore = defineStore("auth", {
         }
         
         // Call logout API to clear server session
+        // Note: API /api/u/active-logs/logout may not exist (404), so we ignore errors
         const authApi = useAuthApi();
-        await authApi.logout().catch(() => {
-          // Ignore logout API errors
-        });
+        try {
+          await authApi.logout();
+        } catch (error: any) {
+          // Ignore logout API errors (404 is expected if API doesn't exist)
+          // This is not critical for logout functionality
+        }
 
         // Set logout sync cookie to notify CRM site
         // Do this BEFORE clearing state to ensure cookie is set while still authenticated
@@ -895,6 +909,16 @@ export const useAuthStore = defineStore("auth", {
         setTimeout(() => {
           this.justLoggedIn = false;
         }, 30000); // 30 seconds grace period (increased from 15)
+
+        // Clear logout sync cookie when logging in successfully to prevent auto-logout
+        if (process.client) {
+          try {
+            const { clearLogoutSyncCookie } = await import('~/utils/authSync');
+            clearLogoutSyncCookie();
+          } catch (e) {
+            // Ignore errors
+          }
+        }
 
           // Save to cookies (E-Learning uses cookie-based persistence for SSO)
           if (process.client) {
