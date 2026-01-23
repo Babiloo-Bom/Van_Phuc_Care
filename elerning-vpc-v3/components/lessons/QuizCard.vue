@@ -56,8 +56,9 @@ import { useCoursesStore } from '~/stores/courses'
 import { useAuthStore } from '~/stores/auth'
 
 interface Props {
-  chapter: any
+  lesson: any
   chapterIndex: number
+  lessonIndex: number
   courseSlug: string
 }
 
@@ -90,68 +91,32 @@ const isLocked = computed(() => {
   // Nếu đã mua hoặc đã hoàn thành, không lock
   if (isPurchasedOrCompleted.value) return false
   
-  // Kiểm tra lesson đầu tiên của chapter
-  const firstLesson = props.chapter?.lessons?.[0]
-  if (!firstLesson) return true
-  
+  // Kiểm tra lesson hiện tại
+  if (!props.lesson) return true
+
   // Nếu chưa mua, chỉ cho phép bài preview
-  return !firstLesson?.isPreview || firstLesson?.isLocked || false
+  return !props.lesson?.isPreview || props.lesson?.isLocked || false
 })
 
-// Kiểm tra chapter có quiz không (chỉ tìm lesson có type='quiz')
+// Kiểm tra lesson hiện tại có quiz không
 const hasQuiz = computed(() => {
-  if (!props.chapter?.lessons) return false
-  
-  // Chỉ tìm lesson có type='quiz'
-  return props.chapter.lessons.some((lesson: any) => lesson?.type === 'quiz')
+  // Kiểm tra lesson có showQuiz=true và có quiz data
+  return props.lesson?.showQuiz === true && !!props.lesson?.quiz
 })
 
-// Tìm quiz trong chapter từ quiz lesson gần nhất sau lesson hiện tại
-const chapterQuiz = computed(() => {
-  if (!props.chapter?.lessons) return null
-  
-  // Lấy lesson index hiện tại từ route query
-  const currentLessonIndex = parseInt(route.query.lesson as string) || 0
-  
-  // Tìm quiz lesson đầu tiên sau lesson hiện tại
-  for (let i = currentLessonIndex + 1; i < props.chapter.lessons.length; i++) {
-    if (props.chapter.lessons[i]?.type === 'quiz') {
-      return props.chapter.lessons[i].quiz || null
-    }
-  }
-  
-  // Nếu không tìm thấy quiz sau lesson hiện tại, tìm quiz đầu tiên trong chapter
-  const firstQuizLesson = props.chapter.lessons.find((lesson: any) => lesson?.type === 'quiz')
-  
-  if (!firstQuizLesson) return null
-  
-  // Trả về quiz object từ lesson
-  return firstQuizLesson.quiz || null
+// Lấy quiz trực tiếp từ lesson hiện tại
+const lessonQuiz = computed(() => {
+  return props.lesson?.quiz || null
 })
 
-// Tìm lesson index có quiz gần nhất ngay sau lesson hiện tại trong cùng chapter
+// Lesson index của quiz chính là lesson hiện tại
 const quizLessonIndex = computed(() => {
-  if (!props.chapter?.lessons) return 0
-  
-  // Lấy lesson index hiện tại từ route query
-  const currentLessonIndex = parseInt(route.query.lesson as string) || 0
-  
-  // Tìm quiz lesson đầu tiên sau lesson hiện tại
-  for (let i = currentLessonIndex + 1; i < props.chapter.lessons.length; i++) {
-    if (props.chapter.lessons[i]?.type === 'quiz') {
-      return i
-    }
-  }
-  
-  // Nếu không tìm thấy quiz sau lesson hiện tại, tìm quiz đầu tiên trong chapter
-  const firstQuizIndex = props.chapter.lessons.findIndex((lesson: any) => lesson?.type === 'quiz')
-  
-  return firstQuizIndex >= 0 ? firstQuizIndex : 0
+  return props.lessonIndex
 })
 
 // Lấy thông tin quiz
 const quizInfo = computed(() => {
-  const quiz = chapterQuiz.value
+  const quiz = lessonQuiz.value
   if (quiz && typeof quiz === 'object') {
     const questionCount = quiz.questions?.length || 0
     // Tính tổng điểm từ các câu hỏi

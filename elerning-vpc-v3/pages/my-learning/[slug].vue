@@ -469,14 +469,15 @@
                   ></div>
                 </div>
 
-                <!-- Quiz Card (Desktop) - Hiển thị ở cuối lesson nếu chapter có quiz -->
+                <!-- Quiz Card (Desktop) - Hiển thị ở cuối lesson nếu lesson hiện tại có quiz -->
                 <div
-                  v-if="currentChapter && hasQuizInChapter(currentChapter)"
+                  v-if="currentLesson && currentLesson.showQuiz && currentLesson.quiz"
                   class="mt-6"
                 >
                   <QuizCard
-                    :chapter="currentChapter"
+                    :lesson="currentLesson"
                     :chapter-index="currentChapterIndex"
+                    :lesson-index="currentLessonIndex"
                     :course-slug="slug"
                   />
                 </div>
@@ -611,16 +612,17 @@
                         ></div>
                       </div>
 
-                      <!-- Quiz Card (Mobile) - Hiển thị ở cuối lesson nếu chapter có quiz -->
+                      <!-- Quiz Card (Mobile) - Hiển thị ở cuối lesson nếu lesson hiện tại có quiz -->
                       <div
                         v-if="
-                          currentChapter && hasQuizInChapter(currentChapter)
+                          currentLesson && currentLesson.showQuiz && currentLesson.quiz
                         "
                         class="mt-6"
                       >
                         <QuizCard
-                          :chapter="currentChapter"
+                          :lesson="currentLesson"
                           :chapter-index="currentChapterIndex"
+                          :lesson-index="currentLessonIndex"
                           :course-slug="slug"
                         />
                       </div>
@@ -1009,14 +1011,6 @@ const hasVideo = computed(() => {
 
   return false;
 });
-
-// Check if chapter has quiz (check lesson có showQuiz = true)
-const hasQuizInChapter = (chapter: any) => {
-  if (!chapter?.lessons) return false;
-
-  // Tìm lesson có showQuiz = true
-  return chapter.lessons.some((lesson: any) => lesson?.showQuiz === true);
-};
 
 // Get video URL - Stream trực tiếp từ proxy (token ẩn URL gốc)
 // CHỈ tạo URL khi user click play VÀ video ready - ẩn URL khỏi Cốc Cốc
