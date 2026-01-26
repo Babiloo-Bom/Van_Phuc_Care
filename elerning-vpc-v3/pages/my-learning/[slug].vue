@@ -2533,6 +2533,49 @@ div.course-description-content :deep(ul li) {
   color: #155a8f;
 }
 
+/* Table Styles - Match admin editor table styling */
+.course-description-content :deep(table) {
+  border-collapse: collapse;
+  width: 100%;
+  margin: 1em 0;
+  border: 1px solid #ddd;
+}
+
+.course-description-content :deep(table td),
+.course-description-content :deep(table th) {
+  border: 1px solid #ddd;
+  padding: 8px;
+  text-align: left;
+  vertical-align: top;
+}
+
+.course-description-content :deep(table th) {
+  background-color: #f2f2f2;
+  font-weight: bold;
+  text-align: center;
+}
+
+.course-description-content :deep(table tr:nth-child(even)) {
+  background-color: #f9f9f9;
+}
+
+.course-description-content :deep(table tr:hover) {
+  background-color: #f5f5f5;
+}
+
+.course-description-content :deep(table tr) {
+  border-bottom: 1px solid #ddd;
+}
+
+.course-description-content :deep(table thead) {
+  background-color: #f2f2f2;
+}
+
+.course-description-content :deep(table thead th) {
+  background-color: #e8e8e8;
+  font-weight: 600;
+}
+
 .prose :deep(pre) {
   background-color: #f3f4f6;
   padding: 1em;

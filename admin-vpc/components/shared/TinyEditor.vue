@@ -174,10 +174,21 @@
                     // },
                     // tiny_mce_wiris_formulaEditor tiny_mce_wiris_formulaEditorChemistry
                     font_formats: 'Arial=arial,helvetica,sans-serif; Courier New=courier new,courier,monospace; AkrutiKndPadmini=Akpdmi-n',
-                    toolbar: 'undo redo | bold italic underline strikethrough | fontfamily fontsize blocks | myPickImageButton myPickAudioButton myPickVideoButton link | alignleft aligncenter alignright alignjustify | outdent indent |  numlist bullist | forecolor backcolor removeformat | charmap emoticons | fullscreen preview print',
+                    toolbar: 'undo redo | bold italic underline strikethrough | fontfamily fontsize blocks | myPickImageButton myPickAudioButton myPickVideoButton link | alignleft aligncenter alignright alignjustify | outdent indent |  numlist bullist | forecolor backcolor removeformat | table | charmap emoticons | fullscreen preview print',
                     toolbar_sticky: true,
                     toolbar_mode: 'sliding',
                     contextmenu: 'link image table',
+                    table_toolbar: 'tableprops tabledelete | tableinsertrowbefore tableinsertrowafter tabledeleterow | tableinsertcolbefore tableinsertcolafter tabledeletecol',
+                    table_appearance_options: false,
+                    table_grid: false,
+                    table_resize_bars: true,
+                    table_default_attributes: {
+                        border: '1'
+                    },
+                    table_default_styles: {
+                        'border-collapse': 'collapse',
+                        'width': '100%'
+                    },
                     height: this.height || this.$refs.editorContainer?.clientHeight || 350,
                     image_class_list: [
                         { title: 'None', value: '' },
