@@ -19,7 +19,7 @@ export default defineNuxtConfig({
 
   // Site config for SEO module
   site: {
-    url: process.env.NUXT_PUBLIC_APP_URL || 'http://localhost:3102',
+    url: process.env.NUXT_PUBLIC_APP_URL || (process.env.NODE_ENV === 'production' ? 'https://edu.vanphuccare.vn' : 'http://localhost:3102'),
     name: 'Van Phuc Care E-Learning',
     description: 'Nền tảng học trực tuyến hàng đầu Việt Nam',
     defaultLocale: 'vi'

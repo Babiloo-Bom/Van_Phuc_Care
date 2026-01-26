@@ -1,8 +1,20 @@
 export default defineEventHandler(async event => {
   const config = useRuntimeConfig();
   
-  // Get base URL from runtime config (production domain)
-  const baseUrl = config.public.appUrl || config.public.baseUrl || 'https://edu.vanphuccare.vn';
+  // Get request host to determine if we're in production
+  const host = getHeader(event, 'host') || '';
+  const protocol = host.includes('localhost') || host.includes('127.0.0.1') ? 'http' : 'https';
+  
+  // Get base URL - Force production domain, never use localhost
+  let baseUrl = config.public.appUrl || config.public.baseUrl;
+  
+  // If baseUrl is localhost, undefined, or we're accessing from production domain, force production domain
+  if (!baseUrl || baseUrl.includes('localhost') || baseUrl.includes('127.0.0.1') || host.includes('edu.vanphuccare.vn')) {
+    baseUrl = 'https://edu.vanphuccare.vn';
+  }
+  
+  // Ensure baseUrl doesn't end with slash
+  baseUrl = baseUrl.replace(/\/$/, '');
   
   // Get API host for fetching courses
   const apiHost = config.apiHostInternal || config.public.apiHost || 'http://localhost:3000';
