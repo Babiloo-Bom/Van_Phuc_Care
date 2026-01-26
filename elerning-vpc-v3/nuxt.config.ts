@@ -13,7 +13,8 @@ export default defineNuxtConfig({
   modules: [
     '@nuxtjs/tailwindcss',
     '@pinia/nuxt',
-    '@nuxtjs/seo'
+    '@nuxtjs/seo',
+    '@zadigetvoltaire/nuxt-gtm'
   ],
 
   // Site config for SEO module
@@ -94,10 +95,27 @@ export default defineNuxtConfig({
       appName: process.env.NUXT_PUBLIC_APP_NAME || 'E-Learning Portal - Van Phuc Care',
       appUrl: process.env.NUXT_PUBLIC_APP_URL || 'http://localhost:3102',
       
+      // Google Tag Manager Configuration
+      gtmId: process.env.NUXT_PUBLIC_GTM_ID || '',
+      
       // Environment
       isDevelopment: process.env.NODE_ENV === 'development',
       isProduction: process.env.NODE_ENV === 'production',
     }
+  },
+
+  // Google Tag Manager Configuration
+  // @ts-ignore - nuxt-gtm module configuration
+  gtm: {
+    id: process.env.NUXT_PUBLIC_GTM_ID || '',
+    enabled: !!process.env.NUXT_PUBLIC_GTM_ID,
+    defer: false,
+    compatibility: false,
+    nonce: undefined,
+    scriptId: 'gtm-script',
+    scriptURL: 'https://www.googletagmanager.com/gtm.js',
+    noscript: true,
+    noscriptId: 'gtm-noscript'
   },
 
   // App config
