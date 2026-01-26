@@ -3,18 +3,9 @@ export default defineEventHandler(async event => {
   
   // Get request host to determine if we're in production
   const host = getHeader(event, 'host') || '';
-  const protocol = host.includes('localhost') || host.includes('127.0.0.1') ? 'http' : 'https';
   
-  // Get base URL - Force production domain, never use localhost
-  let baseUrl = config.public.appUrl || config.public.baseUrl;
-  
-  // If baseUrl is localhost, undefined, or we're accessing from production domain, force production domain
-  if (!baseUrl || baseUrl.includes('localhost') || baseUrl.includes('127.0.0.1') || host.includes('edu.vanphuccare.vn')) {
-    baseUrl = 'https://edu.vanphuccare.vn';
-  }
-  
-  // Ensure baseUrl doesn't end with slash
-  baseUrl = baseUrl.replace(/\/$/, '');
+  // ALWAYS use production domain for sitemap - never use localhost
+  const baseUrl = 'https://edu.vanphuccare.vn';
   
   // Get API host for fetching courses
   const apiHost = config.apiHostInternal || config.public.apiHost || 'http://localhost:3000';
@@ -90,7 +81,16 @@ export default defineEventHandler(async event => {
       });
 
       const coursesData = response?.data?.courses || response?.courses || [];
-      allCourses = [...allCourses, ...coursesData];
+      
+      // Filter to only include courses with valid slug
+      const validCourses = coursesData.filter((course: any) => 
+        course.slug && 
+        typeof course.slug === 'string' && 
+        course.slug.trim().length > 0 &&
+        course.status === 'published'
+      );
+      
+      allCourses = [...allCourses, ...validCourses];
 
       // Check if there are more pages
       const totalPages = response?.data?.pagination?.totalPages || response?.pagination?.totalPages || 1;
@@ -99,8 +99,9 @@ export default defineEventHandler(async event => {
     }
 
     courses = allCourses;
+    console.log(`[Sitemap] Fetched ${courses.length} published courses`);
   } catch (error) {
-    console.error('Error fetching courses for sitemap:', error);
+    console.error('[Sitemap] Error fetching courses:', error);
     // Continue with empty courses array if API fails
   }
 

@@ -27,9 +27,7 @@ export default defineNuxtConfig({
   
   // Disable automatic sitemap from @nuxtjs/seo - We use custom sitemap at server/routes/sitemap.xml.ts
   // @ts-ignore - Module configuration
-  sitemaps: {
-    exclude: ['/**'] // Exclude all routes from auto sitemap
-  },
+  sitemaps: false, // Completely disable automatic sitemap generation
   
   // Enable pages module for routing
   // Enable pages module for routing
