@@ -133,7 +133,8 @@ export default defineNuxtConfig({
         { name: 'description', content: 'Nền tảng học trực tuyến hàng đầu Việt Nam với các khóa học chất lượng cao về chăm sóc mẹ và bé, nuôi dạy con, sức khỏe thai kỳ. Học mọi lúc, mọi nơi với giáo viên chuyên nghiệp.' },
         { name: 'keywords', content: 'học trực tuyến, e-learning, khóa học online, chăm sóc mẹ và bé, nuôi dạy con, thai kỳ, sức khỏe bà bầu, Van Phuc Care, Vạn Phúc Care, học online, giáo dục trực tuyến, bệnh viện Vạn Phúc' },
         { name: 'dmca-site-verification', content: 'MEhyUXU4clB0cEdaZm1aSk56MVhnWTZ4MHY4R3REQkQzblptNHdqVmFkcz01' },
-        { name: 'google-site-verification', content: 'MEhyUXU4clB0cEdaZm1aSk56MVhnWTZ4MHY4R3REQkQzblptNHdqVmFkcz01' }
+        { name: 'google-site-verification', content: 'MEhyUXU4clB0cEdaZm1aSk56MVhnWTZ4MHY4R3REQkQzblptNHdqVmFkcz01' },
+        { name: 'google-site-verification', content: 'JE5D99uHywdAihdJTbbrmh4TPdLicrlViMmfIrIqq2k' }
       ],
       link: [
         { rel: 'icon', type: 'image/png', href: '/images/logo_van_phuc.png' },
