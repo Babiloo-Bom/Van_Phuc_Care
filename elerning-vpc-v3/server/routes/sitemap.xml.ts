@@ -132,7 +132,7 @@ ${allPages
     const course = courses.find((c) => page.url === `/courses/${c.slug}`);
     const imageTag = course?.thumbnail
       ? `    <image:image>
-      <image:loc>${baseUrl}${course.thumbnail.startsWith("/") ? course.thumbnail : `/${course.thumbnail}`}</image:loc>
+      <image:loc>${course.thumbnail.startsWith('http') ? course.thumbnail : `${baseUrl}${course.thumbnail.startsWith('/') ? course.thumbnail : `/${course.thumbnail}`}`}</image:loc>
       <image:title>${(course.title || "").replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;")}</image:title>
     </image:image>`
       : "";
