@@ -24,6 +24,13 @@ export default defineNuxtConfig({
     description: 'Nền tảng học trực tuyến hàng đầu Việt Nam',
     defaultLocale: 'vi'
   },
+  
+  // Disable automatic sitemap from @nuxtjs/seo - We use custom sitemap at server/routes/sitemap.xml.ts
+  // @ts-ignore - Module configuration
+  sitemaps: {
+    exclude: ['/**'] // Exclude all routes from auto sitemap
+  },
+  
   // Enable pages module for routing
   // Enable pages module for routing
   pages: true,

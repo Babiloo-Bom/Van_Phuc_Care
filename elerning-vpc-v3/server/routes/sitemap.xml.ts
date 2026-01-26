@@ -145,3 +145,4 @@ ${allPages.map(page => {
 
   return sitemap;
 });
+
