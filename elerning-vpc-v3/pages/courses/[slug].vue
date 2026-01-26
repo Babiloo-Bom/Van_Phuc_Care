@@ -52,12 +52,12 @@
     </div>
 
     <!-- Main Content -->
-    <div class="bg-[#f4f7f9] max-lg:mt-[616px]">
+    <div class="bg-[#f4f7f9] max-lg:-mt-[150px]">
       <div class="container mx-auto px-4 sm:px-6 relative">
         <div class="grid grid-cols-12 gap-4 sm:gap-6 lg:gap-8">
           <!-- Left Content -->
           <div
-            class="col-span-12 lg:col-span-8 max-[639px]:mt-0 max-md:mt-[11rem] max-lg:mt-[12rem]"
+            class="col-span-12 lg:col-span-8"
           >
             <div>
               <!-- Video or Thumbnail -->
@@ -689,7 +689,7 @@
 
           <!-- Right Sidebar -->
           <div
-            class="col-span-12 lg:col-span-4 max-lg:absolute max-lg:-top-[49rem] max-lg:w-[calc(100%-48px)] max-[639px]:w-[calc(100%-32px)]"
+            class="col-span-12 lg:col-span-4 max-lg:order-first"
           >
             <div
               class="bg-white rounded-md px-3 sm:px-4 pt-3 pb-5 z-[2] shadow-xl mt-4 lg:-mt-[100%] lg:sticky lg:top-[90px]"
