@@ -37,6 +37,9 @@ Van Phuc Care là một hệ thống quản lý chăm sóc sức khỏe toàn di
 - ✅ Upload và quản lý file (MinIO, Cloudflare R2)
 - ✅ Xác thực OAuth (Google)
 - ✅ Phân quyền người dùng (Admin, Manager, Worker)
+- ✅ Google Tag Manager (GTM) integration
+- ✅ Analytics và Event Tracking
+- ✅ SEO optimization
 
 ---
 
@@ -115,6 +118,8 @@ Van Phuc Care là một hệ thống quản lý chăm sóc sức khỏe toàn di
 - **Email**: SMTP (Nodemailer)
 - **OAuth**: Google OAuth 2.0
 - **Video Storage**: Cloudflare R2/CDN
+- **Analytics**: Google Tag Manager (GTM)
+- **Queue System**: Redis (Bull queue)
 
 ---
 
@@ -181,6 +186,8 @@ Van_Phuc_Care/
 
 ## 🚀 Cài đặt và chạy dự án
 
+> 💡 **Quick Start**: Xem [docs/QUICK_START.md](./docs/QUICK_START.md) để bắt đầu nhanh trong 5 phút!
+
 ### 1. Clone repository
 
 ```bash
@@ -204,6 +211,8 @@ cp ENV_TEMPLATE.md .env.example
 - `SMTP_*`: SMTP configuration
 - `SEPAY_*`, `VNP_*`: Payment gateway configs
 - `CLOUDFLARE_R2_*`: Cloudflare R2 configs
+- `NUXT_PUBLIC_GTM_ID`: Google Tag Manager ID (cho E-Learning Portal)
+- `REDIS_HOST`, `REDIS_PORT`, `REDIS_PASSWORD`: Redis configuration
 
 ### 3. Chạy với Docker Compose (Khuyến nghị)
 
@@ -289,18 +298,46 @@ node scripts/create-admin-user.js
 
 ## 📚 Tài liệu liên quan
 
-### Tài liệu chính
+> 📖 **Xem [docs/README.md](./docs/README.md) để có danh sách đầy đủ tất cả tài liệu**
+
+### 📖 Tài liệu hệ thống
+- [docs/README.md](./docs/README.md) - **Documentation Index** - Tổng hợp tất cả tài liệu
+- [docs/SYSTEM_OVERVIEW.md](./docs/SYSTEM_OVERVIEW.md) - Tổng quan hệ thống
+- [docs/QUICK_START.md](./docs/QUICK_START.md) - Hướng dẫn bắt đầu nhanh (5 phút)
 - [DEPLOYMENT_GUIDE.md](./DEPLOYMENT_GUIDE.md) - Hướng dẫn deploy chi tiết
 - [MIGRATION_NOTE.md](./MIGRATION_NOTE.md) - Ghi chú về database migration
 - [ENV_TEMPLATE.md](./ENV_TEMPLATE.md) - Template biến môi trường
-- [VAN_PHUC_CARE_API_DOCUMENTATION.md](./VAN_PHUC_CARE_API_DOCUMENTATION.md) - Tài liệu API đầy đủ
+- [VAN_PHUC_CARE_API_DOCUMENTATION.md](./VAN_PHUC_CARE_API_DOCUMENTATION.md) - Tài liệu API đầy đủ (Backend)
 
-### Tài liệu theo module
+### 🏗️ Backend API
 - [server-vpc/README.md](./server-vpc/README.md) - Backend API documentation
 - [server-vpc/docs/sb-schema.md](./server-vpc/docs/sb-schema.md) - Database schema
-- [admin-vpc-v3/README.md](./admin-vpc-v3/README.md) - Admin Portal docs
-- [crm-vpc-v3/README.md](./crm-vpc-v3/README.md) - CRM Portal docs
-- [elerning-vpc-v3/README.md](./elerning-vpc-v3/README.md) - E-Learning Portal docs
+- [server-vpc/docs/api-endpoint.md](./server-vpc/docs/api-endpoint.md) - API endpoints
+- [server-vpc/docs/TICKET_API.md](./server-vpc/docs/TICKET_API.md) - Ticket API
+
+### 🎨 Frontend Portals
+
+#### Admin Portal
+- [admin-vpc-v3/README.md](./admin-vpc-v3/README.md) - Admin Portal documentation
+
+#### CRM Portal
+- [crm-vpc-v3/README.md](./crm-vpc-v3/README.md) - CRM Portal documentation
+- [crm-vpc-v3/CRM_API_LIST.md](./crm-vpc-v3/CRM_API_LIST.md) - CRM API list
+- [crm-vpc-v3/CRM_API_REVIEW.md](./crm-vpc-v3/CRM_API_REVIEW.md) - CRM API review
+
+#### E-Learning Portal
+- [elerning-vpc-v3/README.md](./elerning-vpc-v3/README.md) - E-Learning Portal documentation
+- [elerning-vpc-v3/docs/INDEX.md](./elerning-vpc-v3/docs/INDEX.md) - Documentation index
+- [elerning-vpc-v3/docs/API_DOCUMENTATION.md](./elerning-vpc-v3/docs/API_DOCUMENTATION.md) - API documentation
+- [elerning-vpc-v3/docs/GTM_SETUP.md](./elerning-vpc-v3/docs/GTM_SETUP.md) - Google Tag Manager setup
+- [elerning-vpc-v3/docs/SEO_CONFIGURATION.md](./elerning-vpc-v3/docs/SEO_CONFIGURATION.md) - SEO configuration
+- [elerning-vpc-v3/docs/PAYMENT_SYSTEM.md](./elerning-vpc-v3/docs/PAYMENT_SYSTEM.md) - Payment system
+- [elerning-vpc-v3/docs/CART_SYSTEM.md](./elerning-vpc-v3/docs/CART_SYSTEM.md) - Cart system
+- [elerning-vpc-v3/docs/PROJECT_STRUCTURE.md](./elerning-vpc-v3/docs/PROJECT_STRUCTURE.md) - Project structure
+
+### 🔧 Utilities & Scripts
+- [scripts/REDIS_FIX_GUIDE.md](./scripts/REDIS_FIX_GUIDE.md) - Redis troubleshooting
+- [scripts/CLEANUP_GUIDE.md](./scripts/CLEANUP_GUIDE.md) - Cleanup scripts guide
 
 ---
 
@@ -335,6 +372,12 @@ docker compose ps minio
 - Kiểm tra CORS settings trong backend
 - Kiểm tra network trong Docker Compose
 
+### GTM không load (E-Learning Portal)
+
+- Kiểm tra `NUXT_PUBLIC_GTM_ID` đã được set chưa
+- Kiểm tra console có lỗi không
+- Xem [elerning-vpc-v3/docs/GTM_SETUP.md](./elerning-vpc-v3/docs/GTM_SETUP.md) để debug
+
 ### Port đã được sử dụng
 
 ```bash
@@ -347,6 +390,33 @@ lsof -i :3000
 
 # Hoặc đổi port trong docker-compose.yml
 ```
+
+---
+
+## 📊 Analytics & Tracking
+
+### Google Tag Manager (GTM)
+
+E-Learning Portal đã được tích hợp Google Tag Manager để tracking:
+
+- **Setup**: Xem [elerning-vpc-v3/docs/GTM_SETUP.md](./elerning-vpc-v3/docs/GTM_SETUP.md)
+- **Events Tracking**: Course views, purchases, video plays, etc.
+- **Composable**: `useGtmTracking()` trong E-Learning Portal
+
+**Cấu hình:**
+```env
+NUXT_PUBLIC_GTM_ID=GTM-XXXXXX
+```
+
+### Event Tracking
+
+Các events được track tự động:
+- Page views
+- Course views
+- Purchases
+- Add to cart
+- Video plays
+- User actions
 
 ---
 
@@ -373,6 +443,13 @@ curl http://localhost:3100/api/_health
 
 ## 📝 Changelog
 
+### Version 1.1.0 (2025-01-26)
+- ✅ Google Tag Manager (GTM) integration cho E-Learning Portal
+- ✅ API Documentation đầy đủ cho E-Learning Portal
+- ✅ Cải thiện tài liệu và documentation structure
+- ✅ Event tracking system với GTM
+- ✅ SEO optimization improvements
+
 ### Version 1.0.0 (2025)
 - ✅ Initial release
 - ✅ Admin Portal với quản lý khóa học, dịch vụ, khách hàng
@@ -381,6 +458,8 @@ curl http://localhost:3100/api/_health
 - ✅ Support Tickets system
 - ✅ File upload (MinIO, Cloudflare R2)
 - ✅ OAuth authentication (Google)
+- ✅ Video processing với HLS conversion
+- ✅ Redis queue system cho background jobs
 
 ---
 
