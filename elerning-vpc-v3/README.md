@@ -257,6 +257,7 @@ elerning-vpc-v3/
 - [API Documentation](./docs/API_DOCUMENTATION.md) - Tài liệu đầy đủ về API endpoints
 - [GTM Setup Guide](./docs/GTM_SETUP.md) - Hướng dẫn cài đặt và sử dụng Google Tag Manager
 - [SEO Configuration](./docs/SEO_CONFIGURATION.md) - Cấu hình SEO và Schema.org
+- [Search Console Verification](./docs/SEARCH_CONSOLE_VERIFICATION.md) - Xác minh website với Google Search Console
 - [Payment System](./docs/PAYMENT_SYSTEM.md) - Hệ thống thanh toán
 - [Cart System](./docs/CART_SYSTEM.md) - Hệ thống giỏ hàng
 - [Stores Documentation](./stores/README.md) - Pinia stores guide

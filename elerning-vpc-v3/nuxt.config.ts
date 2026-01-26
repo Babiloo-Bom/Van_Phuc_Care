@@ -107,15 +107,17 @@ export default defineNuxtConfig({
   // Google Tag Manager Configuration
   // @ts-ignore - nuxt-gtm module configuration
   gtm: {
-    id: process.env.NUXT_PUBLIC_GTM_ID || '',
-    enabled: !!process.env.NUXT_PUBLIC_GTM_ID,
+    id: process.env.NUXT_PUBLIC_GTM_ID || 'GTM-WR46Z7DD',
+    enabled: !!(process.env.NUXT_PUBLIC_GTM_ID || 'GTM-WR46Z7DD'), // Enable nếu có GTM ID (env hoặc default)
     defer: false,
     compatibility: false,
     nonce: undefined,
     scriptId: 'gtm-script',
     scriptURL: 'https://www.googletagmanager.com/gtm.js',
     noscript: true,
-    noscriptId: 'gtm-noscript'
+    noscriptId: 'gtm-noscript',
+    // Enable router sync để tự động track page views khi route thay đổi (SPA/SSR mode)
+    enableRouterSync: true
   },
 
   // App config

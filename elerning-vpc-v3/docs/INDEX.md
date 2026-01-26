@@ -42,6 +42,14 @@ Cấu hình SEO:
 - SEO optimization
 - Monitoring
 
+### 🔍 [SEARCH_CONSOLE_VERIFICATION.md](./SEARCH_CONSOLE_VERIFICATION.md)
+Google Search Console verification:
+- HTML Tag verification
+- HTML File verification
+- DNS verification
+- Troubleshooting
+- Submit sitemap
+
 ### 💳 [PAYMENT_SYSTEM.md](./PAYMENT_SYSTEM.md)
 Hệ thống thanh toán:
 - Cấu hình payment methods

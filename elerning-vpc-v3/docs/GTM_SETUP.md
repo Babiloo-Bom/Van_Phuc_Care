@@ -53,13 +53,19 @@ GTM đã được cấu hình trong `nuxt.config.ts`:
 
 ```typescript
 gtm: {
-  id: process.env.NUXT_PUBLIC_GTM_ID || '',
-  enabled: !!process.env.NUXT_PUBLIC_GTM_ID,
+  id: process.env.NUXT_PUBLIC_GTM_ID || 'GTM-WR46Z7DD',
+  enabled: !!process.env.NUXT_PUBLIC_GTM_ID || true,
   defer: false,
   compatibility: false,
-  noscript: true
+  noscript: true,
+  // Enable router sync để tự động track page views khi route thay đổi
+  enableRouterSync: true
 }
 ```
+
+**Lưu ý quan trọng:**
+- `enableRouterSync: true` - Tự động track page views khi route thay đổi (SPA/SSR mode)
+- GTM ID mặc định: `GTM-WR46Z7DD` (có thể override bằng env variable)
 
 ## 🚀 Sử dụng
 
