@@ -4,9 +4,9 @@
       <!-- Header Bar (màu xanh) -->
       <div class="my-learning-detail-head">
         <div class="container mx-auto">
-          <div
-            class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 sm:gap-4"
-          >
+      <div
+        class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 sm:gap-4 py-3 sm:py-4"
+      >
             <!-- Course Topic (bên trái) -->
             <div
               class="flex-1 min-w-0 flex flex-col md:flex-row items-center md:gap-3"
@@ -41,7 +41,7 @@
                 ]"
                 :style="!isQuiz ? { color: '#1A75BB' } : {}"
               >
-                {{ currentChapter?.title || "Chưa có chủ đề" }}
+                Phần {{ currentChapterIndex + 1 }}: {{ currentChapter?.title || "Chưa có chủ đề" }}
               </h2>
             </div>
 
@@ -136,23 +136,6 @@
                     @copy.prevent
                   ></video>
 
-                  <!-- Watermark Overlay -->
-                  <div
-                    v-if="
-                      isMounted &&
-                      currentVideoUrl &&
-                      !videoTokenLoading &&
-                      videoReady
-                    "
-                    class="absolute top-4 right-4 pointer-events-none select-none"
-                    style="user-select: none; -webkit-user-select: none"
-                  >
-                    <div
-                      class="bg-black bg-opacity-50 text-white px-3 py-1 rounded text-xs font-semibold"
-                    >
-                      {{ authStore.user?.email || "Van Phuc Care" }}
-                    </div>
-                  </div>
 
                   <!-- Thumbnail với nút Play (nếu có video nhưng chưa click play) -->
                   <div
@@ -1639,7 +1622,7 @@ const formatTime = (seconds: number) => {
 
 const skipBackward = () => {
   if (!videoRef.value) return;
-  const newTime = Math.max(0, videoRef.value.currentTime - 15);
+  const newTime = Math.max(0, videoRef.value.currentTime - 10);
   videoRef.value.currentTime = newTime;
   playerState.value.currentTime = newTime;
 };
@@ -1648,7 +1631,7 @@ const skipForward = () => {
   if (!videoRef.value) return;
   const newTime = Math.min(
     videoRef.value.duration,
-    videoRef.value.currentTime + 15,
+    videoRef.value.currentTime + 10,
   );
   videoRef.value.currentTime = newTime;
   playerState.value.currentTime = newTime;
@@ -1666,6 +1649,12 @@ const toggleFullscreen = async () => {
       if (isMobile && (videoRef.value as any).webkitEnterFullscreen) {
         // iOS Safari - phải dùng video element trực tiếp
         (videoRef.value as any).webkitEnterFullscreen();
+        // Lock orientation to landscape khi vào fullscreen trên mobile
+        if (screen.orientation && (screen.orientation as any).lock) {
+          (screen.orientation as any).lock('landscape').catch(() => {
+            // Ignore nếu không lock được (một số trình duyệt không hỗ trợ)
+          });
+        }
         return;
       }
 
@@ -1686,6 +1675,12 @@ const toggleFullscreen = async () => {
           } else if ((parent as any).msRequestFullscreen) {
             await (parent as any).msRequestFullscreen();
           }
+          // Lock orientation to landscape khi vào fullscreen trên mobile
+          if (isMobile && screen.orientation && (screen.orientation as any).lock) {
+            (screen.orientation as any).lock('landscape').catch(() => {
+              // Ignore nếu không lock được
+            });
+          }
         }
         return;
       }
@@ -1700,8 +1695,20 @@ const toggleFullscreen = async () => {
       } else if ((videoWrapper as any).msRequestFullscreen) {
         await (videoWrapper as any).msRequestFullscreen();
       }
+      
+      // Lock orientation to landscape khi vào fullscreen trên mobile
+      if (isMobile && screen.orientation && (screen.orientation as any).lock) {
+        (screen.orientation as any).lock('landscape').catch(() => {
+          // Ignore nếu không lock được
+        });
+      }
     } else {
       // Exit fullscreen
+      // Unlock orientation khi thoát fullscreen
+      if (screen.orientation && (screen.orientation as any).unlock) {
+        (screen.orientation as any).unlock();
+      }
+      
       if (document.exitFullscreen) {
         await document.exitFullscreen();
       } else if ((document as any).webkitExitFullscreen) {
@@ -1720,6 +1727,12 @@ const toggleFullscreen = async () => {
       (videoRef.value as any).webkitEnterFullscreen
     ) {
       (videoRef.value as any).webkitEnterFullscreen();
+      // Lock orientation to landscape khi vào fullscreen trên mobile
+      if (screen.orientation && (screen.orientation as any).lock) {
+        (screen.orientation as any).lock('landscape').catch(() => {
+          // Ignore nếu không lock được
+        });
+      }
     }
   }
 };

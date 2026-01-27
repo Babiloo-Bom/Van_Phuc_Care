@@ -193,7 +193,9 @@
   const authStore = useAuthStore();
 
   const progressPct = computed(() => {
-    return props.progress ?? props.course?.progress?.progressPercentage ?? 0;
+    const fromProp = props.progress ?? 0;
+    const fromCourse = (props.course as any)?.progress?.progressPercentage ?? 0;
+    return Math.max(fromProp, fromCourse);
   });
 
   const everCompleted = computed(() => {
@@ -510,8 +512,8 @@
     font-weight: 600;
     cursor: pointer;
     transition: all 0.2s ease;
-    background: #1a75bb;
-    color: white;
+  background: #15cf74;
+  color: #ffffff;
   }
 
   @media (min-width: 640px) {
@@ -521,7 +523,7 @@
   }
   
   .btn-access:hover {
-    background: #1a75bbdd;
+  background: #12b865;
   }
   
   .course-purchased {

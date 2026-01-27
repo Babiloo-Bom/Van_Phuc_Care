@@ -548,12 +548,12 @@ const isPromotionActive = computed(() => {
   font-weight: 600;
   cursor: pointer;
   transition: all 0.2s ease;
-  background: #1a75bb;
-  color: white;
+  background: #15cf74;
+  color: #ffffff;
 }
 
 .btn-access:hover {
-  background: #1a75bbdd;
+  background: #12b865;
 }
 .btn-completed {
   flex: 1;

@@ -2270,6 +2270,39 @@ watch(
   background: #2a6ba8 !important;
 }
 
+/* Responsive adjustments for mobile so text is not clipped */
+@media (max-width: 480px) {
+  .purchase-modal-content {
+    min-height: auto;
+  }
+
+  .purchase-modal-text-container {
+    padding: 20px 16px;
+    min-height: auto;
+  }
+
+  .purchase-modal-frame,
+  .purchase-modal-title-section,
+  .purchase-modal-text-content {
+    width: 100%;
+  }
+
+  .purchase-modal-description {
+    width: 100%;
+    font-size: 14px;
+    line-height: 22px;
+    min-height: auto;
+  }
+
+  .purchase-modal-cta-section {
+    padding: 8px 16px 20px;
+  }
+
+  .purchase-modal-button {
+    width: 100%;
+  }
+}
+
 /* Login Modal Styles */
 .login-modal :deep(.ant-modal-content) {
   background: #ffffff;
