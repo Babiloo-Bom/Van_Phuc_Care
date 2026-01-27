@@ -13,21 +13,19 @@ export default defineNuxtConfig({
   modules: [
     '@nuxtjs/tailwindcss',
     '@pinia/nuxt',
-    '@nuxtjs/seo',
+    // Temporarily removed @nuxtjs/seo to prevent automatic sitemap generation
+    // We use custom sitemap at server/routes/sitemap.xml.ts
+    // '@nuxtjs/seo',
     '@zadigetvoltaire/nuxt-gtm'
   ],
 
-  // Site config for SEO module
-  site: {
-    url: process.env.NUXT_PUBLIC_APP_URL || (process.env.NODE_ENV === 'production' ? 'https://edu.vanphuccare.vn' : 'http://localhost:3102'),
-    name: 'Van Phuc Care E-Learning',
-    description: 'Nền tảng học trực tuyến hàng đầu Việt Nam',
-    defaultLocale: 'vi'
-  },
-  
-  // Disable automatic sitemap from @nuxtjs/seo - We use custom sitemap at server/routes/sitemap.xml.ts
-  // @ts-ignore - Module configuration
-  sitemap: { enabled: false }, // Completely disable automatic sitemap generation
+  // Site config (kept for reference, but @nuxtjs/seo is disabled)
+  // site: {
+  //   url: process.env.NUXT_PUBLIC_APP_URL || (process.env.NODE_ENV === 'production' ? 'https://edu.vanphuccare.vn' : 'http://localhost:3102'),
+  //   name: 'Van Phuc Care E-Learning',
+  //   description: 'Nền tảng học trực tuyến hàng đầu Việt Nam',
+  //   defaultLocale: 'vi'
+  // },
   
   // Enable pages module for routing
   // Enable pages module for routing
@@ -99,30 +97,26 @@ export default defineNuxtConfig({
       // App Configuration
       appName: process.env.NUXT_PUBLIC_APP_NAME || 'E-Learning Portal - Van Phuc Care',
       appUrl: process.env.NUXT_PUBLIC_APP_URL || 'http://localhost:3102',
-      
-      // Google Tag Manager Configuration
-      gtmId: process.env.NUXT_PUBLIC_GTM_ID || '',
+
+      // Google Tag Manager Configuration (used by @zadigetvoltaire/nuxt-gtm)
+      // Nuxt 3 modules read options from runtimeConfig.public.gtm
+      gtm: {
+        id: process.env.NUXT_PUBLIC_GTM_ID || 'GTM-WR46Z7DD',
+        enabled: true,
+        enableRouterSync: true,
+        debug: process.env.NODE_ENV !== 'production',
+        defer: false,
+        compatibility: false,
+        scriptId: 'gtm-script',
+        scriptURL: 'https://www.googletagmanager.com/gtm.js',
+        noscript: true,
+        noscriptId: 'gtm-noscript'
+      },
       
       // Environment
       isDevelopment: process.env.NODE_ENV === 'development',
       isProduction: process.env.NODE_ENV === 'production',
     }
-  },
-
-  // Google Tag Manager Configuration
-  // @ts-ignore - nuxt-gtm module configuration
-  gtm: {
-    id: process.env.NUXT_PUBLIC_GTM_ID || 'GTM-WR46Z7DD',
-    enabled: !!(process.env.NUXT_PUBLIC_GTM_ID || 'GTM-WR46Z7DD'), // Enable nếu có GTM ID (env hoặc default)
-    defer: false,
-    compatibility: false,
-    nonce: undefined,
-    scriptId: 'gtm-script',
-    scriptURL: 'https://www.googletagmanager.com/gtm.js',
-    noscript: true,
-    noscriptId: 'gtm-noscript',
-    // Enable router sync để tự động track page views khi route thay đổi (SPA/SSR mode)
-    enableRouterSync: true
   },
 
   // App config
