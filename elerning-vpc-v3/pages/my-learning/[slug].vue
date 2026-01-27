@@ -635,37 +635,6 @@
                 </a-tab-pane>
 
                 <a-tab-pane key="modules" tab="Học phần">
-                  <!-- Progress Section -->
-                  <div class="bg-white rounded-lg shadow-sm p-4 md:p-6 mb-4">
-                    <h3 class="text-lg font-semibold text-gray-800 mb-4">
-                      Tiến trình
-                    </h3>
-                    <div class="flex items-center gap-4">
-                      <div class="flex-1">
-                        <div
-                          class="w-full bg-gray-200 rounded-full h-2.5 overflow-hidden"
-                        >
-                          <div
-                            class="h-full bg-gradient-to-r from-[#15CF74] to-[#15CF74] rounded-full transition-all duration-500 ease-out"
-                            :style="{ width: `${courseProgress}%` }"
-                          />
-                        </div>
-                      </div>
-                      <span
-                        class="text-sm font-medium text-gray-700 whitespace-nowrap"
-                        >{{ courseProgress }}%</span
-                      >
-                    </div>
-                    <div
-                      v-if="course?.progress"
-                      class="mt-2 text-sm text-gray-600"
-                    >
-                      <span>{{ course.progress.completedLessons }}</span> /
-                      <span>{{ course.progress.totalLessons }}</span> bài học đã
-                      hoàn thành
-                    </div>
-                  </div>
-
                   <!-- NavCourse Component -->
                   <div class="bg-white rounded-lg shadow-sm">
                     <NavCourse :chapters="normalizedChapters as any" />
