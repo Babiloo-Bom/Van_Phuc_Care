@@ -122,7 +122,7 @@
                     "
                     ref="videoRef"
                     :poster="currentThumbnail || undefined"
-                    class="w-full h-full object-contain video-element"
+                    class="w-full h-full object-cover video-element"
                     preload="none"
                     playsinline
                     controlslist="nodownload noplaybackrate"
@@ -1714,6 +1714,14 @@ const handleFullscreenChange = () => {
     (document as any).mozFullScreenElement ||
     (document as any).msFullscreenElement
   );
+
+  // Toggle class on wrapper for reliable fullscreen styling (fallback for :fullscreen pseudo-class)
+  if (videoRef.value) {
+    const wrapper = videoRef.value.closest(".video-wrapper");
+    if (wrapper) {
+      wrapper.classList.toggle("is-fullscreen", isFullscreen.value);
+    }
+  }
 };
 
 // Get video token for proxy streaming - CHỈ lấy khi user click play
@@ -1950,10 +1958,12 @@ watch(
     }
     isQuiz.value = query.quiz === "true" ? true : false;
 
-    // Scroll to top khi chuyển lesson/chapter
+    // Scroll to top khi chuyển lesson/chapter (chỉ client-side, không chạy trên SSR)
     if (
-      query.lesson !== oldQuery?.lesson ||
-      query.chapter !== oldQuery?.chapter
+      process.client &&
+      oldQuery &&
+      (query.lesson !== oldQuery.lesson ||
+        query.chapter !== oldQuery.chapter)
     ) {
       window.scrollTo({ top: 0, behavior: "smooth" });
     }
@@ -2207,6 +2217,13 @@ onUnmounted(() => {
   height: 100%;
 }
 
+/* Controls bar stays at bottom with auto height */
+.video-aspect > .video-controls {
+  top: auto;
+  bottom: 0;
+  height: auto;
+}
+
 /* Prefer native aspect-ratio when supported */
 @supports (aspect-ratio: 16 / 9) {
   .video-aspect {
@@ -2225,6 +2242,12 @@ onUnmounted(() => {
     width: 100%;
     height: 100%;
   }
+
+  .video-aspect > .video-controls {
+    top: auto;
+    bottom: 0;
+    height: auto;
+  }
 }
 
 @media (max-width: 640px) {
@@ -2237,29 +2260,56 @@ onUnmounted(() => {
 .video-wrapper:fullscreen,
 .video-wrapper:-webkit-full-screen,
 .video-wrapper:-moz-full-screen {
-  width: 100vw;
-  height: 100vh;
-  background: #000;
+  width: 100vw !important;
+  height: 100vh !important;
+  background: #000 !important;
 }
 
 .video-wrapper:fullscreen .video-aspect,
 .video-wrapper:-webkit-full-screen .video-aspect,
 .video-wrapper:-moz-full-screen .video-aspect {
-  width: 100%;
-  height: 100%;
-  aspect-ratio: unset;
+  width: 100% !important;
+  height: 100% !important;
+  aspect-ratio: unset !important;
+  border-radius: 0 !important;
+  overflow: visible !important;
 }
 
 .video-wrapper:fullscreen .video-aspect::before,
 .video-wrapper:-webkit-full-screen .video-aspect::before,
 .video-wrapper:-moz-full-screen .video-aspect::before {
-  display: none;
+  display: none !important;
 }
 
 .video-wrapper:fullscreen .video-element,
 .video-wrapper:-webkit-full-screen .video-element,
-.video-wrapper:-moz-full-screen .video-element {
-  object-fit: contain;
+.video-wrapper:-moz-full-screen .video-element,
+.video-wrapper.is-fullscreen .video-element {
+  position: absolute !important;
+  top: 0 !important;
+  left: 0 !important;
+  width: 100% !important;
+  height: 100% !important;
+  object-fit: contain !important;
+}
+
+/* JS-based fallback class for browsers where :fullscreen doesn't work in scoped styles */
+.video-wrapper.is-fullscreen {
+  width: 100vw !important;
+  height: 100vh !important;
+  background: #000 !important;
+}
+
+.video-wrapper.is-fullscreen .video-aspect {
+  width: 100% !important;
+  height: 100% !important;
+  aspect-ratio: unset !important;
+  border-radius: 0 !important;
+  overflow: visible !important;
+}
+
+.video-wrapper.is-fullscreen .video-aspect::before {
+  display: none !important;
 }
 
 /* Video Security Styles */
