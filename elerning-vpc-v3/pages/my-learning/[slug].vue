@@ -4,9 +4,9 @@
       <!-- Header Bar (màu xanh) -->
       <div class="my-learning-detail-head">
         <div class="container mx-auto">
-      <div
-        class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 sm:gap-4 py-3 sm:py-4"
-      >
+          <div
+            class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 sm:gap-4 py-3 sm:py-4"
+          >
             <!-- Course Topic (bên trái) -->
             <div
               class="flex-1 min-w-0 flex flex-col md:flex-row items-center md:gap-3"
@@ -32,7 +32,7 @@
               </div>
               <h2
                 :class="[
-                  'truncate mb-0',
+                  'mb-0',
                   {
                     'md:text-white text-sm md:text-xl md:font-semibold': isQuiz,
                     'text-left text-xl font-bold': !isQuiz,
@@ -41,7 +41,8 @@
                 ]"
                 :style="!isQuiz ? { color: '#1A75BB' } : {}"
               >
-                Phần {{ currentChapterIndex + 1 }}: {{ currentChapter?.title || "Chưa có chủ đề" }}
+                Phần {{ currentChapterIndex + 1 }}:
+                {{ currentChapter?.title || "Chưa có chủ đề" }}
               </h2>
             </div>
 
@@ -63,7 +64,7 @@
       </div>
 
       <!-- Main Content Area -->
-      <div class="container mx-auto py-4 md:py-6">
+      <div class="container mx-auto md:py-6">
         <div class="flex flex-col lg:flex-row gap-4 lg:gap-6">
           <div
             v-if="!isQuiz && !showCertificate"
@@ -121,7 +122,7 @@
                     "
                     ref="videoRef"
                     :poster="currentThumbnail || undefined"
-                    class="w-full h-full object-cover video-element"
+                    class="w-full h-full object-contain video-element"
                     preload="none"
                     playsinline
                     controlslist="nodownload noplaybackrate"
@@ -135,7 +136,6 @@
                     @selectstart.prevent
                     @copy.prevent
                   ></video>
-
 
                   <!-- Thumbnail với nút Play (nếu có video nhưng chưa click play) -->
                   <div
@@ -254,7 +254,7 @@
                       @click.stop="skipBackward"
                       @touchstart.stop
                       @touchend.stop
-                      title="Tua lại 15 giây"
+                      title="Tua lại 10 giây"
                     >
                       <div class="flex items-center gap-0.5">
                         <svg
@@ -294,7 +294,7 @@
                       @click.stop="skipForward"
                       @touchstart.stop
                       @touchend.stop
-                      title="Tua tới 15 giây"
+                      title="Tua tới 10 giây"
                     >
                       <div class="flex items-center gap-0.5">
                         <svg
@@ -419,7 +419,15 @@
               <!-- Documents Section -->
               <div v-if="currentLesson" class="space-y-6 mb-6">
                 <!-- Documents Component (show if showDocument = true AND documents exist) -->
-                <div v-if="currentLesson && currentLesson.showDocument && (currentLesson.documents && currentLesson.documents.length > 0)" class="mt-6">
+                <div
+                  v-if="
+                    currentLesson &&
+                    currentLesson.showDocument &&
+                    currentLesson.documents &&
+                    currentLesson.documents.length > 0
+                  "
+                  class="mt-6"
+                >
                   <DocumentsComponent
                     :course-id="course?._id || ''"
                     :chapter-id="currentChapter?._id || ''"
@@ -436,13 +444,19 @@
                     class="text-lg md:text-xl font-bold mb-4"
                     style="color: #1a75bb"
                   >
-                    {{ currentLesson?.textSectionName || currentLesson?.title || "Nội dung" }}
+                    {{
+                      currentLesson?.textSectionName ||
+                      currentLesson?.title ||
+                      "Nội dung"
+                    }}
                   </h3>
                   <div
                     ref="lessonContentDesktopRef"
                     :class="[
                       'course-description-content prose max-w-none text-gray-700 leading-relaxed text-sm md:text-base transition-all duration-300',
-                      isLessonCollapsed && canCollapseLesson ? 'max-h-72 overflow-hidden' : ''
+                      isLessonCollapsed && canCollapseLesson
+                        ? 'max-h-72 overflow-hidden'
+                        : '',
                     ]"
                     v-html="
                       normalizedLessonContent ||
@@ -450,23 +464,24 @@
                       'Chưa có nội dung'
                     "
                   ></div>
-                  <div
-                    v-if="canCollapseLesson"
-                    class="mt-3 text-center"
-                  >
+                  <div v-if="canCollapseLesson" class="mt-3 text-center">
                     <button
                       type="button"
                       class="text-[#1a75bb] font-semibold text-sm md:text-base underline-offset-2 hover:underline"
                       @click="toggleLessonCollapse"
                     >
-                      {{ isLessonCollapsed ? 'Xem thêm >>>' : 'Thu gọn' }}
+                      {{ isLessonCollapsed ? "Xem thêm >>>" : "Thu gọn" }}
                     </button>
                   </div>
                 </div>
 
                 <!-- Quiz Card (Desktop) - Hiển thị ở cuối lesson nếu lesson hiện tại có quiz -->
                 <div
-                  v-if="currentLesson && currentLesson.showQuiz && currentLesson.quiz"
+                  v-if="
+                    currentLesson &&
+                    currentLesson.showQuiz &&
+                    currentLesson.quiz
+                  "
                   class="mt-6"
                 >
                   <QuizCard
@@ -544,41 +559,18 @@
                 <a-tab-pane key="content" tab="Nội dung bài học">
                   <!-- Lesson Content -->
                   <div class="py-4 md:py-6">
-                    <!-- Progress Section -->
-                    <div class="bg-white rounded-lg shadow-sm p-4 md:p-6 mb-4">
-                      <h3 class="text-lg font-semibold text-gray-800 mb-4">
-                        Tiến trình
-                      </h3>
-                      <div class="flex items-center gap-4">
-                        <div class="flex-1">
-                          <div
-                            class="w-full bg-gray-200 rounded-full h-2.5 overflow-hidden"
-                          >
-                            <div
-                              class="h-full bg-gradient-to-r from-[#15CF74] to-[#15CF74] rounded-full transition-all duration-500 ease-out"
-                              :style="{ width: `${courseProgress}%` }"
-                            />
-                          </div>
-                        </div>
-                        <span
-                          class="text-sm font-medium text-gray-700 whitespace-nowrap"
-                          >{{ courseProgress }}%</span
-                        >
-                      </div>
-                      <div
-                        v-if="course?.progress"
-                        class="mt-2 text-sm text-gray-600"
-                      >
-                        <span>{{ course.progress.completedLessons }}</span> /
-                        <span>{{ course.progress.totalLessons }}</span> bài học
-                        đã hoàn thành
-                      </div>
-                    </div>
-
                     <!-- Documents Section -->
                     <div v-if="currentLesson" class="space-y-6">
                       <!-- Documents Component (mobile): show if showDocument = true AND documents exist -->
-                      <div v-if="currentLesson && currentLesson.showDocument && (currentLesson.documents && currentLesson.documents.length > 0)" class="mb-4 p-4 md:p-6">
+                      <div
+                        v-if="
+                          currentLesson &&
+                          currentLesson.showDocument &&
+                          currentLesson.documents &&
+                          currentLesson.documents.length > 0
+                        "
+                        class="mb-4 p-4 md:p-6"
+                      >
                         <DocumentsComponent
                           :course-id="course?._id || ''"
                           :chapter-id="currentChapter?._id || ''"
@@ -601,7 +593,9 @@
                           ref="lessonContentMobileRef"
                           :class="[
                             'course-description-content prose max-w-none text-gray-700 leading-relaxed text-sm md:text-base transition-all duration-300',
-                            isLessonCollapsed && canCollapseLesson ? 'max-h-72 overflow-hidden' : ''
+                            isLessonCollapsed && canCollapseLesson
+                              ? 'max-h-72 overflow-hidden'
+                              : '',
                           ]"
                           v-html="
                             normalizedLessonContent ||
@@ -609,16 +603,13 @@
                             'Chưa có nội dung'
                           "
                         ></div>
-                        <div
-                          v-if="canCollapseLesson"
-                          class="mt-3 text-center"
-                        >
+                        <div v-if="canCollapseLesson" class="mt-3 text-center">
                           <button
                             type="button"
                             class="text-[#1a75bb] font-semibold text-sm md:text-base underline-offset-2 hover:underline"
                             @click="toggleLessonCollapse"
                           >
-                            {{ isLessonCollapsed ? 'Xem thêm >>>' : 'Thu gọn' }}
+                            {{ isLessonCollapsed ? "Xem thêm >>>" : "Thu gọn" }}
                           </button>
                         </div>
                       </div>
@@ -626,7 +617,9 @@
                       <!-- Quiz Card (Mobile) - Hiển thị ở cuối lesson nếu lesson hiện tại có quiz -->
                       <div
                         v-if="
-                          currentLesson && currentLesson.showQuiz && currentLesson.quiz
+                          currentLesson &&
+                          currentLesson.showQuiz &&
+                          currentLesson.quiz
                         "
                         class="mt-6"
                       >
@@ -691,7 +684,10 @@
               </a-tabs>
 
               <!-- Navigation Buttons: Bài trước / Bài tiếp theo (Mobile) - Luôn hiển thị bên dưới tabs -->
-              <div v-if="!isQuiz && !showCertificate" class="flex justify-center gap-3 mt-4 pb-4">
+              <div
+                v-if="!isQuiz && !showCertificate"
+                class="flex justify-center gap-3 mt-4 pb-4"
+              >
                 <button
                   :disabled="isFirstLesson"
                   :class="[
@@ -1326,7 +1322,7 @@ const canMarkLessonCompleted = (
 
   // Không tự động mark cho quiz độc lập (type='quiz')
   // Lesson thường (video/text) có quiz đính kèm vẫn được mark completed
-  if (currentLesson.type === 'quiz') return false;
+  if (currentLesson.type === "quiz") return false;
 
   // Không mark lại bài đã hoàn thành
   if (currentLesson.isCompleted) return false;
@@ -1651,7 +1647,7 @@ const toggleFullscreen = async () => {
         (videoRef.value as any).webkitEnterFullscreen();
         // Lock orientation to landscape khi vào fullscreen trên mobile
         if (screen.orientation && (screen.orientation as any).lock) {
-          (screen.orientation as any).lock('landscape').catch(() => {
+          (screen.orientation as any).lock("landscape").catch(() => {
             // Ignore nếu không lock được (một số trình duyệt không hỗ trợ)
           });
         }
@@ -1676,8 +1672,12 @@ const toggleFullscreen = async () => {
             await (parent as any).msRequestFullscreen();
           }
           // Lock orientation to landscape khi vào fullscreen trên mobile
-          if (isMobile && screen.orientation && (screen.orientation as any).lock) {
-            (screen.orientation as any).lock('landscape').catch(() => {
+          if (
+            isMobile &&
+            screen.orientation &&
+            (screen.orientation as any).lock
+          ) {
+            (screen.orientation as any).lock("landscape").catch(() => {
               // Ignore nếu không lock được
             });
           }
@@ -1695,10 +1695,10 @@ const toggleFullscreen = async () => {
       } else if ((videoWrapper as any).msRequestFullscreen) {
         await (videoWrapper as any).msRequestFullscreen();
       }
-      
+
       // Lock orientation to landscape khi vào fullscreen trên mobile
       if (isMobile && screen.orientation && (screen.orientation as any).lock) {
-        (screen.orientation as any).lock('landscape').catch(() => {
+        (screen.orientation as any).lock("landscape").catch(() => {
           // Ignore nếu không lock được
         });
       }
@@ -1708,7 +1708,7 @@ const toggleFullscreen = async () => {
       if (screen.orientation && (screen.orientation as any).unlock) {
         (screen.orientation as any).unlock();
       }
-      
+
       if (document.exitFullscreen) {
         await document.exitFullscreen();
       } else if ((document as any).webkitExitFullscreen) {
@@ -1729,7 +1729,7 @@ const toggleFullscreen = async () => {
       (videoRef.value as any).webkitEnterFullscreen();
       // Lock orientation to landscape khi vào fullscreen trên mobile
       if (screen.orientation && (screen.orientation as any).lock) {
-        (screen.orientation as any).lock('landscape').catch(() => {
+        (screen.orientation as any).lock("landscape").catch(() => {
           // Ignore nếu không lock được
         });
       }
@@ -1980,6 +1980,15 @@ watch(
       }
     }
     isQuiz.value = query.quiz === "true" ? true : false;
+
+    // Scroll to top khi chuyển lesson/chapter
+    if (
+      query.lesson !== oldQuery?.lesson ||
+      query.chapter !== oldQuery?.chapter
+    ) {
+      window.scrollTo({ top: 0, behavior: "smooth" });
+    }
+
     // Mỗi khi chuyển lesson, reset & đo lại chiều cao nội dung text
     nextTick(() => {
       evaluateLessonContentHeight();
@@ -2127,7 +2136,7 @@ onUnmounted(() => {
 }
 @media screen and (max-width: 768px) {
   .my-learning-detail-head {
-    padding: 12px 0px 12px 0;
+    padding: 12px 16px;
     background: transparent;
   }
 }
@@ -2223,8 +2232,10 @@ onUnmounted(() => {
 /* Keep all inner layers (video, overlays, controls) inside the 16:9 box */
 .video-aspect > * {
   position: absolute;
-  inset-inline: 0;
-  bottom: 0;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
 }
 
 /* Prefer native aspect-ratio when supported */
@@ -2240,8 +2251,10 @@ onUnmounted(() => {
 
   .video-aspect > * {
     position: absolute;
-    inset-inline: 0;
-    bottom: 0;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
   }
 }
 
@@ -2249,6 +2262,35 @@ onUnmounted(() => {
   .video-wrapper {
     margin-bottom: 0.75rem;
   }
+}
+
+/* Fullscreen: remove aspect ratio constraint, fill entire screen */
+.video-wrapper:fullscreen,
+.video-wrapper:-webkit-full-screen,
+.video-wrapper:-moz-full-screen {
+  width: 100vw;
+  height: 100vh;
+  background: #000;
+}
+
+.video-wrapper:fullscreen .video-aspect,
+.video-wrapper:-webkit-full-screen .video-aspect,
+.video-wrapper:-moz-full-screen .video-aspect {
+  width: 100%;
+  height: 100%;
+  aspect-ratio: unset;
+}
+
+.video-wrapper:fullscreen .video-aspect::before,
+.video-wrapper:-webkit-full-screen .video-aspect::before,
+.video-wrapper:-moz-full-screen .video-aspect::before {
+  display: none;
+}
+
+.video-wrapper:fullscreen .video-element,
+.video-wrapper:-webkit-full-screen .video-element,
+.video-wrapper:-moz-full-screen .video-element {
+  object-fit: contain;
 }
 
 /* Video Security Styles */

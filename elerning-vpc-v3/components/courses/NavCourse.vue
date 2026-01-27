@@ -29,11 +29,11 @@
       </template>
       <a-collapse-panel
         v-for="(chapter, chapterIndex) in normalizedChapters"
-        :key="chapter._id || chapter.slug || chapter._clientId || `chapter_${chapterIndex}`"
+        :key="`chapter_${chapterIndex}`"
         class="nav-chapter-panel !rounded-lg shadow-lg p-4 md:p-8"
       >
         <template #header>
-          <div class="chapter-header border-b border-[#ACD7F9] pb-2 cursor-pointer" @click="handlePanelClick(chapterIndex, $event)">
+          <div class="chapter-header border-b border-[#ACD7F9] pb-2 cursor-pointer">
             <div class="chapter-title">
              P{{ chapterIndex + 1 }}: {{ chapter.title }}
             </div>
@@ -342,36 +342,6 @@ const getTotalLessons = (chapter: any) => {
   if (!chapter.lessons) return 0
   // Đếm tất cả lessons bao gồm cả quiz
   return chapter.lessons.length
-}
-
-const handlePanelClick = (chapterIndex: number, event?: Event) => {
-  // Toggle collapse panel (mở/đóng danh sách bài học)
-  const chapterKey = `chapter_${chapterIndex}`
-  
-  if (Array.isArray(activeKey.value)) {
-    // Nếu đang mở, đóng lại; nếu đang đóng, mở ra
-    if (activeKey.value.includes(chapterKey)) {
-      activeKey.value = activeKey.value.filter(key => key !== chapterKey)
-    } else {
-      activeKey.value = [...activeKey.value, chapterKey]
-    }
-  } else {
-    // Nếu đang mở, đóng lại; nếu đang đóng, mở ra
-    if (activeKey.value === chapterKey) {
-      activeKey.value = ''
-    } else {
-      activeKey.value = chapterKey
-    }
-  }
-  
-  // Update route query để giữ chapter index (không bắt buộc, nhưng tốt cho UX)
-  const queryParams = { ...route.query, chapter: chapterIndex.toString() }
-  
-  // Navigate with updated query (chỉ update, không reload)
-  router.replace({
-    path: route.path,
-    query: queryParams,
-  })
 }
 
 const handleLessonClick = (chapterIndex: number, lessonIndex: number, lesson?: any) => {
