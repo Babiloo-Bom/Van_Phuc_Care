@@ -77,10 +77,6 @@
               {{ currentLesson?.title || "Chưa có bài học" }}
             </h1>
 
-            <!-- Progress Bar -->
-            <div class="mb-6">
-              <ProgressBar :percentage="courseProgress" />
-            </div>
             <!-- Video Player - Chỉ hiển thị nếu lesson có video VÀ showVideo = true -->
             <div
               v-if="
@@ -460,13 +456,29 @@
                     {{ currentLesson?.textSectionName || currentLesson?.title || "Nội dung" }}
                   </h3>
                   <div
-                    class="course-description-content prose max-w-none text-gray-700 leading-relaxed text-sm md:text-base"
+                    ref="lessonContentDesktopRef"
+                    :class="[
+                      'course-description-content prose max-w-none text-gray-700 leading-relaxed text-sm md:text-base transition-all duration-300',
+                      isLessonCollapsed && canCollapseLesson ? 'max-h-72 overflow-hidden' : ''
+                    ]"
                     v-html="
                       normalizedLessonContent ||
                       currentLesson?.content ||
                       'Chưa có nội dung'
                     "
                   ></div>
+                  <div
+                    v-if="canCollapseLesson"
+                    class="mt-3 text-center"
+                  >
+                    <button
+                      type="button"
+                      class="text-[#1a75bb] font-semibold text-sm md:text-base underline-offset-2 hover:underline"
+                      @click="toggleLessonCollapse"
+                    >
+                      {{ isLessonCollapsed ? 'Xem thêm >>>' : 'Thu gọn' }}
+                    </button>
+                  </div>
                 </div>
 
                 <!-- Quiz Card (Desktop) - Hiển thị ở cuối lesson nếu lesson hiện tại có quiz -->
@@ -603,13 +615,29 @@
                           {{ currentLesson?.title || "Chưa có bài học" }}
                         </h3>
                         <div
-                          class="course-description-content prose max-w-none text-gray-700 leading-relaxed text-sm md:text-base"
+                          ref="lessonContentMobileRef"
+                          :class="[
+                            'course-description-content prose max-w-none text-gray-700 leading-relaxed text-sm md:text-base transition-all duration-300',
+                            isLessonCollapsed && canCollapseLesson ? 'max-h-72 overflow-hidden' : ''
+                          ]"
                           v-html="
                             normalizedLessonContent ||
                             currentLesson?.content ||
                             'Chưa có nội dung'
                           "
                         ></div>
+                        <div
+                          v-if="canCollapseLesson"
+                          class="mt-3 text-center"
+                        >
+                          <button
+                            type="button"
+                            class="text-[#1a75bb] font-semibold text-sm md:text-base underline-offset-2 hover:underline"
+                            @click="toggleLessonCollapse"
+                          >
+                            {{ isLessonCollapsed ? 'Xem thêm >>>' : 'Thu gọn' }}
+                          </button>
+                        </div>
                       </div>
 
                       <!-- Quiz Card (Mobile) - Hiển thị ở cuối lesson nếu lesson hiện tại có quiz -->
@@ -784,7 +812,6 @@ import DocumentsComponent from "~/components/lessons/DocumentsComponent.vue";
 import QuizzesComponent from "~/components/lessons/QuizzesComponent.vue";
 import QuizCard from "~/components/lessons/QuizCard.vue";
 import CourseCertificateComponent from "~/components/lessons/CourseCertificateComponent.vue";
-import ProgressBar from "~/components/common/ProgressBar.vue";
 import type { Course, Chapter, Lesson } from "~/stores/courses";
 import { useProgressTracking } from "~/composables/useProgressTracking";
 import { useApiBase } from "~/composables/useApiBase";
@@ -826,6 +853,12 @@ const videoRef = ref<HTMLVideoElement | null>(null);
 const activeTab = ref("modules"); // Default to "Học phần" tab
 const markingCompleted = ref(false);
 
+// Collapse/expand for long text lessons (desktop + mobile)
+const lessonContentDesktopRef = ref<HTMLElement | null>(null);
+const lessonContentMobileRef = ref<HTMLElement | null>(null);
+const isLessonCollapsed = ref(true);
+const canCollapseLesson = ref(false);
+
 const playerState = ref({
   duration: 0,
   currentTime: 0,
@@ -841,6 +874,24 @@ const isFullscreen = ref(false);
 
 // Computed
 const course = computed<Course | null>(() => coursesStore.course);
+
+// Helpers to detect long text lesson and toggle "Xem thêm"
+const evaluateLessonContentHeight = () => {
+  if (!process.client) return;
+  const el = lessonContentDesktopRef.value || lessonContentMobileRef.value;
+  if (!el) return;
+  // Nếu nội dung cao hơn 400px thì mới cho thu gọn / xem thêm
+  canCollapseLesson.value = el.scrollHeight > 400;
+  if (!canCollapseLesson.value) {
+    isLessonCollapsed.value = false;
+  } else {
+    isLessonCollapsed.value = true;
+  }
+};
+
+const toggleLessonCollapse = () => {
+  isLessonCollapsed.value = !isLessonCollapsed.value;
+};
 // Normalize chapters/lessons order to keep indexes stable across UI/navigation
 const normalizedChapters = computed(() => {
   const chapters = course.value?.chapters || [];
@@ -1812,7 +1863,11 @@ watch(
     // Chỉ mark completed nếu chưa hoàn thành (kể cả khi ở chế độ review/jump ahead)
     // Điều này đảm bảo khi nhảy cóc vẫn tính tiến độ
     // Chỉ quiz độc lập (showQuiz=true và các section khác=false) mới không auto mark
-    const isQuizLesson = lesson.showQuiz && !lesson.showVideo && !lesson.showText && !lesson.showDocument;
+    const isQuizLesson =
+      (lesson as any).showQuiz &&
+      !(lesson as any).showVideo &&
+      !(lesson as any).showText &&
+      !(lesson as any).showDocument;
     if (!isQuizLesson && !lesson.isCompleted) {
       try {
         markingCompleted.value = true;
@@ -1912,6 +1967,10 @@ watch(
       }
     }
     isQuiz.value = query.quiz === "true" ? true : false;
+    // Mỗi khi chuyển lesson, reset & đo lại chiều cao nội dung text
+    nextTick(() => {
+      evaluateLessonContentHeight();
+    });
     // Khi vào chế độ review, load lại course để đảm bảo tất cả bài hiển thị đúng trạng thái
     if (query.review === "true" && oldQuery?.review !== "true") {
       fetchCourseDetail();
@@ -2008,6 +2067,10 @@ let securityCleanup: (() => void) | null | undefined = null;
 onMounted(async () => {
   isMounted.value = true; // Set mounted flag để tránh hydration mismatch
   await fetchCourseDetail();
+  // Đo chiều cao nội dung bài học text sau khi load course
+  nextTick(() => {
+    evaluateLessonContentHeight();
+  });
   securityCleanup = setupVideoSecurity() || null;
 
   // Add fullscreen change event listeners

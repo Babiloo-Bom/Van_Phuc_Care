@@ -169,6 +169,7 @@
           :quiz-result="quizResult"
           :on-close="handleCloseModal"
           :on-submit="handleSubmitModal"
+          :on-next="handleNextLesson"
         />
       </div>
     </template>
@@ -276,6 +277,36 @@ const handleCloseModal = () => {
   }
   
   // Ở chế độ review không đánh dấu hoàn thành tiến độ
+  if (!props.isReviewMode) {
+    emit('completed', true)
+  }
+}
+
+// Điều hướng sang bài học kế tiếp sau khi vượt qua quiz
+const handleNextLesson = () => {
+  isVisibleModal.value = false;
+
+  const baseLesson = route.query.originalLesson ?? route.query.lesson;
+  const chapterIndex = route.query.chapter;
+  const review = route.query.review;
+
+  if (chapterIndex !== undefined && baseLesson !== undefined) {
+    const nextLessonIndex = Number(baseLesson) + 1;
+
+    const queryParams: any = {
+      chapter: String(chapterIndex),
+      lesson: String(nextLessonIndex)
+    };
+    if (review === 'true') {
+      queryParams.review = 'true';
+    }
+
+    router.push({
+      path: route.path,
+      query: queryParams
+    });
+  }
+  
   if (!props.isReviewMode) {
     emit('completed', true)
   }

@@ -19,15 +19,17 @@
         </div>
         <div class="text-xl font-bold leading-6 text-[#232325] mt-5 text-center">{{ title }}</div>
         <div class="text-base text-[#6F727A] font-normal leading-6 mt-1 text-center">{{ description }}</div>
-        <div :class="[{'text-[#F48284]': true}, {'text-[#1A75BB]': false}, 'font-bold leading-6 mt-1 text-center']">Số câu trả lời đúng: {{ props?.quizResult?.score }}/{{ props?.quizResult?.totalPoints }}</div>
+        <div class="font-bold leading-6 mt-1 text-center text-[#15CF74]">
+          Số câu trả lời đúng: {{ props?.quizResult?.score }}/{{ props?.quizResult?.totalPoints }}
+        </div>
         <div class="grid grid-cols-2 gap-3 mt-10 mb-2">
           <a-button class="w-full h-[48px] border border-[#1A75BB] text-[#1A75BB] flex items-center justify-center rounded-lg font-bold"
             @click="handleShowQuiz"
           >
               Kiểm tra kết quả
           </a-button>
-          <a-button class="w-full h-[48px] border bg-[#1A75BB] !text-white flex items-center justify-center rounded-lg font-bold" @click="backQuiz">
-              Quay lại bài học
+          <a-button class="w-full h-[48px] border bg-[#1A75BB] !text-white flex items-center justify-center rounded-lg font-bold" @click="handleNextLesson">
+              Bài học kế tiếp
           </a-button>
         </div>
       </div>
@@ -45,12 +47,14 @@ interface Props {
   description?: string
   quizResult: IQuizResult
   onClose: () => void,
-  onSubmit: () => void
+  onSubmit: () => void,
+  onNext?: () => void
 }
 
 const props = withDefaults(defineProps<Props>(), {
   title: 'Xin chúc mừng, bạn đã vượt qua bài kiểm tra!!!',
   description: 'Làm tốt lắm, hãy tiếp tục phát huy lần sau nhé!',
+  onNext: () => {}
 })
 
 const backQuiz = () => {
@@ -59,6 +63,12 @@ const backQuiz = () => {
 
 const handleShowQuiz = () => {
   props?.onSubmit()
+}
+
+const handleNextLesson = () => {
+  if (props.onNext) {
+    props.onNext()
+  }
 }
 
 </script>
