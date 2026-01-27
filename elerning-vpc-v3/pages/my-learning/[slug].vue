@@ -2150,6 +2150,10 @@ onUnmounted(() => {
   font-weight: 600;
 }
 
+.course-tabs :deep(.ant-tabs-tab-active .ant-tabs-tab-btn) {
+  color: #1a75bb !important;
+}
+
 .course-tabs :deep(.ant-tabs-ink-bar) {
   background: #1a75bb;
   height: 3px;
