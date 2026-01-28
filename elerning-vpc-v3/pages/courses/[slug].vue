@@ -94,7 +94,7 @@
                     :poster="getImageUrlWithPriority([
                       (course as any)?.introVideoThumbnail,
                       course?.thumbnail
-                    ], '/images/courses/python-course.jpg')"
+                    ], '/images/placeholder-course.svg')"
                     class="w-full aspect-[16/9] object-cover rounded-[8px] sm:rounded-[12px] video-element"
                     preload="none"
                     playsinline
@@ -120,7 +120,7 @@
                       :src="getImageUrlWithPriority([
                         (course as any)?.introVideoThumbnail,
                         course?.thumbnail
-                      ], '/images/courses/python-course.jpg')"
+                      ], '/images/placeholder-course.svg')"
                       alt="Course thumbnail"
                     />
                     <!-- Play button overlay -->
@@ -145,7 +145,7 @@
                   <img
                     v-else
                     class="w-full aspect-[16/9] object-cover rounded-[8px] sm:rounded-md"
-                    :src="getImageUrl(course?.thumbnail, '/images/courses/python-course.jpg')"
+                    :src="getImageUrl(course?.thumbnail, '/images/placeholder-course.svg')"
                     alt="Course thumbnail"
                   />
                 </div>
@@ -698,7 +698,7 @@
                 <div class="course-thumbnail-16x9">
                   <img
                     class="w-full h-full object-cover"
-                    :src="getImageUrl(course?.thumbnail, '/images/courses/python-course.jpg')"
+                    :src="getImageUrl(course?.thumbnail, '/images/placeholder-course.svg')"
                     alt="/"
                   />
                 </div>
@@ -769,12 +769,21 @@
                   >
                     {{ Number(course.originalPrice || course.price || 0).toLocaleString("vi-VN") }}₫
                   </h3>
+                  <!-- Hiển thị "Miễn phí" chỉ khi course đã load và thực sự miễn phí -->
                   <h3
-                    v-else
+                    v-else-if="course && (!course.price && !course.originalPrice)"
                     class="text-2xl sm:text-3xl md:text-4xl font-bold mb-0"
                     style="color: #15cf74"
                   >
                     Miễn phí
+                  </h3>
+                  <!-- Khoảng trắng khi chưa load course -->
+                  <h3
+                    v-else
+                    class="text-2xl sm:text-3xl md:text-4xl font-bold mb-0"
+                    style="color: transparent"
+                  >
+                    &nbsp;
                   </h3>
                   <!-- Hiển thị giá gốc bị gạch khi có khuyến mãi -->
                   <h4
@@ -1409,7 +1418,7 @@ useHead({
       content: computed(
         () =>
           `https://vanphuccare.com${
-            course.value?.thumbnail || "/images/courses/default.jpg"
+            course.value?.thumbnail || "/images/placeholder-course.jpg"
           }`,
       ),
     },
@@ -1447,7 +1456,7 @@ useHead({
       content: computed(
         () =>
           `https://vanphuccare.com${
-            course.value?.thumbnail || "/images/courses/default.jpg"
+            course.value?.thumbnail || "/images/placeholder-course.jpg"
           }`,
       ),
     },
