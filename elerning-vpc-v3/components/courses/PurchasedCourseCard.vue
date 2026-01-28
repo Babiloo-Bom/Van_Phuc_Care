@@ -193,13 +193,16 @@
   const authStore = useAuthStore();
 
   // % tiến trình tổng các bài của khóa học (ưu tiên course.progress.progressPercentage - tiến trình tổng các bài)
+  // Đảm bảo không vượt quá 100% và luôn sử dụng tiến trình tổng các bài
   const progressPct = computed(() => {
     // Ưu tiên tiến trình tổng các bài từ course.progress.progressPercentage
     const fromCourse = (props.course as any)?.progress?.progressPercentage ?? 0;
-    // Fallback về prop progress nếu không có
+    // Fallback về prop progress nếu không có (prop progress cũng nên là tiến trình tổng)
     const fromProp = props.progress ?? 0;
-    // Ưu tiên tiến trình tổng các bài (từ course.progress)
-    return fromCourse || fromProp || 0;
+    // Ưu tiên tiến trình tổng các bài (từ course.progress), fallback về prop
+    const finalProgress = fromCourse || fromProp || 0;
+    // Đảm bảo không vượt quá 100% và không nhỏ hơn 0%
+    return Math.min(Math.max(finalProgress, 0), 100);
   });
 
   const everCompleted = computed(() => {
