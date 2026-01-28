@@ -349,8 +349,8 @@
                                 class="flex items-center justify-between py-2 gap-2 cursor-pointer hover:bg-gray-50 rounded transition-colors"
                                 @click="
                                   handleLessonNavigate(
-                                    chapterIndex,
-                                    lessonIndex,
+                                    Number(chapterIndex),
+                                    Number(lessonIndex),
                                     lesson,
                                   )
                                 "
@@ -404,8 +404,8 @@
                                     "
                                     @click.stop="
                                       handleLessonNavigate(
-                                        chapterIndex,
-                                        lessonIndex,
+                                        Number(chapterIndex),
+                                        Number(lessonIndex),
                                         lesson,
                                       )
                                     "
@@ -1210,7 +1210,6 @@
 
 <script setup lang="ts">
 import { ref, computed, onMounted, onUnmounted, watch, nextTick } from "vue";
-import { useRoute, useRouter } from "vue-router";
 import { useCoursesStore } from "~/stores/courses";
 import { useCartStore } from "~/stores/cart";
 import { useAuthStore } from "~/stores/auth";
@@ -1361,133 +1360,107 @@ const heroBackgroundStyle = computed(() => {
   return "#0e1d29db";
 });
 
-// SEO Configuration
+// SEO Configuration (Dynamic)
+const runtimeConfig = useRuntimeConfig();
+const requestUrl = useRequestURL();
+
+// Use configured appUrl if present; fallback to request origin in SSR.
+const siteUrl = computed(() => {
+  const fromConfig = (runtimeConfig.public.appUrl || "").replace(/\/$/, "");
+  return fromConfig || requestUrl.origin;
+});
+
+// SSR-safe slug getter (prevents empty canonical like "/courses/")
+const slugParam = computed(() => {
+  const raw = (route.params as any)?.slug;
+  if (raw !== undefined && raw !== null && String(raw).trim() !== "") return String(raw);
+  // Fallback: parse from path (e.g. "/courses/san-sang-lam-me")
+  const path = String((route as any)?.path || "");
+  const m = path.match(/\/courses\/([^/?#]+)/);
+  return m?.[1] ? decodeURIComponent(m[1]) : "";
+});
+
+const courseName = computed(
+  () => (course.value as any)?.name || course.value?.title || "Chi tiết khóa học",
+);
+const courseSummary = computed(
+  () => (course.value as any)?.summary || course.value?.shortDescription || "",
+);
+
+const courseTags = computed(() => {
+  const tagsRaw = (course.value as any)?.tags;
+  if (!tagsRaw) return "";
+  if (Array.isArray(tagsRaw)) {
+    return tagsRaw
+      .map((t: any) => (typeof t === "string" ? t : t?.name))
+      .filter(Boolean)
+      .join(", ");
+  }
+  if (typeof tagsRaw === "string") return tagsRaw;
+  return "";
+});
+
+const canonicalUrl = computed(() => {
+  // Always self-referencing canonical for detail page
+  const slug = slugParam.value;
+  return slug ? `${siteUrl.value}/courses/${slug}` : `${siteUrl.value}/courses`;
+});
+
+const toAbsoluteUrl = (maybeUrl?: string) => {
+  if (!maybeUrl) return "";
+  if (/^https?:\/\//i.test(maybeUrl)) return maybeUrl;
+  return `${siteUrl.value}${maybeUrl.startsWith("/") ? "" : "/"}${maybeUrl}`;
+};
+
+const ogImageUrl = computed(() => {
+  const thumb = (course.value as any)?.thumbnail;
+  return toAbsoluteUrl(thumb || "/images/place-hoder.jpg");
+});
+
+// Map fields per spec:
+// - <title>: "Khóa học: {course.name}"
+// - description: course.summary
+// - og:title: same as title
+// - og:description: same as description
+// - og:image: course.thumbnail (absolute)
+// - keywords: course.tags (comma separated)
+// - canonical: /courses/{slug}
+useSeoMeta({
+  title: computed(() => `Khóa học: ${courseName.value}`),
+  description: computed(() => courseSummary.value || `Khóa học: ${courseName.value}`),
+  keywords: computed(() => courseTags.value || ""),
+  ogTitle: computed(() => `Khóa học: ${courseName.value}`),
+  ogDescription: computed(() => courseSummary.value || `Khóa học: ${courseName.value}`),
+  ogImage: ogImageUrl,
+  ogUrl: canonicalUrl,
+  twitterCard: "summary_large_image",
+  twitterTitle: computed(() => `Khóa học: ${courseName.value}`),
+  twitterDescription: computed(() => courseSummary.value || `Khóa học: ${courseName.value}`),
+  twitterImage: ogImageUrl
+});
+
 useHead({
-  title: computed(
-    () =>
-      `${course.value?.title || "Chi tiết khóa học"} - Van Phuc Care E-Learning`,
-  ),
-  meta: [
-    {
-      name: "description",
-      content: computed(
-        () =>
-          course.value?.shortDescription ||
-          "Khám phá khóa học tại Van Phuc Care E-Learning",
-      ),
-    },
-    {
-      name: "keywords",
-      content: computed(() => {
-        if (!course.value)
-          return "khóa học trực tuyến, e-learning, Van Phuc Care";
-        const tags = course.value.tags?.join(", ") || "";
-        const category = course.value.category || "";
-        return `${course.value.title}, ${category}, ${tags}, khóa học trực tuyến, e-learning, Van Phuc Care`;
-      }),
-    },
-    {
-      property: "og:title",
-      content: computed(
-        () =>
-          `${
-            course.value?.title || "Chi tiết khóa học"
-          } - Van Phuc Care E-Learning`,
-      ),
-    },
-    {
-      property: "og:description",
-      content: computed(
-        () =>
-          course.value?.shortDescription ||
-          "Khám phá khóa học tại Van Phuc Care E-Learning",
-      ),
-    },
-    {
-      property: "og:type",
-      content: "article",
-    },
-    {
-      property: "og:url",
-      content: computed(
-        () => `https://vanphuccare.com/courses/${course.value?.slug || ""}`,
-      ),
-    },
-    {
-      property: "og:image",
-      content: computed(
-        () =>
-          `https://vanphuccare.com${
-            course.value?.thumbnail || "/images/place-hoder.jpg"
-          }`,
-      ),
-    },
-    {
-      property: "og:image:width",
-      content: "1200",
-    },
-    {
-      property: "og:image:height",
-      content: "630",
-    },
-    {
-      name: "twitter:card",
-      content: "summary_large_image",
-    },
-    {
-      name: "twitter:title",
-      content: computed(
-        () =>
-          `${
-            course.value?.title || "Chi tiết khóa học"
-          } - Van Phuc Care E-Learning`,
-      ),
-    },
-    {
-      name: "twitter:description",
-      content: computed(
-        () =>
-          course.value?.shortDescription ||
-          "Khám phá khóa học tại Van Phuc Care E-Learning",
-      ),
-    },
-    {
-      name: "twitter:image",
-      content: computed(
-        () =>
-          `https://vanphuccare.com${
-            course.value?.thumbnail || "/images/place-hoder.jpg"
-          }`,
-      ),
-    },
-    {
-      name: "article:author",
-      content: computed(
-        () => course.value?.instructor?.name || "Van Phuc Care",
-      ),
-    },
-    {
-      name: "article:published_time",
-      content: computed(
-        () => course.value?.createdAt || new Date().toISOString(),
-      ),
-    },
-    {
-      name: "article:modified_time",
-      content: computed(
-        () => course.value?.updatedAt || new Date().toISOString(),
-      ),
-    },
-  ],
+  // Disable global titleTemplate ("... - Van Phuc Care E-Learning") for this page
+  // so <title> matches the required format exactly.
+  titleTemplate: null,
   link: [
     {
       rel: "canonical",
-      href: computed(
-        () => `https://vanphuccare.com/courses/${course.value?.slug || ""}`,
-      ),
+      href: canonicalUrl,
+      // Ensure this canonical overrides any global/default canonical
+      key: "canonical",
     },
   ],
 });
+
+// Ensure schema.org WebPage description matches our SEO description (instead of falling back to site default)
+useSchemaOrg([
+  defineWebPage({
+    name: computed(() => `Khóa học: ${courseName.value}`),
+    description: computed(() => courseSummary.value || `Khóa học: ${courseName.value}`),
+    url: canonicalUrl
+  })
+]);
 
 // Schema.org markup for Course Detail (temporarily disabled for testing)
 // useSchemaOrg([
@@ -2052,33 +2025,59 @@ const handlePreviewLesson = (lesson: any) => {
 };
 
 const fetchData = async () => {
-  try {
-    // Đảm bảo authStore đã được init trước khi fetch course detail
-    if (process.client && authStore.isLoggedIn) {
-      await authStore.initAuth();
-    }
+  // Đảm bảo authStore đã được init trước khi fetch course detail
+  if (process.client && authStore.isLoggedIn) {
+    await authStore.initAuth();
+  }
 
-    const slug = route.params.slug as string;
-    await coursesStore.fetchDetail(slug);
-    convertToObjectArray();
+  const slug = route.params.slug as string;
+  await coursesStore.fetchDetail(slug);
+  convertToObjectArray();
 
-    // Fetch reviews to calculate rating
-    if (course.value?._id) {
-      try {
-        await coursesStore.fetchReviews(course.value._id);
-      } catch (error) {
-      }
+  // Fetch reviews to calculate rating
+  if (course.value?._id) {
+    try {
+      await coursesStore.fetchReviews(course.value._id);
+    } catch (error) {
+      // Reviews fetch failure is not critical, continue
     }
-  } catch (error) {
-    // Redirect to home if course not found
-    router.push("/");
   }
 };
+
+// SSR: Fetch course data BEFORE rendering HTML
+// This ensures course data and meta tags are available in view-source/disabled JS
+const slug = route.params.slug as string;
+const { error: courseError } = await useAsyncData(`course-${slug}`, async () => {
+  try {
+    await fetchData();
+    return course.value;
+  } catch (error: any) {
+    // SSR: throw error to let Nuxt handle 404
+    if (process.server) {
+      throw createError({
+        statusCode: 404,
+        statusMessage: 'Course not found'
+      });
+    }
+    // Client: redirect to home
+    if (process.client) {
+      router.push("/");
+    }
+    throw error;
+  }
+});
+
+// Handle error during SSR (if useAsyncData didn't throw)
+if (courseError.value && process.server) {
+  throw createError({
+    statusCode: 404,
+    statusMessage: 'Course not found'
+  });
+}
 
 // Lifecycle
 onMounted(async () => {
   isMounted.value = true;
-  await fetchData();
   // Load cart if user is logged in
   if (authStore.isLoggedIn) {
     await cartStore.fetchCart();

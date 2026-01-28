@@ -16,9 +16,28 @@ export default defineNuxtConfig({
     // Temporarily removed @nuxtjs/seo to prevent automatic sitemap generation
     // We use custom sitemap at server/routes/sitemap.xml.ts
     // '@nuxtjs/seo',
+    'nuxt-schema-org',
     '@zadigetvoltaire/nuxt-gtm',
     '@nuxt/image'
   ],
+
+  /**
+   * Google Tag Manager
+   * - Module key is `gtm` (configKey: "gtm")
+   * - Keep this at root so the module can read it reliably.
+   */
+  gtm: {
+    id: process.env.NUXT_PUBLIC_GTM_ID || 'GTM-WR46Z7DD',
+    enabled: true,
+    enableRouterSync: true,
+    debug: process.env.NODE_ENV !== 'production',
+    defer: false,
+    compatibility: false,
+    scriptId: 'gtm-script',
+    scriptURL: 'https://www.googletagmanager.com/gtm.js',
+    noscript: true,
+    noscriptId: 'gtm-noscript'
+  },
 
   // Site config (kept for reference, but @nuxtjs/seo is disabled)
   // site: {
@@ -100,7 +119,7 @@ export default defineNuxtConfig({
       appUrl: process.env.NUXT_PUBLIC_APP_URL || 'http://localhost:3102',
 
       // Google Tag Manager Configuration (used by @zadigetvoltaire/nuxt-gtm)
-      // Nuxt 3 modules read options from runtimeConfig.public.gtm
+      // Keep this in runtimeConfig so client-side code/composables can read it too.
       gtm: {
         id: process.env.NUXT_PUBLIC_GTM_ID || 'GTM-WR46Z7DD',
         enabled: true,
@@ -137,8 +156,8 @@ export default defineNuxtConfig({
         { name: 'google-site-verification', content: 'JE5D99uHywdAihdJTbbrmh4TPdLicrlViMmfIrIqq2k' }
       ],
       link: [
-        { rel: 'icon', type: 'image/png', href: '/images/logo_van_phuc.png' },
-        { rel: 'apple-touch-icon', href: '/images/logo_van_phuc.png' }
+        { rel: 'icon', type: 'image/png', href: '/images/favicon-vpc.png' },
+        { rel: 'apple-touch-icon', href: '/images/favicon-vpc.png' }
       ]
     }
   }

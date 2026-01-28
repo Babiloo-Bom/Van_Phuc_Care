@@ -97,8 +97,8 @@ export default defineNuxtConfig({
         { name: 'description', content: 'Van Phuc Care Admin Portal' }
       ],
       link: [
-        { rel: 'icon', type: 'image/png', href: '/images/logo_van_phuc.png' },
-        { rel: 'apple-touch-icon', href: '/images/logo_van_phuc.png' }
+        { rel: 'icon', type: 'image/png', href: '/images/favicon-vpc.png' },
+        { rel: 'apple-touch-icon', href: '/images/favicon-vpc.png' }
       ]
     }
   }

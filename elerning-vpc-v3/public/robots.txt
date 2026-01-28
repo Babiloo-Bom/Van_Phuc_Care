@@ -1,0 +1,27 @@
+User-agent: *
+Allow: /
+
+# Disallow private/user pages
+Disallow: /my-learning
+Disallow: /my-learning/
+Disallow: /cart
+Disallow: /cart/
+Disallow: /checkout
+Disallow: /checkout/
+Disallow: /vnpay-return
+Disallow: /vnpay-return/
+
+# Disallow admin and API routes
+Disallow: /admin/
+Disallow: /api/
+Disallow: /_nuxt/
+
+# Allow important public pages
+Allow: /
+Allow: /courses
+Allow: /courses/
+Allow: /courses/*
+
+# Sitemap
+Sitemap: https://edu.vanphuccare.vn/sitemap.xml
+

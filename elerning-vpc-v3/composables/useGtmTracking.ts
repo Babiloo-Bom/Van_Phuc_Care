@@ -26,7 +26,7 @@ export const useGtmTracking = () => {
    * Check if GTM is enabled
    */
   const isGtmEnabled = computed(() => {
-    return !!config.public.gtmId && config.public.gtmId !== ''
+    return !!config.public.gtm?.id && config.public.gtm.id !== '' && config.public.gtm.enabled !== false
   })
 
   /**

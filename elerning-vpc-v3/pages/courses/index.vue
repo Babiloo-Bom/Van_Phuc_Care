@@ -287,14 +287,23 @@ const handleSortChange = (value: any) => {
 };
 
 const fetchCourses = async () => {
-  try {
-    loading.value = true;
-    await courseStore.fetchAll();
-  } catch (error) {
-  } finally {
-    loading.value = false;
-  }
+  await courseStore.fetchAll();
 };
+
+// SSR: Fetch courses BEFORE rendering HTML
+// This ensures courses are available in view-source/disabled JS
+const { pending: coursesPending } = await useAsyncData('courses', async () => {
+  try {
+    await fetchCourses();
+    return courseStore.courses;
+  } catch (error) {
+    // Return empty array on error, don't break SSR
+    return [];
+  }
+});
+
+// Update loading state based on SSR fetch status
+loading.value = coursesPending.value;
 
 const handleAddToCart = async (course: any) => {
   if (!course._id) {
@@ -364,8 +373,8 @@ const handleViewDetail = (course: any) => {
 // Lifecycle
 onMounted(async () => {
   authStore.initAuth();
-  await fetchCourses();
-  // Only fetch my courses if user is logged in
+  // Courses already fetched via useAsyncData above (SSR)
+  // Only fetch my courses if user is logged in (client-side only)
   if (authStore.isLoggedIn) {
     courseStore.fetchMyCourses();
   }
@@ -383,7 +392,7 @@ useHead({
     {
       name: "description",
       content:
-        "Khám phá các khóa học trực tuyến về chăm sóc sức khỏe gia đình. Được hướng dẫn từ đội ngũ chuyên gia trong lĩnh vực sản nhi giàu kinh nghiệm.",
+        "Van Phuc Care E-Learning - Nền tảng đào tạo trực tuyến chuyên sâu về chăm sóc sức khỏe gia đình, chăm sóc sức khỏe mẹ và bé chuẩn Y khoa. Cung cấp các khóa học thực chiến về chăm sóc y tế, nuôi dạy và kỹ năng làm cha mẹ.",
     },
     {
       name: "keywords",
@@ -397,62 +406,56 @@ useHead({
     {
       property: "og:description",
       content:
-        "Khám phá các khóa học trực tuyến về chăm sóc sức khỏe gia đình. Được hướng dẫn từ đội ngũ chuyên gia trong lĩnh vực sản nhi giàu kinh nghiệm.",
+        "Van Phuc Care E-Learning - Nền tảng đào tạo trực tuyến chuyên sâu về chăm sóc sức khỏe gia đình, chăm sóc sức khỏe mẹ và bé chuẩn Y khoa. Cung cấp các khóa học thực chiến về chăm sóc y tế, nuôi dạy và kỹ năng làm cha mẹ.",
     },
   ],
 });
 
-// Schema.org markup for Course List (temporarily disabled for testing)
-// useSchemaOrg([
-//   {
-//     '@type': 'ItemList',
-//     name: 'Danh sách khóa học trực tuyến',
-//     description: 'Tất cả các khóa học trực tuyến chất lượng cao tại Van Phuc Care',
-//     url: 'https://vanphuccare.com/courses',
-//     numberOfItems: computed(() => courses.value.length),
-//     itemListElement: computed(() =>
-//       courses.value.map((course, index) => ({
-//         '@type': 'ListItem',
-//         position: index + 1,
-//         item: {
-//           '@type': 'Course',
-//           name: course.title,
-//           description: course.shortDescription,
-//           url: `https://vanphuccare.com/courses/${course.slug}`,
-//           image: `https://vanphuccare.com${course.thumbnail}`,
-//           provider: {
-//             '@type': 'Organization',
-//             name: 'Van Phuc Care',
-//             url: 'https://vanphuccare.com'
-//           },
-//           offers: {
-//             '@type': 'Offer',
-//             price: course.price,
-//             priceCurrency: 'VND',
-//             availability: 'https://schema.org/InStock'
-//           },
-//           aggregateRating: course.rating ? {
-//             '@type': 'AggregateRating',
-//             ratingValue: course.rating.average,
-//             reviewCount: course.rating.count
-//           } : undefined
-//         }
-//       }))
-//     )
-//   },
-//   {
-//     '@type': 'Organization',
-//     name: 'Van Phuc Care',
-//     url: 'https://vanphuccare.com',
-//     logo: 'https://vanphuccare.com/images/logo.png',
-//     description: 'Nền tảng học trực tuyến hàng đầu Việt Nam với các khóa học chất lượng cao',
-//     sameAs: [
-//       'https://facebook.com/vanphuccare',
-//       'https://youtube.com/vanphuccare',
-//       'https://linkedin.com/company/vanphuccare'
-//     ]
-//   }
-// ])
+// Schema.org markup for Course List
+const runtimeConfig = useRuntimeConfig();
+const siteUrl = computed(() => (runtimeConfig.public.appUrl || '').replace(/\/$/, ''));
+
+useSchemaOrg([
+  {
+    '@type': 'ItemList',
+    name: 'Danh sách khóa học trực tuyến',
+    description:
+      'Van Phuc Care E-Learning - Nền tảng đào tạo trực tuyến chuyên sâu về chăm sóc sức khỏe gia đình, chăm sóc sức khỏe mẹ và bé chuẩn Y khoa. Cung cấp các khóa học thực chiến về chăm sóc y tế, nuôi dạy và kỹ năng làm cha mẹ.',
+    url: computed(() => `${siteUrl.value}/courses`),
+    numberOfItems: computed(() => courses.value.length),
+    itemListElement: computed(() =>
+      courses.value.map((course, index) => ({
+        '@type': 'ListItem',
+        position: index + 1,
+        item: {
+          '@type': 'Course',
+          name: course.title,
+          description: course.shortDescription || course.description,
+          url: `${siteUrl.value}/courses/${course.slug}`,
+          image: course.thumbnail ? `${siteUrl.value}${course.thumbnail}` : undefined,
+          provider: {
+            '@type': 'Organization',
+            name: 'Van Phuc Care',
+            url: siteUrl.value
+          },
+          offers: {
+            '@type': 'Offer',
+            price: course.price,
+            priceCurrency: 'VND',
+            availability: 'https://schema.org/InStock'
+          },
+          aggregateRating: course.rating
+            ? {
+                '@type': 'AggregateRating',
+                ratingValue: course.rating.average,
+                reviewCount: course.rating.count
+              }
+            : undefined
+        }
+      }))
+    )
+  }
+])
 </script>
 
 <style scoped>

@@ -131,8 +131,8 @@ export default defineNuxtConfig({
         { name: 'description', content: 'Van Phuc Care CRM Portal' }
       ],
       link: [
-        { rel: 'icon', type: 'image/png', href: '/images/logo_van_phuc.png' },
-        { rel: 'apple-touch-icon', href: '/images/logo_van_phuc.png' }
+        { rel: 'icon', type: 'image/png', href: '/images/favicon-vpc.png' },
+        { rel: 'apple-touch-icon', href: '/images/favicon-vpc.png' }
         // Font preload removed to avoid browser warnings
         // Fonts will load on-demand via @font-face (font-display: swap handles this)
       ]
