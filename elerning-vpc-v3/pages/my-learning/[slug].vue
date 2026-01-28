@@ -1079,10 +1079,39 @@ const showLessonContent = computed(() => {
 });
 
 // Course progress percentage from backend (capped at 100%)
+// Có fallback lấy từ myCourses store nếu course.value.progress chưa có
+// Nếu khóa học đã hoàn thành (isCompleted === true hoặc có trong user.courseCompleted), luôn trả về 100%
 const courseProgress = computed(() => {
-  if (!course.value || !course.value.progress) return 0;
-  const progress = course.value.progress.progressPercentage || 0;
-  return Math.min(progress, 100); // Ensure never exceeds 100%
+  const courseId = course.value?._id?.toString();
+  
+  // Kiểm tra nếu khóa học đã hoàn thành (ưu tiên cao nhất)
+  if (courseId && authStore.user?.courseCompleted?.includes(courseId)) {
+    return 100;
+  }
+  
+  // Kiểm tra isCompleted từ course.value.progress
+  if (course.value?.progress?.isCompleted === true) {
+    return 100;
+  }
+  
+  // Ưu tiên lấy từ course.value.progress.progressPercentage
+  if (course.value?.progress?.progressPercentage !== undefined) {
+    return Math.min(course.value.progress.progressPercentage, 100);
+  }
+  
+  // Fallback: lấy từ myCourses store nếu course.value.progress chưa có
+  if (courseId) {
+    const myCourse = coursesStore.myCourses.find((c: any) => c._id === courseId);
+    // Kiểm tra isCompleted từ myCourse
+    if (myCourse?.progress?.isCompleted === true) {
+      return 100;
+    }
+    if (myCourse?.progress?.progressPercentage !== undefined) {
+      return Math.min(myCourse.progress.progressPercentage, 100);
+    }
+  }
+  
+  return 0;
 });
 
 // SEO - Must be after all computed properties are defined
@@ -1359,45 +1388,72 @@ const fetchCourseDetail = async () => {
       currentLessonIndex.value = parseInt(lessonParam as string) || 0;
     }
 
-    // Nếu user chưa mua, dùng API public để lấy thông tin khóa học (cho phép xem preview)
-    // Nếu user đã mua, dùng API my-courses để lấy thông tin đầy đủ với progress
-    try {
-      await coursesStore.fetchDetail(slug.value);
+    // Kiểm tra xem user đã mua chưa (dựa trên myCourses store hoặc user.courseRegister)
+    // Nếu đã mua, dùng API my-courses ngay từ đầu để có progress đầy đủ
+    const courseIdFromMyCourses = coursesStore.myCourses.find(
+      (c: any) => c.slug === slug.value
+    )?._id?.toString();
+    const isPurchasedFromStore =
+      courseIdFromMyCourses ||
+      (authStore.user?.courseRegister || []).some(
+        (id: string) => {
+          // Tìm course trong myCourses có cùng _id
+          return coursesStore.myCourses.some((c: any) => c._id?.toString() === id && c.slug === slug.value);
+        }
+      );
 
-      // Sau khi fetch, kiểm tra lại isPurchased hoặc đã hoàn thành
-      if (!isPurchasedOrCompleted.value) {
-        // Nếu chưa mua, chỉ cho phép xem bài preview
+    if (isPurchasedFromStore) {
+      // Nếu đã mua, fetch bằng my-courses để có progress đầy đủ
+      try {
+        await coursesStore.fetchMyCourseBySlug(
+          slug.value,
+          currentChapterIndex.value,
+          currentLessonIndex.value,
+        );
+      } catch (error: any) {
+        // Nếu my-courses fail, thử dùng API public
+        await coursesStore.fetchDetail(slug.value);
+      }
+    } else {
+      // Nếu chưa mua, dùng API public để lấy thông tin khóa học (cho phép xem preview)
+      try {
+        await coursesStore.fetchDetail(slug.value);
+
+        // Sau khi fetch, kiểm tra lại isPurchased hoặc đã hoàn thành
+        if (!isPurchasedOrCompleted.value) {
+          // Nếu chưa mua, chỉ cho phép xem bài preview
+          if (
+            currentLesson.value &&
+            (!currentLesson.value.isPreview || currentLesson.value.isLocked)
+          ) {
+            // Redirect về trang chi tiết khóa học với query parameter để tự động hiện popup
+            navigateTo(`/courses/${slug.value}?showPurchaseModal=true`);
+            return;
+          }
+        } else {
+          // Nếu đã mua (sau khi fetch mới biết), fetch lại bằng my-courses để có progress đầy đủ
+          await coursesStore.fetchMyCourseBySlug(
+            slug.value,
+            currentChapterIndex.value,
+            currentLessonIndex.value,
+          );
+        }
+      } catch (error: any) {
+        // Nếu API public cũng fail, thử dùng my-courses (có thể user đã mua nhưng API public có vấn đề)
         if (
-          currentLesson.value &&
-          (!currentLesson.value.isPreview || currentLesson.value.isLocked)
+          error?.statusCode === 403 ||
+          error?.data?.error?.includes("chưa mua")
         ) {
-          // Redirect về trang chi tiết khóa học với query parameter để tự động hiện popup
-          navigateTo(`/courses/${slug.value}?showPurchaseModal=true`);
+          // User chưa mua, redirect về trang chi tiết
+          navigateTo(`/courses/${slug.value}`);
           return;
         }
-      } else {
-        // Nếu đã mua, fetch lại bằng my-courses để có progress đầy đủ
         await coursesStore.fetchMyCourseBySlug(
           slug.value,
           currentChapterIndex.value,
           currentLessonIndex.value,
         );
       }
-    } catch (error: any) {
-      // Nếu API public cũng fail, thử dùng my-courses (có thể user đã mua nhưng API public có vấn đề)
-      if (
-        error?.statusCode === 403 ||
-        error?.data?.error?.includes("chưa mua")
-      ) {
-        // User chưa mua, redirect về trang chi tiết
-        navigateTo(`/courses/${slug.value}`);
-        return;
-      }
-      await coursesStore.fetchMyCourseBySlug(
-        slug.value,
-        currentChapterIndex.value,
-        currentLessonIndex.value,
-      );
     }
 
     // Set lại chapter và lesson index sau khi fetch
