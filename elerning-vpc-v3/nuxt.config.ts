@@ -16,7 +16,8 @@ export default defineNuxtConfig({
     // Temporarily removed @nuxtjs/seo to prevent automatic sitemap generation
     // We use custom sitemap at server/routes/sitemap.xml.ts
     // '@nuxtjs/seo',
-    '@zadigetvoltaire/nuxt-gtm'
+    '@zadigetvoltaire/nuxt-gtm',
+    '@nuxt/image'
   ],
 
   // Site config (kept for reference, but @nuxtjs/seo is disabled)
