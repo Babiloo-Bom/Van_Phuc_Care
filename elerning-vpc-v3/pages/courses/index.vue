@@ -423,7 +423,7 @@ useHead({
   script: [
     {
       type: "application/ld+json",
-      children: computed(() => {
+      innerHTML: computed(() => {
         const base = siteUrl.value || "https://edu.vanphuccare.vn";
         const pageUrl = `${base}/courses`;
 
@@ -455,33 +455,36 @@ useHead({
             // 3. ItemList (danh sách các khóa học)
             {
               "@type": "ItemList",
-              itemListElement: (courses.value || []).map((course: any, index: number) => {
-                const courseUrl = `${base}/courses/${course.slug}`;
-                const thumb = course.thumbnail;
-                const imageUrl =
-                  typeof thumb === "string" && thumb
-                    ? thumb.startsWith("http")
-                      ? thumb
-                      : `${base}${thumb.startsWith("/") ? "" : "/"}${thumb}`
-                    : undefined;
+              itemListElement: (courses.value || []).map(
+                (course: any, index: number) => {
+                  const courseUrl = `${base}/courses/${course.slug}`;
+                  const thumb = course.thumbnail;
+                  const imageUrl =
+                    typeof thumb === "string" && thumb
+                      ? thumb.startsWith("http")
+                        ? thumb
+                        : `${base}${thumb.startsWith("/") ? "" : "/"}${thumb}`
+                      : undefined;
 
-                return {
-                  "@type": "ListItem",
-                  position: index + 1,
-                  item: {
-                    "@type": "Course",
-                    url: courseUrl,
-                    name: course.title,
-                    description: course.shortDescription || course.description,
-                    image: imageUrl,
-                    offers: {
-                      "@type": "Offer",
-                      price: course.price,
-                      priceCurrency: "VND",
+                  return {
+                    "@type": "ListItem",
+                    position: index + 1,
+                    item: {
+                      "@type": "Course",
+                      url: courseUrl,
+                      name: course.title,
+                      description:
+                        course.shortDescription || course.description,
+                      image: imageUrl,
+                      offers: {
+                        "@type": "Offer",
+                        price: course.price,
+                        priceCurrency: "VND",
+                      },
                     },
-                  },
-                };
-              }),
+                  };
+                }
+              ),
             },
           ],
         });
