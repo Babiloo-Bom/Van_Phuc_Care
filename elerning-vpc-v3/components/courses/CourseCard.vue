@@ -119,12 +119,12 @@
       <div v-if="course.isPurchased == true" class="w-full mb-3 sm:mb-4 flex-grow flex flex-col justify-end">
         <div class="w-full flex items-center justify-between mb-2">
           <span class="text-xs sm:text-sm text-[#868686]">Tiến độ</span>
-          <span class="text-xs sm:text-sm text-[#868686]">{{ progress ?? 0 }}%</span>
+          <span class="text-xs sm:text-sm text-[#868686]">{{ progressPct }}%</span>
         </div>
         <div class="relative w-full h-1 bg-[#dfdfdf] rounded-sm">
           <div 
             class="absolute top-0 bottom-0 left-0 bg-[#6DE380] rounded-sm transition-all duration-300" 
-            :style="{ width: `${Math.min(Math.max(progress ?? 0, 0), 100)}%` }"
+            :style="{ width: `${Math.min(Math.max(progressPct, 0), 100)}%` }"
           ></div>
         </div>
       </div>
@@ -239,12 +239,15 @@ const router = useRouter();
 const authStore = useAuthStore();
 const { getImageUrl } = useImageUrl();
 
-// % tiến trình hiện tại của khóa học (ưu tiên prop progress, fallback course.progress)
+// % tiến trình tổng các bài của khóa học (ưu tiên course.progress.progressPercentage - tiến trình tổng các bài)
 const progressPct = computed(() => {
-  const pctFromProp = props.progress ?? 0;
+  // Ưu tiên tiến trình tổng các bài từ course.progress.progressPercentage
   const pctFromCourse =
     (props.course as any)?.progress?.progressPercentage ?? 0;
-  return Math.max(pctFromProp, pctFromCourse) || 0;
+  // Fallback về prop progress nếu không có
+  const pctFromProp = props.progress ?? 0;
+  // Ưu tiên tiến trình tổng các bài (từ course.progress)
+  return pctFromCourse || pctFromProp || 0;
 });
 
 // Đã từng hoàn thành (có chứng chỉ) - dựa trên user.courseCompleted

@@ -1964,7 +1964,7 @@ watch(
     }
     isQuiz.value = query.quiz === "true" ? true : false;
 
-    // Scroll to top khi chuyển lesson/chapter (chỉ client-side, không chạy trên SSR)
+    // Scroll to top và chuyển tab về "Nội dung bài học" khi chuyển lesson/chapter (chỉ client-side, không chạy trên SSR)
     if (
       process.client &&
       oldQuery &&
@@ -1972,6 +1972,10 @@ watch(
         query.chapter !== oldQuery.chapter)
     ) {
       window.scrollTo({ top: 0, behavior: "smooth" });
+      // Chuyển tab về "Nội dung bài học" khi chọn bài học khác ở tab "Học phần" (trừ khi đang ở quiz)
+      if (query.quiz !== "true" && activeTab.value === "modules") {
+        activeTab.value = "content";
+      }
     }
 
     // Mỗi khi chuyển lesson, reset & đo lại chiều cao nội dung text
