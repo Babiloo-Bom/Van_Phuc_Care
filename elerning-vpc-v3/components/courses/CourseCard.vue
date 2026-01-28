@@ -239,18 +239,29 @@ const router = useRouter();
 const authStore = useAuthStore();
 const { getImageUrl } = useImageUrl();
 
-// % tiến trình tổng các bài của khóa học (ưu tiên course.progress.progressPercentage - tiến trình tổng các bài)
-// Đảm bảo không vượt quá 100% và luôn sử dụng tiến trình tổng các bài
+// % tiến trình tổng các bài của khóa học (same logic as my-learning/[slug].vue courseProgress)
 const progressPct = computed(() => {
-  // Ưu tiên tiến trình tổng các bài từ course.progress.progressPercentage
-  const pctFromCourse =
-    (props.course as any)?.progress?.progressPercentage ?? 0;
-  // Fallback về prop progress nếu không có (prop progress cũng nên là tiến trình tổng)
+  const courseId = props.course?._id?.toString?.();
+
+  // Kiểm tra nếu khóa học đã hoàn thành (ưu tiên cao nhất)
+  if (courseId && authStore.user?.courseCompleted?.includes(courseId)) {
+    return 100;
+  }
+
+  // Kiểm tra isCompleted từ course.progress
+  if ((props.course as any)?.progress?.isCompleted === true) {
+    return 100;
+  }
+
+  // Ưu tiên lấy từ course.progress.progressPercentage
+  const pctFromCourse = (props.course as any)?.progress?.progressPercentage;
+  if (pctFromCourse !== undefined) {
+    return Math.min(pctFromCourse, 100);
+  }
+
+  // Fallback về prop progress
   const pctFromProp = props.progress ?? 0;
-  // Ưu tiên tiến trình tổng các bài (từ course.progress), fallback về prop
-  const finalProgress = pctFromCourse || pctFromProp || 0;
-  // Đảm bảo không vượt quá 100% và không nhỏ hơn 0%
-  return Math.min(Math.max(finalProgress, 0), 100);
+  return Math.min(Math.max(pctFromProp, 0), 100);
 });
 
 // Đã từng hoàn thành (có chứng chỉ) - dựa trên user.courseCompleted
