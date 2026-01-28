@@ -22,19 +22,32 @@
       <h3 class="course-title">{{ course.title }}</h3>
       <div class="course-price" v-if="!isPurchased">
         <!-- Hiển thị giá khuyến mãi nếu đang trong thời gian khuyến mãi -->
-        <div class="price-current" v-if="isPromotionActive && course.originalPrice && course.originalPrice > course.price">
-          {{ formatPrice(course.price) }}
+        <div
+          class="price-current"
+          v-if="
+            ((course as any)?.isPromotionActive ||
+              ((course as any)?.promotionDaysRemaining ?? 0) > 0) &&
+            course.originalPrice &&
+            Number(course.originalPrice) > Number(course.price || 0)
+          "
+        >
+          {{ formatPrice(Number(course.price || 0)) }}
         </div>
-        <!-- Hiển thị giá gốc nếu không có khuyến mãi hoặc giá gốc = giá bán -->
-        <div class="price-current" v-else>
-          {{ formatPrice(course.originalPrice || course.price) }}
+        <!-- Hiển thị giá gốc nếu không có khuyến mãi hoặc không thỏa điều kiện khuyến mãi -->
+        <div class="price-current" v-else-if="course.price || course.originalPrice">
+          {{ formatPrice(Number(course.originalPrice || course.price || 0)) }}
         </div>
         <!-- Hiển thị giá gốc bị gạch khi có khuyến mãi -->
         <div
           class="price-original"
-          v-if="isPromotionActive && course.originalPrice && course.originalPrice > course.price"
+          v-if="
+            ((course as any)?.isPromotionActive ||
+              ((course as any)?.promotionDaysRemaining ?? 0) > 0) &&
+            course.originalPrice &&
+            Number(course.originalPrice) > Number(course.price || 0)
+          "
         >
-          {{ formatPrice(course.originalPrice) }}
+          {{ formatPrice(Number(course.originalPrice)) }}
         </div>
         <div class="price-discount" v-if="isPromotionActive && (course.discount ?? 0) > 0">
           -{{ course.discount ?? 0 }}%
