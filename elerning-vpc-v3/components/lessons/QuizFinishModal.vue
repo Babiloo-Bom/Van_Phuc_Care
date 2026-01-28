@@ -1,8 +1,8 @@
 <template>
   <div>
-    <a-modal 
-      v-model:open="props.visible" 
-      :closable="true"
+    <a-modal
+      v-model:open="props.visible"
+      :closable="false"
       :maskClosable="true"
       :footer="false"
       @cancel="handleShowQuiz"
@@ -17,19 +17,38 @@
           <img src="/public/images/quiz_done_dragon.png" v-if="props.quizResult.passed == true" alt="done" />
           <img src="/public/images/quiz_fail_dragon.png" v-else alt="done" />
         </div>
-        <div class="text-xl font-bold leading-6 text-[#232325] mt-5 text-center">{{ title }}</div>
-        <div class="text-base text-[#6F727A] font-normal leading-6 mt-1 text-center">{{ description }}</div>
-        <div class="font-bold leading-6 mt-1 text-center text-[#15CF74]">
+        <div class="text-xl font-bold leading-6 text-[#232325] mt-5 text-center">
+          {{ title }}
+        </div>
+        <div class="text-base text-[#6F727A] font-normal leading-6 mt-1 text-center">
+          {{ description }}
+        </div>
+        <div
+          class="font-bold leading-6 mt-1 text-center"
+          :class="props.quizResult.passed ? 'text-[#15CF74]' : 'text-[#DE4841]'"
+        >
           Số câu trả lời đúng: {{ props?.quizResult?.score }}/{{ props?.quizResult?.totalPoints }}
         </div>
         <div class="grid grid-cols-2 gap-3 mt-10 mb-2">
-          <a-button class="w-full h-[48px] border border-[#1A75BB] text-[#1A75BB] flex items-center justify-center rounded-lg font-bold"
+          <a-button
+            class="w-full h-[48px] border border-[#1A75BB] text-[#1A75BB] flex items-center justify-center rounded-lg font-bold"
             @click="handleShowQuiz"
           >
-              Kiểm tra kết quả
+            Kiểm tra kết quả
           </a-button>
-          <a-button class="w-full h-[48px] border bg-[#1A75BB] !text-white flex items-center justify-center rounded-lg font-bold" @click="handleNextLesson">
-              Bài học kế tiếp
+          <a-button
+            v-if="props.quizResult.passed"
+            class="w-full h-[48px] border bg-[#1A75BB] !text-white flex items-center justify-center rounded-lg font-bold"
+            @click="handleNextLesson"
+          >
+            Bài học kế tiếp
+          </a-button>
+          <a-button
+            v-else
+            class="w-full h-[48px] border bg-[#1A75BB] !text-white flex items-center justify-center rounded-lg font-bold"
+            @click="handleBackToLesson"
+          >
+            Quay lại bài học
           </a-button>
         </div>
       </div>
@@ -58,6 +77,11 @@ const props = withDefaults(defineProps<Props>(), {
 })
 
 const backQuiz = () => {
+  props?.onClose();
+}
+
+const handleBackToLesson = () => {
+  // Quay lại bài học tương ứng (sử dụng callback onClose từ parent)
   props?.onClose();
 }
 

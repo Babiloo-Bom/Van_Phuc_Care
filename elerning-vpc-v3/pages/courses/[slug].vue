@@ -1453,96 +1453,117 @@ useHead({
   ],
 });
 
-// Ensure schema.org WebPage description matches our SEO description (instead of falling back to site default)
+// Schema.org markup: WebPage + Course + BreadcrumbList
 useSchemaOrg([
+  // WebPage (giữ nguyên để Google hiểu đây là trang chi tiết)
   defineWebPage({
     name: computed(() => `Khóa học: ${courseName.value}`),
-    description: computed(() => courseSummary.value || `Khóa học: ${courseName.value}`),
-    url: canonicalUrl
-  })
-]);
+    description: computed(
+      () => courseSummary.value || `Khóa học: ${courseName.value}`,
+    ),
+    url: canonicalUrl,
+  }),
 
-// Schema.org markup for Course Detail (temporarily disabled for testing)
-// useSchemaOrg([
-//   {
-//     '@type': 'Course',
-//     name: computed(() => course.value?.title || 'Khóa học'),
-//     description: computed(() => course.value?.description || course.value?.shortDescription || ''),
-//     url: computed(() => `https://vanphuccare.com/courses/${course.value?.slug || ''}`),
-//     image: computed(() => `https://vanphuccare.com${course.value?.thumbnail || '/images/courses/default.jpg'}`),
-//     provider: {
-//       '@type': 'Organization',
-//       name: 'Van Phuc Care',
-//       url: 'https://vanphuccare.com',
-//       logo: 'https://vanphuccare.com/images/logo.png'
-//     },
-//     instructor: computed(() => course.value?.instructor ? {
-//       '@type': 'Person',
-//       name: course.value.instructor.name,
-//       image: course.value.instructor.avatar ? `https://vanphuccare.com${course.value.instructor.avatar}` : undefined,
-//       description: course.value.instructor.bio
-//     } : undefined),
-//     offers: computed(() => course.value ? {
-//       '@type': 'Offer',
-//       price: course.value.price,
-//       priceCurrency: 'VND',
-//       availability: 'https://schema.org/InStock',
-//       validFrom: course.value.createdAt || new Date().toISOString()
-//     } : undefined),
-//     aggregateRating: computed(() => course.value?.rating ? {
-//       '@type': 'AggregateRating',
-//       ratingValue: course.value.rating.average,
-//       reviewCount: course.value.rating.count,
-//       bestRating: 5,
-//       worstRating: 1
-//     } : undefined),
-//     courseMode: 'online',
-//     educationalLevel: computed(() => {
-//       if (!course.value?.level) return undefined
-//       const levelMap: Record<string, string> = {
-//         'beginner': 'Beginner',
-//         'intermediate': 'Intermediate',
-//         'advanced': 'Advanced'
-//       }
-//       return levelMap[course.value.level] || course.value.level
-//     }),
-//     timeRequired: computed(() => course.value?.duration ? `PT${Math.floor(course.value.duration / 60)}M` : undefined),
-//     numberOfCredits: computed(() => course.value?.lessons || undefined),
-//     inLanguage: 'vi',
-//     isAccessibleForFree: false,
-//     hasCourseInstance: computed(() => course.value ? {
-//       '@type': 'CourseInstance',
-//       courseMode: 'online',
-//       instructor: course.value.instructor ? {
-//         '@type': 'Person',
-//         name: course.value.instructor.name
-//       } : undefined
-//     } : undefined)
-//   },
-//   {
-//     '@type': 'BreadcrumbList',
-//     itemListElement: [
-//       {
-//         '@type': 'ListItem',
-//         position: 1,
-//         name: 'Trang chủ',
-//         item: 'https://vanphuccare.com'
-//       },
-//       {
-//         '@type': 'ListItem',
-//         position: 2,
-//         name: 'Khóa học',
-//         item: 'https://vanphuccare.com/courses'
-//       },
-//       {
-//         '@type': 'ListItem',
-//         position: 3,
-//         name: computed(() => course.value?.title || 'Chi tiết khóa học'),
-//         item: computed(() => `https://vanphuccare.com/courses/${course.value?.slug || ''}`)
-//       }
-//     ]
-//   }
-// ])
+  // Course (schema chính cho trang giới thiệu khóa học)
+  {
+    "@type": "Course",
+    "@id": computed(() => `${canonicalUrl.value}#course`),
+    name: computed(() => courseName.value),
+    // Mô tả ngắn / syllabus
+    description: computed(
+      () =>
+        courseSummary.value ||
+        (course.value as any)?.description ||
+        courseName.value,
+    ),
+    // Provider cố định
+    provider: {
+      "@type": "Organization",
+      name: "Vạn Phúc Care",
+      sameAs: computed(() => siteUrl.value),
+    },
+    // Giảng viên
+    author: computed(() => {
+      const c: any = course.value;
+      const instructor = c?.instructor;
+      if (instructor?.name) {
+        return {
+          "@type": "Person",
+          name: instructor.name,
+          image: instructor.avatar
+            ? toAbsoluteUrl(instructor.avatar)
+            : undefined,
+        };
+      }
+      return {
+        "@type": "Organization",
+        name: "Vạn Phúc Care",
+        sameAs: siteUrl.value,
+      };
+    }),
+    // Đánh giá sao (chỉ khi có review)
+    aggregateRating: computed(() => {
+      const rating = (course.value as any)?.rating;
+      if (!rating || !rating.count || rating.count <= 0) return undefined;
+      return {
+        "@type": "AggregateRating",
+        ratingValue: rating.average,
+        reviewCount: rating.count,
+        bestRating: "5",
+        worstRating: "1",
+      };
+    }),
+    // Giá bán
+    offers: computed(() => {
+      const c: any = course.value;
+      return {
+        "@type": "Offer",
+        category: "Paid",
+        priceCurrency: "VND",
+        price: c?.price ?? 0,
+        availability: "https://schema.org/InStock",
+        url: canonicalUrl.value,
+      };
+    }),
+    // Thông tin bổ sung cho khóa online
+    hasCourseInstance: computed(() => {
+      const c: any = course.value;
+      const workload = c?.duration
+        ? `P${Number(c.duration) || 0}H`
+        : undefined;
+      return {
+        "@type": "CourseInstance",
+        courseMode: "Online",
+        courseWorkload: workload,
+      };
+    }),
+  },
+
+  // Breadcrumb
+  {
+    "@type": "BreadcrumbList",
+    itemListElement: [
+      {
+        "@type": "ListItem",
+        position: 1,
+        name: "Trang chủ",
+        item: siteUrl,
+      },
+      {
+        "@type": "ListItem",
+        position: 2,
+        name: "Khóa học",
+        item: computed(() => `${siteUrl.value}/courses`),
+      },
+      {
+        "@type": "ListItem",
+        position: 3,
+        name: computed(() => courseName.value),
+        item: canonicalUrl,
+      },
+    ],
+  },
+])
 const reviews = computed(() => {
   const reviewsData = coursesStore.reviews;
   return reviewsData;
