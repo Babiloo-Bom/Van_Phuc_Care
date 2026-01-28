@@ -1137,6 +1137,15 @@ class CourseController {
       const LessonsModel = (await import("@mongodb/lessons")).default;
       const QuizzesModel = (await import("@mongodb/quizzes")).default;
 
+      // Fetch lesson progress and quiz attempts for accurate progress calculation
+      // (same logic as getMyCourseBySlug: quiz lessons → only quiz attempt, non-quiz → only lessonProgress)
+      const LessonProgress = mongoose.model("LessonProgress");
+      const MongoDbQuizAttempts = (await import("@mongodb/quiz-attempts")).default;
+      const [allLessonProgress, allQuizAttempts] = await Promise.all([
+        LessonProgress.find({ userId: userIdStr, courseId: { $in: purchasedCourseIds }, completed: true }),
+        MongoDbQuizAttempts.find({ userId: userIdStr, courseId: { $in: purchasedCourseIds }, status: "completed", passed: true }),
+      ]);
+
       // Fetch course docs (unordered) and preserve order using orderedCourseIds
       const courseDocs = await Course.find({ _id: { $in: orderedCourseIds } });
       const courseDocsById = new Map(
@@ -1159,7 +1168,7 @@ class CourseController {
           let totalDocumentCount = 0;
           let totalLessons = 0;
           let totalQuizCount = 0;
-          let completedLessons = 0; // will be overridden by aggregation when available
+          let completedLessons = 0;
 
           for (const chapter of chapters) {
             const lessons = await LessonsModel.model.find({
@@ -1191,6 +1200,31 @@ class CourseController {
               }
 
               totalLessons += 1;
+
+              // Progress calculation (same logic as getMyCourseBySlug)
+              const hasQuiz = !!lessonData.quizId || lessonData.type === 'quiz';
+              const lessonIdStr = lesson._id.toString();
+              const chapterIdStr = chapter._id.toString();
+
+              if (hasQuiz) {
+                const passed = allQuizAttempts.some(
+                  (a: any) =>
+                    a.courseId === courseId &&
+                    a.chapterId === chapterIdStr &&
+                    a.lessonId === lessonIdStr &&
+                    a.passed === true
+                );
+                if (passed) completedLessons += 1;
+              } else {
+                const prog = allLessonProgress.some(
+                  (p: any) =>
+                    p.courseId === courseId &&
+                    p.chapterId === chapterIdStr &&
+                    p.lessonId === lessonIdStr &&
+                    p.completed === true
+                );
+                if (prog) completedLessons += 1;
+              }
             }
           }
 
@@ -1243,15 +1277,10 @@ class CourseController {
             documentCount: totalDocumentCount,
             quizCount: totalQuizCount,
             progress: {
-              totalLessons: aggMap.get(courseId)?.totalLessons ?? totalLessons,
-              completedLessons:
-                aggMap.get(courseId)?.completedLessons ?? completedLessons,
-              progressPercentage:
-                aggMap.get(courseId)?.progressPercentage ?? progressPercentage,
-              isCompleted:
-                aggMap.get(courseId)?.isCompleted ??
-                (aggMap.get(courseId)?.progressPercentage ??
-                  progressPercentage) === 100,
+              totalLessons,
+              completedLessons,
+              progressPercentage,
+              isCompleted: progressPercentage === 100,
             },
 
             createdAt: courseData.createdAt,
@@ -1260,8 +1289,17 @@ class CourseController {
         })
       );
 
-      // courses are already ordered by aggregation (incomplete first, then completed; ties by createdAt desc)
-      sendSuccess(res, { courses: coursesWithStats });
+      // Sort: incomplete first, then completed; ties by createdAt desc
+      const filteredCourses = coursesWithStats.filter(Boolean);
+      filteredCourses.sort((a: any, b: any) => {
+        const ra = a.progress?.isCompleted ? 1 : 0;
+        const rb = b.progress?.isCompleted ? 1 : 0;
+        if (ra !== rb) return ra - rb;
+        const at = new Date(a.createdAt).getTime() || 0;
+        const bt = new Date(b.createdAt).getTime() || 0;
+        return bt - at;
+      });
+      sendSuccess(res, { courses: filteredCourses });
     } catch (error: any) {
       console.error("❌ Get my courses error:", error);
       sendError(res, 500, error.message, error as Error);
