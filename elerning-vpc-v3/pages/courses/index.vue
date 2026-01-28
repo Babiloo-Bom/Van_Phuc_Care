@@ -383,6 +383,11 @@ onMounted(async () => {
 // Page meta
 definePageMeta({
   layout: "default",
+  // Tắt tự động sinh Schema của nuxt-schema-org cho riêng trang này
+  // để tránh trùng lặp và lỗi image bị dán đúp domain.
+  schemaOrg: {
+    disabled: true,
+  },
 });
 
 // Runtime config for building absolute URLs
