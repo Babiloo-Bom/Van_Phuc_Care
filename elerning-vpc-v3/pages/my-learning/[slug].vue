@@ -78,6 +78,11 @@
               {{ currentLesson?.title || "Chưa có bài học" }}
             </h1>
 
+            <!-- Progress Bar -->
+            <div class="mb-4 md:mb-6">
+              <ProgressBar :percentage="courseProgress" />
+            </div>
+
             <!-- Video Player - Chỉ hiển thị nếu lesson có video VÀ showVideo = true -->
             <div
               v-if="
@@ -760,6 +765,7 @@ import DocumentsComponent from "~/components/lessons/DocumentsComponent.vue";
 import QuizzesComponent from "~/components/lessons/QuizzesComponent.vue";
 import QuizCard from "~/components/lessons/QuizCard.vue";
 import CourseCertificateComponent from "~/components/lessons/CourseCertificateComponent.vue";
+import ProgressBar from "~/components/common/ProgressBar.vue";
 import type { Course, Chapter, Lesson } from "~/stores/courses";
 import { useProgressTracking } from "~/composables/useProgressTracking";
 import { useApiBase } from "~/composables/useApiBase";

@@ -49,7 +49,7 @@
               Bài kiểm tra đã hoàn thành, kiểm tra kết quả ngay chứ?
             </div>
           </div>
-          <div class="text-center mt-6">
+          <div class="text-center mt-6 mb-8 md:mb-6">
             <a-button
               type="primary"
               :loading="submitLoading"

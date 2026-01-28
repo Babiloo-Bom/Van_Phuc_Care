@@ -94,7 +94,7 @@
                     :poster="getImageUrlWithPriority([
                       (course as any)?.introVideoThumbnail,
                       course?.thumbnail
-                    ], '/images/placeholder-course.svg')"
+                    ], '/images/place-hoder.jpg')"
                     class="w-full aspect-[16/9] object-cover rounded-[8px] sm:rounded-[12px] video-element"
                     preload="none"
                     playsinline
@@ -120,7 +120,7 @@
                       :src="getImageUrlWithPriority([
                         (course as any)?.introVideoThumbnail,
                         course?.thumbnail
-                      ], '/images/placeholder-course.svg')"
+                      ], '/images/place-hoder.jpg')"
                       alt="Course thumbnail"
                     />
                     <!-- Play button overlay -->
@@ -145,7 +145,7 @@
                   <img
                     v-else
                     class="w-full aspect-[16/9] object-cover rounded-[8px] sm:rounded-md"
-                    :src="getImageUrl(course?.thumbnail, '/images/placeholder-course.svg')"
+                    :src="getImageUrl(course?.thumbnail, '/images/place-hoder.jpg')"
                     alt="Course thumbnail"
                   />
                 </div>
@@ -698,7 +698,7 @@
                 <div class="course-thumbnail-16x9">
                   <img
                     class="w-full h-full object-cover"
-                    :src="getImageUrl(course?.thumbnail, '/images/placeholder-course.svg')"
+                    :src="getImageUrl(course?.thumbnail, '/images/place-hoder.jpg')"
                     alt="/"
                   />
                 </div>
@@ -1418,7 +1418,7 @@ useHead({
       content: computed(
         () =>
           `https://vanphuccare.com${
-            course.value?.thumbnail || "/images/placeholder-course.jpg"
+            course.value?.thumbnail || "/images/place-hoder.jpg"
           }`,
       ),
     },
@@ -1456,7 +1456,7 @@ useHead({
       content: computed(
         () =>
           `https://vanphuccare.com${
-            course.value?.thumbnail || "/images/placeholder-course.jpg"
+            course.value?.thumbnail || "/images/place-hoder.jpg"
           }`,
       ),
     },
