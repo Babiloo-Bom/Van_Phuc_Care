@@ -177,25 +177,36 @@ class CourseController {
     isPromotionActive: boolean;
     daysRemaining?: number;
   } {
+    // Use "day-based" promotion window in Vietnam timezone (UTC+7).
+    // Admin nhập ngày bắt đầu/kết thúc → khuyến mãi áp dụng cho TRỌN các ngày đó.
     const now = new Date();
-    const promotionStartDate = courseData.promotionStartDate
+    const toVNTime = (d: Date) =>
+      new Date(d.getTime() + 7 * 60 * 60 * 1000); // UTC+7
+    const normalizeYMD = (d: Date) =>
+      new Date(d.getFullYear(), d.getMonth(), d.getDate());
+
+    const promotionStartDateRaw = courseData.promotionStartDate
       ? new Date(courseData.promotionStartDate)
       : null;
-    const promotionEndDate = courseData.promotionEndDate
+    const promotionEndDateRaw = courseData.promotionEndDate
       ? new Date(courseData.promotionEndDate)
       : null;
 
-    const isPromotionActive =
-      promotionStartDate &&
-      promotionEndDate &&
-      now >= promotionStartDate &&
-      now <= promotionEndDate;
-
+    let isPromotionActive = false;
     let daysRemaining: number | undefined;
-    if (isPromotionActive && promotionEndDate) {
-      const diffTime = promotionEndDate.getTime() - now.getTime();
-      daysRemaining = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
-      if (daysRemaining < 0) daysRemaining = 0;
+
+    if (promotionStartDateRaw && promotionEndDateRaw) {
+      const todayVN = normalizeYMD(toVNTime(now));
+      const startVN = normalizeYMD(toVNTime(promotionStartDateRaw));
+      const endVN = normalizeYMD(toVNTime(promotionEndDateRaw));
+
+      isPromotionActive = todayVN >= startVN && todayVN <= endVN;
+
+      if (todayVN <= endVN) {
+        const diffTime = endVN.getTime() - todayVN.getTime();
+        const d = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+        daysRemaining = d > 0 ? d : 0;
+      }
     }
 
     // Prefer explicit originalPrice if available; fallback to derive from discount if possible

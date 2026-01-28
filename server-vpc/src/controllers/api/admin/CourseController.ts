@@ -187,31 +187,39 @@ class CourseController {
     isPromotionActive: boolean;
     daysRemaining?: number;
   } {
+    // Use "day-based" promotion window in Vietnam timezone (UTC+7),
+    // giống như CourseController (user API) để đảm bảo thống nhất.
     const now = new Date();
-    const promotionStartDate = courseData.promotionStartDate 
-      ? new Date(courseData.promotionStartDate) 
+    const toVNTime = (d: Date) =>
+      new Date(d.getTime() + 7 * 60 * 60 * 1000); // UTC+7
+    const normalizeYMD = (d: Date) =>
+      new Date(d.getFullYear(), d.getMonth(), d.getDate());
+
+    const promotionStartDateRaw = courseData.promotionStartDate
+      ? new Date(courseData.promotionStartDate)
       : null;
-    const promotionEndDate = courseData.promotionEndDate 
-      ? new Date(courseData.promotionEndDate) 
+    const promotionEndDateRaw = courseData.promotionEndDate
+      ? new Date(courseData.promotionEndDate)
       : null;
-    
-    // Check if promotion is active
-    const isPromotionActive = 
-      promotionStartDate && 
-      promotionEndDate && 
-      now >= promotionStartDate && 
-      now <= promotionEndDate;
-    
-    // Calculate days remaining
+
+    let isPromotionActive = false;
     let daysRemaining: number | undefined;
-    if (isPromotionActive && promotionEndDate) {
-      const diffTime = promotionEndDate.getTime() - now.getTime();
-      daysRemaining = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
-      if (daysRemaining < 0) daysRemaining = 0;
+
+    if (promotionStartDateRaw && promotionEndDateRaw) {
+      const todayVN = normalizeYMD(toVNTime(now));
+      const startVN = normalizeYMD(toVNTime(promotionStartDateRaw));
+      const endVN = normalizeYMD(toVNTime(promotionEndDateRaw));
+
+      isPromotionActive = todayVN >= startVN && todayVN <= endVN;
+
+      if (todayVN <= endVN) {
+        const diffTime = endVN.getTime() - todayVN.getTime();
+        const d = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+        daysRemaining = d > 0 ? d : 0;
+      }
     }
     
-    // If promotion is active, use promotion price, otherwise use original price
-    const effectivePrice = isPromotionActive 
+    const effectivePrice = isPromotionActive
       ? (courseData.price || courseData.originalPrice || 0)
       : (courseData.originalPrice || courseData.price || 0);
     
