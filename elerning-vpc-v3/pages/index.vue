@@ -251,7 +251,7 @@ const updateSEOMetaTags = () => {
   if (metaDescription) {
     metaDescription.setAttribute(
       "content",
-      "Van Phuc Care E-Learning - Nền tảng học trực tuyến hàng đầu Việt Nam với các khóa học chất lượng cao về lập trình, marketing, thiết kế, khoa học dữ liệu. Học mọi lúc, mọi nơi với giáo viên chuyên nghiệp."
+      "Van Phuc Care E-Learning - Nền tảng đào tạo trực tuyến chuyên sâu về chăm sóc sức khỏe gia đình, chăm sóc sức khỏe mẹ và bé chuẩn Y khoa. Cung cấp các khóa học thực chiến về chăm sóc y tế, nuôi dạy và kỹ năng làm cha mẹ."
     );
   }
 
@@ -283,7 +283,7 @@ const updateSEOMetaTags = () => {
   );
   addMetaTag(
     "og:description",
-    "Van Phuc Care E-Learning - Nền tảng học trực tuyến hàng đầu Việt Nam với các khóa học chất lượng cao về lập trình, marketing, thiết kế, khoa học dữ liệu. Học mọi lúc, mọi nơi với giáo viên chuyên nghiệp."
+    "Van Phuc Care E-Learning - Nền tảng đào tạo trực tuyến chuyên sâu về chăm sóc sức khỏe gia đình, chăm sóc sức khỏe mẹ và bé chuẩn Y khoa. Cung cấp các khóa học thực chiến về chăm sóc y tế, nuôi dạy và kỹ năng làm cha mẹ."
   );
   addMetaTag("og:url", "https://vanphuccare.com");
   addMetaTag("og:image", "https://vanphuccare.com/images/og-home.jpg");
@@ -298,7 +298,7 @@ const updateSEOMetaTags = () => {
   );
   addMetaName(
     "twitter:description",
-    "Van Phuc Care E-Learning - Nền tảng học trực tuyến hàng đầu Việt Nam với các khóa học chất lượng cao về lập trình, marketing, thiết kế, khoa học dữ liệu. Học mọi lúc, mọi nơi với giáo viên chuyên nghiệp."
+    "Van Phuc Care E-Learning - Nền tảng đào tạo trực tuyến chuyên sâu về chăm sóc sức khỏe gia đình, chăm sóc sức khỏe mẹ và bé chuẩn Y khoa. Cung cấp các khóa học thực chiến về chăm sóc y tế, nuôi dạy và kỹ năng làm cha mẹ."
   );
   addMetaName("twitter:image", "https://vanphuccare.com/images/og-home.jpg");
 
@@ -326,7 +326,7 @@ useHead({
     {
       name: "description",
       content:
-        "Van Phuc Care E-Learning - Nền tảng học trực tuyến hàng đầu Việt Nam với các khóa học chất lượng cao về lập trình, marketing, thiết kế, khoa học dữ liệu. Học mọi lúc, mọi nơi với giáo viên chuyên nghiệp.",
+        "Van Phuc Care E-Learning - Nền tảng đào tạo trực tuyến chuyên sâu về chăm sóc sức khỏe gia đình, chăm sóc sức khỏe mẹ và bé chuẩn Y khoa. Cung cấp các khóa học thực chiến về chăm sóc y tế, nuôi dạy và kỹ năng làm cha mẹ.",
     },
     {
       name: "keywords",
@@ -341,7 +341,7 @@ useHead({
     {
       property: "og:description",
       content:
-        "Van Phuc Care E-Learning - Nền tảng học trực tuyến hàng đầu Việt Nam với các khóa học chất lượng cao về lập trình, marketing, thiết kế, khoa học dữ liệu. Học mọi lúc, mọi nơi với giáo viên chuyên nghiệp.",
+        "Van Phuc Care E-Learning - Nền tảng đào tạo trực tuyến chuyên sâu về chăm sóc sức khỏe gia đình, chăm sóc sức khỏe mẹ và bé chuẩn Y khoa. Cung cấp các khóa học thực chiến về chăm sóc y tế, nuôi dạy và kỹ năng làm cha mẹ.",
     },
     {
       property: "og:type",
@@ -375,7 +375,7 @@ useHead({
     {
       name: "twitter:description",
       content:
-        "Van Phuc Care E-Learning - Nền tảng học trực tuyến hàng đầu Việt Nam với các khóa học chất lượng cao về lập trình, marketing, thiết kế, khoa học dữ liệu. Học mọi lúc, mọi nơi với giáo viên chuyên nghiệp.",
+        "Van Phuc Care E-Learning - Nền tảng đào tạo trực tuyến chuyên sâu về chăm sóc sức khỏe gia đình, chăm sóc sức khỏe mẹ và bé chuẩn Y khoa. Cung cấp các khóa học thực chiến về chăm sóc y tế, nuôi dạy và kỹ năng làm cha mẹ.",
     },
     {
       name: "twitter:image",
