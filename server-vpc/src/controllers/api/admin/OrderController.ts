@@ -430,9 +430,9 @@ class OrderController {
       const revenue = totalRevenue.length > 0 ? totalRevenue[0].total : 0;
 
       // Đếm số khóa học đã bán (từ các orders đã hoàn thành)
-      const completedOrdersWithItems = await Order.find({ 
+      // Chỉ cần status = 'completed' để bao quát cả các orders cũ chưa set paymentStatus
+      const completedOrdersWithItems = await Order.find({
         status: 'completed',
-        paymentStatus: 'completed'
       }).select('items');
       
       let totalCoursesSold = 0;

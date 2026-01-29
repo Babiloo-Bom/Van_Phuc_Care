@@ -118,6 +118,79 @@ const orderSchema = new mongoose.Schema(
 const OrderModel =
   mongoose.models.Order || mongoose.model("Order", orderSchema);
 
+// Coupon schema (re-use structure from CouponController)
+const couponSchema = new mongoose.Schema({
+  code: {
+    type: String,
+    required: true,
+    unique: true,
+    uppercase: true
+  },
+  name: {
+    type: String,
+    required: true
+  },
+  description: {
+    type: String,
+    default: ''
+  },
+  type: {
+    type: String,
+    enum: ['percentage', 'fixed'],
+    required: true
+  },
+  value: {
+    type: Number,
+    required: true,
+    min: 0
+  },
+  minOrderAmount: {
+    type: Number,
+    default: 0
+  },
+  maxDiscountAmount: {
+    type: Number,
+    default: null
+  },
+  usageLimit: {
+    type: Number,
+    default: null // null = unlimited
+  },
+  usedCount: {
+    type: Number,
+    default: 0
+  },
+  validFrom: {
+    type: Date,
+    required: true
+  },
+  validTo: {
+    type: Date,
+    required: true
+  },
+  isActive: {
+    type: Boolean,
+    default: true
+  },
+  applicableCourses: [{
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'courses'
+  }],
+  applicableCategories: [{
+    type: String
+  }],
+  createdBy: {
+    type: String,
+    required: true
+  }
+}, {
+  timestamps: true
+});
+
+// Re-use existing model if already registered
+const CouponModel =
+  mongoose.models.Coupon || mongoose.model('Coupon', couponSchema);
+
 // Cart schema (same as admin CartController)
 const cartSchema = new mongoose.Schema({
   userId: {
@@ -177,6 +250,24 @@ const Cart = mongoose.models.Cart || mongoose.model('Cart', cartSchema);
 const sepayCheckCache: Map<string, { found: boolean; transaction?: any; amount?: number; expiresAt: number }> = new Map();
 
 class OrderController {
+  /**
+   * Increase coupon usage count when an order with coupon is successfully paid
+   */
+  private async increaseCouponUsage(order: any) {
+    try {
+      const couponCode = order?.discount?.couponCode;
+      if (!couponCode) return;
+
+      await CouponModel.findOneAndUpdate(
+        { code: couponCode.toUpperCase() },
+        { $inc: { usedCount: 1 } }
+      );
+    } catch (error) {
+      console.error('❌ Error increasing coupon usedCount:', error);
+      // Không throw để không làm fail thanh toán
+    }
+  }
+
   public async create(req: Request, res: Response) {
     try {
       const {
@@ -326,6 +417,9 @@ class OrderController {
         order.status = "completed";
         order.transactionId = paymentResult.transactionId;
         await order.save();
+
+        // Increase coupon usage if any
+        await this.increaseCouponUsage(order);
 
         // Add courses to user's courseRegister
         if (order.userId && order.userId !== 'guest_user') {
@@ -548,12 +642,20 @@ class OrderController {
           metadata: { ...rawParams, vnp_SecureHash: secureHash, vnp_SecureHashType: secureHashType },
         });
 
-        const order = await OrderModel.findOneAndUpdate({ orderId: transaction.get('orderId') }, {
-          paymentStatus: 'completed',
-          status: 'completed'
-        });
+        const order = await OrderModel.findOneAndUpdate(
+          { orderId: transaction.get('orderId') },
+          {
+            paymentStatus: 'completed',
+            status: 'completed'
+          },
+          { new: true }
+        );
 
-        await this.updateCourseForUser(order);
+        if (order) {
+          // Tăng số lượt sử dụng mã giảm giá (nếu có)
+          await this.increaseCouponUsage(order);
+          await this.updateCourseForUser(order);
+        }
 
         // Acknowledge receipt to VNPay
         return res.json({ RspCode: "00", Message: "Confirm Success" });
@@ -887,6 +989,9 @@ class OrderController {
       }
       await order.save();
 
+      // Tăng số lượt sử dụng mã giảm giá (nếu có)
+      await this.increaseCouponUsage(order);
+
       // Cập nhật courseRegister cho user
       await this.updateCourseForUser(order);
 
@@ -964,6 +1069,10 @@ class OrderController {
                 order.transactionId = cacheEntry.transaction.id || cacheEntry.transaction.transactionId;
               }
               await order.save();
+
+              // Tăng số lượt sử dụng mã giảm giá (nếu có)
+              await this.increaseCouponUsage(order);
+
               await this.updateCourseForUser(order);
               await this.clearCartUser(order);
 
@@ -1006,6 +1115,9 @@ class OrderController {
               order.transactionId = transactionResult.transaction.id || transactionResult.transaction.transactionId;
             }
             await order.save();
+
+            // Tăng số lượt sử dụng mã giảm giá (nếu có)
+            await this.increaseCouponUsage(order);
 
             // Cập nhật courseRegister cho user
             await this.updateCourseForUser(order);

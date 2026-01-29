@@ -693,7 +693,7 @@ const startQrStatusPolling = (orderId: string) => {
         } catch (e) {
         }
 
-        // Lấy thông tin khóa học từ order để chuyển thẳng sang trang học
+        // Lấy thông tin khóa học từ order để chuyển sang trang chi tiết khóa học
         const order = res.data.order as any
         const firstItem = order?.items?.[0]
         const courseSlug =
@@ -705,9 +705,9 @@ const startQrStatusPolling = (orderId: string) => {
         showQrModal.value = false
 
         if (courseSlug) {
-          await navigateTo(`/my-learning/${courseSlug}`)
+          await navigateTo(`/courses/${courseSlug}`)
         } else {
-          await navigateTo('/my-learning')
+          await navigateTo('/courses')
         }
         return
       }
