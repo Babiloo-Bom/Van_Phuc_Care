@@ -645,12 +645,24 @@ const loadCourses = async () => {
   try {
     loadingCourses.value = true
     const response = await coursesApi.getCourses({ limit: 1000 })
-    
+
     if (response.status && response.data) {
-      const responseData = response.data.data || response.data
-      courses.value = responseData.courses || responseData.data || []
+      // Hỗ trợ nhiều dạng payload khác nhau từ backend
+      const raw: any = response.data
+      // Các shape có thể gặp:
+      // { data: { courses: [...] } }
+      // { courses: [...], pagination: {...} }
+      // { data: { data: { courses: [...] } } }
+      const level1 = raw.data ?? raw
+      const level2 = level1.data ?? level1
+
+      const list = level2.courses ?? level2.data ?? []
+      courses.value = Array.isArray(list) ? list : []
+    } else {
+      courses.value = []
     }
   } catch (error: any) {
+    courses.value = []
   } finally {
     loadingCourses.value = false
   }
@@ -707,6 +719,10 @@ const showCreateModal = () => {
     applicableCourses: [],
     isActive: true
   }
+  // Đảm bảo luôn có danh sách khóa học mới nhất khi mở modal
+  if (!courses.value.length) {
+    loadCourses()
+  }
   showCouponModal.value = true
 }
 
@@ -731,6 +747,10 @@ const editCoupon = (coupon: any) => {
     validTo: coupon.validTo ? dayjs(coupon.validTo) : null,
     applicableCourses: coupon.applicableCourses?.map((c: any) => typeof c === 'string' ? c : c._id || c) || [],
     isActive: coupon.isActive !== undefined ? coupon.isActive : true
+  }
+  // Load lại khóa học nếu list đang trống (hoặc lần đầu vào trang)
+  if (!courses.value.length) {
+    loadCourses()
   }
   showCouponModal.value = true
 }
