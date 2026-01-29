@@ -70,14 +70,19 @@ export const useHealthBooksApi = () => {
       formData.append("gender", data.gender);
       if (data.avatar) formData.append("avatar", data.avatar);
 
-      // Get token from localStorage
-      const token = localStorage.getItem("auth_token");
+      // Get token from authStore
+      const authStore = useAuthStore();
+      const token = authStore.token;
+
+      if (!token) {
+        throw new Error("Bạn cần đăng nhập để thực hiện thao tác này");
+      }
 
       // Call through Nuxt server proxy
       const response = await fetch("/api/healthbooks", {
         method: "POST",
         headers: {
-          ...(token ? { Authorization: `Bearer ${token}` } : {}),
+          Authorization: `Bearer ${token}`,
         },
         body: formData,
       });
@@ -110,14 +115,19 @@ export const useHealthBooksApi = () => {
       if (data.gender) formData.append("gender", data.gender);
       if (data.avatar) formData.append("avatar", data.avatar);
 
-      // Get token from localStorage
-      const token = localStorage.getItem("auth_token");
+      // Get token from authStore
+      const authStore = useAuthStore();
+      const token = authStore.token;
+
+      if (!token) {
+        throw new Error("Bạn cần đăng nhập để thực hiện thao tác này");
+      }
 
       // Call through Nuxt server proxy
       const response = await fetch(`/api/healthbooks/${id}`, {
         method: "PATCH",
         headers: {
-          ...(token ? { Authorization: `Bearer ${token}` } : {}),
+          Authorization: `Bearer ${token}`,
         },
         body: formData,
       });

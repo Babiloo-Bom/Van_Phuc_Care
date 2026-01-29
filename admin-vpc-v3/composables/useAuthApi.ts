@@ -274,18 +274,26 @@ export const useAuthApi = () => {
 
 
     /**
-     * Reset password with token
+     * Reset password with token (OTP flow for admin)
+     * Backend endpoint: POST /api/a/sessions/reset_password
      * @param email Email
-     * @param token Token from OTP verification
+     * @param token Token returned from verifyOtp
      * @param newPassword New password
      */
     async resetPassword(email: string, token: string, newPassword: string) {
       try {
         return await withRetry(() =>
-          fetchWithTimeout(`${fullApiBase}/passwords`, {
+          fetchWithTimeout(`${fullApiBase}/sessions/reset_password`, {
             method: 'POST',
-            params: { email, token },
-            body: { password: newPassword }
+            headers: {
+              'Content-Type': 'application/json'
+            },
+            body: {
+              email,
+              token,
+              newPassword,
+              confirmPassword: newPassword
+            }
           })
         )
       } catch (error: any) {
