@@ -34,6 +34,13 @@ export default class VideoProxyController {
     const isHttps = forwardedProto === 'https' || 
                    req.secure || 
                    (req.headers['x-forwarded-ssl'] === 'on');
+    
+    // In production, prefer HTTPS if X-Forwarded-Proto is set or if secure
+    // Default to HTTPS in production environment
+    if (process.env.NODE_ENV === 'production' && (forwardedProto || req.secure)) {
+      return 'https';
+    }
+    
     return isHttps ? 'https' : 'http';
   }
 
@@ -44,7 +51,16 @@ export default class VideoProxyController {
     // Prefer X-Forwarded-Host if available (set by proxy/load balancer)
     const forwardedHost = req.get('x-forwarded-host');
     if (forwardedHost) {
-      return forwardedHost;
+      // X-Forwarded-Host can contain multiple values (comma-separated) or spaces
+      // Extract the first valid hostname and clean it
+      const cleanedHost = forwardedHost
+        .split(',')[0]  // Take first value if comma-separated
+        .trim()         // Remove leading/trailing whitespace
+        .split(' ')[0]; // Take first value if space-separated
+      
+      if (cleanedHost && cleanedHost.length > 0) {
+        return cleanedHost;
+      }
     }
     
     // Fallback to host header
@@ -646,13 +662,18 @@ export default class VideoProxyController {
             
             // Nếu có X-Forwarded-Host, dùng nó (frontend hostname)
             // Nếu không, dùng relative path
-            const forwardedHost = req.get('x-forwarded-host');
-            const baseUrl = forwardedHost 
-              ? `${protocol}://${forwardedHost}`
+            const forwardedHostRaw = req.get('x-forwarded-host');
+            // Clean forwardedHost to handle comma-separated or space-separated values
+            const cleanedForwardedHost = forwardedHostRaw 
+              ? forwardedHostRaw.split(',')[0].trim().split(' ')[0]
+              : null;
+            
+            const baseUrl = cleanedForwardedHost 
+              ? `${protocol}://${cleanedForwardedHost}`
               : `${protocol}://${host}`;
             
             // Sử dụng /api/video/stream thay vì /api/u/video/stream để đi qua Nuxt proxy
-            const proxyPath = forwardedHost ? '/api/video/stream' : '/api/u/video/stream';
+            const proxyPath = cleanedForwardedHost ? '/api/video/stream' : '/api/u/video/stream';
 
             // Replace segment paths with proxy URLs
             // Match cả relative paths và filenames
