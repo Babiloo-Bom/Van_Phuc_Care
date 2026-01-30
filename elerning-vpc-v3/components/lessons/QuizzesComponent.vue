@@ -194,6 +194,9 @@ const props = defineProps<{
   lessonId: string
   quizComplete: boolean
   isReviewMode?: boolean
+  chapters?: any[] // Danh sách chapters để kiểm tra điều hướng
+  currentChapterIndex?: number // Index của chapter hiện tại
+  currentLessonIndex?: number // Index của lesson hiện tại (lesson gốc có quiz)
 }>()
 const quizStore = useQuizStore();
 const route = useRoute();
@@ -291,20 +294,97 @@ const handleNextLesson = () => {
   const review = route.query.review;
 
   if (chapterIndex !== undefined && baseLesson !== undefined) {
-    const nextLessonIndex = Number(baseLesson) + 1;
+    const currentChapterIdx = Number(chapterIndex);
+    const currentLessonIdx = Number(baseLesson);
+    
+    // Lấy thông tin chapters từ props hoặc từ route
+    const chapters = props.chapters || [];
+    
+    // Kiểm tra xem chapter hiện tại có tồn tại không
+    if (chapters.length > 0 && currentChapterIdx < chapters.length) {
+      const currentChapter = chapters[currentChapterIdx];
+      const currentChapterLessons = currentChapter?.lessons || [];
+      const currentChapterLessonsCount = currentChapterLessons.length;
+      
+      // Kiểm tra xem có phải là chapter cuối cùng và lesson cuối cùng không
+      const isLastChapter = currentChapterIdx === chapters.length - 1;
+      const isLastLesson = currentLessonIdx === currentChapterLessonsCount - 1;
+      
+      if (isLastChapter && isLastLesson) {
+        // Ở chapter cuối cùng, lesson cuối cùng: quay lại lesson đó
+        const queryParams: any = {
+          chapter: String(currentChapterIdx),
+          lesson: String(currentLessonIdx)
+        };
+        if (review === 'true') {
+          queryParams.review = 'true';
+        }
+        
+        router.push({
+          path: route.path,
+          query: queryParams
+        });
+      } else {
+        // Không phải lesson cuối cùng: chuyển sang lesson tiếp theo hoặc chapter tiếp theo
+        let newChapterIndex = currentChapterIdx;
+        let newLessonIndex = currentLessonIdx + 1;
+        
+        // Nếu đang ở lesson cuối cùng của chapter, chuyển sang chapter tiếp theo
+        if (newLessonIndex >= currentChapterLessonsCount) {
+          newChapterIndex++;
+          newLessonIndex = 0;
+          
+          // Kiểm tra xem chapter mới có tồn tại không
+          if (newChapterIndex >= chapters.length) {
+            // Đã ở bài cuối cùng, quay lại lesson hiện tại
+            const queryParams: any = {
+              chapter: String(currentChapterIdx),
+              lesson: String(currentLessonIdx)
+            };
+            if (review === 'true') {
+              queryParams.review = 'true';
+            }
+            
+            router.push({
+              path: route.path,
+              query: queryParams
+            });
+            
+            if (!props.isReviewMode) {
+              emit('completed', true)
+            }
+            return;
+          }
+        }
 
-    const queryParams: any = {
-      chapter: String(chapterIndex),
-      lesson: String(nextLessonIndex)
-    };
-    if (review === 'true') {
-      queryParams.review = 'true';
+        const queryParams: any = {
+          chapter: String(newChapterIndex),
+          lesson: String(newLessonIndex)
+        };
+        if (review === 'true') {
+          queryParams.review = 'true';
+        }
+
+        router.push({
+          path: route.path,
+          query: queryParams
+        });
+      }
+    } else {
+      // Fallback: logic cũ nếu không có chapters từ props
+      const nextLessonIndex = Number(baseLesson) + 1;
+      const queryParams: any = {
+        chapter: String(chapterIndex),
+        lesson: String(nextLessonIndex)
+      };
+      if (review === 'true') {
+        queryParams.review = 'true';
+      }
+      router.push({
+        path: route.path,
+        query: queryParams
+      });
     }
-
-    router.push({
-      path: route.path,
-      query: queryParams
-    });
   }
   
   if (!props.isReviewMode) {

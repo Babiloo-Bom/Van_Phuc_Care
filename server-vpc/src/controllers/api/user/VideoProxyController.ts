@@ -187,6 +187,17 @@ export default class VideoProxyController {
     try {
       const { token } = req.params;
       console.log('📦 [Video Stream] Request received, token:', token?.substring(0, 50) + '...');
+      console.log('📦 [Video Stream] Request method:', req.method);
+      console.log('📦 [Video Stream] Request URL:', req.url);
+      console.log('📦 [Video Stream] Request query:', req.query);
+
+      // Handle OPTIONS request for CORS preflight
+      if (req.method === 'OPTIONS') {
+        res.setHeader('Access-Control-Allow-Origin', '*');
+        res.setHeader('Access-Control-Allow-Methods', 'GET, OPTIONS');
+        res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
+        return res.status(200).end();
+      }
 
       // Verify token
       const payload = VideoProxyController.verifyToken(token);
@@ -406,10 +417,22 @@ export default class VideoProxyController {
             }
 
             // Set headers for video segment
+            // Disable cache cho intro video segments để đảm bảo video mới được load
+            // Lesson video segments vẫn có thể cache vì ít thay đổi
+            const cacheControl = payload.isIntroVideo 
+              ? 'no-store, no-cache, must-revalidate, proxy-revalidate, max-age=0, private'
+              : 'public, max-age=3600';
             res.setHeader('Content-Type', 'video/mp2t');
             res.setHeader('Content-Length', segmentBuffer.length);
-            res.setHeader('Cache-Control', 'public, max-age=3600');
+            res.setHeader('Cache-Control', cacheControl);
+            if (payload.isIntroVideo) {
+              res.setHeader('Pragma', 'no-cache');
+            }
             res.setHeader('Accept-Ranges', 'bytes');
+            // CORS headers để đảm bảo frontend có thể load segments
+            res.setHeader('Access-Control-Allow-Origin', '*');
+            res.setHeader('Access-Control-Allow-Methods', 'GET, OPTIONS');
+            res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
 
             // Send segment
             res.send(segmentBuffer);
@@ -463,12 +486,26 @@ export default class VideoProxyController {
             );
 
             // Set headers for HLS manifest
+            // Disable cache cho intro video manifest để đảm bảo manifest mới được load
+            // Lesson video manifest vẫn có thể cache vì ít thay đổi
+            const cacheControl = payload.isIntroVideo 
+              ? 'no-store, no-cache, must-revalidate, proxy-revalidate, max-age=0, private'
+              : 'public, max-age=60';
             res.setHeader('Content-Type', 'application/vnd.apple.mpegurl');
             res.setHeader('Content-Length', Buffer.byteLength(manifestContent));
-            res.setHeader('Cache-Control', 'public, max-age=60');
+            res.setHeader('Cache-Control', cacheControl);
+            if (payload.isIntroVideo) {
+              res.setHeader('Pragma', 'no-cache');
+            }
+            // CORS headers để đảm bảo frontend có thể load manifest
+            res.setHeader('Access-Control-Allow-Origin', '*');
+            res.setHeader('Access-Control-Allow-Methods', 'GET, OPTIONS');
+            res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
 
             // Send manifest
+            console.log('📦 [Video Stream] Sending manifest, length:', manifestContent.length);
             res.send(manifestContent);
+            console.log('✅ [Video Stream] Manifest sent successfully');
             return;
           } catch (manifestError: any) {
             console.error('❌ [Video Stream] Error getting intro video manifest from R2:', manifestError);

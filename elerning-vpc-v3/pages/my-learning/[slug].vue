@@ -726,6 +726,9 @@
               :lesson-id="currentLesson?._id || ''"
               :quiz-complete="currentLesson?.isCompleted || false"
               :is-review-mode="isReviewMode"
+              :chapters="normalizedChapters"
+              :current-chapter-index="currentChapterIndex"
+              :current-lesson-index="currentLessonIndex"
               @completed="(quizResult) => handleFinishQuiz(quizResult)"
             />
           </div>
