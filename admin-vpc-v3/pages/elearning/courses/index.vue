@@ -2482,7 +2482,7 @@ import { message, Modal } from "ant-design-vue";
 import type { Course } from "~/types/api";
 import { useCoursesApi } from "~/composables/api/useCoursesApi";
 import type { UploadFile } from "ant-design-vue";
-import { watch, nextTick } from "vue";
+import { watch, nextTick, h } from "vue";
 import dayjs, { type Dayjs } from "dayjs";
 
 definePageMeta({
@@ -2600,8 +2600,7 @@ const extractImageUrl = (response: any): string => {
 
   // Debug: Log if no URL found
   if (!imageUrl) {
-    console.error("extractImageUrl - No URL found. Response:", JSON.stringify(response, null, 2));
-    console.error("extractImageUrl - responseData:", JSON.stringify(responseData, null, 2));
+    // No URL found in response
   }
 
   return imageUrl;
@@ -2917,7 +2916,6 @@ const handleBannerChange = async (info: any) => {
           bannerFileList.value = [];
         }
       } catch (error: any) {
-        console.error("Upload banner error:", error);
         message.error(error.message || "Upload banner thất bại");
         bannerFileList.value = [];
       }
@@ -2953,7 +2951,9 @@ const handleIntroVideoChange = async (info: any) => {
       // Lưu các trường vào formData
       formData.introVideo = videoData.url || videoData.hlsUrl || "";
       formData.introVideoHlsUrl = videoData.hlsUrl || "";
-      formData.introVideoStatus = videoData.status || "ready";
+      // QUAN TRỌNG: Không fallback thành "ready" - dùng status từ backend
+      // Backend sẽ trả về "queueing" hoặc "processing" nếu video chưa sẵn sàng
+      formData.introVideoStatus = videoData.status || "queueing";
       formData.introVideoErrorMessage = videoData.errorMessage || "";
       formData.introVideoJobId = videoData.jobId || "";
       // Thumbnail sẽ được upload thủ công, không tự động từ video
@@ -2974,6 +2974,27 @@ const handleIntroVideoChange = async (info: any) => {
         },
       ];
 
+      // CRITICAL: Nếu course đã có _id và video đang processing, save jobId vào database ngay
+      // Điều này cho phép worker tự động update course khi video processing hoàn thành
+      // Giống như lesson video - worker cần jobId để tìm course
+      if (
+        editingCourse.value?._id &&
+        formData.introVideoJobId &&
+        (formData.introVideoStatus === "queueing" ||
+          formData.introVideoStatus === "processing")
+      ) {
+        try {
+          // Save jobId to database immediately so worker can find and update course
+          // Use type assertion to include introVideoJobId
+          await coursesApi.updateCourse(editingCourse.value._id, {
+            ...formData,
+            introVideoJobId: formData.introVideoJobId,
+          } as any);
+        } catch (error: any) {
+          // Don't fail the upload if save fails - jobId is still in formData
+        }
+      }
+
       // If video is ready, clear progress tracker immediately
       if (formData.introVideoStatus === "ready") {
         // Clear progress tracker
@@ -2992,7 +3013,15 @@ const handleIntroVideoChange = async (info: any) => {
           formData.introVideoStatus === "processing")
       ) {
         // Poll job status if video is still processing
+        // KHÔNG báo thành công ở đây - chỉ báo khi status = "ready"
+        message.info("Video đang được xử lý, vui lòng đợi...");
         pollIntroVideoJobStatus(formData.introVideoJobId);
+      } else {
+        // Nếu không có jobId hoặc status không hợp lệ, vẫn poll nếu có jobId
+        if (formData.introVideoJobId) {
+          message.info("Video đang được xử lý, vui lòng đợi...");
+          pollIntroVideoJobStatus(formData.introVideoJobId);
+        }
       }
     } catch (error: any) {
       // Extract error message from error response
@@ -3372,7 +3401,6 @@ const uploadFileToMinIO = async (
     }
 
     // Debug: Log response if no URL found
-    console.error("Upload MinIO - No URL found. Response:", JSON.stringify(response, null, 2));
     throw new Error("Upload failed: No file URL in response");
   } catch (error: any) {
     throw new Error(error.message || "Upload failed");
@@ -5068,6 +5096,114 @@ const handleModalOk = async () => {
       );
     }
 
+    // Validate quiz questions before submitting
+    const invalidQuizQuestions: Array<{
+      chapterIndex: number;
+      chapterTitle: string;
+      lessonIndex: number;
+      lessonTitle: string;
+      questionIndex: number;
+      questionText: string;
+    }> = [];
+
+    for (let chIdx = 0; chIdx < formData.chapters.length; chIdx++) {
+      const chapter = formData.chapters[chIdx];
+      if (chapter.lessons) {
+        for (let lessonIdx = 0; lessonIdx < chapter.lessons.length; lessonIdx++) {
+          const lesson = chapter.lessons[lessonIdx];
+          if (
+            lesson.quiz &&
+            lesson.quiz.questions &&
+            lesson.quiz.questions.length > 0
+          ) {
+            for (let qIdx = 0; qIdx < lesson.quiz.questions.length; qIdx++) {
+              const question = lesson.quiz.questions[qIdx];
+              const questionText = question.question || question.text || "";
+              
+              // Check if question has text
+              if (!questionText || !questionText.trim()) {
+                continue; // Skip empty questions
+              }
+
+              // Map options to check for correct answer
+              const mappedOptions = (question.options || []).map(
+                (opt: any, optIdx: number) => ({
+                  id: opt.id || opt._id?.toString?.() || opt._id || `opt-${qIdx}-${optIdx}`,
+                  text: opt.text || "",
+                  isCorrect: opt.isCorrect || false,
+                }),
+              );
+
+              // Check for correct answer
+              let hasCorrectAnswer = false;
+
+              // Priority 1: Check if any option has isCorrect=true
+              const correctOption = mappedOptions.find((opt: any) => opt.isCorrect);
+              if (correctOption) {
+                hasCorrectAnswer = true;
+              } else if (
+                question.correctAnswer !== undefined &&
+                question.correctAnswer !== null &&
+                question.correctAnswer !== ""
+              ) {
+                // Priority 2: Check if correctAnswer is set
+                if (typeof question.correctAnswer === "number") {
+                  // It's an index, check if valid
+                  if (mappedOptions[question.correctAnswer]) {
+                    hasCorrectAnswer = true;
+                  }
+                } else {
+                  // It's a string (id), check if valid
+                  const optionById = mappedOptions.find(
+                    (opt: any) =>
+                      opt.id === question.correctAnswer ||
+                      opt._id?.toString() === question.correctAnswer,
+                  );
+                  if (optionById) {
+                    hasCorrectAnswer = true;
+                  }
+                }
+              }
+
+              // If question has text but no correct answer, add to invalid list
+              if (!hasCorrectAnswer) {
+                invalidQuizQuestions.push({
+                  chapterIndex: chIdx + 1,
+                  chapterTitle: chapter.title || `Chương ${chIdx + 1}`,
+                  lessonIndex: lessonIdx + 1,
+                  lessonTitle: lesson.title || `Bài học ${lessonIdx + 1}`,
+                  questionIndex: qIdx + 1,
+                  questionText: questionText.length > 50 
+                    ? questionText.substring(0, 50) + "..." 
+                    : questionText,
+                });
+              }
+            }
+          }
+        }
+      }
+    }
+
+    // If there are invalid quiz questions, show error and prevent submission
+    if (invalidQuizQuestions.length > 0) {
+      let errorMessage = "Vui lòng chọn đáp án đúng cho các câu hỏi sau:\n\n";
+      invalidQuizQuestions.forEach((invalid, idx) => {
+        errorMessage += `${idx + 1}. Chương "${invalid.chapterTitle}" - Bài "${invalid.lessonTitle}" - Câu hỏi ${invalid.questionIndex}: "${invalid.questionText}"\n`;
+      });
+      errorMessage += "\nVui lòng sửa các câu hỏi trên trước khi lưu.";
+      
+      Modal.warning({
+        title: "Các câu hỏi chưa có đáp án đúng",
+        content: h('div', { 
+          style: 'white-space: pre-line; max-height: 400px; overflow-y: auto; line-height: 1.8;' 
+        }, errorMessage),
+        width: 600,
+        okText: "Đã hiểu",
+      });
+      modalLoading.value = false;
+      return;
+    }
+
     // Prepare payload
 
     // Upload lesson video thumbnails first
@@ -5874,6 +6010,24 @@ const pollIntroVideoJobStatus = async (jobId: string) => {
             jobResult.qualityMetadata || formData.introVideoQualityMetadata;
         } else {
           formData.introVideoStatus = "ready";
+        }
+
+        // CRITICAL: Nếu course đã có _id, save vào database ngay lập tức
+        // Điều này đảm bảo database được update ngay khi video ready
+        // Giống như lesson video - worker có thể không tìm thấy course nếu chưa save
+        if (editingCourse.value?._id && jobResult) {
+          try {
+            // Update course intro video trong database
+            await coursesApi.updateCourse(editingCourse.value._id, {
+              ...formData,
+              introVideo: formData.introVideo,
+              introVideoHlsUrl: formData.introVideoHlsUrl,
+              introVideoStatus: "ready",
+              introVideoQualityMetadata: formData.introVideoQualityMetadata,
+            });
+          } catch (error: any) {
+            // Don't fail - video is still updated in local state
+          }
         }
 
         // Update progress to 100% before hiding

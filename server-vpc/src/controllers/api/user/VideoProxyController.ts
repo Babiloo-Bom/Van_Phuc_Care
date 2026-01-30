@@ -43,7 +43,21 @@ export default class VideoProxyController {
   private static getHost(req: Request): string {
     // Prefer X-Forwarded-Host if available (set by proxy/load balancer)
     const forwardedHost = req.get('x-forwarded-host');
-    return forwardedHost || req.get('host') || 'localhost';
+    if (forwardedHost) {
+      return forwardedHost;
+    }
+    
+    // Fallback to host header
+    const host = req.get('host');
+    if (host) {
+      // Nếu host là Docker internal hostname (api:3000), thay bằng localhost
+      if (host.includes('api:') || host.startsWith('api')) {
+        return host.replace(/^api:\d+/, 'localhost:3000').replace(/^api/, 'localhost:3000');
+      }
+      return host;
+    }
+    
+    return 'localhost:3000';
   }
 
   /**
@@ -211,25 +225,28 @@ export default class VideoProxyController {
       // Check if this is intro video
       if (payload.isIntroVideo) {
         // Get course to find intro video URL
+        // CRITICAL: Luôn query database mới nhất, không dùng cache
         const CoursesModel = (await import('@mongodb/courses')).default;
-        const course = await CoursesModel.model.findById(payload.courseId);
+        const course = await CoursesModel.model.findById(payload.courseId).lean(); // Use lean() để tránh cache
 
         if (!course) {
           console.error('❌ [Video Stream] Course not found:', payload.courseId);
           return sendError(res, 404, 'Course not found');
         }
 
-        const courseData: any = course.toObject();
+        const courseData: any = course;
         console.log('📦 [Video Stream] Course found, checking for segment request...');
+        console.log('📦 [Video Stream] Course introVideoHlsUrl:', courseData.introVideoHlsUrl?.substring(0, 50) + '...');
+        console.log('📦 [Video Stream] Course introVideo:', courseData.introVideo?.substring(0, 50) + '...');
 
-        // Get intro video URL
+        // Get intro video URL - ưu tiên HLS URL
         const introVideoUrl = courseData.introVideoHlsUrl || courseData.introVideo;
         if (!introVideoUrl) {
           console.error('❌ [Video Stream] Intro video not found for course:', payload.courseId);
           return sendError(res, 404, 'Intro video not found');
         }
 
-        console.log('📦 [Video Stream] Intro video URL:', introVideoUrl);
+        console.log('📦 [Video Stream] Intro video URL (full):', introVideoUrl);
 
         // Check if this is a segment request (from HLS manifest)
         const segmentPath = req.query.segment as string | undefined;
@@ -383,16 +400,94 @@ export default class VideoProxyController {
                 const listResponse = await tempClient.send(listCommand);
                 
                 if (listResponse.Contents && listResponse.Contents.length > 0) {
-                  // Find segment that ends with segmentFileName
-                  segmentObject = listResponse.Contents.find((obj: any) => {
+                  console.log(`📦 [Video Stream] Found ${listResponse.Contents.length} objects in folder ${folderPattern}`);
+                  
+                  // Log first few objects để debug
+                  if (listResponse.Contents.length > 0) {
+                    const sampleObjects = listResponse.Contents.slice(0, 5).map((obj: any) => obj.Key);
+                    console.log(`📦 [Video Stream] Sample objects:`, sampleObjects);
+                  }
+                  
+                  // Find segment that matches segmentFileName
+                  // Logic: Tìm tất cả segments matching, rồi chọn segment có timestamp gần nhất với manifest timestamp
+                  // Format: {timestamp}-segment_XXX.ts
+                  const matchingSegments: Array<{ obj: any; timestamp: number; key: string }> = [];
+                  
+                  for (const obj of listResponse.Contents) {
                     const objKey = obj.Key || '';
-                    return objKey.endsWith(segmentFileName);
-                  });
+                    const fileName = objKey.split('/').pop() || '';
+                    
+                    // Nếu segmentFileName không có timestamp prefix (ví dụ: segment_000.ts)
+                    // và có timestamp từ manifest, thì tìm segment với format: {timestamp}-segmentFileName
+                    if (timestamp && !segmentFileName.match(/^\d{10,}-/)) {
+                      // Segment trong R2 có format: {timestamp}-segment_XXX.ts
+                      // Manifest reference: segment_XXX.ts
+                      // Cần tìm: {timestamp}-segment_XXX.ts
+                      const expectedFileName = `${timestamp}-${segmentFileName}`;
+                      if (fileName === expectedFileName) {
+                        console.log(`✅ [Video Stream] Matched segment by exact timestamp prefix: ${objKey} (expected: ${expectedFileName})`);
+                        segmentObject = obj;
+                        break; // Exact match, use it immediately
+                      }
+                    }
+                    
+                    // Check if segment ends with segmentFileName
+                    if (!fileName.endsWith(segmentFileName)) {
+                      continue;
+                    }
+                    
+                    // Extract timestamp từ segment filename
+                    const segmentTimestampMatch = fileName.match(/^(\d{10,})-/);
+                    if (segmentTimestampMatch) {
+                      const segmentTimestamp = parseInt(segmentTimestampMatch[1], 10);
+                      matchingSegments.push({
+                        obj,
+                        timestamp: segmentTimestamp,
+                        key: objKey,
+                      });
+                    } else {
+                      // Segment không có timestamp, thêm vào list với timestamp = 0 (sẽ được ưu tiên thấp)
+                      matchingSegments.push({
+                        obj,
+                        timestamp: 0,
+                        key: objKey,
+                      });
+                    }
+                  }
+                  
+                  // Nếu có exact match với timestamp, đã break ở trên
+                  if (!segmentObject && matchingSegments.length > 0) {
+                    if (timestamp) {
+                      // Chọn segment có timestamp gần nhất với manifest timestamp (ưu tiên >= manifest timestamp)
+                      const manifestTimestamp = parseInt(timestamp, 10);
+                      
+                      // Ưu tiên segments có timestamp >= manifest timestamp (segment mới hơn hoặc bằng)
+                      const newerSegments = matchingSegments.filter(s => s.timestamp >= manifestTimestamp);
+                      if (newerSegments.length > 0) {
+                        // Chọn segment có timestamp nhỏ nhất trong các segments mới hơn (gần nhất với manifest)
+                        newerSegments.sort((a, b) => a.timestamp - b.timestamp);
+                        segmentObject = newerSegments[0].obj;
+                        console.log(`✅ [Video Stream] Selected segment with newer timestamp: ${newerSegments[0].key} (timestamp: ${newerSegments[0].timestamp}, manifest: ${manifestTimestamp})`);
+                      } else {
+                        // Nếu không có segment mới hơn, chọn segment có timestamp lớn nhất (gần nhất)
+                        matchingSegments.sort((a, b) => b.timestamp - a.timestamp);
+                        segmentObject = matchingSegments[0].obj;
+                        console.log(`⚠️ [Video Stream] No newer segment found, using latest: ${matchingSegments[0].key} (timestamp: ${matchingSegments[0].timestamp}, manifest: ${manifestTimestamp})`);
+                      }
+                    } else {
+                      // Không có timestamp từ manifest, chọn segment có timestamp lớn nhất (mới nhất)
+                      matchingSegments.sort((a, b) => b.timestamp - a.timestamp);
+                      segmentObject = matchingSegments[0].obj;
+                      console.log(`✅ [Video Stream] Selected latest segment: ${matchingSegments[0].key} (timestamp: ${matchingSegments[0].timestamp})`);
+                    }
+                  }
 
                   if (segmentObject) {
                     foundFolder = folderPattern;
                     console.log(`✅ [Video Stream] Found intro video segment: ${segmentObject.Key}`);
                     break;
+                  } else {
+                    console.log(`⚠️ [Video Stream] No matching segment found in folder ${folderPattern}`);
                   }
                 }
               } catch (listError: any) {
@@ -446,41 +541,132 @@ export default class VideoProxyController {
           console.log('📦 [Video Stream] Intro video manifest request');
 
           // Get manifest from R2
+          // Logic giống lesson video: extract path từ URL và thử nhiều cách
           try {
             // Extract manifest path from intro video URL
+            // Format: https://...r2.dev/courses/intro-videos/hls/{timestamp}-video.m3u8
+            // Object path: courses/intro-videos/hls/{timestamp}-video.m3u8
             let manifestPath: string;
+            let extractedBasePath: string | null = null;
+            
             if (introVideoUrl.startsWith('http://') || introVideoUrl.startsWith('https://')) {
               const urlModule = await import('url');
               const parsedUrl = new urlModule.URL(introVideoUrl);
-              manifestPath = parsedUrl.pathname;
-              if (manifestPath.startsWith('/')) {
-                manifestPath = manifestPath.substring(1);
+              let videoPathname = parsedUrl.pathname;
+              
+              // Remove leading slash
+              if (videoPathname.startsWith('/')) {
+                videoPathname = videoPathname.substring(1);
+              }
+              
+              // KEEP 'courses' prefix - objects are stored with this prefix
+              // Get folder (everything except filename)
+              const lastSlash = videoPathname.lastIndexOf('/');
+              if (lastSlash > 0) {
+                extractedBasePath = videoPathname.substring(0, lastSlash);
+                manifestPath = videoPathname; // Full path including filename
+                console.log('📦 [Video Stream] Extracted base path from intro video URL (keeping courses/ prefix):', extractedBasePath);
+              } else {
+                manifestPath = videoPathname;
               }
             } else {
               manifestPath = introVideoUrl;
+              // Try to extract base path from relative path
+              const lastSlash = introVideoUrl.lastIndexOf('/');
+              if (lastSlash > 0) {
+                extractedBasePath = introVideoUrl.substring(0, lastSlash);
+              }
             }
 
             console.log('📦 [Video Stream] Intro video manifest path:', manifestPath);
+            console.log('📦 [Video Stream] Intro video extracted base path:', extractedBasePath);
 
-            const manifestBuffer = await CloudflareService.getFile(manifestPath);
+            // Try to get manifest - thử nhiều path patterns như lesson video
+            let manifestBuffer: Buffer | null = null;
+            const manifestPathsToTry: string[] = [];
+            
+            // Add extracted path first
+            if (manifestPath) {
+              manifestPathsToTry.push(manifestPath);
+            }
+            
+            // Add fallback paths
+            if (extractedBasePath) {
+              // Try with filename from original URL
+              const fileName = manifestPath.split('/').pop() || '';
+              if (fileName) {
+                manifestPathsToTry.push(`${extractedBasePath}/${fileName}`);
+              }
+            }
+            
+            // Try common patterns
+            const fileName = manifestPath.split('/').pop() || '';
+            if (fileName) {
+              manifestPathsToTry.push(`courses/intro-videos/hls/${fileName}`);
+            }
+            
+            console.log('📦 [Video Stream] Trying manifest paths:', manifestPathsToTry);
+            
+            // Try each path until we find the manifest
+            for (const tryPath of manifestPathsToTry) {
+              try {
+                manifestBuffer = await CloudflareService.getFile(tryPath);
+                if (manifestBuffer) {
+                  console.log(`✅ [Video Stream] Found manifest at: ${tryPath}`);
+                  break;
+                }
+              } catch (err: any) {
+                console.log(`⚠️ [Video Stream] Manifest not found at: ${tryPath}`);
+                // Continue to next path
+              }
+            }
+            
             if (!manifestBuffer) {
-              console.error('❌ [Video Stream] Intro video manifest not found in R2:', manifestPath);
+              console.error('❌ [Video Stream] Intro video manifest not found in R2 after trying all paths');
+              console.error('❌ [Video Stream] Tried paths:', manifestPathsToTry);
               return sendError(res, 404, 'Manifest not found');
             }
 
             let manifestContent = manifestBuffer.toString('utf8');
+            
+            // Log manifest content để debug segment format
+            console.log('📦 [Video Stream] Original manifest content (first 500 chars):', manifestContent.substring(0, 500));
+            
+            // Extract segment filenames từ manifest để hiểu format
+            const segmentMatches = manifestContent.match(/^([^#\n]+\.ts)$/gm);
+            if (segmentMatches && segmentMatches.length > 0) {
+              console.log('📦 [Video Stream] Found segments in manifest:', segmentMatches.slice(0, 5));
+            }
 
             // Rewrite segment URLs to use proxy
             // Replace segment URLs with proxy URLs
+            // Sử dụng X-Forwarded-Host để tạo segment URLs với frontend hostname
             const protocol = VideoProxyController.getProtocol(req);
             const host = VideoProxyController.getHost(req);
-            const baseUrl = `${protocol}://${host}`;
+            
+            // Nếu có X-Forwarded-Host, dùng nó (frontend hostname)
+            // Nếu không, dùng relative path
+            const forwardedHost = req.get('x-forwarded-host');
+            const baseUrl = forwardedHost 
+              ? `${protocol}://${forwardedHost}`
+              : `${protocol}://${host}`;
+            
+            // Sử dụng /api/video/stream thay vì /api/u/video/stream để đi qua Nuxt proxy
+            const proxyPath = forwardedHost ? '/api/video/stream' : '/api/u/video/stream';
 
             // Replace segment paths with proxy URLs
+            // Match cả relative paths và filenames
             manifestContent = manifestContent.replace(
               /^([^#\n]+\.ts)$/gm,
               (match: string) => {
-                const segmentUrl = `${baseUrl}/api/u/video/stream/${token}?segment=${encodeURIComponent(match)}`;
+                // Extract chỉ filename từ match (có thể là full path hoặc chỉ filename)
+                const segmentFileName = match.split('/').pop() || match;
+                const segmentUrl = `${baseUrl}${proxyPath}/${token}?segment=${encodeURIComponent(segmentFileName)}`;
+                console.log('📦 [Video Stream] Rewritten segment URL:', {
+                  original: match,
+                  filename: segmentFileName,
+                  newUrl: segmentUrl
+                });
                 return segmentUrl;
               }
             );

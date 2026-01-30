@@ -263,8 +263,7 @@ const handleUpload = async (file: File, pageType: 'all-courses' | 'my-courses') 
       
       // Debug: Log if no URL found
       if (!imageUrl) {
-        console.error('handleUpload - No URL found. Response:', JSON.stringify(uploadResponse, null, 2))
-        console.error('handleUpload - responseData:', JSON.stringify(responseData, null, 2))
+        // No URL found in response
       }
       
       if (imageUrl) {

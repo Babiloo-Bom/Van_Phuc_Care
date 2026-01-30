@@ -104,9 +104,8 @@ export default defineEventHandler(async (event) => {
     }
 
     courses = allCourses;
-    console.log(`[Sitemap] Fetched ${courses.length} published courses`);
   } catch (error) {
-    console.error("[Sitemap] Error fetching courses:", error);
+    // Error fetching courses
     // Continue with empty courses array if API fails
   }
 

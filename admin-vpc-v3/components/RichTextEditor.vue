@@ -42,7 +42,7 @@ onMounted(async () => {
       const quillTableUIModule: any = await import('quill-table-ui')
       TableUI = quillTableUIModule.default || quillTableUIModule
     } catch (tableError) {
-      console.warn('quill-table-ui not available:', tableError)
+      // quill-table-ui not available
     }
 
     // Custom table handler
@@ -108,11 +108,11 @@ onMounted(async () => {
         // @ts-ignore
         new TableUI(quillInstance)
       } catch (initError) {
-        console.warn('Failed to initialize TableUI:', initError)
+        // Failed to initialize TableUI
       }
     }
   } catch (error) {
-    console.error('Failed to load Quill:', error)
+    // Failed to load Quill
     return
   }
 

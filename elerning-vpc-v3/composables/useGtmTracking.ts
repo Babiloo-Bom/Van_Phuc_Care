@@ -42,7 +42,7 @@ export const useGtmTracking = () => {
       // @ts-ignore
       return useGtm?.() || null
     } catch (error) {
-      console.warn('GTM not available:', error)
+      // GTM not available
       return null
     }
   }
@@ -54,7 +54,6 @@ export const useGtmTracking = () => {
    */
   const trackEvent = (eventName: string, eventData?: Record<string, any>) => {
     if (!isGtmEnabled.value) {
-      console.log('[GTM] Event tracking disabled:', eventName, eventData)
       return
     }
 
@@ -67,7 +66,7 @@ export const useGtmTracking = () => {
           ...eventData
         })
       } catch (error) {
-        console.error('[GTM] Error tracking event:', error)
+        // Error tracking event
       }
     } else {
       // Fallback: push to dataLayer directly

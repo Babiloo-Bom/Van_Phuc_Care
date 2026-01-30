@@ -1634,9 +1634,9 @@ const currentVideoUrl = computed(() => {
 
   // Tất cả video (HLS và MP4) đều stream qua proxy để tránh CORS và ẩn URL gốc
   if (introVideoToken.value) {
-    // Không thêm query param vào URL vì có thể gây vấn đề với routing
-    // Cache-busting sẽ được xử lý bằng cache headers từ backend
-    return `${apiUser}/video/stream/${introVideoToken.value}`;
+    // Sử dụng relative path để proxy qua Nuxt server route (tránh CORS)
+    // Nuxt server route sẽ proxy request đến backend
+    return `/api/video/stream/${introVideoToken.value}`;
   }
 
   return null; // Chưa có token, sẽ hiển thị loading
@@ -1701,7 +1701,6 @@ const getIntroVideoToken = async () => {
 // Load intro video with HLS
 const loadIntroVideoWithHls = async () => {
   if (!videoRef.value || !currentVideoUrl.value) {
-    console.warn('⚠️ [Video] Cannot load video: missing videoRef or currentVideoUrl');
     return;
   }
 
@@ -1710,7 +1709,7 @@ const loadIntroVideoWithHls = async () => {
     try {
       introHlsInstance.destroy();
     } catch (error: any) {
-      console.warn('⚠️ [Video] Error destroying HLS instance:', error);
+      // Error destroying HLS instance
     }
     introHlsInstance = null;
   }
@@ -1723,7 +1722,7 @@ const loadIntroVideoWithHls = async () => {
       videoRef.value.load(); // Force reload để clear cache
       await nextTick();
     } catch (error: any) {
-      console.warn('⚠️ [Video] Error resetting video element:', error);
+      // Error resetting video element
     }
   }
 
@@ -1756,59 +1755,65 @@ const loadIntroVideoWithHls = async () => {
         });
 
         // Load HLS manifest
-        console.log('📦 [Video] Loading HLS manifest:', currentVideoUrl.value);
         introHlsInstance.loadSource(currentVideoUrl.value);
         introHlsInstance.attachMedia(videoRef.value);
 
       introHlsInstance.on(Hls.Events.MANIFEST_PARSED, () => {
-        console.log('✅ [Video] HLS manifest parsed successfully');
         // Video ready to play
         if (videoRef.value) {
           videoRef.value.play().catch((error: any) => {
-            console.error('❌ [Video] Error playing video:', error);
+            // Error playing video
           });
         }
       });
 
       introHlsInstance.on(Hls.Events.ERROR, (event: string, data: any) => {
-        console.error('❌ [Video] HLS error:', event, data);
+        
         if (data.fatal) {
           switch (data.type) {
             case Hls.ErrorTypes.NETWORK_ERROR:
-              console.log('🔄 [Video] Network error, retrying...');
-              introHlsInstance?.startLoad();
+              // Chờ một chút trước khi retry
+              setTimeout(() => {
+                if (introHlsInstance && currentVideoUrl.value) {
+                  introHlsInstance.startLoad();
+                }
+              }, 1000);
               break;
             case Hls.ErrorTypes.MEDIA_ERROR:
-              console.log('🔄 [Video] Media error, recovering...');
               introHlsInstance?.recoverMediaError();
               break;
             default:
-              console.error('❌ [Video] Fatal error, destroying HLS instance');
-              introHlsInstance?.destroy();
-              introHlsInstance = null;
+              // Fatal error, destroying HLS instance
+              // Không destroy ngay, thử retry trước
+              if (data.type === Hls.ErrorTypes.NETWORK_ERROR && introHlsInstance && currentVideoUrl.value) {
+                setTimeout(() => {
+                  if (introHlsInstance) {
+                    introHlsInstance.startLoad();
+                  }
+                }, 2000);
+              } else {
+                introHlsInstance?.destroy();
+                introHlsInstance = null;
+              }
               break;
           }
         }
       });
     } catch (error: any) {
-      console.error('❌ [Video] Error creating HLS instance:', error);
+      // Error creating HLS instance
     }
   } else if (videoRef.value.canPlayType("application/vnd.apple.mpegurl")) {
     // Safari native HLS support
-    console.log('📦 [Video] Using Safari native HLS support');
     videoRef.value.src = currentVideoUrl.value;
     videoRef.value.play().catch((error: any) => {
-      console.error('❌ [Video] Error playing video:', error);
+      // Error playing video
     });
-  } else {
-    console.warn('⚠️ [Video] HLS not supported');
   }
 } else {
   // MP4: Use native video element (streamed via proxy)
-  console.log('📦 [Video] Loading MP4 video');
   videoRef.value.src = currentVideoUrl.value;
   videoRef.value.play().catch((error: any) => {
-    console.error('❌ [Video] Error playing video:', error);
+    // Error playing video
   });
 }
 };
@@ -1821,7 +1826,7 @@ const playIntroVideo = async () => {
       try {
         introHlsInstance.destroy();
       } catch (error: any) {
-        console.warn('⚠️ [Video] Error destroying HLS instance:', error);
+        // Error destroying HLS instance
       }
       introHlsInstance = null;
     }
@@ -1833,7 +1838,7 @@ const playIntroVideo = async () => {
         videoRef.value.src = '';
         videoRef.value.load();
       } catch (error: any) {
-        console.warn('⚠️ [Video] Error resetting video element:', error);
+        // Error resetting video element
       }
     }
     
@@ -1843,11 +1848,9 @@ const playIntroVideo = async () => {
     introVideoToken.value = null; // Force reset token để lấy token mới
 
     // Lấy token ngay khi user click play - token mới sẽ lấy video mới từ database
-    console.log('📦 [Video] Getting video token...');
     await getIntroVideoToken();
     
     if (!introVideoToken.value) {
-      console.error('❌ [Video] Failed to get video token');
       return;
     }
 
@@ -1866,20 +1869,17 @@ const playIntroVideo = async () => {
 
     // Kiểm tra lại videoRef và currentVideoUrl trước khi load
     if (!videoRef.value) {
-      console.error('❌ [Video] Video element not found');
       return;
     }
     
     if (!currentVideoUrl.value) {
-      console.error('❌ [Video] Video URL not available');
       return;
     }
 
-    console.log('📦 [Video] Loading video with HLS...');
     // Load video qua HLS (stream theo chunks - chống download tốt hơn)
     await loadIntroVideoWithHls();
   } catch (error: any) {
-    console.error('❌ [Video] Error in playIntroVideo:', error);
+    // Error in playIntroVideo
   }
 };
 
@@ -1898,22 +1898,27 @@ watch(
     if (introHlsInstance) {
       try {
         introHlsInstance.destroy();
-      } catch (error) {
-        // Ignore cleanup errors
+      } catch (error: any) {
+        // Error destroying HLS instance
       }
       introHlsInstance = null;
     }
     
     // Reset video element src nếu đang có video
     if (videoRef.value && videoChanged) {
-      videoRef.value.src = '';
-      videoRef.value.load(); // Force reload video element
+      try {
+        videoRef.value.pause();
+        videoRef.value.src = '';
+        videoRef.value.load(); // Force reload video element
+      } catch (error: any) {
+        // Error resetting video element
+      }
     }
     
-    // Reset play state when course changes
+    // Reset play state when course changes - CRITICAL để force lấy token mới
     userClickedPlay.value = false;
     introVideoReady.value = false;
-    introVideoToken.value = null;
+    introVideoToken.value = null; // Force reset token để lấy token mới với video URL mới
   },
   { immediate: true },
 );

@@ -614,13 +614,133 @@ videoQueue.on('completed', async (job, result) => {
           if (course) {
             console.log(`✅ [Video Queue] Found course ${course._id} by introVideoJobId`);
             
+            const courseData = course as any;
+            const newIntroVideoUrl = result.hlsUrl || result.url || '';
+            const oldIntroVideoUrl = courseData.introVideoHlsUrl || courseData.introVideo || '';
+            
+            // Xóa intro video cũ nếu có video mới và video mới khác video cũ
+            if (oldIntroVideoUrl && newIntroVideoUrl && newIntroVideoUrl !== oldIntroVideoUrl) {
+              console.log(`🗑️ [Video Queue] Intro video changed, deleting old video...`);
+              console.log(`🗑️ [Video Queue] Old intro video URL: ${oldIntroVideoUrl}`);
+              console.log(`🗑️ [Video Queue] New intro video URL: ${newIntroVideoUrl}`);
+              
+              try {
+                // Extract timestamp từ video URL cũ để xóa cụ thể files của video cũ
+                // Intro video format: courses/intro-videos/hls/{timestamp}-video.m3u8
+                // Segments format: courses/intro-videos/hls/{timestamp}-segment_XXX.ts
+                let oldVideoTimestamp: string | null = null;
+                const oldVideoPath = oldIntroVideoUrl.includes(process.env.CLOUDFLARE_R2_PUBLIC_URL || '')
+                  ? oldIntroVideoUrl.replace(process.env.CLOUDFLARE_R2_PUBLIC_URL || '', '').replace(/^\//, '')
+                  : oldIntroVideoUrl;
+                
+                // Extract timestamp từ manifest filename
+                const oldManifestFileName = oldVideoPath.split('/').pop() || '';
+                const oldTimestampMatch = oldManifestFileName.match(/^(\d{10,})-/);
+                if (oldTimestampMatch) {
+                  oldVideoTimestamp = oldTimestampMatch[1];
+                  console.log(`🗑️ [Video Queue] Extracted old video timestamp: ${oldVideoTimestamp}`);
+                }
+                
+                if (oldVideoTimestamp) {
+                  // Xóa cụ thể files của video cũ dựa trên timestamp
+                  // List tất cả files trong folder và xóa chỉ files có timestamp này
+                  const hlsFolder = CloudflareService.extractHlsFolderFromUrl(oldIntroVideoUrl);
+                  if (hlsFolder) {
+                    // Dynamic import để list files
+                    // @ts-ignore - @aws-sdk/client-s3 is installed but TypeScript may not recognize it
+                    const { ListObjectsV2Command, DeleteObjectsCommand, S3Client } = await import('@aws-sdk/client-s3');
+                    const tempClient = new S3Client({
+                      region: "auto",
+                      endpoint: `https://${process.env.CLOUDFLARE_R2_ACCOUNT_ID}.r2.cloudflarestorage.com`,
+                      credentials: {
+                        accessKeyId: process.env.CLOUDFLARE_R2_ACCESS_KEY_ID!,
+                        secretAccessKey: process.env.CLOUDFLARE_R2_SECRET_ACCESS_KEY!,
+                      },
+                      forcePathStyle: true,
+                    });
+                    
+                    const bucketName = process.env.CLOUDFLARE_R2_BUCKET_NAME!;
+                    const listCommand = new ListObjectsV2Command({
+                      Bucket: bucketName,
+                      Prefix: hlsFolder.endsWith('/') ? hlsFolder : `${hlsFolder}/`,
+                    });
+                    
+                    const listResponse = await tempClient.send(listCommand);
+                    if (listResponse.Contents && listResponse.Contents.length > 0) {
+                      // Filter chỉ files có timestamp của video cũ
+                      const filesToDelete = listResponse.Contents
+                        .filter((obj: any) => {
+                          const fileName = obj.Key?.split('/').pop() || '';
+                          // Match files có timestamp prefix giống video cũ
+                          return fileName.startsWith(`${oldVideoTimestamp}-`);
+                        })
+                        .map((obj: any) => ({ Key: obj.Key }));
+                      
+                      if (filesToDelete.length > 0) {
+                        const deleteCommand = new DeleteObjectsCommand({
+                          Bucket: bucketName,
+                          Delete: {
+                            Objects: filesToDelete,
+                            Quiet: false,
+                          },
+                        });
+                        await tempClient.send(deleteCommand);
+                        console.log(`✅ [Video Queue] Deleted ${filesToDelete.length} old intro video files with timestamp ${oldVideoTimestamp}`);
+                      } else {
+                        console.log(`⚠️ [Video Queue] No files found with timestamp ${oldVideoTimestamp} to delete`);
+                      }
+                    } else {
+                      // Fallback: try to delete single file
+                      let objectName = '';
+                      
+                      if (oldIntroVideoUrl.includes(process.env.CLOUDFLARE_R2_PUBLIC_URL || '')) {
+                        objectName = oldIntroVideoUrl.replace(process.env.CLOUDFLARE_R2_PUBLIC_URL || '', '').replace(/^\//, '');
+                      } else if (oldIntroVideoUrl.includes('/')) {
+                        const urlParts = oldIntroVideoUrl.split('/');
+                        const coursesIndex = urlParts.findIndex((part: string) => part === 'courses' || part === 'lessons');
+                        if (coursesIndex !== -1) {
+                          objectName = urlParts.slice(coursesIndex).join('/');
+                        }
+                      }
+                      
+                      if (objectName) {
+                        await CloudflareService.deleteFile(objectName);
+                        console.log(`✅ [Video Queue] Deleted old intro video file: ${objectName}`);
+                      }
+                    }
+                  } else {
+                    // Fallback: try to delete single file if no timestamp found
+                    let objectName = '';
+                    
+                    if (oldIntroVideoUrl.includes(process.env.CLOUDFLARE_R2_PUBLIC_URL || '')) {
+                      objectName = oldIntroVideoUrl.replace(process.env.CLOUDFLARE_R2_PUBLIC_URL || '', '').replace(/^\//, '');
+                    } else if (oldIntroVideoUrl.includes('/')) {
+                      const urlParts = oldIntroVideoUrl.split('/');
+                      const coursesIndex = urlParts.findIndex((part: string) => part === 'courses' || part === 'lessons');
+                      if (coursesIndex !== -1) {
+                        objectName = urlParts.slice(coursesIndex).join('/');
+                      }
+                    }
+                    
+                    if (objectName) {
+                      await CloudflareService.deleteFile(objectName);
+                      console.log(`✅ [Video Queue] Deleted old intro video file: ${objectName}`);
+                    }
+                  }
+                }
+              } catch (deleteError: any) {
+                console.error(`❌ [Video Queue] Error deleting old intro video:`, deleteError);
+                // Không throw error, tiếp tục update course
+              }
+            }
+            
             // Update course intro video (thumbnail sẽ được upload thủ công, không tự động từ video)
             await Course.findByIdAndUpdate(course._id, {
-              introVideo: result.url || course.introVideo,
-              introVideoHlsUrl: result.hlsUrl || course.introVideoHlsUrl,
+              introVideo: result.url || courseData.introVideo,
+              introVideoHlsUrl: result.hlsUrl || courseData.introVideoHlsUrl,
               // Không tự động update thumbnail - admin sẽ upload thủ công
               introVideoStatus: 'ready',
-              introVideoQualityMetadata: result.qualityMetadata || course.introVideoQualityMetadata,
+              introVideoQualityMetadata: result.qualityMetadata || courseData.introVideoQualityMetadata,
             });
             
             console.log(`✅ [Video Queue] Updated course ${course._id} intro video`);
