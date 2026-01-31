@@ -1540,32 +1540,39 @@ class CourseController {
                   }
                 }
                 
-                // Update lesson
+                // Update lesson - CHỈ update các fields có trong request để tránh mất dữ liệu
+                // Điều này đảm bảo partial update (chỉ update videos) không làm mất các fields khác
+                const lessonUpdateData: any = {
+                  chapterId: updatedChapter._id,
+                };
+                
+                // CHỈ set các fields có trong request
+                if (lessonData.title !== undefined) lessonUpdateData.title = lessonData.title;
+                if (lessonData.description !== undefined) lessonUpdateData.description = lessonData.description || "";
+                if (lessonData.content !== undefined) lessonUpdateData.content = lessonData.content || "";
+                if (lessonData.type !== undefined) lessonUpdateData.type = lessonData.type || "video";
+                if (lessonData.isPreview !== undefined) lessonUpdateData.isPreview = lessonData.isPreview || false;
+                if (lessonData.videos !== undefined) lessonUpdateData.videos = validVideos;
+                if (lessonData.documents !== undefined) lessonUpdateData.documents = lessonData.documents || [];
+                if (lessonData.duration !== undefined) lessonUpdateData.duration = lessonData.duration || 0;
+                if (lessonData.status !== undefined) lessonUpdateData.status = lessonData.status || "active";
+                if (lessonData.order !== undefined || lessonData.index !== undefined) {
+                  lessonUpdateData.order = typeof lessonData.order === "number" ? lessonData.order : (typeof lessonData.index === "number" ? lessonData.index : 0);
+                }
+                // Display section flags - CHỈ update nếu có trong request
+                if (lessonData.showVideo !== undefined) lessonUpdateData.showVideo = lessonData.showVideo ?? false;
+                if (lessonData.showText !== undefined) lessonUpdateData.showText = lessonData.showText ?? false;
+                if (lessonData.showDocument !== undefined) lessonUpdateData.showDocument = lessonData.showDocument ?? false;
+                if (lessonData.showQuiz !== undefined) lessonUpdateData.showQuiz = lessonData.showQuiz ?? false;
+                // Section names - CHỈ update nếu có trong request
+                if (lessonData.videoSectionName !== undefined) lessonUpdateData.videoSectionName = lessonData.videoSectionName ?? '';
+                if (lessonData.textSectionName !== undefined) lessonUpdateData.textSectionName = lessonData.textSectionName ?? '';
+                if (lessonData.documentSectionName !== undefined) lessonUpdateData.documentSectionName = lessonData.documentSectionName ?? '';
+                if (lessonData.quizSectionName !== undefined) lessonUpdateData.quizSectionName = lessonData.quizSectionName ?? '';
+                
                 lesson = await LessonsModel.model.findByIdAndUpdate(
                   lessonData._id,
-                  {
-                    chapterId: updatedChapter._id,
-                    title: lessonData.title,
-                    description: lessonData.description || "",
-                    content: lessonData.content || "",
-                    type: lessonData.type || "video",
-                    isPreview: lessonData.isPreview || false,
-                    videos: validVideos,
-                    documents: lessonData.documents || [],
-                    duration: lessonData.duration || 0,
-                    status: lessonData.status || "active",
-                    order: typeof lessonData.order === "number" ? lessonData.order : (typeof lessonData.index === "number" ? lessonData.index : 0),
-                    // Display section flags
-                    showVideo: lessonData.showVideo ?? false,
-                    showText: lessonData.showText ?? false,
-                    showDocument: lessonData.showDocument ?? false,
-                    showQuiz: lessonData.showQuiz ?? false,
-                    // Section names
-                    videoSectionName: lessonData.videoSectionName ?? '',
-                    textSectionName: lessonData.textSectionName ?? '',
-                    documentSectionName: lessonData.documentSectionName ?? '',
-                    quizSectionName: lessonData.quizSectionName ?? '',
-                  },
+                  lessonUpdateData,
                   { new: true }
                 );
                 
@@ -1700,14 +1707,26 @@ class CourseController {
 
                 totalQuizzes++;
               } else {
-                // Nếu không có quizData nhưng lesson có quizId, xóa quiz cũ
+                // CRITICAL FIX: Nếu không có quizData, KHÔNG xóa quiz cũ
+                // Có thể đây là partial update (chỉ update videos, không update quiz)
+                // CHỈ xóa quiz nếu có flag deleteQuiz = true từ frontend
                 const lessonQuizId = (existingLesson as any)?.quizId;
-                if (lessonQuizId) {
+                const shouldDeleteQuiz = lessonData.deleteQuiz === true || lessonData.removeQuiz === true;
+                
+                if (lessonQuizId && shouldDeleteQuiz) {
+                  // Chỉ xóa khi user EXPLICITLY yêu cầu xóa
+                  console.log(`🗑️ [UpdateCourse] Deleting quiz ${lessonQuizId} for lesson ${lesson._id} (explicit delete requested)`);
                   await QuizzesModel.findByIdAndDelete(lessonQuizId);
                   await LessonsModel.model.findByIdAndUpdate(lesson._id, {
                     $unset: { quizId: 1 }
                   });
+                } else if (lessonQuizId) {
+                  // Nếu có quizId nhưng không có quizData và không có flag deleteQuiz
+                  // GIỮ NGUYÊN quiz - không làm gì cả
+                  // Điều này tránh mất dữ liệu khi auto-update (chỉ update videos)
+                  console.log(`⚠️ [UpdateCourse] No quizData provided for lesson ${lesson._id} but quiz ${lessonQuizId} exists - preserving quiz (may be partial update)`);
                 }
+                // Nếu không có quizId từ trước và không có quizData, không làm gì (lesson chưa có quiz)
               }
             }
           }

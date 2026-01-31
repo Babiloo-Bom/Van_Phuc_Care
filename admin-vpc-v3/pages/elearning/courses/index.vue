@@ -2977,6 +2977,7 @@ const handleIntroVideoChange = async (info: any) => {
       // CRITICAL: Nếu course đã có _id và video đang processing, save jobId vào database ngay
       // Điều này cho phép worker tự động update course khi video processing hoàn thành
       // Giống như lesson video - worker cần jobId để tìm course
+      // CRITICAL FIX: CHỈ gửi introVideoJobId, KHÔNG gửi toàn bộ formData để tránh mất quiz questions
       if (
         editingCourse.value?._id &&
         formData.introVideoJobId &&
@@ -2985,10 +2986,10 @@ const handleIntroVideoChange = async (info: any) => {
       ) {
         try {
           // Save jobId to database immediately so worker can find and update course
-          // Use type assertion to include introVideoJobId
+          // CHỈ gửi introVideoJobId, không gửi quizData để tránh mất questions
           await coursesApi.updateCourse(editingCourse.value._id, {
-            ...formData,
             introVideoJobId: formData.introVideoJobId,
+            introVideoStatus: formData.introVideoStatus,
           } as any);
         } catch (error: any) {
           // Don't fail the upload if save fails - jobId is still in formData
@@ -5858,6 +5859,7 @@ const handleLessonVideoChange = async (
 
       // CRITICAL: If lesson already exists in database (has _id), save jobId immediately
       // This allows worker to auto-update lesson when video processing completes
+      // CRITICAL FIX: CHỈ gửi videos của lesson này, KHÔNG gửi toàn bộ formData để tránh mất quiz questions
       if (
         lesson._id &&
         videoData.jobId &&
@@ -5865,23 +5867,24 @@ const handleLessonVideoChange = async (
       ) {
         try {
           // Save jobId to database immediately so worker can find and update lesson
-          const updatePayload = {
-            videos: JSON.stringify(lesson.videos || []),
-          };
+          // CHỈ gửi videos của lesson này, không gửi quizData để tránh mất questions
           await coursesApi.updateCourse(editingCourse.value?._id || "", {
-            ...formData,
             chapters: formData.chapters.map((ch: any, chIdx: number) => ({
-              ...ch,
+              _id: ch._id,
               index: chIdx,
               lessons:
                 ch.lessons?.map((l: any, lIdx: number) => {
                   if (chIdx === chapterIndex && lIdx === lessonIndex) {
+                    // CHỈ gửi videos, không gửi quizData
                     return {
-                      ...l,
+                      _id: l._id,
                       videos: l.videos || [],
                     };
                   }
-                  return l;
+                  // CHỈ gửi _id cho các lessons khác, không gửi quizData
+                  return {
+                    _id: l._id,
+                  };
                 }) || [],
             })),
           });
@@ -6015,11 +6018,12 @@ const pollIntroVideoJobStatus = async (jobId: string) => {
         // CRITICAL: Nếu course đã có _id, save vào database ngay lập tức
         // Điều này đảm bảo database được update ngay khi video ready
         // Giống như lesson video - worker có thể không tìm thấy course nếu chưa save
+        // CRITICAL FIX: CHỈ gửi introVideo fields, KHÔNG gửi toàn bộ formData để tránh mất quiz questions
         if (editingCourse.value?._id && jobResult) {
           try {
             // Update course intro video trong database
+            // CHỈ gửi introVideo fields, không gửi quizData để tránh mất questions
             await coursesApi.updateCourse(editingCourse.value._id, {
-              ...formData,
               introVideo: formData.introVideo,
               introVideoHlsUrl: formData.introVideoHlsUrl,
               introVideoStatus: "ready",
@@ -6222,24 +6226,29 @@ const pollLessonVideoJobStatus = async (
 
         // CRITICAL: If lesson has _id, save to database immediately
         // This ensures database is updated even if worker didn't find the lesson
+        // CRITICAL FIX: CHỈ gửi videos của lesson này, KHÔNG gửi toàn bộ formData để tránh mất quiz questions
         if (lesson._id && lesson.videos.length > 0 && jobResult) {
           try {
             // Update lesson in database via course update
+            // CHỈ gửi videos của lesson này, không gửi quizData để tránh mất questions
             if (editingCourse.value?._id) {
               await coursesApi.updateCourse(editingCourse.value._id, {
-                ...formData,
                 chapters: formData.chapters.map((ch: any, chIdx: number) => ({
-                  ...ch,
+                  _id: ch._id,
                   index: chIdx,
                   lessons:
                     ch.lessons?.map((l: any, lIdx: number) => {
                       if (chIdx === chapterIndex && lIdx === lessonIndex) {
+                        // CHỈ gửi videos, không gửi quizData
                         return {
-                          ...l,
+                          _id: l._id,
                           videos: l.videos || [],
                         };
                       }
-                      return l;
+                      // CHỈ gửi _id cho các lessons khác, không gửi quizData
+                      return {
+                        _id: l._id,
+                      };
                     }) || [],
                 })),
               });
