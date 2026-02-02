@@ -185,8 +185,11 @@
 <script setup lang="ts">
 import { ref, computed, onMounted, onUnmounted, nextTick, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
+import { navigateTo } from '#app'
 import QuizFinishModal from './QuizFinishModal.vue'
 import { useQuizStore, type IQuiz, type IQuizResult } from '~/stores/quiz';
+import { useProgressTracking } from '~/composables/useProgressTracking';
+import { useCoursesStore } from '~/stores/courses';
 
 const props = defineProps<{
   courseId: string
@@ -201,6 +204,8 @@ const props = defineProps<{
 const quizStore = useQuizStore();
 const route = useRoute();
 const router = useRouter(); 
+const progressTracking = useProgressTracking();
+const coursesStore = useCoursesStore();
 
 const emit = defineEmits<{
   close: []
@@ -286,27 +291,87 @@ const handleCloseModal = () => {
 }
 
 // Điều hướng sang bài học kế tiếp sau khi vượt qua quiz
-const handleNextLesson = () => {
+const handleNextLesson = async () => {
   isVisibleModal.value = false;
 
+  // CRITICAL FIX: Luôn dùng originalLesson nếu có (đây là lesson gốc có quiz)
+  // Nếu không có originalLesson, dùng lesson hiện tại
+  // Điều này đảm bảo tính toán lesson tiếp theo dựa trên lesson gốc, không phải quiz lesson
   const baseLesson = route.query.originalLesson ?? route.query.lesson;
   const chapterIndex = route.query.chapter;
   const review = route.query.review;
 
+  // Tính toán lesson tiếp theo TRƯỚC KHI mark completed
+  let newChapterIndex: number | null = null;
+  let newLessonIndex: number | null = null;
+  
   if (chapterIndex !== undefined && baseLesson !== undefined) {
     const currentChapterIdx = Number(chapterIndex);
     const currentLessonIdx = Number(baseLesson);
-    
-    // Lấy thông tin chapters từ props hoặc từ route
     const chapters = props.chapters || [];
     
-    // Kiểm tra xem chapter hiện tại có tồn tại không
     if (chapters.length > 0 && currentChapterIdx < chapters.length) {
       const currentChapter = chapters[currentChapterIdx];
       const currentChapterLessons = currentChapter?.lessons || [];
       const currentChapterLessonsCount = currentChapterLessons.length;
       
-      // Kiểm tra xem có phải là chapter cuối cùng và lesson cuối cùng không
+      const isLastChapter = currentChapterIdx === chapters.length - 1;
+      const isLastLesson = currentLessonIdx === currentChapterLessonsCount - 1;
+      
+      if (!isLastChapter || !isLastLesson) {
+        // Tính toán lesson tiếp theo
+        newChapterIndex = currentChapterIdx;
+        newLessonIndex = currentLessonIdx + 1;
+        
+        if (newLessonIndex >= currentChapterLessonsCount) {
+          newChapterIndex++;
+          newLessonIndex = 0;
+          
+          if (newChapterIndex >= chapters.length) {
+            // Đã ở bài cuối cùng
+            newChapterIndex = null;
+            newLessonIndex = null;
+          }
+        }
+      }
+    }
+  }
+
+  // CRITICAL FIX: Không cần mark lesson completed ở đây vì:
+  // 1. Khi user pass quiz, backend đã tự động mark lesson completed (trong QuizController)
+  // 2. Nếu mark ở đây, backend sẽ check quiz attempt và có thể fail nếu quiz attempt chưa được lưu kịp
+  // 3. Việc mark lesson completed đã được xử lý tự động khi submit quiz thành công
+  // Chỉ cần navigate đến lesson tiếp theo, không cần mark completed thủ công
+
+  // Navigate đến lesson tiếp theo (nếu có)
+  if (newChapterIndex !== null && newLessonIndex !== null) {
+    const queryParams: any = {
+      chapter: String(newChapterIndex),
+      lesson: String(newLessonIndex)
+    };
+    if (review === 'true') {
+      queryParams.review = 'true';
+    }
+    // CRITICAL: Bỏ quiz=true và originalLesson khi navigate đến lesson tiếp theo
+    // Điều này đảm bảo không bị redirect về lesson hiện tại
+    // KHÔNG thêm quiz và originalLesson vào queryParams
+    
+    // Dùng navigateTo để navigate (đảm bảo navigation hoạt động đúng)
+    await navigateTo({
+      path: route.path,
+      query: queryParams
+    });
+  } else if (chapterIndex !== undefined && baseLesson !== undefined) {
+    // Fallback: nếu không tính được lesson tiếp theo, dùng logic cũ
+    const currentChapterIdx = Number(chapterIndex);
+    const currentLessonIdx = Number(baseLesson);
+    const chapters = props.chapters || [];
+    
+    if (chapters.length > 0 && currentChapterIdx < chapters.length) {
+      const currentChapter = chapters[currentChapterIdx];
+      const currentChapterLessons = currentChapter?.lessons || [];
+      const currentChapterLessonsCount = currentChapterLessons.length;
+      
       const isLastChapter = currentChapterIdx === chapters.length - 1;
       const isLastLesson = currentLessonIdx === currentChapterLessonsCount - 1;
       
@@ -320,22 +385,20 @@ const handleNextLesson = () => {
           queryParams.review = 'true';
         }
         
-        router.push({
+        await navigateTo({
           path: route.path,
           query: queryParams
         });
       } else {
-        // Không phải lesson cuối cùng: chuyển sang lesson tiếp theo hoặc chapter tiếp theo
-        let newChapterIndex = currentChapterIdx;
-        let newLessonIndex = currentLessonIdx + 1;
+        // Không phải lesson cuối cùng: chuyển sang lesson tiếp theo
+        let nextChapterIndex = currentChapterIdx;
+        let nextLessonIndex = currentLessonIdx + 1;
         
-        // Nếu đang ở lesson cuối cùng của chapter, chuyển sang chapter tiếp theo
-        if (newLessonIndex >= currentChapterLessonsCount) {
-          newChapterIndex++;
-          newLessonIndex = 0;
+        if (nextLessonIndex >= currentChapterLessonsCount) {
+          nextChapterIndex++;
+          nextLessonIndex = 0;
           
-          // Kiểm tra xem chapter mới có tồn tại không
-          if (newChapterIndex >= chapters.length) {
+          if (nextChapterIndex >= chapters.length) {
             // Đã ở bài cuối cùng, quay lại lesson hiện tại
             const queryParams: any = {
               chapter: String(currentChapterIdx),
@@ -344,8 +407,8 @@ const handleNextLesson = () => {
             if (review === 'true') {
               queryParams.review = 'true';
             }
-            
-            router.push({
+            // CRITICAL: Bỏ quiz=true và originalLesson
+            await navigateTo({
               path: route.path,
               query: queryParams
             });
@@ -358,14 +421,14 @@ const handleNextLesson = () => {
         }
 
         const queryParams: any = {
-          chapter: String(newChapterIndex),
-          lesson: String(newLessonIndex)
+          chapter: String(nextChapterIndex),
+          lesson: String(nextLessonIndex)
         };
         if (review === 'true') {
           queryParams.review = 'true';
         }
-
-        router.push({
+        // CRITICAL: Bỏ quiz=true và originalLesson
+        await navigateTo({
           path: route.path,
           query: queryParams
         });
@@ -380,7 +443,9 @@ const handleNextLesson = () => {
       if (review === 'true') {
         queryParams.review = 'true';
       }
-      router.push({
+      // CRITICAL: Bỏ quiz=true và originalLesson khi navigate đến lesson tiếp theo
+      // Điều này đảm bảo không bị redirect về lesson hiện tại
+      await navigateTo({
         path: route.path,
         query: queryParams
       });
@@ -538,3 +603,4 @@ onUnmounted(() => {
   margin-right: 0 !important;
 }
 </style>
+

@@ -1425,9 +1425,11 @@ const fetchCourseDetail = async () => {
         // Sau khi fetch, kiểm tra lại isPurchased hoặc đã hoàn thành
         if (!isPurchasedOrCompleted.value) {
           // Nếu chưa mua, chỉ cho phép xem bài preview
+          // CRITICAL: Bỏ check isLocked vì backend đã bỏ logic check lock
+          // Chỉ check isPreview để quyết định có cho phép xem không
           if (
             currentLesson.value &&
-            (!currentLesson.value.isPreview || currentLesson.value.isLocked)
+            !currentLesson.value.isPreview
           ) {
             // Redirect về trang chi tiết khóa học với query parameter để tự động hiện popup
             navigateTo(`/courses/${slug.value}?showPurchaseModal=true`);
@@ -1905,7 +1907,9 @@ watch(
     // Nếu chưa mua hoặc chưa hoàn thành khóa học
     if (!isPurchasedOrCompleted.value) {
       // Chỉ cho phép xem bài preview, không mark completed
-      if (!lesson.isPreview || lesson.isLocked) {
+      // CRITICAL: Bỏ check isLocked vì backend đã bỏ logic check lock
+      // Chỉ check isPreview để quyết định có cho phép xem không
+      if (!lesson.isPreview) {
         // Redirect về trang chi tiết với query parameter để tự động hiện popup mua khóa học
         navigateTo(`/courses/${slug.value}?showPurchaseModal=true`);
         return;
@@ -1923,6 +1927,16 @@ watch(
       !(lesson as any).showVideo &&
       !(lesson as any).showText &&
       !(lesson as any).showDocument;
+    
+    // CRITICAL FIX: Không mark lesson completed nếu lesson có quiz và quiz chưa được completed
+    // Backend sẽ reject với lỗi 400 nếu lesson có quiz nhưng quiz chưa passed
+    const hasQuiz = !!(lesson as any).quizId || !!(lesson as any).quiz;
+    if (hasQuiz && !lesson.isCompleted) {
+      // Lesson có quiz: không tự động mark completed
+      // Quiz sẽ tự động mark lesson completed khi user pass quiz (trong QuizController)
+      return;
+    }
+    
     if (!isQuizLesson && !lesson.isCompleted) {
       try {
         markingCompleted.value = true;
@@ -1944,6 +1958,7 @@ watch(
           await coursesStore.fetchAll();
         } catch (e) {}
       } catch (error) {
+        // Ignore errors (có thể là lỗi 400 nếu lesson có quiz)
       } finally {
         markingCompleted.value = false;
       }

@@ -507,46 +507,9 @@ class CourseController {
         lessonIndex: number,
         allLessons: any[]
       ) => {
-        if (chapterIndex === 0 && lessonIndex <= 1) return false;
-
-        if (!userId) return true;
-
-        if (lessonIndex > 0) {
-          const prevLesson = allLessons[lessonIndex - 1];
-          const prevHasQuiz = !!prevLesson.quizId || !!prevLesson.quiz;
-          const prevCompleted = isLessonCompleted(
-            chapterId,
-            prevLesson._id.toString(),
-            prevHasQuiz
-          );
-
-          if (!prevCompleted) return true;
-        }
-
-        if (chapterIndex > 0 && lessonIndex === 0) {
-          const prevChapter = chapters[chapterIndex - 1];
-          const prevLessons = await LessonsModel.model
-            .find({
-              chapterId: prevChapter._id,
-              status: "active",
-            })
-            .populate("quiz")
-            .sort({ createdAt: 1 });
-
-          if (prevLessons.length > 0) {
-            const lastPrevLesson: any = prevLessons[prevLessons.length - 1];
-            const lastPrevHasQuiz =
-              !!lastPrevLesson.quizId || !!lastPrevLesson.quiz;
-            const lastPrevCompleted = isLessonCompleted(
-              prevChapter._id.toString(),
-              lastPrevLesson._id.toString(),
-              lastPrevHasQuiz
-            );
-
-            if (!lastPrevCompleted) return true;
-          }
-        }
-
+        // CRITICAL CHANGE: Admin luôn có thể xem tất cả bài học
+        // Bỏ qua tất cả logic check sequential completion
+        // Admin có thể nhảy cóc và xem bất kỳ bài nào mà không cần hoàn thành bài trước
         return false;
       };
 

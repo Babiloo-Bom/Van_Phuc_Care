@@ -539,50 +539,9 @@ class CourseController {
           return true;
         }
 
-        // If user has purchased, check sequential completion
-        // First 2 lessons of first chapter are always unlocked
-        if (chapterIndex === 0 && lessonIndex <= 1) return false;
-
-        if (!userId) return true;
-
-        // Check if previous lesson in same chapter is completed
-        if (lessonIndex > 0) {
-          const prevLesson = allLessons[lessonIndex - 1];
-          const prevHasQuiz = !!prevLesson.quizId || !!prevLesson.quiz;
-          const prevCompleted = isLessonCompleted(
-            chapterId,
-            prevLesson._id.toString(),
-            prevHasQuiz
-          );
-
-          if (!prevCompleted) return true;
-        }
-
-        // Check if last lesson of previous chapter is completed
-        if (chapterIndex > 0 && lessonIndex === 0) {
-          const prevChapter = chapters[chapterIndex - 1];
-          const prevLessons = await LessonsModel.model
-            .find({
-              chapterId: prevChapter._id,
-              status: "active",
-            })
-            .populate("quiz")
-            .sort({ order: 1, index: 1, createdAt: 1 }); // Sort by order first, then by index, then by createdAt as fallback
-
-          if (prevLessons.length > 0) {
-            const lastPrevLesson: any = prevLessons[prevLessons.length - 1];
-            const lastPrevHasQuiz =
-              !!lastPrevLesson.quizId || !!lastPrevLesson.quiz;
-            const lastPrevCompleted = isLessonCompleted(
-              prevChapter._id.toString(),
-              lastPrevLesson._id.toString(),
-              lastPrevHasQuiz
-            );
-
-            if (!lastPrevCompleted) return true;
-          }
-        }
-
+        // CRITICAL CHANGE: Nếu user đã mua khóa học, cho phép học bất kỳ bài nào
+        // Bỏ qua tất cả logic check sequential completion
+        // User có thể nhảy cóc và học bất kỳ bài nào mà không cần hoàn thành bài trước
         return false;
       };
 
