@@ -349,13 +349,11 @@
                 </a-form-item>
               </a-col>
               <a-col :span="12">
-                <a-form-item label="Cấp độ" name="level">
+                <a-form-item label="Trình độ" name="level">
                   <a-select v-model:value="formData.level">
                     <a-select-option value="beginner">Cơ bản</a-select-option>
-                    <a-select-option value="intermediate"
-                      >Trung bình</a-select-option
-                    >
                     <a-select-option value="advanced">Nâng cao</a-select-option>
+                    <a-select-option value="expert">Chuyên sâu</a-select-option>
                   </a-select>
                 </a-form-item>
               </a-col>
@@ -2096,13 +2094,17 @@
           <a-descriptions-item label="Danh mục">
             {{ viewingCourse.category }}
           </a-descriptions-item>
-          <a-descriptions-item label="Cấp độ">
+          <a-descriptions-item label="Trình độ">
             {{
               viewingCourse.level === "beginner"
                 ? "Cơ bản"
-                : viewingCourse.level === "intermediate"
-                  ? "Trung bình"
-                  : "Nâng cao"
+                : viewingCourse.level === "advanced"
+                  ? "Nâng cao"
+                  : viewingCourse.level === "expert"
+                    ? "Chuyên sâu"
+                    : viewingCourse.level === "intermediate"
+                      ? "Trung bình"
+                      : "Chưa xác định"
             }}
           </a-descriptions-item>
           <a-descriptions-item label="Giá">
@@ -2727,7 +2729,7 @@ const formData = reactive({
     specialization: "",
   },
   category: "",
-  level: "beginner" as "beginner" | "intermediate" | "advanced",
+  level: "beginner" as "beginner" | "advanced" | "expert",
   tags: [] as string[],
   isPublished: true,
   isFeatured: false,

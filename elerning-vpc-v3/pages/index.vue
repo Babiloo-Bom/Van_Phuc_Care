@@ -109,19 +109,17 @@
                   </a-select-option>
                 </a-select>
 
-                <!-- Level Filter -->
+                <!-- Level Filter (Trình độ: đồng bộ với admin) -->
                 <a-select
                   v-model:value="selectedLevel"
-                  placeholder="Chọn cấp độ"
+                  placeholder="Chọn trình độ"
                   class="!w-48 !bg-white/10 !border-white/30"
                   @change="handleLevelChange"
                 >
-                  <a-select-option value="">Tất cả cấp độ</a-select-option>
+                  <a-select-option value="">Tất cả trình độ</a-select-option>
                   <a-select-option value="beginner">Cơ bản</a-select-option>
-                  <a-select-option value="intermediate"
-                    >Trung bình</a-select-option
-                  >
                   <a-select-option value="advanced">Nâng cao</a-select-option>
+                  <a-select-option value="expert">Chuyên sâu</a-select-option>
                 </a-select>
 
                 <!-- Sort Options -->

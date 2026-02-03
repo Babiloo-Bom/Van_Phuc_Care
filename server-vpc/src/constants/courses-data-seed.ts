@@ -321,7 +321,7 @@ export const coursesData = [
         bio: 'Data Scientist với 7+ năm kinh nghiệm trong lĩnh vực AI/ML, từng làm việc tại các công ty lớn'
       },
       category: 'Khoa Học Dữ Liệu',
-      level: 'intermediate',
+      level: 'advanced',
       duration: 1500,
       lessons: 58,
       students: 2100,
@@ -527,7 +527,7 @@ export const coursesData = [
         bio: 'Full-stack Developer với 6+ năm kinh nghiệm, chuyên về Node.js và microservices'
       },
       category: 'Lập Trình',
-      level: 'intermediate',
+      level: 'advanced',
       duration: 1400,
       lessons: 52,
       students: 1850,
