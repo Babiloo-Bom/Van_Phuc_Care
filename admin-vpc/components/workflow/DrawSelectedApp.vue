@@ -16,9 +16,32 @@
         <div class="px-4">
             <div v-show="!appSelected">
                 <div v-for="(item, idx) in sortedApps" :key="`app_${idx}`">
-                    <div class="cursor-pointer flex items-center justify-between gap-3 px-3 py-3 border-b-[1px] border-[#dfe3e8] hover:bg-[#ececec] transition-all duration-150" @click="selectedApp(item)">
+                    <!-- Sắp ra mắt: hiển thị nhưng không cho ấn -->
+                    <div
+                        v-if="item.isCommingSoon"
+                        class="app-row app-row--coming-soon flex items-center justify-between gap-3 px-3 py-3 border-b-[1px] border-[#dfe3e8]"
+                    >
                         <div class="flex items-center gap-3">
-                            <img class="w-8 h-8 rounded-sm" :src="item.logo" alt="/">
+                            <img class="w-8 h-8 rounded-sm app-row__logo--dim" :src="item.logo" alt="" onerror="this.style.visibility='hidden'">
+                            <div>
+                                <h6 class="!m-0 flex items-center gap-2">
+                                    {{ item.name }}
+                                    <span class="badge-coming-soon">Sắp ra mắt</span>
+                                </h6>
+                                <p class="!m-0 text-[12px] text-[#616161]">
+                                    {{ item.descriptions }}
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+                    <!-- Đã triển khai: có thể chọn -->
+                    <div
+                        v-else
+                        class="cursor-pointer flex items-center justify-between gap-3 px-3 py-3 border-b-[1px] border-[#dfe3e8] hover:bg-[#ececec] transition-all duration-150"
+                        @click="selectedApp(item)"
+                    >
+                        <div class="flex items-center gap-3">
+                            <img class="w-8 h-8 rounded-sm" :src="item.logo" alt="">
                             <div>
                                 <h6 class="!m-0">
                                     {{ item.name }}
@@ -172,5 +195,21 @@
     };
 </script>
 
-<style>
+<style scoped>
+.app-row--coming-soon {
+    cursor: not-allowed;
+    opacity: 0.85;
+    pointer-events: none;
+}
+.app-row__logo--dim {
+    opacity: 0.9;
+}
+.badge-coming-soon {
+    font-size: 10px;
+    font-weight: 600;
+    color: #888;
+    background: #f0f0f0;
+    padding: 2px 6px;
+    border-radius: 4px;
+}
 </style>

@@ -490,6 +490,13 @@ export const APP_LISTING = [
         linkGuide: '',
     },
     {
+        logo: 'https://cdn.relay.app/app/assets/sources/zoho-logo.svg',
+        name: 'Zoho',
+        descriptions: 'Kết nối và đồng bộ dữ liệu với Zoho CRM.',
+        isCommingSoon: true,
+        linkGuide: '',
+    },
+    {
         logo: 'https://cdn.relay.app/app/assets/sources/scrapingbee-logo.svg',
         name: 'ScrapingBee',
         descriptions: 'Automate web scraping with ScrapingBee.',

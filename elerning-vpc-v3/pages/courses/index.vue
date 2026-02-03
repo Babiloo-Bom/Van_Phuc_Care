@@ -68,10 +68,20 @@
         </div>
         <div
           v-else
-          class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 xl:grid-cols-4 gap-6 mt-[-348px] sm:mt-[-328px] md:-mt-60 lg:-mt-60"
+          class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 xl:grid-cols-4 gap-6 mt-[-348px] sm:mt-[-328px] md:-mt-60 lg:-mt-72"
         >
-          <div v-for="index in [1, 2, 3, 4]" :key="index" class="">
-            <Skeleton />
+          <div
+            v-for="index in [1, 2, 3, 4]"
+            :key="index"
+            class="bg-white rounded-lg shadow-sm animate-pulse"
+          >
+            <div class="h-48 bg-gray-200 rounded-t-lg" />
+            <div class="p-4 space-y-3">
+              <div class="h-4 bg-gray-200 rounded w-3/4" />
+              <div class="h-4 bg-gray-200 rounded w-1/2" />
+              <div class="h-2 bg-gray-200 rounded w-full mt-4" />
+              <div class="h-8 bg-gray-200 rounded w-full mt-4" />
+            </div>
           </div>
         </div>
       </div>
@@ -88,7 +98,6 @@ import { useCoursesStore } from "~/stores/courses";
 import { useAuthStore } from "~/stores/auth";
 import { useCartStore } from "~/stores/cart";
 import CourseCard from "~/components/courses/CourseCard.vue";
-import Skeleton from "~/components/shared/Skeleton.vue";
 import CartToast from "~/components/cart/Toast.vue";
 import BannerSlider from "~/components/banners/BannerSlider.vue";
 
