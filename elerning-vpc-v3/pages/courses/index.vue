@@ -39,10 +39,10 @@
       </div>
     </BannerSlider>
 
-    <!-- Courses Section -->
+    <!-- Courses Section: lúc chưa load xong không hiện card, chỉ placeholder giống trang Khóa học của tôi -->
     <section class="pb-20 p-4 lg:pt-20 sm:pt-10 bg-[#f4f7f9] relative z-10">
       <div class="container mx-auto !px-0 md:!px-auto">
-        <div v-if="!loading">
+        <div v-if="!coursesPending">
           <div
             v-if="filteredCourses.length"
             class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 xl:grid-cols-4 gap-6 mt-[-348px] sm:mt-[-328px] md:-mt-60 lg:-mt-72"
@@ -59,7 +59,7 @@
               class=""
             />
           </div>
-          <div v-else>
+          <div v-else class="flex items-center justify-center min-h-[400px] pt-20 sm:pt-0">
             <a-empty
               descriptions="Chưa có khóa học nào"
               class="flex flex-col items-center"
@@ -107,7 +107,6 @@ const authStore = useAuthStore();
 const cartStore = useCartStore();
 
 // Reactive data
-const loading = ref(false);
 const searchKey = ref("");
 const selectedCategory = ref("");
 const selectedLevel = ref("");
@@ -299,20 +298,15 @@ const fetchCourses = async () => {
   await courseStore.fetchAll();
 };
 
-// SSR: Fetch courses BEFORE rendering HTML
-// This ensures courses are available in view-source/disabled JS
-const { pending: coursesPending } = await useAsyncData('courses', async () => {
+// Không await để component render ngay, dùng pending → lúc chưa load xong không hiện card (giống Khóa học của tôi)
+const { pending: coursesPending } = useAsyncData('courses', async () => {
   try {
     await fetchCourses();
     return courseStore.courses;
   } catch (error) {
-    // Return empty array on error, don't break SSR
     return [];
   }
 });
-
-// Update loading state based on SSR fetch status
-loading.value = coursesPending.value;
 
 const handleAddToCart = async (course: any) => {
   if (!course._id) {
