@@ -11,12 +11,20 @@ export const useCourseApi = () => {
   const apiUserBase = apiUser
 
   /**
-   * Get all courses (user API - includes isPurchased)
+   * Get all courses (user API - includes isPurchased when authenticated)
+   * On client, ensures auth is inited so token is sent and backend returns isPurchased.
    */
   const getAllCourses = async (params?: any) => {
     try {
+      const authStore = useAuthStore()
+      if (!authStore.token && process.client) {
+        await authStore.initAuth()
+      }
       const response = await $fetch(`${apiUserBase}/courses`, {
-        params
+        params,
+        headers: authStore.token
+          ? { Authorization: `Bearer ${authStore.token}` }
+          : undefined,
       })
       return response
     } catch (error: any) {

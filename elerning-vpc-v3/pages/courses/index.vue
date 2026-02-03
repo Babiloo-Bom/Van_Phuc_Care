@@ -372,11 +372,11 @@ const handleViewDetail = (course: any) => {
 
 // Lifecycle
 onMounted(async () => {
-  authStore.initAuth();
-  // Courses already fetched via useAsyncData above (SSR)
-  // Only fetch my courses if user is logged in (client-side only)
+  await authStore.initAuth();
+  // Refetch all courses so backend receives token and returns correct isPurchased (fix F5 showing all as not purchased)
   if (authStore.isLoggedIn) {
-    courseStore.fetchMyCourses();
+    await courseStore.fetchAll();
+    await courseStore.fetchMyCourses();
   }
 });
 

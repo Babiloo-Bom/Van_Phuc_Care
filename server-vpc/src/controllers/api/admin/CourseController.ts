@@ -1472,8 +1472,15 @@ class CourseController {
                 if (existingLesson) {
                   const existingLessonData = existingLesson as any;
                   
-                  // Xóa HLS folders của videos bị thay thế (không còn trong validVideos)
-                  if (existingLessonData.videos && Array.isArray(existingLessonData.videos)) {
+                  // CHỈ xóa HLS folders khi request GỬI RÕ videos cho lesson này.
+                  // Khi frontend gửi partial update (vd: chỉ { _id } cho lesson khác sau khi 1 video xong),
+                  // lessonData.videos = undefined → validVideos = [] → không được coi "tất cả video cũ bị thay thế".
+                  // Tránh bug: upload 4 bài cùng lúc, bài cuối xong gửi update chỉ có videos của bài đó → xóa nhầm 3 bài trước.
+                  if (
+                    Array.isArray(lessonData.videos) &&
+                    existingLessonData.videos &&
+                    Array.isArray(existingLessonData.videos)
+                  ) {
                     const existingVideoUrls = new Set(
                       validVideos
                         .map((v: any) => v.hlsUrl || v.videoUrl)

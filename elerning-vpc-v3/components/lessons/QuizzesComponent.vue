@@ -304,7 +304,7 @@ const handleNextLesson = async () => {
   // Tính toán lesson tiếp theo TRƯỚC KHI mark completed
   let newChapterIndex: number | null = null;
   let newLessonIndex: number | null = null;
-  
+
   if (chapterIndex !== undefined && baseLesson !== undefined) {
     const currentChapterIdx = Number(chapterIndex);
     const currentLessonIdx = Number(baseLesson);
@@ -436,19 +436,19 @@ const handleNextLesson = async () => {
     } else {
       // Fallback: logic cũ nếu không có chapters từ props
       const nextLessonIndex = Number(baseLesson) + 1;
-      const queryParams: any = {
-        chapter: String(chapterIndex),
-        lesson: String(nextLessonIndex)
-      };
-      if (review === 'true') {
-        queryParams.review = 'true';
-      }
+    const queryParams: any = {
+      chapter: String(chapterIndex),
+      lesson: String(nextLessonIndex)
+    };
+    if (review === 'true') {
+      queryParams.review = 'true';
+    }
       // CRITICAL: Bỏ quiz=true và originalLesson khi navigate đến lesson tiếp theo
       // Điều này đảm bảo không bị redirect về lesson hiện tại
       await navigateTo({
-        path: route.path,
-        query: queryParams
-      });
+      path: route.path,
+      query: queryParams
+    });
     }
   }
   
