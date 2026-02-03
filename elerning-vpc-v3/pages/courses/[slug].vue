@@ -1924,8 +1924,12 @@ watch(
 );
 
 // Methods
+// Trình độ: map giá trị từ admin (cấp độ) và legacy
 const mapDifficulty = (level?: string) => {
   const map: Record<string, string> = {
+    beginner: "Cơ bản",
+    intermediate: "Trung bình",
+    advanced: "Nâng cao",
     easy: "Dễ",
     medium: "Vừa",
     hard: "Khó",
