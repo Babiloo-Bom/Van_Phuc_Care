@@ -832,13 +832,16 @@ const isFullscreen = ref(false);
 // Computed
 const course = computed<Course | null>(() => coursesStore.course);
 
-// Helpers to detect long text lesson and toggle "Xem thêm"
+// Helpers to detect long text lesson and toggle "Xem thêm" (desktop + mobile)
+// Trên mobile block desktop bị hidden (scrollHeight=0), nên lấy max của cả hai ref để nút "Xem thêm" hiện đúng trên mobile
 const evaluateLessonContentHeight = () => {
   if (!process.client) return;
-  const el = lessonContentDesktopRef.value || lessonContentMobileRef.value;
-  if (!el) return;
-  // Nếu nội dung cao hơn 400px thì mới cho thu gọn / xem thêm
-  canCollapseLesson.value = el.scrollHeight > 400;
+  const desktopEl = lessonContentDesktopRef.value;
+  const mobileEl = lessonContentMobileRef.value;
+  const h1 = desktopEl ? desktopEl.scrollHeight : 0;
+  const h2 = mobileEl ? mobileEl.scrollHeight : 0;
+  const maxH = Math.max(h1, h2);
+  canCollapseLesson.value = maxH > 400;
   if (!canCollapseLesson.value) {
     isLessonCollapsed.value = false;
   } else {
@@ -1308,6 +1311,10 @@ const playVideo = async () => {
 
 const handleTabChange = (key: string) => {
   activeTab.value = key;
+  // Trên mobile, khi chuyển sang tab "Nội dung bài học" cần đo lại chiều cao để nút "Xem thêm" hiện đúng
+  if (key === "content") {
+    nextTick(() => evaluateLessonContentHeight());
+  }
 };
 
 // Cho phép nhảy cóc: chỉ chặn mark completed cho quiz hoặc bài đã hoàn thành
