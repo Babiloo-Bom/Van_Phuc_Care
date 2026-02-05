@@ -17,7 +17,9 @@
         </template>
         <template #bodyCell="{ column, record }">
           <template v-if="column.dataIndex === 'status'">
-            <span :class="statusClass(record.status)">{{ statusText(record.status) }}</span>
+            <a-tag :color="getStatusColor(record.status)">
+              {{ getStatusText(record.status) }}
+            </a-tag>
           </template>
           <template v-else-if="column.dataIndex === 'total'">
             {{ formatCurrency(record.total) }}
@@ -86,20 +88,28 @@ function formatCourseNames(names: string[] | undefined) {
   if (!names || !Array.isArray(names) || names.length === 0) return "—";
   return names.join(", ");
 }
-function statusText(status: string) {
-  if (status === "success") return "Thành công";
-  if (status === "pending") return "Đang xử lý";
-  if (status === "denied") return "Đã huỷ";
-  return status;
+// Đồng bộ với admin: màu và nhãn trạng thái (Đang xử lý = blue như admin)
+function getStatusColor(status: string) {
+  const colors: Record<string, string> = {
+    success: "green",
+    pending: "blue",   // Đang xử lý hiển thị giống admin (tag xanh)
+    denied: "red",
+    processing: "blue",
+    completed: "green",
+    cancelled: "red",
+  };
+  return colors[status] || "default";
 }
-function statusClass(status: string) {
-  if (status === "success")
-    return "inline-block min-w-[90px] text-center px-2 py-1 rounded bg-[#00B69B40] text-[#00B69B] text-xs font-medium";
-  if (status === "pending")
-    return "inline-block min-w-[90px] text-center px-2 py-1 rounded bg-[#FEA51E40] text-[#FEA51E] text-xs font-medium";
-  if (status === "denied")
-    return "inline-block min-w-[90px] text-center px-2 py-1 rounded bg-[#EF382640] text-[#EF3826] text-xs font-medium";
-  return "";
+function getStatusText(status: string) {
+  const texts: Record<string, string> = {
+    success: "Thành công",
+    pending: "Đang xử lý",
+    denied: "Đã huỷ",
+    processing: "Đang xử lý",
+    completed: "Hoàn thành",
+    cancelled: "Đã hủy",
+  };
+  return texts[status] || status || "N/A";
 }
 </script>
 
