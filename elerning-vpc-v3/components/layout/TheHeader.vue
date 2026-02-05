@@ -7,12 +7,18 @@
           <img
             src="/images/logo-small.png"
             alt="Van Phuc Care"
+            width="120"
+            height="32"
             class="h-8 w-auto md:hidden"
+            fetchpriority="high"
           />
           <img
             src="/images/logo-large.png"
             alt="Van Phuc Care"
+            width="180"
+            height="32"
             class="h-8 w-auto hidden md:block"
+            fetchpriority="high"
           />
         </a>
 
@@ -82,8 +88,15 @@
               class="relative"
             >
               <div
+                role="button"
+                tabindex="0"
+                aria-label="Mở menu tài khoản"
+                :aria-expanded="showUserMenu"
+                aria-haspopup="true"
                 class="user-profile flex items-center gap-4 px-4 py-2 cursor-pointer hover:bg-white/10 rounded-lg transition-all"
                 @click.stop="toggleUserMenu"
+                @keydown.enter.prevent="toggleUserMenu"
+                @keydown.space.prevent="toggleUserMenu"
               >
                 <!-- Avatar -->
                 <img
@@ -254,6 +267,7 @@
             <!-- Cart Icon -->
             <NuxtLink
               to="/cart"
+              aria-label="Xem giỏ hàng"
               class="relative hover:bg-white/10 rounded-lg transition-colors shrink-0 p-2 flex items-center justify-center"
             >
               <svg
@@ -304,6 +318,8 @@
           <div class="flex items-center gap-2 sm:gap-4">
             <!-- Mobile Menu Button -->
             <button
+              type="button"
+              aria-label="Mở menu điều hướng"
               class="lg:hidden w-9 h-9 p-2 bg-white hover:bg-white/70 rounded-lg transition-colors"
               @click="mobileMenuOpen = !mobileMenuOpen"
             >

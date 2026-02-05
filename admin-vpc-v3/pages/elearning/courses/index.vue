@@ -1209,6 +1209,12 @@
                           <!-- Video Content -->
                           <template v-if="lesson.type === 'video'">
                             <a-col :span="24">
+                              <a-form-item label="Tên phần Video">
+                                <a-input
+                                  v-model:value="lesson.videoSectionName"
+                                  placeholder="VD: Video bài giảng"
+                                />
+                              </a-form-item>
                               <a-form-item label="Video bài học">
                                 <div
                                   style="
@@ -1652,6 +1658,12 @@
                           <!-- Text Content -->
                           <template v-if="lesson.type === 'text'">
                             <a-col :span="24">
+                              <a-form-item label="Tên phần Văn bản">
+                                <a-input
+                                  v-model:value="lesson.textSectionName"
+                                  placeholder="VD: Nội dung chi tiết"
+                                />
+                              </a-form-item>
                               <a-form-item label="Nội dung bài học">
                                 <RichTextEditor
                                   v-model="lesson.content"
@@ -1663,6 +1675,12 @@
                           <!-- Document Content -->
                           <template v-if="lesson.type === 'document'">
                             <a-col :span="24">
+                              <a-form-item label="Tên phần Tài liệu">
+                                <a-input
+                                  v-model:value="lesson.documentSectionName"
+                                  placeholder="VD: Tài liệu tham khảo"
+                                />
+                              </a-form-item>
                               <a-form-item label="Tài liệu bài học">
                                 <a-upload
                                   v-model:file-list="lesson.documentFileList"
@@ -1722,6 +1740,12 @@
                           <!-- Quiz Content -->
                           <template v-if="lesson.type === 'quiz'">
                             <a-col :span="24">
+                              <a-form-item label="Tên phần Quiz">
+                                <a-input
+                                  v-model:value="lesson.quizSectionName"
+                                  placeholder="VD: Bài kiểm tra"
+                                />
+                              </a-form-item>
                               <div
                                 style="
                                   margin-top: 16px;

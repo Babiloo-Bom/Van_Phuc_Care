@@ -866,9 +866,9 @@ const fetchHealthBookProfile = async () => {
       loading.value = false;
 
       // Auto open create healthbook modal after a short delay
-      // setTimeout(() => {
-      //   showCreateHealthBookModal.value = true;
-      // }, 500);
+      setTimeout(() => {
+        showCreateHealthBookModal.value = true;
+      }, 500);
     }
   } catch (err: any) {
     hasHealthBook.value = false;

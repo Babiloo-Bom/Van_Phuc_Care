@@ -16,9 +16,9 @@
         <a-input
           v-model:value="searchKey"
           placeholder="Tìm kiếm khóa học"
+          aria-label="Tìm kiếm khóa học của tôi"
           class="!bg-transparent rounded-full h-10 w-full max-w-[400px] sm:max-w-[440px] md:max-w-[340px] custom_input mx-auto md:mx-0"
           @change="handleSearch"
-          @click.prevent.stop
         >
           <template #prefix>
             <svg
@@ -97,7 +97,7 @@ import { useCoursesStore } from "~/stores/courses";
 import PurchasedCourseCard from "~/components/courses/PurchasedCourseCard.vue";
 import BannerSlider from "~/components/banners/BannerSlider.vue";
 
-// SEO
+// SEO (cho phép index khi có nội dung công khai / crawler)
 useHead({
   title: "Trang Khóa học của tôi",
   meta: [
@@ -111,6 +111,7 @@ useHead({
       content:
         "Khóa học trực tuyến, Vạn Phúc Care, Trang Khóa học của tôi",
     },
+    { name: "robots", content: "index, follow" },
   ],
 });
 

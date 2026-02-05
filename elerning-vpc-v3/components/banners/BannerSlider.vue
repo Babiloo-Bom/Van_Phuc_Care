@@ -38,10 +38,10 @@
               >
                 <div class="text-white w-full px-4 lg:px-0 xl:px-4 flex flex-col items-center lg:items-start">
                   <div class="flex flex-row flex-nowrap items-center justify-between md:justify-start gap-2 md:gap-6 w-full max-w-[400px] sm:max-w-[440px] md:max-w-full">
-                    <!-- Title -->
-                    <h4 class="text-[28px] sm:text-3xl md:text-4xl font-bold text-white mb-0">
+                    <!-- Title (h2 cho thứ tự heading SEO/A11y: h1 -> h2) -->
+                    <h2 class="text-[28px] sm:text-3xl md:text-4xl font-bold text-white mb-0">
                       {{ defaultTitle }}
-                    </h4>
+                    </h2>
 
                     <!-- Course Count (only for all-courses page) -->
                     <div
@@ -106,9 +106,9 @@
         >
           <div class="text-white w-full px-4 lg:px-0 xl:px-4 flex flex-col items-center lg:items-start">
             <div class="flex flex-row flex-nowrap items-center justify-between md:justify-start gap-2 md:gap-6 w-full max-w-[400px] sm:max-w-[440px] md:max-w-full">
-              <h4 class="text-[28px] sm:text-3xl md:text-4xl font-bold text-white mb-0">
+              <h2 class="text-[28px] sm:text-3xl md:text-4xl font-bold text-white mb-0">
                 {{ defaultTitle }}
-              </h4>
+              </h2>
               <div
                 v-if="showCourseCount"
                 class="flex items-center rounded-full md:mt-1 py-1.5 px-2 md:px-5 border-[1px] border-solid border-white gap-3 w-fit"

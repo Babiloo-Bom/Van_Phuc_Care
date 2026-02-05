@@ -284,9 +284,6 @@ const handleCloseModal = () => {
     });
   }
   
-  // Scroll to top of page
-  window.scrollTo({ top: 0, behavior: 'smooth' });
-  
   // Ở chế độ review không đánh dấu hoàn thành tiến độ
   if (!props.isReviewMode) {
     emit('completed', true)
@@ -297,43 +294,9 @@ const handleCloseModal = () => {
 const handleNextLesson = async () => {
   isVisibleModal.value = false;
 
-  // Cập nhật progress TRƯỚC KHI navigate (chỉ khi không ở chế độ review)
-  if (!props.isReviewMode) {
-    try {
-      // Import composables
-      const { useProgressTracking } = await import('~/composables/useProgressTracking');
-      const { useCoursesStore } = await import('~/stores/courses');
-      
-      const progressTracking = useProgressTracking();
-      const coursesStore = useCoursesStore();
-      
-      // Gọi API để mark lesson completed và ĐỢI nó hoàn thành
-      await progressTracking.markLessonCompleted(
-        props.courseId,
-        props.chapterId,
-        props.lessonId,
-        0
-      );
-      
-      // Reload course để cập nhật UI (tick, progress %)
-      const currentChapterIndex = parseInt(route.query.chapter as string) || 0;
-      const currentLessonIndex = parseInt(route.query.lesson as string) || 0;
-      const slug = route.params.slug as string;
-      
-      await coursesStore.fetchMyCourseBySlug(
-        slug,
-        currentChapterIndex,
-        currentLessonIndex
-      );
-      
-      // Đồng bộ cache courses để trang /courses cập nhật đúng trạng thái
-      await coursesStore.fetchAll();
-    } catch (error) {
-      console.error('Error updating progress:', error);
-    }
-  }
-
-  // SAU KHI progress đã được cập nhật, mới navigate
+  // CRITICAL FIX: Luôn dùng originalLesson nếu có (đây là lesson gốc có quiz)
+  // Nếu không có originalLesson, dùng lesson hiện tại
+  // Điều này đảm bảo tính toán lesson tiếp theo dựa trên lesson gốc, không phải quiz lesson
   const baseLesson = route.query.originalLesson ?? route.query.lesson;
   const chapterIndex = route.query.chapter;
   const review = route.query.review;
@@ -487,6 +450,10 @@ const handleNextLesson = async () => {
       query: queryParams
     });
     }
+  }
+  
+  if (!props.isReviewMode) {
+    emit('completed', true)
   }
 }
 const handleSubmitModal = () => {

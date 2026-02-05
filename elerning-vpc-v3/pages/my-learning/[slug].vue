@@ -445,7 +445,7 @@
                   class="bg-white rounded-lg border border-gray-200 p-4 md:p-6"
                 >
                   <!-- Text Content Section -->
-                  <!-- <h3
+                  <h3
                     class="text-lg md:text-xl font-bold mb-4"
                     style="color: #1a75bb"
                   >
@@ -454,7 +454,7 @@
                       currentLesson?.title ||
                       "Nội dung"
                     }}
-                  </h3> -->
+                  </h3>
                   <div
                     ref="lessonContentDesktopRef"
                     :class="[
@@ -588,12 +588,12 @@
                         v-if="showLessonContent"
                         class="bg-white rounded-lg border border-gray-200 p-4 md:p-6"
                       >
-                        <!-- <h3
+                        <h3
                           class="text-base md:text-lg font-bold mb-4"
                           style="color: #1a75bb"
                         >
                           {{ currentLesson?.title || "Chưa có bài học" }}
-                        </h3> -->
+                        </h3>
                         <div
                           ref="lessonContentMobileRef"
                           :class="[
@@ -1168,9 +1168,6 @@ const goToPreviousLesson = () => {
     path: `/my-learning/${slug.value}`,
     query,
   });
-  
-  // Scroll to top of page
-  window.scrollTo({ top: 0, behavior: 'smooth' });
 };
 
 // Điều hướng đến bài học tiếp theo
@@ -1208,9 +1205,6 @@ const goToNextLesson = () => {
     path: `/my-learning/${slug.value}`,
     query,
   });
-  
-  // Scroll to top of page
-  window.scrollTo({ top: 0, behavior: 'smooth' });
 };
 
 const downloadDocument = (docType: string) => {

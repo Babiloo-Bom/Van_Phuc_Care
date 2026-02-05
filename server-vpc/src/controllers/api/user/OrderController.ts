@@ -563,6 +563,7 @@ class OrderController {
       params.vnp_SecureHash = secureHash;
       
       const paymentUrl = `${configs.vnpayConfig.vnp_Url}?${qs.stringify(params, { encode: false })}`;
+      await this.clearCartUser(order);
       sendSuccess(res, {
         message: "Create Payment successfully",
         paymentUrl,
@@ -654,7 +655,6 @@ class OrderController {
           // Tăng số lượt sử dụng mã giảm giá (nếu có)
           await this.increaseCouponUsage(order);
           await this.updateCourseForUser(order);
-          await this.clearCartUser(order);
         }
 
         // Acknowledge receipt to VNPay

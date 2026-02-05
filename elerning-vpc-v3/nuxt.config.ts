@@ -157,8 +157,14 @@ export default defineNuxtConfig({
       ],
       link: [
         { rel: 'icon', type: 'image/png', href: '/images/favicon-vpc.png' },
-        { rel: 'apple-touch-icon', href: '/images/favicon-vpc.png' }
+        { rel: 'apple-touch-icon', href: '/images/favicon-vpc.png' },
+        { rel: 'preconnect', href: 'https://www.googletagmanager.com', crossorigin: 'anonymous' }
       ]
     }
+  },
+
+  // Nitro: cache + compression for static
+  nitro: {
+    compressPublicAssets: true
   }
 })

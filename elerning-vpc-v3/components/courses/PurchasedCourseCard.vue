@@ -4,6 +4,9 @@
         <img
           :src="course.thumbnail || '/images/courses/default-course.jpg'"
           :alt="course.title"
+          width="400"
+          height="225"
+          loading="lazy"
           class="thumbnail-image"
         />
       </div>
