@@ -18,6 +18,7 @@
           placeholder="Tìm kiếm khóa học"
           class="!bg-transparent rounded-full h-10 w-full max-w-[400px] sm:max-w-[440px] md:max-w-[340px] custom_input mx-auto md:mx-0"
           @change="handleSearch"
+          @click.prevent.stop
         >
           <template #prefix>
             <svg

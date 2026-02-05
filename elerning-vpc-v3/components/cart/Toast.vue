@@ -60,7 +60,7 @@
         </div>
 
         <!-- Action buttons -->
-        <div v-if="cartStore.toast?.type === 'success'" class="mt-3 flex gap-2">
+        <div v-if="cartStore.toast?.type === 'success' && cartStore.toast?.action !== 'remove'" class="mt-3 flex gap-2">
           <NuxtLink
             to="/cart"
             class="flex-1 text-center px-3 py-2 bg-primary-100 text-white text-sm rounded hover:bg-primary-110 transition-colors"
@@ -87,7 +87,8 @@ const cartStore = useCartStore()
 const toastTitle = computed(() => {
   switch (cartStore.toast?.type) {
     case 'success':
-      return 'Đã thêm vào giỏ hàng!'
+      // Use action field to determine the message
+      return cartStore.toast?.action === 'remove' ? 'Đã xóa khỏi giỏ hàng!' : 'Đã thêm vào giỏ hàng!'
     case 'error':
       return 'Có lỗi xảy ra!'
     case 'info':

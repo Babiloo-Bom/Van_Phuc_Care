@@ -1,8 +1,8 @@
 <template>
   <div class="recoment-course">
-    <a-empty v-if="!loading && displayedCourses.length === 0" description="Chưa có khóa học nào" />
+    <a-empty v-if="!pending && displayedCourses.length === 0" description="Chưa có khóa học nào" />
     
-    <div v-else-if="loading" class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 xl:grid-cols-4 gap-6">
+    <div v-else-if="pending" class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 xl:grid-cols-4 gap-6">
       <div
         v-for="index in 4"
         :key="index"
@@ -33,40 +33,50 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, onMounted } from 'vue'
+import { computed } from 'vue'
 import { message } from 'ant-design-vue'
-import { useCoursesStore } from '~/stores/courses'
 import { useAuthStore } from '~/stores/auth'
 import { useCartStore } from '~/stores/cart'
 import CourseCard from '~/components/courses/CourseCard.vue'
 
-const coursesStore = useCoursesStore()
 const authStore = useAuthStore()
 const cartStore = useCartStore()
-const loading = ref(false)
 
-const courses = computed(() => coursesStore.courses)
+// Use useAsyncData for SSR - fetch courses during server-side rendering
+const { data: coursesData, pending } = await useAsyncData(
+  'related-courses',
+  async () => {
+    const courseApi = useCourseApi()
+    try {
+      const response: any = await courseApi.getAllCourses({ limit: 4 })
+      const raw = response.data?.courses || response.data || response.courses || response || []
+      
+      // Map courses with isPurchased status
+      const purchasedSet = new Set(authStore.user?.courseRegister || [])
+      return raw.map((c: any) => {
+        const id = c?._id?.toString?.()
+        return {
+          ...c,
+          isPurchased: c?.isPurchased === true || (id ? purchasedSet.has(id) : false),
+        }
+      }).slice(0, 4) // Ensure max 4 courses
+    } catch (error) {
+      console.error('Error fetching related courses:', error)
+      return []
+    }
+  }
+)
 
 const displayedCourses = computed(() => {
-  // Hiển thị tối đa 4 khóa học
-  if (!courses.value || !Array.isArray(courses.value)) {
+  // Return courses from useAsyncData
+  if (!coursesData.value || !Array.isArray(coursesData.value)) {
     return []
   }
-  return courses.value.slice(0, 4)
+  return coursesData.value
 })
 
 const isPurchased = (courseId: string) => {
   return authStore.user?.courseRegister?.includes(courseId) || false
-}
-
-const fetchCourses = async () => {
-  try {
-    loading.value = true
-    await coursesStore.fetchAll()
-  } catch (error) {
-  } finally {
-    loading.value = false
-  }
 }
 
 // Event handlers
@@ -101,16 +111,12 @@ const handleBuyNow = async (course: any) => {
 const handleViewDetail = (course: any) => {
   navigateTo(`/courses/${course.slug}`)
 }
+
 const getProgress = (courseId: string) => {
-  const course = coursesStore.myCourses.find((c: any) => c._id === courseId);
-  if (course && course.progress) {
-    return Math.min(course.progress.progressPercentage || 0, 100);
-  }
-  return 0;
-};
-onMounted(() => {
-  fetchCourses()
-})
+  // Progress is not available for related courses (they're not in myCourses)
+  // This is only relevant for courses the user has purchased
+  return 0
+}
 </script>
 
 <style scoped>

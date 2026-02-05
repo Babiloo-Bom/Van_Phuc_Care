@@ -87,6 +87,7 @@ export interface CartState {
     status: boolean
     type: 'success' | 'error' | 'info'
     course: CartItem | null
+    action?: 'add' | 'remove'
   }
 }
 
