@@ -398,9 +398,20 @@ class CourseController {
         })
       );
 
-      // Sort courses: purchased & not completed -> not purchased -> purchased & completed
-      // Tie-breaker: createdAt descending (newest first)
+      // Sort courses: featured first, then by purchase/completion status
+      // Priority 1: Featured courses (isFeatured: true) first
+      // Priority 2: Within each group (featured/non-featured):
+      //   - purchased & not completed
+      //   - not purchased
+      //   - purchased & completed
+      // Priority 3: Tie-breaker - createdAt descending (newest first)
       coursesWithStats.sort((a: any, b: any) => {
+        // Priority 1: Featured courses first
+        if (a.isFeatured !== b.isFeatured) {
+          return a.isFeatured ? -1 : 1;
+        }
+
+        // Priority 2: Purchase/completion status (within same featured group)
         const rank = (c: any) => {
           if (c.isPurchased && !c.isCompleted) return 0;
           if (!c.isPurchased) return 1;
@@ -410,6 +421,7 @@ class CourseController {
         const ra = rank(a);
         const rb = rank(b);
         if (ra === rb) {
+          // Priority 3: Newest first (tie-breaker)
           const at = new Date(a.createdAt).getTime() || 0;
           const bt = new Date(b.createdAt).getTime() || 0;
           return bt - at;
@@ -1098,7 +1110,7 @@ class CourseController {
             createdAt: 1,
           },
         },
-        { $sort: { isCompleted: 1, createdAt: -1 } },
+        { $sort: { isFeatured: -1, isCompleted: 1, createdAt: -1 } },
       ]);
 
       const orderedCourseIds = agg.map((c: any) => c._id);
