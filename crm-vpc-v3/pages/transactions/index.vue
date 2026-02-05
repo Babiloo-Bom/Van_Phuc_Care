@@ -36,10 +36,10 @@
         </template>
       </a-table>
       <a-pagination
-        :current="pagination.current"
+        v-model:current="pagination.current"
         :page-size="pagination.pageSize"
         :total="pagination.total"
-        @change="fetchTransactions"
+        @change="(page: number) => fetchTransactions(page)"
         :show-size-changer="false"
         class="ant-pagination-custom"
         style="margin-top: 20px; display: flex; justify-content: flex-end; align-items: center"
@@ -71,8 +71,9 @@ const columns = [
 
 const fetchTransactions = async (page = 1) => {
   const res = await getUserTransactions({ page, limit: pagination.value.pageSize });
-  transactions.value = res.data?.data?.transactions ?? [];
-  pagination.value.total = transactions.value.length;
+  const data = res.data?.data as { transactions?: Transaction[]; total?: number } | undefined;
+  transactions.value = data?.transactions ?? [];
+  pagination.value.total = typeof (data?.total) === "number" ? data.total : transactions.value.length;
   pagination.value.current = page;
 };
 
@@ -92,8 +93,9 @@ function formatCourseNames(names: string[] | undefined) {
 function getStatusColor(status: string) {
   const colors: Record<string, string> = {
     success: "green",
-    pending: "blue",   // Đang xử lý hiển thị giống admin (tag xanh)
+    pending: "blue",
     denied: "red",
+    failed: "red",
     processing: "blue",
     completed: "green",
     cancelled: "red",
@@ -105,6 +107,7 @@ function getStatusText(status: string) {
     success: "Thành công",
     pending: "Đang xử lý",
     denied: "Đã huỷ",
+    failed: "Thất bại",
     processing: "Đang xử lý",
     completed: "Hoàn thành",
     cancelled: "Đã hủy",
