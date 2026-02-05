@@ -192,7 +192,20 @@ onMounted(() => {
 </script>
 
 <style scoped>
+/* Viền ô tìm kiếm theo Figma: very light grey #E5E5E5 */
+.custom_input :deep(.ant-input-affix-wrapper) {
+  @apply bg-transparent rounded-full border-[1px] !border-solid;
+  border-color: #E5E5E5 !important;
+}
+
+.custom_input :deep(.ant-input-affix-wrapper:hover),
+.custom_input :deep(.ant-input-affix-wrapper:focus),
+.custom_input :deep(.ant-input-affix-wrapper-focused) {
+  @apply !border-[1px] !border-solid !shadow-none;
+  border-color: #E5E5E5 !important;
+}
+
 .custom_input :deep(.ant-input) {
-  @apply bg-transparent placeholder:text-white rounded-full hover:border-white focus:border-white outline-none text-white;
+  @apply bg-transparent placeholder:text-white text-white outline-none;
 }
 </style>

@@ -50,7 +50,7 @@
 </template>
 
 <script setup lang="ts">
-import { computed } from 'vue'
+import { computed, nextTick } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useCoursesStore } from '~/stores/courses'
 import { useAuthStore } from '~/stores/auth'
@@ -129,10 +129,11 @@ const quizInfo = computed(() => {
 })
 
 // Xử lý click nút "Làm bài ngay"
-const handleStartQuiz = () => {
+const handleStartQuiz = async () => {
   // Nếu chưa mua/hoàn thành và bài bị lock → redirect về trang chi tiết
   if (!isPurchasedOrCompleted.value && isLocked.value) {
-    router.push(`/courses/${props.courseSlug}?showPurchaseModal=true`)
+    await router.push(`/courses/${props.courseSlug}?showPurchaseModal=true`)
+    nextTick(() => window.scrollTo({ top: 0, behavior: 'smooth' }))
     return
   }
   
@@ -148,10 +149,12 @@ const handleStartQuiz = () => {
     queryParams.review = 'true'
   }
   
-  router.push({
+  await router.push({
     path: `/my-learning/${props.courseSlug}`,
     query: queryParams
   })
+  // Cuộn lên đầu trang (cả mobile và desktop) sau khi chuyển sang màn hình quiz
+  nextTick(() => window.scrollTo({ top: 0, behavior: 'smooth' }))
 }
 </script>
 
