@@ -26,32 +26,36 @@ class TransactionListController {
           MongoDbTransaction.model.countDocuments({ userId: userIdStr }),
         ]);
 
-        const orderIds = [...new Set((transactions as any[]).map((t: any) => t.orderId).filter(Boolean))];
+        const orderIds = [...new Set((transactions as any[]).map((t: any) => t.orderId && String(t.orderId)).filter(Boolean))];
         let orderMap: Record<string, any> = {};
         if (orderIds.length > 0) {
           try {
             const Order = mongoose.models.Order;
             if (Order) {
-              const orders = await Order.find({ orderId: { $in: orderIds }, userId: userIdStr })
+              // Chỉ tìm theo orderId (orderIds đã lấy từ transaction của user này), tránh lệch kiểu userId
+              const orders = await Order.find({ orderId: { $in: orderIds } })
                 .select('orderId items paymentStatus')
                 .lean();
               (orders as any[]).forEach((o: any) => {
-                orderMap[o.orderId] = o;
+                const id = o.orderId != null ? String(o.orderId) : '';
+                if (id) orderMap[id] = o;
               });
             }
           } catch (_) {}
         }
 
         const enriched = (transactions as any[]).map((t: any) => {
-          const order = t.orderId ? orderMap[t.orderId] : null;
+          const tOrderId = t.orderId != null ? String(t.orderId) : '';
+          const order = tOrderId ? orderMap[tOrderId] : null;
           const courseNames = order?.items?.length
             ? (order.items as any[]).map((i: any) => i.course?.title || i.course?.name || 'Khóa học').filter(Boolean)
             : [];
-          // Đồng bộ trạng thái với admin: nếu order đã ghi thất bại/hủy thì hiển thị denied
+          // Đồng bộ trạng thái với admin: ưu tiên paymentStatus từ Order (admin cập nhật ở đây)
           let status = t.status;
-          if (order?.paymentStatus === 'failed' || order?.paymentStatus === 'cancelled') {
+          const payStatus = order?.paymentStatus != null ? String(order.paymentStatus) : '';
+          if (payStatus === 'failed' || payStatus === 'cancelled') {
             status = 'denied';
-          } else if (order?.paymentStatus === 'completed') {
+          } else if (payStatus === 'completed') {
             status = 'success';
           }
           return { ...t, courseNames, status };
