@@ -22,6 +22,7 @@ export interface CartToast {
   status: boolean;
   type: "success" | "error" | "info";
   course: CartItem | null;
+  action?: "add" | "remove";
 }
 
 export const useCartStore = defineStore("cart", {
@@ -35,6 +36,7 @@ export const useCartStore = defineStore("cart", {
       status: false,
       type: "success",
       course: null,
+      action: undefined,
     },
   }),
 
@@ -192,6 +194,7 @@ export const useCartStore = defineStore("cart", {
           status: true,
           type: "success",
           course: null, // We don't have course info in the new API
+          action: "add",
         });
       } catch (error: any) {
         const rawMsg = (error?.data && (error.data.message || error.data.error)) || error?.message || "";
@@ -247,11 +250,12 @@ export const useCartStore = defineStore("cart", {
         this.updateCart(cart);
         this.saveCartToCache();
 
-        // Show info toast
+        // Show success toast for removal
         this.showToast({
           status: true,
-          type: "info",
+          type: "success",
           course: null, // We don't have course info in the new API
+          action: "remove",
         });
       } catch (error) {
         this.setError("Không thể xóa khỏi giỏ hàng");
@@ -437,6 +441,7 @@ export const useCartStore = defineStore("cart", {
         status: false,
         type: "success",
         course: null,
+        action: undefined,
       };
       this.clearCartCache();
     },
