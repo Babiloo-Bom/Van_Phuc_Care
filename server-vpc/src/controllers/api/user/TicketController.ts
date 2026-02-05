@@ -417,13 +417,14 @@ class UserTicketController {
         await MongoDbTickets.model.findByIdAndUpdate(id, { status: 'pending' });
       }
 
-      // Emit realtime event đến room ticket tương ứng
+      // Emit realtime event đến room ticket (admin + user cùng room nhận)
       try {
         const io = getIO();
+        const roomId = `ticket:${String(id)}`;
         io.of('/tickets')
-          .to(`ticket:${id}`)
+          .to(roomId)
           .emit('ticket:comment:new', {
-            ticketId: id,
+            ticketId: String(id),
             comment: formattedComment,
           });
       } catch {

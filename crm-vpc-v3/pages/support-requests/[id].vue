@@ -275,6 +275,7 @@ const imageInputRef = ref<HTMLInputElement>()
 const uploadedImages = ref<string[]>([])
 const replyContent = ref('')
 const commentsContainerRef = ref<HTMLElement | null>(null)
+let commentsPollInterval: ReturnType<typeof setInterval> | null = null
 
 // Category mapping
 const categoryMap: Record<SupportRequestCategory, string> = {
@@ -442,23 +443,47 @@ const handleSendReply = async () => {
   }
 }
 
+// Map API comment -> Comment UI
+const mapComment = (c: any) => ({
+  id: c._id,
+  author: c.isAdmin && c.adminId
+    ? (typeof c.adminId === 'object' ? c.adminId.fullname : null) || 'Chuyên viên'
+    : c.name || 'Bạn',
+  avatar: (c.adminId && typeof c.adminId === 'object' ? c.adminId.avatar : null) ||
+    (c.userId && typeof c.userId === 'object' ? c.userId.avatar : null) ||
+    c.avatar ||
+    '/images/avatar-fallback.png',
+  message: c.content || '',
+  time: dayjs(c.createdAt || new Date()).format('HH:mm DD/MM/YYYY'),
+  isStaff: !!c.isAdmin,
+  images: (c.attachments || []).map((a: any) => a.url).filter((x: string) => !!x),
+})
+
 // Load comments helper: dùng Tickets API user-side
 const loadComments = async () => {
   try {
     const ticketComments = await getComments(requestId.value)
-    comments.value = ticketComments.map((c: any) => ({
-      id: c._id,
-      author: c.name || 'Bạn',
-      avatar: c.avatar || '/images/avatar-fallback.png',
-      message: c.content || '',
-      time: dayjs(c.createdAt || new Date()).format('HH:mm DD/MM/YYYY'),
-      isStaff: !!c.isAdmin,
-      images: (c.attachments || []).map((a: any) => a.url).filter((x: string) => !!x),
-    }))
+    comments.value = ticketComments.map((c: any) => mapComment(c))
     scrollToBottom()
   } catch (e) {
     // Nếu lỗi thì giữ comments hiện tại
   }
+}
+
+// Poll comments để nhận tin admin khi socket không tới (fallback realtime)
+const pollComments = async () => {
+  if (!requestId.value) return
+  try {
+    const ticketComments = await getComments(requestId.value)
+    const newList = ticketComments.map((c: any) => mapComment(c))
+    const prevLen = comments.value.length
+    const prevLastId = comments.value[prevLen - 1]?.id
+    const hasNew = newList.length > prevLen || (newList.length > 0 && newList[newList.length - 1]?.id !== prevLastId)
+    if (hasNew) {
+      comments.value = newList
+      scrollToBottom()
+    }
+  } catch (_) {}
 }
 
 const scrollToBottom = () => {
@@ -467,40 +492,64 @@ const scrollToBottom = () => {
   }
 }
 
+// Socket: join room (gọi sau khi đã có request từ API để dùng đúng id backend)
+const joinTicketRoom = () => {
+  const tid = request.value?.id ?? requestId.value
+  if (socket.value && tid) {
+    socket.value.emit('join', { ticketId: String(tid) })
+  }
+}
+
 // Lifecycle
-onMounted(() => {
+onMounted(async () => {
   const config = useRuntimeConfig()
   const authStore = useAuthStore()
 
-  fetchRequestDetail()
+  // Lấy URL backend từ server (tránh client dùng apiBaseUrl rỗng -> kết nối nhầm sang Nuxt)
+  let socketBaseUrl = ''
+  try {
+    const res = await $fetch<{ url?: string }>('/api/socket-base-url')
+    socketBaseUrl = (res?.url || '').replace(/\/$/, '')
+  } catch (_) {}
+  if (!socketBaseUrl) {
+    socketBaseUrl = (config.public.apiBaseUrl || config.public.apiHost || 'http://localhost:3000') as string
+    socketBaseUrl = socketBaseUrl.replace(/\/$/, '')
+  }
 
-  // Khởi tạo Socket.IO để lắng nghe comment realtime
-  const apiBaseUrl = (config.public.apiBaseUrl || config.public.apiHost || 'http://localhost:3000') as string
-
-  socket.value = io(`${apiBaseUrl}/tickets`, {
-    auth: {
-      token: authStore.token,
-    },
+  socket.value = io(`${socketBaseUrl}/tickets`, {
+    auth: { token: authStore.token },
     transports: ['websocket', 'polling'],
+    withCredentials: true,
   })
 
-  // Join room theo ticketId
-  socket.value.emit('join', { ticketId: requestId.value })
+  socket.value.on('connect', () => {
+    joinTicketRoom()
+  })
+  socket.value.on('connect_error', () => {
+    // Có thể log hoặc thông báo; vẫn dùng HTTP bình thường
+  })
 
   socket.value.on('ticket:comment:new', (payload: any) => {
-    if (!payload || payload.ticketId !== requestId.value) return
+    if (!payload || !payload.comment) return
+    const tid = payload.ticketId != null ? String(payload.ticketId) : ''
+    const myId = String(request.value?.id ?? requestId.value)
+    if (tid !== myId) return
     const c = payload.comment
-    if (!c) return
 
     const authorName =
       c.isAdmin && c.adminId
-        ? c.adminId.fullname || 'Chuyên viên'
-        : c.name || (c.userId?.fullname ?? 'Bạn')
+        ? (typeof c.adminId === 'object' ? c.adminId.fullname : null) || 'Chuyên viên'
+        : c.name || (c.userId && typeof c.userId === 'object' ? c.userId.fullname : null) || 'Bạn'
+    const avatar =
+      (c.adminId && typeof c.adminId === 'object' ? c.adminId.avatar : null) ||
+      (c.userId && typeof c.userId === 'object' ? c.userId.avatar : null) ||
+      c.avatar ||
+      '/images/avatar-fallback.png'
 
     comments.value.push({
-      id: c._id || Date.now().toString(),
+      id: (c._id && String(c._id)) || Date.now().toString(),
       author: authorName,
-      avatar: c.avatar || c.userId?.avatar || c.adminId?.avatar || '/images/avatar-fallback.png',
+      avatar,
       message: c.content || c.message || '',
       time: dayjs(c.createdAt || new Date()).format('HH:mm DD/MM/YYYY'),
       isStaff: !!c.isAdmin,
@@ -508,9 +557,19 @@ onMounted(() => {
     })
     scrollToBottom()
   })
+
+  await fetchRequestDetail()
+  joinTicketRoom()
+
+  // Poll 3s một lần để nhận tin admin khi socket không tới (không cần F5)
+  commentsPollInterval = setInterval(pollComments, 3000)
 })
 
 onBeforeUnmount(() => {
+  if (commentsPollInterval) {
+    clearInterval(commentsPollInterval)
+    commentsPollInterval = null
+  }
   if (socket.value) {
     socket.value.disconnect()
     socket.value = null

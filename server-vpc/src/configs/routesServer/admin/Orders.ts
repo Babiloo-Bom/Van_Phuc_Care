@@ -30,8 +30,9 @@ router.get('/order/:orderId', OrderController.getOrderByOrderId);
 // Get user's orders - Must be before /:id
 router.get('/user/:userId', OrderController.getUserOrders);
 
-// Update order status
+// Update order status (PUT và PATCH đều hỗ trợ)
 router.put('/:id/status', OrderController.updateOrderStatus);
+router.patch('/:id/status', OrderController.updateOrderStatus);
 
 // Get order by ID - Must be last (catch-all dynamic route)
 router.get('/:id', OrderController.getOrderById);

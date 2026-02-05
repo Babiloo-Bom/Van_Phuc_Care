@@ -52,7 +52,7 @@
       <div class="responses-section">
         <h2 class="section-title">Phản hồi</h2>
 
-        <div class="responses-list">
+        <div ref="responsesListRef" class="responses-list">
           <!-- Response Messages -->
           <div
             v-for="(response, index) in responses"
@@ -195,7 +195,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted } from "vue";
+import { ref, computed, nextTick, onMounted, onBeforeUnmount } from "vue";
 import {
   LeftOutlined,
   LinkOutlined,
@@ -243,6 +243,8 @@ const replyContent = ref("");
 const replyFileList = ref<UploadProps["fileList"]>([]);
 const sending = ref(false);
 const completing = ref(false);
+const responsesListRef = ref<HTMLElement | null>(null);
+let commentsPollInterval: ReturnType<typeof setInterval> | null = null;
 
 // Preview state
 const previewVisible = ref(false);
@@ -291,7 +293,35 @@ const fetchComments = async () => {
   try {
     const comments = await getComments(requestId.value);
     responses.value = comments;
+    scrollResponsesToBottom();
   } catch (err: any) {
+  }
+};
+
+const scrollResponsesToBottom = () => {
+  nextTick(() => {
+    const el = responsesListRef.value;
+    if (el) {
+      el.scrollTop = el.scrollHeight;
+    }
+  });
+};
+
+// Poll comments mỗi 3s để nhận tin admin (không cần F5)
+const pollComments = async () => {
+  if (!requestId.value) return;
+  try {
+    const comments = await getComments(requestId.value);
+    const prevLen = responses.value.length;
+    const prevLastId = responses.value[prevLen - 1]?._id;
+    const hasNew =
+      comments.length > prevLen ||
+      (comments.length > 0 && comments[comments.length - 1]?._id !== prevLastId);
+    if (hasNew) {
+      responses.value = comments;
+      scrollResponsesToBottom();
+    }
+  } catch (_) {
   }
 };
 
@@ -405,8 +435,16 @@ const handleMarkComplete = async () => {
 };
 
 // Lifecycle
-onMounted(() => {
-  fetchRequest();
+onMounted(async () => {
+  await fetchRequest();
+  commentsPollInterval = setInterval(pollComments, 3000);
+});
+
+onBeforeUnmount(() => {
+  if (commentsPollInterval) {
+    clearInterval(commentsPollInterval);
+    commentsPollInterval = null;
+  }
 });
 
 // Page meta

@@ -97,9 +97,9 @@
           allow-clear
           @change="handleFilter"
         >
-          <a-select-option value="pending">Chưa thanh toán</a-select-option>
-          <a-select-option value="completed">Đã thanh toán</a-select-option>
-          <a-select-option value="failed">Thanh toán thất bại</a-select-option>
+          <a-select-option value="completed">Thành công</a-select-option>
+          <a-select-option value="failed">Thất bại</a-select-option>
+          <a-select-option value="pending">Đang chờ</a-select-option>
           <a-select-option value="cancelled">Đã hủy</a-select-option>
         </a-select>
       </div>
@@ -118,7 +118,7 @@
           :data-source="orders"
           :loading="loading"
           :pagination="paginationConfig"
-          :scroll="{ x: 1400 }"
+          :scroll="{ x: 1600 }"
           @change="handleTableChange"
           row-key="_id"
         >
@@ -156,8 +156,8 @@
             </template>
 
             <template v-else-if="column.key === 'paymentStatus'">
-              <a-tag :color="getPaymentStatusColor(record.paymentStatus)">
-                {{ getPaymentStatusText(record.paymentStatus) }}
+              <a-tag :color="getPaymentStatusColor(record.paymentStatus, record)">
+                {{ getPaymentStatusText(record.paymentStatus, record) }}
               </a-tag>
             </template>
 
@@ -165,6 +165,19 @@
               <a-tag :color="getStatusColor(record.status)">
                 {{ getStatusText(record.status) }}
               </a-tag>
+            </template>
+
+            <template v-else-if="column.key === 'actions'">
+              <a-space>
+                <a-button type="link" size="small" @click="viewOrder(record)">
+                  <template #icon><EyeOutlined /></template>
+                  Xem
+                </a-button>
+                <a-button type="link" size="small" @click="updateOrderStatus(record)">
+                  <template #icon><EditOutlined /></template>
+                  Cập nhật trạng thái
+                </a-button>
+              </a-space>
             </template>
           </template>
         </a-table>
@@ -208,13 +221,21 @@
             </div>
             <div class="order-info-row">
               <span class="label">Thanh toán:</span>
-              <a-tag :color="getPaymentStatusColor(order.paymentStatus)" size="small">
-                {{ getPaymentStatusText(order.paymentStatus) }}
+              <a-tag :color="getPaymentStatusColor(order.paymentStatus, order)" size="small">
+                {{ getPaymentStatusText(order.paymentStatus, order) }}
               </a-tag>
             </div>
           </div>
-
-          <!-- Xóa toàn bộ div.order-card-actions -->
+          <div class="order-card-actions">
+            <a-button type="primary" size="small" ghost @click="viewOrder(order)">
+              <template #icon><EyeOutlined /></template>
+              Xem
+            </a-button>
+            <a-button size="small" @click="updateOrderStatus(order)">
+              <template #icon><EditOutlined /></template>
+              Cập nhật trạng thái
+            </a-button>
+          </div>
         </div>
       </div>
     </a-card>
@@ -224,8 +245,16 @@
       v-model:open="viewModalVisible"
       title="Chi tiết đơn hàng"
       width="800px"
-      :footer="null"
     >
+      <template #footer>
+        <a-space>
+          <a-button @click="viewModalVisible = false">Đóng</a-button>
+          <a-button type="primary" @click="openUpdateStatusFromView">
+            <template #icon><EditOutlined /></template>
+            Cập nhật trạng thái
+          </a-button>
+        </a-space>
+      </template>
       <a-descriptions v-if="selectedOrder" bordered :column="2">
         <a-descriptions-item label="Mã đơn hàng" :span="2">
           {{ selectedOrder.orderId }}
@@ -248,8 +277,8 @@
           </a-tag>
         </a-descriptions-item>
         <a-descriptions-item label="Trạng thái thanh toán">
-          <a-tag :color="getPaymentStatusColor(selectedOrder.paymentStatus)">
-            {{ getPaymentStatusText(selectedOrder.paymentStatus) }}
+          <a-tag :color="getPaymentStatusColor(selectedOrder.paymentStatus, selectedOrder)">
+            {{ getPaymentStatusText(selectedOrder.paymentStatus, selectedOrder) }}
           </a-tag>
         </a-descriptions-item>
         <a-descriptions-item label="Phương thức thanh toán">
@@ -299,9 +328,9 @@
         </a-form-item>
         <a-form-item label="Trạng thái thanh toán">
           <a-select v-model:value="updateForm.paymentStatus">
-            <a-select-option value="pending">Chưa thanh toán</a-select-option>
-            <a-select-option value="completed">Đã thanh toán</a-select-option>
-            <a-select-option value="failed">Thanh toán thất bại</a-select-option>
+            <a-select-option value="completed">Thành công</a-select-option>
+            <a-select-option value="failed">Thất bại</a-select-option>
+            <a-select-option value="pending">Đang chờ</a-select-option>
             <a-select-option value="cancelled">Đã hủy</a-select-option>
           </a-select>
         </a-form-item>
@@ -487,7 +516,8 @@ const columns = [
   { title: 'Tổng tiền', key: 'totalAmount', dataIndex: 'totalAmount', width: 150 },
   { title: 'Phương thức', key: 'paymentMethod', dataIndex: 'paymentMethod', width: 120 },
   { title: 'Thanh toán', key: 'paymentStatus', dataIndex: 'paymentStatus', width: 120 },
-  { title: 'Trạng thái', key: 'status', dataIndex: 'status', width: 120 }
+  { title: 'Trạng thái', key: 'status', dataIndex: 'status', width: 120 },
+  { title: 'Thao tác', key: 'actions', width: 180, fixed: 'right' }
 ]
 
 const paginationConfig = computed(() => ({
@@ -544,7 +574,18 @@ const getStatusText = (status?: string) => {
   return texts[status || ''] || status || 'N/A'
 }
 
-const getPaymentStatusColor = (status?: string) => {
+const getPaymentStatusColor = (status?: string, record?: any) => {
+  // Nếu pending và quá 15 phút, coi như thất bại
+  if (status === 'pending' && record?.createdAt) {
+    const createdAt = new Date(record.createdAt)
+    const now = new Date()
+    const minutesDiff = (now.getTime() - createdAt.getTime()) / (1000 * 60)
+    if (minutesDiff > 15) {
+      return 'red' // Thất bại (timeout)
+    }
+    return 'orange' // Đang chờ (trong 15 phút)
+  }
+  
   const colors: Record<string, string> = {
     pending: 'orange',
     completed: 'green',
@@ -554,14 +595,40 @@ const getPaymentStatusColor = (status?: string) => {
   return colors[status || ''] || 'default'
 }
 
-const getPaymentStatusText = (status?: string) => {
-  const texts: Record<string, string> = {
-    pending: 'Chưa thanh toán',
-    completed: 'Đã thanh toán',
-    failed: 'Thất bại',
-    cancelled: 'Đã hủy'
+const getPaymentStatusText = (status?: string, record?: any) => {
+  // Chỉ hiển thị "Thành công" hoặc "Thất bại" cho trạng thái cuối cùng
+  // Trạng thái trung gian (pending trong 15 phút) có thể hiển thị "Đang chờ" tạm thời
+  // Nhưng sau 15 phút phải chuyển về "Thất bại"
+  
+  if (status === 'completed') {
+    return 'Thành công'
   }
-  return texts[status || ''] || status || 'N/A'
+  
+  if (status === 'failed' || status === 'cancelled') {
+    return 'Thất bại'
+  }
+  
+  // Xử lý trạng thái pending
+  if (status === 'pending') {
+    if (record?.createdAt) {
+      const createdAt = new Date(record.createdAt)
+      const now = new Date()
+      const minutesDiff = (now.getTime() - createdAt.getTime()) / (1000 * 60)
+      
+      // Nếu quá 15 phút, coi như thất bại (timeout)
+      if (minutesDiff > 15) {
+        return 'Thất bại'
+      }
+      
+      // Trong 15 phút đầu, hiển thị "Đang chờ" (trạng thái trung gian)
+      return 'Đang chờ'
+    }
+    
+    // Nếu không có createdAt, mặc định là "Đang chờ"
+    return 'Đang chờ'
+  }
+  
+  return status || 'N/A'
 }
 
 const getPaymentMethodColor = (method?: string) => {
@@ -670,6 +737,12 @@ const refreshData = () => {
 const viewOrder = (order: Order) => {
   selectedOrder.value = order
   viewModalVisible.value = true
+}
+
+const openUpdateStatusFromView = () => {
+  if (!selectedOrder.value) return
+  viewModalVisible.value = false
+  updateOrderStatus(selectedOrder.value)
 }
 
 const updateOrderStatus = (order: Order) => {

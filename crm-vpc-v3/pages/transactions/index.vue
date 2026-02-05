@@ -25,6 +25,9 @@
           <template v-else-if="column.dataIndex === 'createdAt'">
             {{ formatDate(record.createdAt) }}
           </template>
+          <template v-else-if="column.dataIndex === 'courseNames'">
+            <span class="course-names-cell">{{ formatCourseNames(record.courseNames) }}</span>
+          </template>
           <template v-else>
             {{ record[column.dataIndex] }}
           </template>
@@ -57,8 +60,8 @@ const transactions = ref<Transaction[]>([]);
 const pagination = ref({ current: 1, pageSize: 10, total: 0 });
 
 const columns = [
-  // Hiển thị tên khóa học (hoặc tiêu đề giao dịch) thay cho ID
-  { title: "Tên khóa học", dataIndex: "title", key: "title", width: 260 },
+  { title: "Mô tả đơn hàng", dataIndex: "title", key: "title", width: 260 },
+  { title: "Tên khóa học", dataIndex: "courseNames", key: "courseNames", width: 280 },
   { title: "Thời gian", dataIndex: "createdAt", key: "createdAt", width: 140 },
   { title: "Giá", dataIndex: "total", key: "total", width: 140 },
   { title: "Trạng thái", dataIndex: "status", key: "status", width: 120 },
@@ -78,6 +81,10 @@ function formatCurrency(val: number) {
 }
 function formatDate(val: string) {
   return val ? dayjs(val).format("DD/MM/YYYY") : "";
+}
+function formatCourseNames(names: string[] | undefined) {
+  if (!names || !Array.isArray(names) || names.length === 0) return "—";
+  return names.join(", ");
 }
 function statusText(status: string) {
   if (status === "success") return "Thành công";
@@ -108,6 +115,11 @@ function statusClass(status: string) {
 
 .transaction-table {
   width: 100%;
+}
+
+.course-names-cell {
+  word-break: break-word;
+  white-space: normal;
 }
 
 /* Table border styles - only horizontal lines + left/right border */

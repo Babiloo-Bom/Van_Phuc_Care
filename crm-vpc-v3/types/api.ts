@@ -428,6 +428,8 @@ export interface Transaction {
   total: number;
   status: "pending" | "success" | "denied";
   createdAt: string;
+  /** Tên các khóa học trong đơn (bổ sung từ Order khi có orderId) */
+  courseNames?: string[];
 }
 
 export interface FAQ {

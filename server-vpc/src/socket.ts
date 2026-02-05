@@ -35,9 +35,8 @@ export const initSocket = (server: HTTPServer) => {
       } else if (payload && typeof payload === 'object') {
         ticketId = payload.ticketId;
       }
-
-      if (ticketId) {
-        socket.join(`ticket:${ticketId}`);
+      if (ticketId != null && ticketId !== '') {
+        socket.join(`ticket:${String(ticketId)}`);
       }
     });
 

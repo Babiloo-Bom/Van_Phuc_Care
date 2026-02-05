@@ -177,6 +177,11 @@
                 <span>Quản lý Banner</span>
               </NuxtLink>
             </a-menu-item>
+            <a-menu-item key="elearning-settings">
+              <NuxtLink to="/settings/elearning" class="flex items-center">
+                <span>Cài đặt E-Learning (VAT)</span>
+              </NuxtLink>
+            </a-menu-item>
           </a-sub-menu>
 
           <a-menu-item key="faqs">
@@ -245,6 +250,7 @@ const selectedKeys = computed(() => {
   if (path.startsWith('/my/support-tickets')) return ['support-tickets']
   if (path.startsWith('/faqs')) return ['faqs']
   if (path.startsWith('/settings/banners')) return ['banners']
+  if (path.startsWith('/settings/elearning')) return ['elearning-settings']
   return []
 })
 

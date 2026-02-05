@@ -319,14 +319,14 @@
         <!-- Comments Section -->
         <a-divider>Bình luận / Trả lời</a-divider>
         
-        <div class="comments-section">
+        <div ref="commentsContainerRef" class="comments-section">
           <div v-if="loadingComments" class="text-center py-4">
             <a-spin />
           </div>
           <div v-else-if="comments.length === 0" class="text-center py-4 text-gray-500">
             Chưa có bình luận nào
           </div>
-          <div v-else ref="commentsContainerRef" class="comments-list">
+          <div v-else class="comments-list">
             <div 
               v-for="comment in comments" 
               :key="comment._id" 
@@ -851,7 +851,7 @@ const viewTicket = async (ticket: Ticket) => {
       transports: ['websocket', 'polling'],
     })
 
-    ticketSocket.value.emit('join', { ticketId: ticket._id })
+    ticketSocket.value.emit('join', { ticketId: String(ticket._id) })
 
     ticketSocket.value.on('ticket:comment:new', (payload: any) => {
       if (!payload || !selectedTicket.value) return
@@ -938,11 +938,14 @@ const loadComments = async (ticketId: string) => {
 }
 
 const nextTickScrollToBottom = () => {
-  setTimeout(() => {
-    if (commentsContainerRef.value) {
-      commentsContainerRef.value.scrollTop = commentsContainerRef.value.scrollHeight
-    }
-  }, 0)
+  nextTick(() => {
+    setTimeout(() => {
+      const el = commentsContainerRef.value
+      if (el) {
+        el.scrollTop = el.scrollHeight
+      }
+    }, 0)
+  })
 }
 
 // File upload handlers

@@ -2,6 +2,7 @@ import { sendError, sendSuccess } from '@libs/response';
 import { Request, Response } from 'express';
 import mongoose from 'mongoose';
 import MongoDbUsers from '@mongodb/users';
+import ModelTransaction from '@mongodb/transactions';
 
 // Order schema
 const orderSchema = new mongoose.Schema({
@@ -390,6 +391,32 @@ class OrderController {
         .sort({ createdAt: -1 })
         .skip(skip)
         .limit(Number(limit));
+
+      // Tự động cập nhật các đơn hàng pending quá 15 phút thành failed
+      const now = new Date();
+      const fifteenMinutesAgo = new Date(now.getTime() - 15 * 60 * 1000);
+      
+      const updatePromises = orders
+        .filter((order: any) => {
+          const createdAt = new Date(order.createdAt);
+          return order.paymentStatus === 'pending' && createdAt < fifteenMinutesAgo;
+        })
+        .map(async (order: any) => {
+          try {
+            await Order.findByIdAndUpdate(order._id, {
+              paymentStatus: 'failed',
+              status: 'cancelled'
+            });
+            // Cập nhật trong memory để trả về đúng trạng thái
+            order.paymentStatus = 'failed';
+            order.status = 'cancelled';
+            console.log(`⏰ Auto-updated order ${order.orderId} from pending to failed (timeout > 15min)`);
+          } catch (err) {
+            console.error(`❌ Error auto-updating order ${order.orderId}:`, err);
+          }
+        });
+
+      await Promise.all(updatePromises);
 
       const total = await Order.countDocuments(query);
 
@@ -795,6 +822,26 @@ class OrderController {
         transactionId: `MANUAL_${Date.now()}`,
         status: 'completed',
         notes: notes || 'Kích hoạt thủ công - User chuyển khoản lỗi hoặc đóng tiền mặt'
+      });
+
+      // Tạo bản ghi Transaction để hiển thị trong lịch sử giao dịch CRM
+      const courseTitles = items.map((item: any) => item.course?.title || item.course?.name || 'Khóa học').filter(Boolean);
+      const transactionTitle = courseTitles.length > 0
+        ? `Kích hoạt thủ công - ${courseTitles.join(', ')}`
+        : `Kích hoạt thủ công - Đơn ${orderId}`;
+      await ModelTransaction.model.create({
+        userId,
+        origin: 'admin_manual',
+        type: 'payment',
+        title: transactionTitle,
+        total: totalAmount,
+        fee: 0,
+        retryCount: 0,
+        status: ModelTransaction.STATUS_ENUM.SUCCESS,
+        paymentMethod: 'bypass',
+        orderId: order.orderId,
+        referenceId: order.transactionId,
+        paidAt: new Date(),
       });
 
       // Add courses to user's courseRegister

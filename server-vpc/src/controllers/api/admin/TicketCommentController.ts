@@ -133,13 +133,16 @@ class TicketCommentController {
 
       console.log('✅ Created comment:', populatedComment?._id);
 
-      // Emit realtime event đến room ticket tương ứng
+      // Emit realtime event đến room ticket (user + admin cùng room nhận)
+      // Dùng ticket._id để đảm bảo trùng format với API GET ticket (client join bằng id này)
       try {
         const io = getIO();
+        const idStr = String((ticket as any)._id ?? ticketId);
+        const roomId = `ticket:${idStr}`;
         io.of('/tickets')
-          .to(`ticket:${ticketId}`)
+          .to(roomId)
           .emit('ticket:comment:new', {
-            ticketId,
+            ticketId: idStr,
             comment: populatedComment,
           });
       } catch {

@@ -424,6 +424,10 @@ const cartStore = useCartStore()
 const authStore = useAuthStore()
 const coursesStore = useCoursesStore()
 
+// Cấu hình E-Learning (VAT % từ admin setting)
+const { data: elearningPublic } = useFetch<{ vatPercent: number }>('/api/settings/elearning-public')
+const vatPercentRate = computed(() => ((elearningPublic.value?.vatPercent ?? 8) / 100))
+
 // Loading state for payments
 const isProcessingOrder = ref(false)
 const isProcessingOrderVnpay = ref(false)
@@ -492,7 +496,7 @@ const discountAmount = computed(() => {
 
 const vatPrice = computed(() => {
   const taxableAmount = Math.max(subtotalPrice.value - discountAmount.value, 0)
-  return Math.round(taxableAmount * 0.08) // Làm tròn VAT
+  return Math.round(taxableAmount * vatPercentRate.value) // VAT % từ cài đặt admin
 })
 
 const finalPrice = computed(() => {

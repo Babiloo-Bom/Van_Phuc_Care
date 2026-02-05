@@ -268,6 +268,11 @@
                   </span>
                 </div>
                 
+                <div v-if="vatAmount > 0" class="flex justify-between items-center py-2">
+                  <span class="text-gray-600 font-medium">Thuế VAT ({{ vatPercent }}%)</span>
+                  <span class="font-semibold text-gray-800">{{ vatAmount.toLocaleString('vi-VN') }}đ</span>
+                </div>
+                
                 <div class="border-t border-gray-200 pt-4">
                   <div class="flex justify-between items-center">
                     <span class="text-xl font-bold text-gray-800">Tổng cộng</span>
@@ -380,13 +385,17 @@ const discountAmount = computed(() => {
   return appliedCoupon.value?.discountAmount || 0
 })
 
-const totalPrice = computed(() => {
-  // Làm tròn để không có số thập phân
-  return Math.round(subtotalPrice.value - discountAmount.value)
-})
+// VAT từ cài đặt admin (API elearning-public)
+const { data: elearningPublic } = useFetch<{ vatPercent: number }>('/api/settings/elearning-public')
+const vatPercent = computed(() => elearningPublic.value?.vatPercent ?? 8)
+const vatPercentRate = computed(() => (vatPercent.value / 100))
 
-// Sync amount with cart total
-watch(() => cartStore.totalPrice, (newPrice) => {
+const taxableAmount = computed(() => Math.max(0, subtotalPrice.value - discountAmount.value))
+const vatAmount = computed(() => Math.round(taxableAmount.value * vatPercentRate.value))
+const totalPrice = computed(() => Math.round(taxableAmount.value + vatAmount.value))
+
+// Sync payment amount with checkout total (đã gồm VAT)
+watch(() => totalPrice.value, (newPrice) => {
   setAmount(newPrice)
 }, { immediate: true })
 

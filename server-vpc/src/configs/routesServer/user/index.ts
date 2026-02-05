@@ -21,6 +21,7 @@ import CouponsRouter from './Coupons';
 import QuizzesRouter from './Quizzes';
 import VideoProxyRouter from './VideoProxy';
 import BannersRouter from './Banners';
+import SettingsRouter from './Settings';
 
 const router = Router();
 
@@ -46,5 +47,6 @@ router.use('/healthbooks', HealthBooksRouter);
 router.use('/vaccination-records', VaccinationRecordsRouter);
 router.use('/coupons', CouponsRouter);
 router.use('/quizzes', QuizzesRouter); // Quiz routes
+router.use('/settings', SettingsRouter);
 
 export default router;

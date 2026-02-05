@@ -79,7 +79,7 @@ export const useOrdersApi = () => {
      * Update order status
      */
     async updateOrderStatus(id: string, data: { status?: string; paymentStatus?: string; notes?: string }) {
-      return apiClient.patch<{ order: Order }>(`/api/a/orders/${id}/status`, data, {
+      return apiClient.put<{ order: Order }>(`/api/a/orders/${id}/status`, data, {
         errorMessage: 'Không thể cập nhật trạng thái đơn hàng'
       })
     },
