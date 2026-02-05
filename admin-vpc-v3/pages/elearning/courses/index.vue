@@ -2536,6 +2536,7 @@ const viewingCourse = ref<Course | null>(null);
 // State để quản lý collapse/expand cho chapters và lessons
 // Key format: `chapter-${chapterIndex}` cho chapter collapse
 // Key format: `chapter-${chapterIndex}-lesson-${lessonIndex}` cho lesson collapse
+// Mặc định: chapter mở, lesson thu gọn
 const collapseState = reactive<Record<string, boolean>>({});
 
 // Helper functions để toggle collapse
@@ -2559,6 +2560,10 @@ const isLessonCollapsed = (
   lessonIndex: number,
 ): boolean => {
   const key = `chapter-${chapterIndex}-lesson-${lessonIndex}`;
+  // Mặc định chưa có state => coi như ĐANG THU GỌN (true)
+  if (collapseState[key] === undefined) {
+    return true;
+  }
   return collapseState[key] === true;
 };
 

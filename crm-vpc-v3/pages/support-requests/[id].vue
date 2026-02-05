@@ -79,7 +79,7 @@
         <h3 class="section-title">Phản hồi</h3>
 
         <!-- Comments List -->
-        <div class="comments-list">
+        <div ref="commentsContainerRef" class="comments-list">
           <div
             v-for="comment in comments"
             :key="comment.id"
@@ -219,7 +219,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, onMounted } from 'vue'
+import { ref, computed, onMounted, onBeforeUnmount } from 'vue'
 import {
   ArrowLeftOutlined,
   BoldOutlined,
@@ -232,6 +232,9 @@ import {
   CloseOutlined
 } from '@ant-design/icons-vue'
 import { message, Modal } from 'ant-design-vue'
+import { io, Socket } from 'socket.io-client'
+import { useRuntimeConfig } from '#app'
+import { useAuthStore } from '~/stores/auth'
 import dayjs from 'dayjs'
 import { useSupportRequestsApi } from '~/composables/api/useSupportRequestsApi'
 import type { SupportRequest, SupportRequestCategory } from '~/composables/api/useSupportRequestsApi'
@@ -259,7 +262,7 @@ const requestId = computed(() => route.params.id as string)
 const customerId = computed(() => route.query.customerId as string)
 
 // API
-const { getSupportRequestById, updateSupportRequest } = useSupportRequestsApi()
+const { getSupportRequestById, updateSupportRequest, getComments, addComment, addCommentWithFiles } = useSupportRequestsApi()
 
 // State
 const loading = ref(true)
@@ -271,6 +274,7 @@ const editorRef = ref<HTMLDivElement>()
 const imageInputRef = ref<HTMLInputElement>()
 const uploadedImages = ref<string[]>([])
 const replyContent = ref('')
+const commentsContainerRef = ref<HTMLElement | null>(null)
 
 // Category mapping
 const categoryMap: Record<SupportRequestCategory, string> = {
@@ -295,6 +299,9 @@ const statusConfig = {
 const statusColor = computed(() => request.value ? statusConfig[request.value.status].color : 'default')
 const statusText = computed(() => request.value ? statusConfig[request.value.status].text : '')
 
+// Socket.io instance
+const socket = ref<Socket | null>(null)
+
 // Fetch request details
 const fetchRequestDetail = async () => {
   try {
@@ -305,27 +312,8 @@ const fetchRequestDetail = async () => {
     const response = await getSupportRequestById(requestId.value)
     request.value = response
 
-    // TODO: Fetch comments from API when available
-    // For now, use mock comments
-    comments.value = [
-      {
-        id: '1',
-        author: 'Chuyên viên',
-        avatar: '/images/avatar-demo.png',
-        message: 'Với trẻ sơ sinh dưới 6 tuổi với nhu cầu ngủ nhiều vào cả ban ngày và ban đêm, việc thức liên 5 tiếng chắc chắn là tình trạng bất thường. Cha mẹ cần sâm sơ ra nguyên nhân vì nếu tình trạng này lặp lại thường xuyên sẽ ảnh hưởng không nhỏ đến sự phát triển của trẻ. Ngược lại, nếu trẻ đã trên 6 tháng tuổi và có thể ngủ liền mạch những giác dài ban đêm, thời gian ngủ ban ngày của trẻ rút ngắn và thời gian thức ban ngày tăng lên là bình thường.',
-        time: '10:30 AM',
-        isStaff: true
-      },
-      {
-        id: '2',
-        author: 'Nguyễn Văn A',
-        avatar: '/images/avatar-demo.png',
-        message: 'Ngày cá khi trẻ trên 6 tháng tuổi đã có thể thức liên 5 tiếng, thì việc trẻ thức ban đêm vẫn là bất thường. Nếu trong độ tuổi này, trẻ thức liên 5 tiếng vào ban ngày không quá đáng ngại.',
-        time: '11:00 AM',
-        isStaff: false,
-        images: ['/images/placeholder-food-1.jpg']
-      }
-    ]
+    // Load comments từ backend tickets API
+    await loadComments()
   } catch (err: any) {
     error.value = err?.data?.message || err?.message || 'Không thể tải thông tin yêu cầu hỗ trợ'
   } finally {
@@ -414,23 +402,30 @@ const handleSendReply = async () => {
   try {
     submitting.value = true
 
-    // TODO: Call API to send reply/comment when backend supports it
-    // Backend tickets API doesn't have comments yet
-    // For now, just add to local list
-    await new Promise(resolve => setTimeout(resolve, 500))
+    // Gửi comment qua API tickets (user)
+    let newComment: any = null
 
-    // Add comment to list
-    comments.value.push({
-      id: Date.now().toString(),
-      author: 'Nguyễn Văn A',
-      avatar: '/images/avatar-demo.png',
-      message: content || '',
-      time: new Date().toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' }),
-      isStaff: false,
-      images: [...uploadedImages.value]
-    })
+    // Nếu có file, dùng multipart
+    if (uploadedImages.value.length > 0 && imageInputRef.value?.files?.length) {
+      const files = Array.from(imageInputRef.value.files)
+      newComment = await addCommentWithFiles(requestId.value, content || '', files as File[])
+    } else {
+      newComment = await addComment(requestId.value, content || '')
+    }
 
-    // Clear editor
+    if (newComment) {
+      // Map TicketComment -> Comment UI (trong khi chờ socket event)
+      comments.value.push({
+        id: newComment._id,
+        author: newComment.name || 'Bạn',
+        avatar: newComment.avatar || '/images/avatar-fallback.png',
+        message: newComment.content || '',
+        time: dayjs(newComment.createdAt || new Date()).format('HH:mm DD/MM/YYYY'),
+        isStaff: !!newComment.isAdmin,
+        images: (newComment.attachments || []).map((a: any) => a.url).filter((x: string) => !!x),
+      })
+    }
+
     if (editorRef.value) {
       editorRef.value.innerHTML = ''
     }
@@ -438,6 +433,7 @@ const handleSendReply = async () => {
     replyContent.value = ''
 
     message.success('Đã gửi phản hồi!')
+    scrollToBottom()
   } catch (err: any) {
     const errorMessage = err?.data?.message || err?.message || 'Có lỗi xảy ra'
     message.error(errorMessage)
@@ -446,9 +442,79 @@ const handleSendReply = async () => {
   }
 }
 
+// Load comments helper: dùng Tickets API user-side
+const loadComments = async () => {
+  try {
+    const ticketComments = await getComments(requestId.value)
+    comments.value = ticketComments.map((c: any) => ({
+      id: c._id,
+      author: c.name || 'Bạn',
+      avatar: c.avatar || '/images/avatar-fallback.png',
+      message: c.content || '',
+      time: dayjs(c.createdAt || new Date()).format('HH:mm DD/MM/YYYY'),
+      isStaff: !!c.isAdmin,
+      images: (c.attachments || []).map((a: any) => a.url).filter((x: string) => !!x),
+    }))
+    scrollToBottom()
+  } catch (e) {
+    // Nếu lỗi thì giữ comments hiện tại
+  }
+}
+
+const scrollToBottom = () => {
+  if (commentsContainerRef.value) {
+    commentsContainerRef.value.scrollTop = commentsContainerRef.value.scrollHeight
+  }
+}
+
 // Lifecycle
 onMounted(() => {
+  const config = useRuntimeConfig()
+  const authStore = useAuthStore()
+
   fetchRequestDetail()
+
+  // Khởi tạo Socket.IO để lắng nghe comment realtime
+  const apiBaseUrl = (config.public.apiBaseUrl || config.public.apiHost || 'http://localhost:3000') as string
+
+  socket.value = io(`${apiBaseUrl}/tickets`, {
+    auth: {
+      token: authStore.token,
+    },
+    transports: ['websocket', 'polling'],
+  })
+
+  // Join room theo ticketId
+  socket.value.emit('join', { ticketId: requestId.value })
+
+  socket.value.on('ticket:comment:new', (payload: any) => {
+    if (!payload || payload.ticketId !== requestId.value) return
+    const c = payload.comment
+    if (!c) return
+
+    const authorName =
+      c.isAdmin && c.adminId
+        ? c.adminId.fullname || 'Chuyên viên'
+        : c.name || (c.userId?.fullname ?? 'Bạn')
+
+    comments.value.push({
+      id: c._id || Date.now().toString(),
+      author: authorName,
+      avatar: c.avatar || c.userId?.avatar || c.adminId?.avatar || '/images/avatar-fallback.png',
+      message: c.content || c.message || '',
+      time: dayjs(c.createdAt || new Date()).format('HH:mm DD/MM/YYYY'),
+      isStaff: !!c.isAdmin,
+      images: (c.attachments || []).map((a: any) => a.url).filter((x: string) => !!x),
+    })
+    scrollToBottom()
+  })
+})
+
+onBeforeUnmount(() => {
+  if (socket.value) {
+    socket.value.disconnect()
+    socket.value = null
+  }
 })
 </script>
 
@@ -514,6 +580,8 @@ onMounted(() => {
 /* Comments Section */
 .comments-section {
   margin-bottom: 24px;
+  max-height: 420px;
+  overflow-y: auto;
 }
 
 .section-title {
@@ -527,7 +595,7 @@ onMounted(() => {
   display: flex;
   flex-direction: column;
   gap: 20px;
-  margin-bottom: 24px;
+  padding-right: 4px;
 }
 
 .comment-item {

@@ -243,6 +243,9 @@ const fetchOrderDetails = async () => {
       
       // Refresh authStore to ensure data is synced
       await refreshAuthStore()
+
+      // Sau khi đồng bộ xong, chuyển về trang "Khóa học của tôi"
+      await navigateTo('/my-learning')
     } else {
       error.value = 'Không tìm thấy thông tin đơn hàng'
     }

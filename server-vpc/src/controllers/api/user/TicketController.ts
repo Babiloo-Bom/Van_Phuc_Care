@@ -4,6 +4,7 @@ import { MongoDbTickets } from '@mongodb/tickets';
 import { MongoDbTicketComments } from '@mongodb/ticket-comments';
 import MinioService from '@services/minio';
 import FileValidator from '@services/fileValidator';
+import { getIO } from '../../../socket';
 
 /**
  * User Ticket Controller
@@ -414,6 +415,19 @@ class UserTicketController {
       // Update ticket status to pending if it was open (user responded)
       if (ticket.status === 'open') {
         await MongoDbTickets.model.findByIdAndUpdate(id, { status: 'pending' });
+      }
+
+      // Emit realtime event đến room ticket tương ứng
+      try {
+        const io = getIO();
+        io.of('/tickets')
+          .to(`ticket:${id}`)
+          .emit('ticket:comment:new', {
+            ticketId: id,
+            comment: formattedComment,
+          });
+      } catch {
+        // Socket server chưa khởi tạo - bỏ qua
       }
 
       sendSuccess(res, { comment: formattedComment }, 'Comment added successfully');

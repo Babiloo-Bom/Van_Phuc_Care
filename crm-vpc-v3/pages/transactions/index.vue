@@ -57,8 +57,8 @@ const transactions = ref<Transaction[]>([]);
 const pagination = ref({ current: 1, pageSize: 10, total: 0 });
 
 const columns = [
-  { title: "ID", dataIndex: "_id", key: "_id", width: 100 },
-  { title: "Phân loại", dataIndex: "title", key: "title", width: 220 },
+  // Hiển thị tên khóa học (hoặc tiêu đề giao dịch) thay cho ID
+  { title: "Tên khóa học", dataIndex: "title", key: "title", width: 260 },
   { title: "Thời gian", dataIndex: "createdAt", key: "createdAt", width: 140 },
   { title: "Giá", dataIndex: "total", key: "total", width: 140 },
   { title: "Trạng thái", dataIndex: "status", key: "status", width: 120 },

@@ -42,7 +42,7 @@
       <div class="filters-container">
         <a-input-search
           v-model:value="searchQuery"
-          placeholder="Tìm kiếm theo tên..."
+          placeholder="Tìm kiếm theo email hoặc tên người dùng..."
           style="width: 300px"
           allow-clear
           @search="handleSearch"
@@ -93,8 +93,16 @@
             
             <template v-else-if="column.key === 'name'">
               <div class="healthbook-info">
-                <div class="healthbook-name">{{ record.name || 'Chưa có tên' }}</div>
-                <div class="healthbook-id">ID: {{ record._id?.substring(0, 8) || 'N/A' }}</div>
+                <!-- Tên sổ / tên bé -->
+                <div class="healthbook-name">
+                  {{ record.name || 'Chưa có tên' }}
+                </div>
+                <!-- Thông tin người dùng: email ưu tiên -->
+                <div class="healthbook-user">
+                  <span class="healthbook-user-email">
+                    {{ record.customerEmail || 'Chưa có email người dùng' }}
+                  </span>
+                </div>
               </div>
             </template>
             
@@ -147,8 +155,12 @@
               </template>
             </a-avatar>
             <div class="mobile-card-title-section">
-              <div class="mobile-healthbook-name">{{ record.name || 'Chưa có tên' }}</div>
-              <div class="mobile-healthbook-id">ID: {{ record._id?.substring(0, 8) || 'N/A' }}</div>
+              <div class="mobile-healthbook-name">
+                {{ record.name || 'Chưa có tên' }}
+              </div>
+              <div class="mobile-healthbook-user">
+                {{ record.customerEmail || 'Chưa có email người dùng' }}
+              </div>
             </div>
           </div>
 

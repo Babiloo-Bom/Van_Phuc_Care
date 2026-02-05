@@ -3,6 +3,7 @@ import { sendError, sendSuccess } from '@libs/response';
 import { MongoDbTicketComments } from '@mongodb/ticket-comments';
 import { MongoDbTickets } from '@mongodb/tickets';
 import FileValidator from '@services/fileValidator';
+import { getIO } from '../../../socket';
 
 /**
  * Ticket Comment Controller
@@ -131,6 +132,19 @@ class TicketCommentController {
         .lean();
 
       console.log('✅ Created comment:', populatedComment?._id);
+
+      // Emit realtime event đến room ticket tương ứng
+      try {
+        const io = getIO();
+        io.of('/tickets')
+          .to(`ticket:${ticketId}`)
+          .emit('ticket:comment:new', {
+            ticketId,
+            comment: populatedComment,
+          });
+      } catch {
+        // Socket server chưa khởi tạo - bỏ qua
+      }
 
       sendSuccess(res, { comment: populatedComment }, 'Comment added successfully');
     } catch (error: any) {

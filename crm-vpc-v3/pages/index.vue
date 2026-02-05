@@ -49,13 +49,18 @@
           <div class="lg:hidden">
             <!-- Profile Info (Mobile) -->
             <div class="flex flex-col items-center">
-              <!-- Avatar - Van Phuc Mascot -->
+              <!-- Avatar fallback khi chưa có hồ sơ (theo thiết kế MY) -->
               <div class="relative mb-3 -translate-y-14">
-                <div
-                  class="w-24 h-24 rounded-full bg-blue-100 flex items-center justify-center border-4 border-blue-200"
-                >
-                  <UserOutlined class="text-4xl text-blue-500" />
-                </div>
+                <nuxt-img
+                  src="/images/avatar-fallback.png"
+                  alt="Vạn Phúc Care"
+                  class="w-24 h-24 rounded-full object-cover border-4 border-blue-200"
+                  width="96"
+                  height="96"
+                  format="webp"
+                  loading="eager"
+                  fetchpriority="high"
+                />
               </div>
 
               <!-- Name -->
@@ -76,15 +81,20 @@
           <div class="hidden lg:flex items-center justify-between relative">
             <!-- Left: Profile Info -->
             <div class="flex items-center gap-4">
-              <!-- Avatar - Van Phuc Mascot -->
+              <!-- Avatar fallback khi chưa có hồ sơ (theo thiết kế MY) -->
               <div
                 class="absolute -top-20 left-5 border-4 lg:border-8 border-white rounded-full"
               >
-                <div
-                  class="w-32 h-32 rounded-full bg-blue-100 flex items-center justify-center border-4 border-blue-200"
-                >
-                  <UserOutlined class="text-5xl text-blue-500" />
-                </div>
+                <nuxt-img
+                  src="/images/avatar-fallback.png"
+                  alt="Vạn Phúc Care"
+                  class="w-32 h-32 rounded-full object-cover border-4 border-blue-200"
+                  width="128"
+                  height="128"
+                  format="webp"
+                  loading="eager"
+                  fetchpriority="high"
+                />
               </div>
               <div class="w-40 h-20"></div>
               <!-- Info -->
@@ -262,11 +272,11 @@
                   fetchpriority="high"
                   loading="eager"
                   decoding="async"
-                  @error="(e) => { const t = e.target as HTMLImageElement; if (t) t.src = '/images/baby-default.png' }"
+                  @error="(e) => { const t = e.target as HTMLImageElement; if (t) t.src = '/images/avatar-fallback.png' }"
                 />
                 <nuxt-img
                   v-else
-                  src="/images/baby-default.png"
+                  src="/images/avatar-fallback.png"
                   :alt="profileInfo.name || healthBook?.name"
                   class="w-24 h-24 rounded-full object-cover"
                   width="96"
@@ -328,7 +338,7 @@
                   :src="
                     profileInfo.avatar ||
                     healthBook?.avatar ||
-                    '/images/baby-default.png'
+                    '/images/avatar-fallback.png'
                   "
                   :alt="profileInfo.name || healthBook?.name"
                   class="w-32 h-32 rounded-full object-cover border-5 lg:border-8 border-blue-100"
@@ -337,7 +347,7 @@
                   fetchpriority="high"
                   loading="eager"
                   decoding="async"
-                  @error="(e) => { const t = e.target as HTMLImageElement; if (t) t.src = '/images/baby-default.png' }"
+                  @error="(e) => { const t = e.target as HTMLImageElement; if (t) t.src = '/images/avatar-fallback.png' }"
                 />
                 <CameraOutlined
                   class="absolute bottom-1 right-1 bg-white rounded-full p-2 text-gray-500 shadow cursor-pointer hover:bg-gray-50"

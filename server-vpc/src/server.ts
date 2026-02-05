@@ -11,6 +11,7 @@ import session from 'express-session';
 import cors from 'cors';
 import strongParams from '@middlewares/parameters';
 import routesServer from '@configs/routesServer';
+import { initSocket } from './socket';
 import Settings from '@configs/settings';
 const https = require('https');
 
@@ -88,6 +89,8 @@ app.use((req, res) => {
 
 const server = app.listen(process.env.PORT || 3000, () => {
   console.log(`Server is running on port ${process.env.PORT || 3000}`);
+  // Khởi tạo Socket.IO sau khi server đã listen
+  initSocket(server);
 });
 
 // Set server timeout for long-running requests (video uploads)

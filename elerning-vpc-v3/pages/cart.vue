@@ -687,27 +687,16 @@ const startQrStatusPolling = (orderId: string) => {
         // Clear cart sau khi thanh toán thành công
         await cartStore.clearCart()
 
-        // Refresh "Khóa học của tôi"
-        try {
-          await coursesStore.fetchMyCourses()
-        } catch (e) {
-        }
-
-        // Lấy thông tin khóa học từ order để chuyển sang trang chi tiết khóa học
-        const order = res.data.order as any
-        const firstItem = order?.items?.[0]
-        const courseSlug =
-          firstItem?.course?.slug ||
-          firstItem?.course?.seoUrl ||
-          firstItem?.course?.slugify ||
-          null
-
         showQrModal.value = false
 
-        if (courseSlug) {
-          await navigateTo(`/courses/${courseSlug}`)
+        // Sau khi thanh toán QR thành công, chuyển về trang "Khóa học của tôi"
+        const order = res.data.order as any
+        const resolvedOrderId = order?.orderId || order?._id
+
+        if (resolvedOrderId) {
+          await navigateTo(`/checkout/success?orderId=${resolvedOrderId}`)
         } else {
-          await navigateTo('/courses')
+          await navigateTo('/my-learning')
         }
         return
       }

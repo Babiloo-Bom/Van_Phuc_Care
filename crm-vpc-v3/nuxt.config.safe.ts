@@ -121,7 +121,8 @@ export default defineNuxtConfig({
         { rel: 'preload', href: '/fonts/SVN-Gilroy Regular.otf', as: 'font', type: 'font/otf', crossorigin: 'anonymous' },
         { rel: 'preload', href: '/fonts/SVN-Gilroy Medium.otf', as: 'font', type: 'font/otf', crossorigin: 'anonymous' },
         { rel: 'preload', href: '/fonts/SVN-Gilroy Bold.otf', as: 'font', type: 'font/otf', crossorigin: 'anonymous' },
-        { rel: 'preload', href: '/images/baby-default.png', as: 'image', fetchpriority: 'high' }
+        // Avatar/header fallback trên trang chủ MY
+        { rel: 'preload', href: '/images/avatar-fallback.png', as: 'image', fetchpriority: 'high' }
       ]
     }
   },

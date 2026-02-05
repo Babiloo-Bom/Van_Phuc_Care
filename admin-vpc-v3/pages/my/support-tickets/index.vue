@@ -326,7 +326,7 @@
           <div v-else-if="comments.length === 0" class="text-center py-4 text-gray-500">
             Chưa có bình luận nào
           </div>
-          <div v-else class="comments-list">
+          <div v-else ref="commentsContainerRef" class="comments-list">
             <div 
               v-for="comment in comments" 
               :key="comment._id" 
@@ -538,6 +538,7 @@ import { message } from 'ant-design-vue'
 import { useTicketsApi, type Ticket } from '~/composables/api/useTicketsApi'
 import { useAuthStore } from '~/stores/auth'
 import dayjs from 'dayjs'
+import { io } from 'socket.io-client'
 
 definePageMeta({
   layout: 'default',
@@ -579,6 +580,10 @@ const assignableAdmins = ref<any[]>([])
 const assignForm = ref({
   assignedTo: null as string | null
 })
+
+// Socket.io for realtime comments
+const ticketSocket = ref<any | null>(null)
+const commentsContainerRef = ref<HTMLElement | null>(null)
 
 // Check if user can assign tickets
 const canAssign = computed(() => {
@@ -833,6 +838,47 @@ const viewTicket = async (ticket: Ticket) => {
   replyForm.value.content = ''
   await loadComments(ticket._id)
   
+  // Kết nối Socket.IO để nhận comment realtime cho ticket này
+  try {
+    if (ticketSocket.value) {
+      ticketSocket.value.disconnect()
+      ticketSocket.value = null
+    }
+
+    const apiHost = process.env.API_HOST || 'http://localhost:3000'
+    ticketSocket.value = io(`${apiHost}/tickets`, {
+      withCredentials: true,
+      transports: ['websocket', 'polling'],
+    })
+
+    ticketSocket.value.emit('join', { ticketId: ticket._id })
+
+    ticketSocket.value.on('ticket:comment:new', (payload: any) => {
+      if (!payload || !selectedTicket.value) return
+      if (payload.ticketId !== selectedTicket.value._id) return
+
+      const c = payload.comment
+      if (!c) return
+
+      const normalized: any = { ...c }
+
+      // Nếu backend gửi dạng đã format (có name/avatar) mà không có userId/adminId,
+      // tạo userId giả để getCommentAuthorName() không trả về Unknown
+      if (!normalized.userId && !normalized.adminId && normalized.name) {
+        normalized.userId = {
+          fullname: normalized.name,
+          email: normalized.email || '',
+          avatar: normalized.avatar || undefined,
+        }
+      }
+
+      comments.value.push(normalized)
+      nextTickScrollToBottom()
+    })
+  } catch (e) {
+    // Nếu socket lỗi thì bỏ qua, vẫn dùng HTTP như cũ
+  }
+  
   // Load assignable admins if user can assign
   if (canAssign.value) {
     await loadAssignableAdmins()
@@ -844,6 +890,11 @@ const closeDetailModal = () => {
   selectedTicket.value = null
   comments.value = []
   replyForm.value.content = ''
+
+  if (ticketSocket.value) {
+    ticketSocket.value.disconnect()
+    ticketSocket.value = null
+  }
 }
 
 const loadComments = async (ticketId: string) => {
@@ -875,12 +926,23 @@ const loadComments = async (ticketId: string) => {
     } else {
       comments.value = []
     }
+
+    // Scroll xuống cuối danh sách sau khi load comments
+    nextTickScrollToBottom()
   } catch (error: any) {
     message.error('Không thể tải bình luận')
     comments.value = []
   } finally {
     loadingComments.value = false
   }
+}
+
+const nextTickScrollToBottom = () => {
+  setTimeout(() => {
+    if (commentsContainerRef.value) {
+      commentsContainerRef.value.scrollTop = commentsContainerRef.value.scrollHeight
+    }
+  }, 0)
 }
 
 // File upload handlers
@@ -1190,6 +1252,13 @@ onMounted(() => {
   // Load assignable admins if user can assign
   if (canAssign.value) {
     loadAssignableAdmins()
+  }
+})
+
+onBeforeUnmount(() => {
+  if (ticketSocket.value) {
+    ticketSocket.value.disconnect()
+    ticketSocket.value = null
   }
 })
 </script>
