@@ -1432,6 +1432,7 @@ onMounted(async () => {
   isCheckingAuth.value = false;
   await fetchHealthBookProfile();
 });
+// Build
 </script>
 
 <style scoped>
