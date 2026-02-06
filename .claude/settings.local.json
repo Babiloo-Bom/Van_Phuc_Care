@@ -1,0 +1,15 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(docker port:*)",
+      "Bash(curl:*)",
+      "Bash(docker ps:*)",
+      "Bash(netstat:*)",
+      "Bash(findstr:*)",
+      "Bash(tasklist:*)",
+      "Bash(cmd /c \"tasklist /FI \"\"PID eq 30368\"\"\")",
+      "Bash(cmd /c \"tasklist /FI \"\"PID eq 58416\"\"\")",
+      "Bash(powershell -Command:*)"
+    ]
+  }
+}

@@ -847,19 +847,27 @@ const viewTicket = async (ticket: Ticket) => {
 
     const config = useRuntimeConfig()
     const apiHost = (config.public as any).apiBaseUrl || (config.public as any).apiHost || 'http://localhost:3000'
+    
+    console.log('[Socket] Attempting to connect:', `${apiHost}/tickets`);
+    
     ticketSocket.value = io(`${apiHost}/tickets`, {
       withCredentials: true,
       transports: ['websocket', 'polling'],
     })
 
     const joinRoom = () => {
+      console.log('[Socket] Joining room:', String(ticket._id));
       ticketSocket.value?.emit('join', { ticketId: String(ticket._id) })
     }
 
     // Join room sau khi connected (và rejoin khi reconnect)
-    ticketSocket.value.on('connect', joinRoom)
+    ticketSocket.value.on('connect', () => {
+      console.log('[Socket] Connected! Socket ID:', ticketSocket.value?.id);
+      joinRoom();
+    });
 
     ticketSocket.value.on('ticket:comment:new', (payload: any) => {
+      console.log('[Socket] Received ticket:comment:new:', payload);
       if (!payload || !selectedTicket.value) return
       if (String(payload.ticketId) !== String(selectedTicket.value._id)) return
 
@@ -885,6 +893,7 @@ const viewTicket = async (ticket: Ticket) => {
       nextTickScrollToBottom()
     })
   } catch (e) {
+    console.error('[Socket] Connection error:', e);
     // Nếu socket lỗi thì bỏ qua, vẫn dùng HTTP như cũ
   }
   
