@@ -807,7 +807,8 @@ const currentChapterIndex = ref(0);
 const currentLessonIndex = ref(0);
 const isQuiz = ref(false);
 const videoRef = ref<HTMLVideoElement | null>(null);
-const activeTab = ref("modules"); // Default to "Học phần" tab
+// Mặc định vào trang học sẽ hiện tab "Nội dung bài học"
+const activeTab = ref("content");
 const markingCompleted = ref(false);
 
 // Collapse/expand for long text lessons (desktop + mobile)
@@ -1488,6 +1489,11 @@ const fetchCourseDetail = async () => {
   } catch (error) {
     navigateTo("/my-learning");
   } finally {
+    // Luôn đảm bảo khi vừa vào trang học (sau khi fetch xong) thì tab mặc định là "Nội dung bài học"
+    // (tránh case từ các nơi khác bấm "Học ngay" mà vẫn đang đứng ở tab "Học phần")
+    if (route.query.quiz !== "true") {
+      activeTab.value = "content";
+    }
     loading.value = false;
   }
 };
@@ -2059,8 +2065,11 @@ watch(
         query.chapter !== oldQuery.chapter)
     ) {
       window.scrollTo({ top: 0, behavior: "smooth" });
-      // Chuyển tab về "Nội dung bài học" khi chọn bài học khác ở tab "Học phần" (trừ khi đang ở quiz)
-      if (query.quiz !== "true" && activeTab.value === "modules") {
+      // Chuyển tab về "Nội dung bài học" khi chọn bài học khác ở tab "Học phần" hoặc "Tài liệu" (trừ khi đang ở quiz)
+      if (
+        query.quiz !== "true" &&
+        (activeTab.value === "modules" || activeTab.value === "documents")
+      ) {
         activeTab.value = "content";
       }
     }

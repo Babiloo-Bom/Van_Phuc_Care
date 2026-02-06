@@ -492,6 +492,10 @@ const handleNextLesson = async () => {
 const handleSubmitModal = () => {
   isVisibleModal.value = false;
   isShowQuizResult.value = true;
+  // Sau khi bấm \"Kiểm tra kết quả\" thì scroll lên đầu trang/khối quiz
+  if (typeof window !== 'undefined') {
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  }
 }
 const getOptionStatus = (questionId: string, option: any) => {
   const userAns = quizAttempt?.value?.answers?.find((a: any) => a.questionId === questionId);
