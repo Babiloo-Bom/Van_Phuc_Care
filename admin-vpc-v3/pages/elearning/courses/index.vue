@@ -3953,7 +3953,8 @@ const addLesson = (chapterIndex: number) => {
     uploadingVideo: false,
     uploadingDocument: false,
     // Display section flags - Admin can choose which sections to show
-    showVideo: false,
+    // Mặc định bật phần Video khi tạo lesson mới
+    showVideo: true,
     showText: false,
     showDocument: false,
     showQuiz: false,
@@ -4418,10 +4419,11 @@ const editCourse = async (course: Course) => {
                 uploadingVideo: false,
                 uploadingDocument: false,
                 // Display section flags - Admin can choose which sections to show
-                showVideo: lesson.showVideo ?? false,
-                showText: lesson.showText ?? false,
-                showDocument: lesson.showDocument ?? false,
-                showQuiz: lesson.showQuiz ?? false,
+                // Nếu backend chưa có flag, mặc định bật phần tương ứng với type (ưu tiên Video)
+                showVideo: lesson.showVideo ?? (lesson.type === "video"),
+                showText: lesson.showText ?? (lesson.type === "text"),
+                showDocument: lesson.showDocument ?? (lesson.type === "document"),
+                showQuiz: lesson.showQuiz ?? (lesson.type === "quiz"),
                 // Section names
                 videoSectionName: lesson.videoSectionName ?? "",
                 textSectionName: lesson.textSectionName ?? "",
