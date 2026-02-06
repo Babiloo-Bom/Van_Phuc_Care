@@ -419,9 +419,11 @@ const handleMarkComplete = async () => {
 const connectSocket = () => {
   try {
     const config = useRuntimeConfig();
-    const apiHost = config.public.apiBaseUrl || config.public.apiHost || 'http://localhost:3000';
+    // In production, apiBaseUrl is empty string (same-origin), don't fallback to localhost
+    let apiHost = config.public.apiBaseUrl ?? config.public.apiHost ?? 'http://localhost:3000';
+    if (apiHost === '') apiHost = ''; // Keep empty string for same-origin
     
-    console.log('[Socket] Attempting to connect:', `${apiHost}/tickets`);
+    console.log('[Socket] Attempting to connect:', `${apiHost}/tickets`, 'Origin:', window.location.origin);
 
     ticketSocket.value = io(`${apiHost}/tickets`, {
       withCredentials: true,

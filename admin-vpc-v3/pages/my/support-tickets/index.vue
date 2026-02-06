@@ -846,9 +846,11 @@ const viewTicket = async (ticket: Ticket) => {
     }
 
     const config = useRuntimeConfig()
-    const apiHost = (config.public as any).apiBaseUrl || (config.public as any).apiHost || 'http://localhost:3000'
+    // In production, apiBaseUrl is empty string (same-origin), don't fallback to localhost
+    let apiHost = (config.public as any).apiBaseUrl ?? (config.public as any).apiHost ?? 'http://localhost:3000'
+    if (apiHost === '') apiHost = ''; // Keep empty string for same-origin
     
-    console.log('[Socket] Attempting to connect:', `${apiHost}/tickets`);
+    console.log('[Socket] Attempting to connect:', `${apiHost}/tickets`, 'Origin:', window.location.origin);
     
     ticketSocket.value = io(`${apiHost}/tickets`, {
       withCredentials: true,
