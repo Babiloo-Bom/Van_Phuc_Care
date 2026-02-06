@@ -99,7 +99,7 @@ class SePayService {
         accountName: this.ACCOUNT_NAME,
         bankCode: this.BANK_CODE,
         amount: roundedAmount, // Dùng số đã làm tròn
-        content: content
+        content: orderId
       });
 
       const result = {
