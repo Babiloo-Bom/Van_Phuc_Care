@@ -196,6 +196,7 @@
 
 <script setup lang="ts">
 import { ref, computed, nextTick, onMounted, onBeforeUnmount } from "vue";
+import { io } from "socket.io-client";
 import {
   LeftOutlined,
   LinkOutlined,
@@ -244,7 +245,7 @@ const replyFileList = ref<UploadProps["fileList"]>([]);
 const sending = ref(false);
 const completing = ref(false);
 const responsesListRef = ref<HTMLElement | null>(null);
-let commentsPollInterval: ReturnType<typeof setInterval> | null = null;
+const ticketSocket = ref<any | null>(null);
 
 // Preview state
 const previewVisible = ref(false);
@@ -305,24 +306,6 @@ const scrollResponsesToBottom = () => {
       el.scrollTop = el.scrollHeight;
     }
   });
-};
-
-// Poll comments mỗi 3s để nhận tin admin (không cần F5)
-const pollComments = async () => {
-  if (!requestId.value) return;
-  try {
-    const comments = await getComments(requestId.value);
-    const prevLen = responses.value.length;
-    const prevLastId = responses.value[prevLen - 1]?._id;
-    const hasNew =
-      comments.length > prevLen ||
-      (comments.length > 0 && comments[comments.length - 1]?._id !== prevLastId);
-    if (hasNew) {
-      responses.value = comments;
-      scrollResponsesToBottom();
-    }
-  } catch (_) {
-  }
 };
 
 // Navigation
@@ -402,15 +385,13 @@ const handleSendReply = async () => {
 
     // Call API to add comment with files
     // Server will handle uploading files to MinIO
-    const newComment = await addCommentWithFiles(requestId.value, replyContent.value, files);
+    await addCommentWithFiles(requestId.value, replyContent.value, files);
 
-    if (newComment) {
-      // Add to local list
-      responses.value.push(newComment);
-      replyContent.value = "";
-      replyFileList.value = [];
-      message.success("Gửi phản hồi thành công!");
-    }
+    // Comment sẽ được nhận qua Socket.IO listener (ticket:comment:new)
+    // Không push local để tránh duplicate
+    replyContent.value = "";
+    replyFileList.value = [];
+    message.success("Gửi phản hồi thành công!");
   } catch (err: any) {
     message.error(err.message || "Không thể gửi phản hồi");
   } finally {
@@ -434,16 +415,52 @@ const handleMarkComplete = async () => {
   }
 };
 
+// Socket.IO realtime comments
+const connectSocket = () => {
+  try {
+    const config = useRuntimeConfig();
+    const apiHost = config.public.apiBaseUrl || config.public.apiHost || 'http://localhost:3000';
+
+    ticketSocket.value = io(`${apiHost}/tickets`, {
+      withCredentials: true,
+      transports: ['websocket', 'polling'],
+    });
+
+    const joinRoom = () => {
+      ticketSocket.value?.emit('join', { ticketId: String(requestId.value) });
+    };
+
+    // Join room sau khi connected (và rejoin khi reconnect)
+    ticketSocket.value.on('connect', joinRoom);
+
+    ticketSocket.value.on('ticket:comment:new', (payload: any) => {
+      if (!payload || !requestId.value) return;
+      if (String(payload.ticketId) !== String(requestId.value)) return;
+
+      const c = payload.comment;
+      if (!c) return;
+
+      // Dedup: skip if comment already exists (from optimistic push)
+      if (c._id && responses.value.some((r) => r._id === c._id)) return;
+
+      responses.value.push(c);
+      scrollResponsesToBottom();
+    });
+  } catch (e) {
+    // Socket lỗi thì bỏ qua
+  }
+};
+
 // Lifecycle
 onMounted(async () => {
   await fetchRequest();
-  commentsPollInterval = setInterval(pollComments, 3000);
+  connectSocket();
 });
 
 onBeforeUnmount(() => {
-  if (commentsPollInterval) {
-    clearInterval(commentsPollInterval);
-    commentsPollInterval = null;
+  if (ticketSocket.value) {
+    ticketSocket.value.disconnect();
+    ticketSocket.value = null;
   }
 });
 

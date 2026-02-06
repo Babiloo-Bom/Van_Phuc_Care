@@ -845,17 +845,23 @@ const viewTicket = async (ticket: Ticket) => {
       ticketSocket.value = null
     }
 
-    const apiHost = process.env.API_HOST || 'http://localhost:3000'
+    const config = useRuntimeConfig()
+    const apiHost = (config.public as any).apiBaseUrl || (config.public as any).apiHost || 'http://localhost:3000'
     ticketSocket.value = io(`${apiHost}/tickets`, {
       withCredentials: true,
       transports: ['websocket', 'polling'],
     })
 
-    ticketSocket.value.emit('join', { ticketId: String(ticket._id) })
+    const joinRoom = () => {
+      ticketSocket.value?.emit('join', { ticketId: String(ticket._id) })
+    }
+
+    // Join room sau khi connected (và rejoin khi reconnect)
+    ticketSocket.value.on('connect', joinRoom)
 
     ticketSocket.value.on('ticket:comment:new', (payload: any) => {
       if (!payload || !selectedTicket.value) return
-      if (payload.ticketId !== selectedTicket.value._id) return
+      if (String(payload.ticketId) !== String(selectedTicket.value._id)) return
 
       const c = payload.comment
       if (!c) return
@@ -871,6 +877,9 @@ const viewTicket = async (ticket: Ticket) => {
           avatar: normalized.avatar || undefined,
         }
       }
+
+      // Dedup: skip if comment already exists
+      if (normalized._id && comments.value.some((c: any) => c._id === normalized._id)) return
 
       comments.value.push(normalized)
       nextTickScrollToBottom()
@@ -1023,40 +1032,13 @@ const handleAddComment = async () => {
       })
     }
     
-    
-    // Optionally add the new comment immediately to the list
-    // Backend returns: { success: true, data: { comment: {...} } }
-    // useApiClient wraps it: { status: true, data: { success: true, data: { comment: {...} } } }
-    if (response.status && response.data) {
-      const responseData = response.data as any
-      let newComment = null
-      
-      if (responseData.data && responseData.data.comment) {
-        newComment = responseData.data.comment
-      } else if (responseData.comment) {
-        newComment = responseData.comment
-      } else if (responseData.data && !responseData.data.comment) {
-        // Sometimes comment is directly in data
-        newComment = responseData.data
-      }
-      
-      if (newComment) {
-        // Add to comments list immediately
-        comments.value.push(newComment)
-      }
-    }
-    
+    // Comment sẽ được nhận qua Socket.IO listener (ticket:comment:new)
+    // Không push local để tránh duplicate
+
     message.success('Đã gửi trả lời thành công')
     replyForm.value.content = ''
     replyFileList.value = [] // Clear file list
-    
-    // Reload comments to ensure we have the latest data (with a small delay to ensure DB is updated)
-    if (selectedTicket.value) {
-      setTimeout(async () => {
-        await loadComments(selectedTicket.value!._id)
-      }, 500)
-    }
-    
+
     // Refresh ticket detail to update status and other fields
     if (selectedTicket.value) {
       const ticketResponse = await ticketsApi.getTicket(selectedTicket.value._id)
