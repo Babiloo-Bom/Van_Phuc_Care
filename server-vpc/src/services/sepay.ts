@@ -87,7 +87,7 @@ class SePayService {
         acc: this.ACCOUNT_NO,
         bank: 'MBBank',
         amount: roundedAmount.toString(), // Dùng số đã làm tròn
-        des: content,
+        des: orderId,
         template: 'compact', // hoặc qronly / để trống
       });
 
@@ -109,7 +109,7 @@ class SePayService {
         accountName: this.ACCOUNT_NAME,
         bankCode: this.BANK_CODE,
         amount: roundedAmount, // Trả về số đã làm tròn
-        content: content
+        content: orderId
       };
 
       if (this.IS_SANDBOX) {
