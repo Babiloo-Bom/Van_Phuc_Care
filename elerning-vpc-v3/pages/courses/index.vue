@@ -94,13 +94,15 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, onMounted } from "vue";
+import { ref, computed, onMounted, defineAsyncComponent } from "vue";
 import { useCoursesStore } from "~/stores/courses";
 import { useAuthStore } from "~/stores/auth";
 import { useCartStore } from "~/stores/cart";
 import CourseCard from "~/components/courses/CourseCard.vue";
 import CartToast from "~/components/cart/Toast.vue";
-import BannerSlider from "~/components/banners/BannerSlider.vue";
+
+// Lazy load BannerSlider để tách Swiper bundle (~60KB) ra chunk riêng
+const BannerSlider = defineAsyncComponent(() => import("~/components/banners/BannerSlider.vue"));
 
 // Store
 const courseStore = useCoursesStore();
@@ -307,6 +309,11 @@ const { pending: coursesPending } = useAsyncData('courses', async () => {
   } catch (error) {
     return [];
   }
+}, {
+  // SWR caching: dùng data cũ nếu chưa quá 30s, tránh re-fetch khi navigate back
+  getCachedData(key, nuxtApp) {
+    return nuxtApp.payload.data[key] || nuxtApp.static.data[key];
+  },
 });
 
 const handleAddToCart = async (course: any) => {
@@ -377,9 +384,9 @@ const handleViewDetail = (course: any) => {
 // Lifecycle
 onMounted(async () => {
   await authStore.initAuth();
-  // Refetch all courses so backend receives token and returns correct isPurchased (fix F5 showing all as not purchased)
+  // isPurchased đã được tính từ authStore.user.courseRegister sau initAuth
+  // Chỉ cần fetch myCourses để lấy progress, không cần re-fetch all courses
   if (authStore.isLoggedIn) {
-    await courseStore.fetchAll();
     await courseStore.fetchMyCourses();
   }
 });

@@ -11,7 +11,6 @@
         disableOnInteraction: false,
       } : false"
       :pagination="banners.length > 1 ? { clickable: true } : false"
-      :navigation="banners.length > 1"
       class="banner-swiper"
       @swiper="onSwiper"
     >
@@ -28,9 +27,17 @@
           @click="handleBannerClick(banner)"
         >
           <div
-            class="banner-item md:mb-[5rem] h-[480px] min-h-[480px] max-h-[480px] w-full py-10 sm:pt-20 sm:pb-20 md:pb-60 bg-cover bg-center bg-no-repeat relative z-[1] after:absolute after:content-[''] after:top-0 after:left-0 after:w-full after:h-full after:opacity-60 after:bg-prim-100"
-            :style="getBannerStyle(banner.image)"
+            class="banner-item md:mb-[5rem] h-[480px] min-h-[480px] max-h-[480px] w-full py-10 sm:pt-20 sm:pb-20 md:pb-60 relative z-[1] overflow-hidden"
           >
+            <NuxtImg
+              :src="banner.image || '/images/home/banner.png'"
+              alt=""
+              class="absolute inset-0 w-full h-full object-cover"
+              :loading="index === 0 ? 'eager' : 'lazy'"
+              width="1920"
+              height="480"
+            />
+            <div class="absolute inset-0 opacity-60 bg-prim-100"></div>
             <div class="absolute inset-0 bg-[#1A75BBB2]"></div>
             <div class="container h-full" :class="props.pageType === 'all-courses' ? 'mx-auto !px-0 md:!px-auto' : props.pageType === 'my-courses' ? 'mx-auto' : ''">
               <div
@@ -96,9 +103,18 @@
     <!-- Fallback Banner (if no banners from API) -->
     <div
       v-else
-      class="md:mb-[5rem] h-[480px] min-h-[480px] max-h-[480px] w-full py-10 sm:pt-20 sm:pb-20 md:pb-60 bg-cover bg-center bg-no-repeat relative z-[1] after:absolute after:content-[''] after:top-0 after:left-0 after:w-full after:h-full after:opacity-60 after:bg-prim-100"
-      :style="fallbackBannerStyle"
+      class="md:mb-[5rem] h-[480px] min-h-[480px] max-h-[480px] w-full py-10 sm:pt-20 sm:pb-20 md:pb-60 relative z-[1] overflow-hidden"
     >
+      <NuxtImg
+        src="/images/home/banner.png"
+        alt=""
+        class="absolute inset-0 w-full h-full object-cover"
+        loading="eager"
+        width="1920"
+        height="480"
+        format="webp"
+      />
+      <div class="absolute inset-0 opacity-60 bg-prim-100"></div>
       <div class="absolute inset-0 bg-[#1A75BBB2]"></div>
       <div class="container h-full" :class="props.pageType === 'all-courses' ? 'mx-auto !px-0 md:!px-auto' : props.pageType === 'my-courses' ? 'mx-auto' : ''">
         <div
@@ -158,14 +174,13 @@
 <script setup lang="ts">
 import { ref, computed, onMounted } from 'vue'
 import { Swiper, SwiperSlide } from 'swiper/vue'
-import { Autoplay, Pagination, Navigation } from 'swiper'
+import { Autoplay, Pagination } from 'swiper'
 import 'swiper/css'
 import 'swiper/css/pagination'
-import 'swiper/css/navigation'
 import { useBannersApi } from '~/composables/api/useBannersApi'
 
 // Register Swiper modules
-const modules = [Autoplay, Pagination, Navigation]
+const modules = [Autoplay, Pagination]
 
 interface Banner {
   _id: string
@@ -201,34 +216,6 @@ const { getBanners } = useBannersApi()
 // Computed để kiểm tra có banners hay không - đảm bảo reactivity
 const hasBanners = computed(() => banners.value && banners.value.length > 0)
 
-// Fallback banner style - sử dụng local image làm fallback chính (đảm bảo luôn có)
-// Nếu muốn dùng CDN, có thể thay đổi URL này
-const fallbackBannerStyle = computed(() => {
-  // Ưu tiên local image (luôn có sẵn), có thể thay bằng CDN nếu cần
-  const fallbackImage = '/images/home/banner.png'
-  // Alternative: 'https://cdn.synck.io.vn/vanphuccare/banner/main.webp'
-  
-  return {
-    backgroundImage: `url("${fallbackImage}")`,
-    backgroundSize: 'cover',
-    backgroundPosition: 'center',
-    backgroundRepeat: 'no-repeat',
-  }
-})
-
-// Helper function để tạo background style - giải quyết SSR/CSR hydration issue
-// Wrap URL trong quotes để handle special characters như () và spaces
-const getBannerStyle = (imageUrl: string) => {
-  if (!imageUrl) return {}
-  // Escape quotes trong URL nếu có, và wrap trong double quotes
-  const safeUrl = imageUrl.replace(/"/g, '%22')
-  return {
-    backgroundImage: `url("${safeUrl}")`,
-    backgroundSize: 'cover',
-    backgroundPosition: 'center',
-    backgroundRepeat: 'no-repeat',
-  }
-}
 
 const onSwiper = (swiper: any) => {
   swiperInstance.value = swiper
@@ -297,26 +284,5 @@ onMounted(() => {
   background: white;
 }
 
-/* Swiper navigation customization */
-:deep(.swiper-button-next),
-:deep(.swiper-button-prev) {
-  color: white;
-  background: rgba(255, 255, 255, 0.2);
-  width: 44px;
-  height: 44px;
-  border-radius: 50%;
-  transition: all 0.3s ease;
-}
-
-:deep(.swiper-button-next:hover),
-:deep(.swiper-button-prev:hover) {
-  background: rgba(255, 255, 255, 0.3);
-}
-
-:deep(.swiper-button-next::after),
-:deep(.swiper-button-prev::after) {
-  font-size: 18px;
-  font-weight: bold;
-}
 </style>
 
