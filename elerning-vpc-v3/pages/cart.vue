@@ -390,6 +390,9 @@
           <p class="mt-4 text-xs text-gray-500">
             Sau khi thanh toán thành công, hệ thống sẽ tự động kích hoạt khóa học và chuyển bạn đến trang học.
           </p>
+            <p class="mt-4 text-xs text-red-500">
+            KHÔNG TẮT MÃ QR KHI THANH TOÁN
+          </p>
 
           <div class="mt-4 text-sm text-center">
             <div v-if="qrError" class="text-red-500 font-semibold">{{ qrError }}</div>

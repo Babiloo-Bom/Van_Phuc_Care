@@ -4388,7 +4388,7 @@ const editCourse = async (course: Course) => {
                 title: lesson.title || "",
                 description: lesson.description || "",
                 content: lesson.content || "",
-                type: lesson.type || "video",
+                type: "video",
                 isPreview: lesson.isPreview || false,
                 status: lesson.status || "active",
                 order:
