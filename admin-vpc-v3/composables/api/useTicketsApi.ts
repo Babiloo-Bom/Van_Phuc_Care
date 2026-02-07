@@ -169,11 +169,8 @@ export const useTicketsApi = () => {
      * Add a comment/reply with file uploads using FormData
      */
     async addCommentWithFiles(ticketId: string, formData: FormData) {
-      return apiClient.post<{ comment: any }>(`/api/a/tickets/${ticketId}/comments`, formData, {
-        errorMessage: 'Không thể thêm bình luận',
-        headers: {
-          'Content-Type': 'multipart/form-data'
-        }
+      return apiClient.upload(`/api/a/tickets/${ticketId}/comments`, formData, {
+        errorMessage: 'Không thể thêm bình luận'
       })
     },
 
