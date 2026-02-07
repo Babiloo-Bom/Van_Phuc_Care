@@ -1,7 +1,16 @@
 /**
  * Create Admin User Script
- * Run: node scripts/create-admin-user.js
- * Or inside Docker: docker compose -f docker-compose.prod.yml exec api node scripts/create-admin-user.js
+ *
+ * Tài khoản mặc định: admin@vanphuccare.vn / 123456 (có thể sửa trong object adminUser bên dưới).
+ *
+ * Chạy từ thư mục server-vpc:
+ *   node scripts/create-admin-user.js
+ *
+ * Cần có MONGODB_URI trong .env hoặc set trước khi chạy:
+ *   MONGODB_URI=mongodb://... node scripts/create-admin-user.js
+ *
+ * Trong Docker:
+ *   docker compose -f docker-compose.prod.yml exec api node scripts/create-admin-user.js
  */
 
 const mongoose = require('mongoose');
@@ -33,12 +42,14 @@ const adminSchema = new mongoose.Schema({
 
 const Admin = mongoose.model('admins', adminSchema, 'admins');
 
-// User admin cần tạo
+// User admin cần tạo (có thể sửa email/password trước khi chạy script)
 const adminUser = {
-  fullname: 'Admin User',
-  email: 'admin@gmail.com',
-  username: 'admin',
+  fullname: 'Admin Van Phuc Care',
+  name: 'Admin Van Phuc Care',
+  email: 'admin@vanphuccare.vn',
+  username: 'admin@vanphuccare.vn',
   password: '123456', // Sẽ được hash
+  provider: 'local',
   role: 'admin',
   status: 'active',
   verified: 'true',
@@ -72,8 +83,10 @@ async function main() {
         {
           $set: {
             fullname: adminUser.fullname,
+            name: adminUser.name,
             username: adminUser.username,
             password: hashedPassword,
+            provider: adminUser.provider || 'local',
             role: adminUser.role,
             status: adminUser.status,
             verified: adminUser.verified,

@@ -868,6 +868,12 @@ class CourseController {
     try {
       const courseData = req.body;
 
+      // Validate bắt buộc: tên giảng viên (báo lỗi bằng văn bản rõ ràng, không dùng mã)
+      const instructorName = courseData.instructor?.name;
+      if (!instructorName || typeof instructorName !== "string" || !instructorName.trim()) {
+        return sendError(res, 400, "Vui lòng nhập tên giảng viên");
+      }
+
       // Check if course with same slug exists
       const existingCourse = await Course.findOne({ slug: courseData.slug });
       if (existingCourse) {
@@ -987,8 +993,12 @@ class CourseController {
 
       // Ensure instructor object is properly structured if provided
       if (req.body.instructor) {
+        const instructorName = req.body.instructor.name;
+        if (!instructorName || typeof instructorName !== "string" || !instructorName.trim()) {
+          return sendError(res, 400, "Vui lòng nhập tên giảng viên");
+        }
         updateData.instructor = {
-          name: req.body.instructor.name || '',
+          name: instructorName.trim(),
           avatar: req.body.instructor.avatar || '',
           bio: req.body.instructor.bio || '',
           specialization: req.body.instructor.specialization || '',

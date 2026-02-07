@@ -334,78 +334,88 @@
     <!-- Cart Toast -->
     <CartToast />
 
-    <!-- QR Payment Modal -->
+    <!-- QR Payment Modal (theo Figma My Academy VPC 2025) -->
     <a-modal
       v-model:open="showQrModal"
       :footer="null"
       :closable="true"
       :maskClosable="false"
       centered
-      width="520px"
+      width="480px"
+      class="qr-payment-modal"
     >
-      <div class="py-4 px-4 sm:px-6">
-        <h3 class="text-lg sm:text-xl font-bold text-center text-gray-800 mb-4">
-          Quét mã QR để thanh toán
-        </h3>
-
-        <p class="mt-4 text-xs text-red-500 font-bold text-center">
-          KHÔNG TẮT MÃ QR KHI THANH TOÁN
+      <div class="qr-modal-inner">
+        <!-- Hướng dẫn trên cùng (Figma: text đậm, xám đậm) -->
+        <p class="qr-modal-instruction">
+          Mở ứng dụng ngân hàng/ ví điện tử, quét QR và xác nhận thanh toán
         </p>
 
-        <div v-if="qrInfo" class="text-center">
-          <div class="inline-block bg-white p-4 rounded-xl shadow-sm border border-gray-100">
-            <!-- SePay /img trả về ảnh QR nên có thể nhúng trực tiếp -->
+        <div v-if="qrInfo" class="qr-modal-content">
+          <!-- Khối QR: khung trắng, viền, shadow nhẹ -->
+          <div class="qr-block">
+            <div class="qr-block-logo">
+              <span class="qr-sepay-s">S</span>
+              <span class="qr-sepay-text">SePay</span>
+            </div>
             <img
               :src="qrInfo.qrCode"
               alt="QR thanh toán MB Bank"
-              class="w-64 h-64 mx-auto rounded-lg object-contain"
+              class="qr-block-image"
             >
+            <div class="qr-block-badges">
+              <span>napas 247</span>
+              <span class="qr-badge-divider">|</span>
+              <span>MB</span>
+              <span class="qr-badge-divider">|</span>
+              <span class="qr-badge-vietqr">VIETQR</span>
+            </div>
           </div>
 
-          <p class="text-sm text-gray-600 mt-4">
-            Mở ứng dụng ngân hàng / ví điện tử, chọn quét QR và xác nhận thanh toán.
+          <!-- Lưu ý màu đỏ (Figma: red notice) -->
+          <p class="qr-modal-notice">
+            Quý khách vui lòng giữ nguyên màn hình cho tới khi hệ thống xác nhận thành công và chuyển về trang khóa học.
           </p>
 
-          <div class="mt-4 text-sm text-gray-700 space-y-1 text-left max-w-sm mx-auto">
-            <p>
-              <span class="font-semibold">Ngân hàng:</span>
-              <span class="ml-1">MB Bank</span>
-            </p>
-            <p>
-              <span class="font-semibold">Số tài khoản:</span>
-              <span class="ml-1">{{ qrInfo.accountNo }}</span>
-            </p>
-            <p>
-              <span class="font-semibold">Chủ tài khoản:</span>
-              <span class="ml-1">{{ qrInfo.accountName }}</span>
-            </p>
-            <p>
-              <span class="font-semibold">Số tiền:</span>
-              <span class="ml-1 text-primary-100 font-bold">
-                {{ Number(qrInfo.amount).toLocaleString('vi-VN') }}đ
-              </span>
-            </p>
-            <p>
-              <span class="font-semibold">Nội dung chuyển khoản:</span>
-              <span class="ml-1 text-gray-900 break-words">{{ qrInfo.content }}</span>
-            </p>
+          <!-- Thông tin chuyển khoản (Figma: label + value, số tiền blue) -->
+          <div class="qr-transfer-details">
+            <div class="qr-transfer-row">
+              <span class="qr-transfer-label">Ngân hàng:</span>
+              <span class="qr-transfer-value">MB Bank</span>
+            </div>
+            <div class="qr-transfer-row">
+              <span class="qr-transfer-label">Số tài khoản:</span>
+              <span class="qr-transfer-value">{{ qrInfo.accountNo }}</span>
+            </div>
+            <div class="qr-transfer-row">
+              <span class="qr-transfer-label">Chủ tài khoản:</span>
+              <span class="qr-transfer-value">{{ qrInfo.accountName }}</span>
+            </div>
+            <div class="qr-transfer-row">
+              <span class="qr-transfer-label">Số tiền:</span>
+              <span class="qr-transfer-amount">{{ Number(qrInfo.amount).toLocaleString('vi-VN') }}₫</span>
+            </div>
+            <div class="qr-transfer-row">
+              <span class="qr-transfer-label">Nội dung chuyển khoản:</span>
+              <span class="qr-transfer-value qr-transfer-content">{{ qrInfo.content }}</span>
+            </div>
           </div>
 
-          <p class="mt-4 text-xs text-gray-500">
-            Sau khi thanh toán thành công, hệ thống sẽ tự động kích hoạt khóa học và chuyển bạn đến trang học.
+          <!-- Hết hạn -->
+          <p class="qr-expiry">
+            Hết hạn sau: <strong>{{ formatSeconds(qrCountdown) }}</strong>
           </p>
 
-          <div class="mt-4 text-sm text-center">
-            <div v-if="qrError" class="text-red-500 font-semibold">{{ qrError }}</div>
-            <div v-else class="text-gray-600">Hết hạn sau: <span class="font-semibold">{{ formatSeconds(qrCountdown) }}</span></div>
-            <div class="mt-3 flex justify-center gap-3">
+          <!-- Nút Đóng (Figma: nền xám nhạt, viền, chữ xám) -->
+          <div class="qr-modal-actions">
+            <div v-if="qrError" class="qr-error-text">{{ qrError }}</div>
+            <div class="qr-actions-buttons">
               <a-button v-if="qrError" type="primary" :loading="isProcessingOrderQr" @click="retryQr">Tạo mã QR mới</a-button>
-              <a-button type="default" @click="closeQrModal">Đóng</a-button>
+              <button type="button" class="qr-btn-close" @click="closeQrModal">Đóng</button>
             </div>
           </div>
         </div>
 
-        <div v-else class="text-center text-gray-500 py-8">
+        <div v-else class="qr-loading">
           Đang chuẩn bị mã QR thanh toán...
         </div>
       </div>
@@ -1101,6 +1111,161 @@ onMounted(async () => {
 </script>
 
 <style scoped>
+/* QR Payment Modal - theo Figma My Academy VPC 2025 (node 2800-7457) */
+.qr-modal-inner {
+  padding: 20px 24px 24px;
+}
+.qr-modal-instruction {
+  font-size: 15px;
+  font-weight: 700;
+  color: #393939;
+  text-align: center;
+  margin: 0 0 20px;
+  line-height: 1.4;
+}
+.qr-modal-content {
+  text-align: center;
+}
+.qr-block {
+  display: inline-block;
+  background: #fff;
+  padding: 20px 24px 16px;
+  border: 1px solid #e8e8e8;
+  border-radius: 8px;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.06);
+  max-width: 100%;
+  width: 100%;
+  box-sizing: border-box;
+}
+.qr-block-logo {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  margin-bottom: 12px;
+}
+.qr-sepay-s {
+  font-size: 20px;
+  font-weight: 700;
+  color: #1A75BB;
+  font-family: inherit;
+}
+.qr-sepay-text {
+  font-size: 18px;
+  font-weight: 600;
+  color: #1A75BB;
+}
+.qr-block-image {
+  width: 224px;
+  height: 224px;
+  max-width: 100%;
+  display: block;
+  margin: 0 auto;
+  object-fit: contain;
+  border-radius: 4px;
+}
+.qr-block-badges {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  margin-top: 12px;
+  padding-top: 12px;
+  border-top: 1px solid #f0f0f0;
+  font-size: 13px;
+  font-weight: 500;
+  color: #595959;
+}
+.qr-badge-divider {
+  color: #d9d9d9;
+  font-weight: 400;
+}
+.qr-badge-vietqr {
+  color: #DE4841;
+}
+.qr-modal-notice {
+  font-size: 13px;
+  color: #DE4841;
+  text-align: center;
+  margin: 16px 0 0;
+  line-height: 1.5;
+}
+.qr-transfer-details {
+  text-align: left;
+  max-width: 360px;
+  margin: 16px auto 0;
+  font-size: 14px;
+}
+.qr-transfer-row {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  margin-bottom: 6px;
+}
+.qr-transfer-label {
+  flex-shrink: 0;
+  font-weight: 600;
+  color: #595959;
+  min-width: 140px;
+}
+.qr-transfer-value {
+  color: #262626;
+  word-break: break-word;
+}
+.qr-transfer-amount {
+  font-weight: 700;
+  color: #1A75BB;
+}
+.qr-transfer-content {
+  flex: 1;
+}
+.qr-expiry {
+  font-size: 14px;
+  color: #8c8c8c;
+  text-align: center;
+  margin: 16px 0 0;
+}
+.qr-expiry strong {
+  color: #262626;
+}
+.qr-modal-actions {
+  margin-top: 20px;
+  text-align: center;
+}
+.qr-error-text {
+  font-size: 14px;
+  font-weight: 600;
+  color: #DE4841;
+  margin-bottom: 12px;
+}
+.qr-actions-buttons {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+}
+.qr-btn-close {
+  padding: 8px 20px;
+  font-size: 14px;
+  font-weight: 500;
+  color: #595959;
+  background: #f5f5f5;
+  border: 1px solid #d9d9d9;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: background 0.2s, color 0.2s;
+}
+.qr-btn-close:hover {
+  background: #e8e8e8;
+  color: #262626;
+}
+.qr-loading {
+  text-align: center;
+  color: #8c8c8c;
+  padding: 48px 16px;
+  font-size: 14px;
+}
+
 /* Custom colors to match design */
 .text-primary-100 {
   color: #2176FF;

@@ -5431,8 +5431,13 @@ const handleModalOk = async () => {
       apiMessage.includes("Path `") ||
       apiMessage.includes("is required")
     ) {
-      // Format: "chapters validation failed: title: Path `title` is required."
-      if (apiMessage.includes("chapters validation failed")) {
+      // Thiếu tên giảng viên (Course validation: instructor.name)
+      if (
+        apiMessage.includes("instructor") &&
+        (apiMessage.includes("name") || apiMessage.includes("instructor.name"))
+      ) {
+        apiMessage = "Vui lòng nhập tên giảng viên";
+      } else if (apiMessage.includes("chapters validation failed")) {
         const fieldMatch = apiMessage.match(/Path\s+`(\w+)`\s+is\s+required/i);
         if (fieldMatch) {
           const field = fieldMatch[1];
