@@ -431,7 +431,7 @@
               v-model:file-list="replyFileList"
               :before-upload="beforeUpload"
               :show-upload-list="false"
-              accept="image/*,video/*,.pdf,.doc,.docx,.xls,.xlsx"
+              accept="image/*"
               :multiple="true"
               :max-count="5"
             >
@@ -439,11 +439,11 @@
                 <template #icon>
                   <PaperClipOutlined />
                 </template>
-                Thêm ảnh, video hoặc file (Tối đa 5)
+                Thêm ảnh (Tối đa 5)
               </a-button>
             </a-upload>
             <div class="text-sm text-gray-500 mt-2">
-              Hỗ trợ: Ảnh, Video, PDF, Word, Excel (Tối đa 10MB/file)
+              Hỗ trợ: Ảnh (Tối đa 10MB/file)
             </div>
           </a-form-item>
           
@@ -970,11 +970,19 @@ const nextTickScrollToBottom = () => {
 
 // File upload handlers
 const beforeUpload: UploadProps['beforeUpload'] = (file) => {
-  const isLt10M = file.size / 1024 / 1024 < 10
-  if (!isLt10M) {
-    message.error('File phải nhỏ hơn 10MB!')
+  const isImage = file.type.startsWith('image/')
+
+  if (!isImage) {
+    message.error('Chỉ có thể tải lên hình ảnh!')
     return false
   }
+
+  const isLt10M = file.size / 1024 / 1024 < 10
+  if (!isLt10M) {
+    message.error('Dung lượng file không được vượt quá 10MB!')
+    return false
+  }
+
   return false // Prevent auto upload
 }
 
