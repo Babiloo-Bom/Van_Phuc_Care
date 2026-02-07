@@ -353,10 +353,6 @@
         <div v-if="qrInfo" class="qr-modal-content">
           <!-- Khối QR: khung trắng, viền, shadow nhẹ -->
           <div class="qr-block">
-            <div class="qr-block-logo">
-              <span class="qr-sepay-s">S</span>
-              <span class="qr-sepay-text">SePay</span>
-            </div>
             <img
               :src="qrInfo.qrCode"
               alt="QR thanh toán MB Bank"
@@ -1136,24 +1132,6 @@ onMounted(async () => {
   max-width: 100%;
   width: 100%;
   box-sizing: border-box;
-}
-.qr-block-logo {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 6px;
-  margin-bottom: 12px;
-}
-.qr-sepay-s {
-  font-size: 20px;
-  font-weight: 700;
-  color: #1A75BB;
-  font-family: inherit;
-}
-.qr-sepay-text {
-  font-size: 18px;
-  font-weight: 600;
-  color: #1A75BB;
 }
 .qr-block-image {
   width: 224px;
