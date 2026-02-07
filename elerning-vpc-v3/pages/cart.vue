@@ -348,6 +348,10 @@
           Quét mã QR để thanh toán
         </h3>
 
+        <p class="mt-4 text-xs text-red-500 font-bold">
+          KHÔNG TẮT MÃ QR KHI THANH TOÁN
+        </p>
+
         <div v-if="qrInfo" class="text-center">
           <div class="inline-block bg-white p-4 rounded-xl shadow-sm border border-gray-100">
             <!-- SePay /img trả về ảnh QR nên có thể nhúng trực tiếp -->
@@ -389,9 +393,6 @@
 
           <p class="mt-4 text-xs text-gray-500">
             Sau khi thanh toán thành công, hệ thống sẽ tự động kích hoạt khóa học và chuyển bạn đến trang học.
-          </p>
-            <p class="mt-4 text-xs text-red-500">
-            KHÔNG TẮT MÃ QR KHI THANH TOÁN
           </p>
 
           <div class="mt-4 text-sm text-center">
