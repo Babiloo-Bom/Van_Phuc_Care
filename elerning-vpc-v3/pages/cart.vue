@@ -348,7 +348,7 @@
           Quét mã QR để thanh toán
         </h3>
 
-        <p class="mt-4 text-xs text-red-500 font-bold">
+        <p class="mt-4 text-xs text-red-500 font-bold text-center">
           KHÔNG TẮT MÃ QR KHI THANH TOÁN
         </p>
 
