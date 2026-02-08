@@ -446,12 +446,13 @@
                           <!-- Instructor Avatar -->
                           <div class="flex-shrink-0 w-full md:w-auto">
                             <div class="w-48 h-48 mx-auto md:mx-0">
-                              <img
+                              <NuxtImg
                                 class="w-full h-full object-cover rounded-full border-4 border-prim-100 shadow-lg"
-                                :src="
-                                  getImageUrl(course?.instructor?.avatar, '/images/avatar-demo.png')
-                                "
+                                :src="getImageUrl(course?.instructor?.avatar, '/images/avatar-demo.png')"
                                 alt="Giảng viên"
+                                width="192"
+                                height="192"
+                                loading="lazy"
                               />
                             </div>
                           </div>
@@ -613,12 +614,13 @@
                           >
                             <div class="flex gap-4">
                               <div class="flex-shrink-0">
-                                <img
+                                <NuxtImg
                                   class="w-16 h-16 object-cover rounded-full"
-                                  :src="
-                                    getImageUrl(review.userAvatar, '/images/avatar-demo.png')
-                                  "
+                                  :src="getImageUrl(review.userAvatar, '/images/avatar-demo.png')"
                                   :alt="review.userName"
+                                  width="64"
+                                  height="64"
+                                  loading="lazy"
                                 />
                               </div>
                               <div class="flex-1">
@@ -696,10 +698,14 @@
             >
               <div class="pb-3 sm:pb-4 rounded-md overflow-hidden">
                 <div class="course-thumbnail-16x9">
-                  <img
+                  <NuxtImg
                     class="w-full h-full object-cover"
                     :src="getImageUrl(course?.thumbnail, '/images/place-hoder.jpg')"
-                    alt="/"
+                    alt="Course thumbnail"
+                    sizes="xs:100vw sm:100vw md:100vw lg:33vw"
+                    width="400"
+                    height="225"
+                    loading="eager"
                   />
                 </div>
               </div>
@@ -1084,8 +1090,9 @@
     <!-- Cart Toast -->
     <CartToast />
 
-    <!-- Purchase Modal -->
+    <!-- Purchase Modal - v-if to unmount DOM when closed -->
     <a-modal
+      v-if="showPurchaseModal"
       v-model:open="showPurchaseModal"
       :width="480"
       :footer="null"
@@ -1145,8 +1152,9 @@
       </div>
     </a-modal>
 
-    <!-- Login Modal -->
+    <!-- Login Modal - v-if to unmount DOM when closed -->
     <a-modal
+      v-if="showLoginModal"
       v-model:open="showLoginModal"
       :width="480"
       :footer="null"
@@ -1209,19 +1217,20 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, onMounted, onUnmounted, watch, nextTick } from "vue";
+import { ref, computed, onMounted, onUnmounted, watch, nextTick, defineAsyncComponent } from "vue";
 import { useCoursesStore } from "~/stores/courses";
 import { useCartStore } from "~/stores/cart";
 import { useAuthStore } from "~/stores/auth";
-import { message } from "ant-design-vue";
-import ContentCourse from "~/components/courses/ContentCourse.vue";
-import RecomentCourse from "~/components/courses/RecomentCourse.vue";
 import { useImageUrl } from "~/composables/useImageUrl";
-import CartToast from "~/components/cart/Toast.vue";
 import type { AddToCartData } from "~/types/cart";
 import { useApiBase } from "~/composables/useApiBase";
-// @ts-ignore - hls.js types
-import Hls from "hls.js";
+
+// Lazy load below-the-fold / on-demand components
+const RecomentCourse = defineAsyncComponent(() => import("~/components/courses/RecomentCourse.vue"));
+const CartToast = defineAsyncComponent(() => import("~/components/cart/Toast.vue"));
+
+// hls.js loaded dynamically only when user clicks play (~60-80KB saved from initial bundle)
+let HlsModule: any = null;
 
 const route = useRoute();
 const router = useRouter();
@@ -1586,20 +1595,15 @@ const calculatedRating = computed(() => {
   }
 
   const total = reviews.value.length;
-  const sum = reviews.value.reduce((acc: number, review: any) => {
-    const rating = Number(review.rating) || 0;
-    return acc + rating;
-  }, 0);
+  // Single-pass: compute sum + breakdown together (instead of 6 iterations)
+  const breakdown = { 5: 0, 4: 0, 3: 0, 2: 0, 1: 0 } as Record<number, number>;
+  let sum = 0;
+  for (const review of reviews.value) {
+    const r = Number((review as any).rating) || 0;
+    sum += r;
+    if (r >= 1 && r <= 5) breakdown[r]++;
+  }
   const average = total > 0 ? sum / total : 0;
-
-  // Calculate breakdown by star rating
-  const breakdown = {
-    5: reviews.value.filter((r: any) => Number(r.rating) === 5).length,
-    4: reviews.value.filter((r: any) => Number(r.rating) === 4).length,
-    3: reviews.value.filter((r: any) => Number(r.rating) === 3).length,
-    2: reviews.value.filter((r: any) => Number(r.rating) === 2).length,
-    1: reviews.value.filter((r: any) => Number(r.rating) === 1).length,
-  };
 
   return {
     average,
@@ -1617,7 +1621,7 @@ const introVideoToken = ref<string | null>(null);
 const introVideoTokenLoading = ref(false);
 const userClickedPlay = ref(false);
 const introVideoReady = ref(false);
-let introHlsInstance: Hls | null = null;
+let introHlsInstance: any = null;
 const isMounted = ref(false);
 
 // Computed: Get intro video URL - Stream qua proxy (token ẩn URL gốc)
@@ -1704,6 +1708,17 @@ const loadIntroVideoWithHls = async () => {
     return;
   }
 
+  // Lazy load hls.js on first use
+  if (!HlsModule) {
+    try {
+      // @ts-ignore
+      const mod = await import("hls.js");
+      HlsModule = mod.default || mod;
+    } catch {
+      return;
+    }
+  }
+
   // Cleanup previous HLS instance - CRITICAL: Force destroy để tránh cache
   if (introHlsInstance) {
     try {
@@ -1734,9 +1749,9 @@ const loadIntroVideoWithHls = async () => {
 
   if (isHls) {
     // HLS: Use hls.js to load HLS manifest (.m3u8)
-    if (Hls.isSupported()) {
+    if (HlsModule.isSupported()) {
       try {
-        introHlsInstance = new Hls({
+        introHlsInstance = new HlsModule({
           enableWorker: true,
           lowLatencyMode: false,
           backBufferLength: 90,
@@ -1758,7 +1773,7 @@ const loadIntroVideoWithHls = async () => {
         introHlsInstance.loadSource(currentVideoUrl.value);
         introHlsInstance.attachMedia(videoRef.value);
 
-      introHlsInstance.on(Hls.Events.MANIFEST_PARSED, () => {
+      introHlsInstance.on(HlsModule.Events.MANIFEST_PARSED, () => {
         // Video ready to play
         if (videoRef.value) {
           videoRef.value.play().catch((error: any) => {
@@ -1767,11 +1782,11 @@ const loadIntroVideoWithHls = async () => {
         }
       });
 
-      introHlsInstance.on(Hls.Events.ERROR, (event: string, data: any) => {
+      introHlsInstance.on(HlsModule.Events.ERROR, (event: string, data: any) => {
         
         if (data.fatal) {
           switch (data.type) {
-            case Hls.ErrorTypes.NETWORK_ERROR:
+            case HlsModule.ErrorTypes.NETWORK_ERROR:
               // Chờ một chút trước khi retry
               setTimeout(() => {
                 if (introHlsInstance && currentVideoUrl.value) {
@@ -1779,13 +1794,13 @@ const loadIntroVideoWithHls = async () => {
                 }
               }, 1000);
               break;
-            case Hls.ErrorTypes.MEDIA_ERROR:
+            case HlsModule.ErrorTypes.MEDIA_ERROR:
               introHlsInstance?.recoverMediaError();
               break;
             default:
               // Fatal error, destroying HLS instance
               // Không destroy ngay, thử retry trước
-              if (data.type === Hls.ErrorTypes.NETWORK_ERROR && introHlsInstance && currentVideoUrl.value) {
+              if (data.type === HlsModule.ErrorTypes.NETWORK_ERROR && introHlsInstance && currentVideoUrl.value) {
                 setTimeout(() => {
                   if (introHlsInstance) {
                     introHlsInstance.startLoad();
@@ -2186,15 +2201,6 @@ const fetchData = async () => {
   const slug = route.params.slug as string;
   await coursesStore.fetchDetail(slug);
   convertToObjectArray();
-
-  // Fetch reviews to calculate rating
-  if (course.value?._id) {
-    try {
-      await coursesStore.fetchReviews(course.value._id);
-    } catch (error) {
-      // Reviews fetch failure is not critical, continue
-    }
-  }
 };
 
 // SSR: Fetch course data BEFORE rendering HTML
@@ -2242,44 +2248,7 @@ onMounted(async () => {
   isMounted.value = true;
   // Load cart if user is logged in
   if (authStore.isLoggedIn) {
-    await cartStore.fetchCart();
-  }
-  
-  // Refresh course data khi mount để đảm bảo lấy dữ liệu mới nhất
-  // Điều này đảm bảo video giới thiệu mới được hiển thị sau khi update ở admin
-  if (process.client) {
-    try {
-      const oldIntroVideo = (course.value as any)?.introVideoHlsUrl || (course.value as any)?.introVideo;
-      await refreshCourseData();
-      await nextTick();
-      
-      // Kiểm tra xem video có thay đổi không
-      const newIntroVideo = (course.value as any)?.introVideoHlsUrl || (course.value as any)?.introVideo;
-      if (oldIntroVideo !== newIntroVideo && userClickedPlay.value) {
-        // Nếu video đang được play và video URL thay đổi, reload video
-        userClickedPlay.value = false;
-        introVideoReady.value = false;
-        introVideoToken.value = null;
-        
-        // Cleanup HLS instance
-        if (introHlsInstance) {
-          try {
-            introHlsInstance.destroy();
-          } catch (error) {
-            // Ignore cleanup errors
-          }
-          introHlsInstance = null;
-        }
-        
-        // Reset video element
-        if (videoRef.value) {
-          videoRef.value.src = '';
-          videoRef.value.load();
-        }
-      }
-    } catch (error) {
-      // Ignore refresh errors, use cached data if available
-    }
+    cartStore.fetchCart();
   }
 });
 

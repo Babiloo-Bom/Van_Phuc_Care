@@ -13,13 +13,15 @@
       <div class="course-badge" v-if="course.isFeatured">
         <span class="badge-text">Nổi bật</span>
       </div>
-      <div class="course-badge purchased-badge" v-if="course.isPurchased" style="top: auto; bottom: 12px; left: 12px; background: #e6f7ff; border: 1px solid #1a75bb;">
-        <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#1a75bb" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="margin-right: 4px;">
-          <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path>
-          <polyline points="22 4 12 14.01 9 11.01"></polyline>
-        </svg>
-        <span class="badge-text" style="color: #1a75bb;">Đã mua</span>
-      </div>
+      <ClientOnly>
+        <div class="course-badge purchased-badge" v-if="isPurchased" style="top: auto; bottom: 12px; left: 12px; background: #e6f7ff; border: 1px solid #1a75bb;">
+          <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#1a75bb" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="margin-right: 4px;">
+            <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path>
+            <polyline points="22 4 12 14.01 9 11.01"></polyline>
+          </svg>
+          <span class="badge-text" style="color: #1a75bb;">Đã mua</span>
+        </div>
+      </ClientOnly>
     </div>
 
     <div class="course-content">
