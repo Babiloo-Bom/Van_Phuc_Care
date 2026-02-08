@@ -38,7 +38,7 @@
   <div v-else class="flex-grow flex flex-col justify-end w-full gap-4">
     <div class="course-actions" v-if="everCompleted || isCurrentlyCompleted">
       <button class="btn-completed" @click.stop="$emit('goToCertificate')">
-        Đã hoàn thành
+        Xem chứng chỉ
       </button>
     </div>
     <div class="course-actions" v-else>
@@ -72,6 +72,7 @@ const progressWidth = computed(() => Math.min(Math.max(props.progressPct, 0), 10
 <style scoped>
 .course-actions {
   display: flex;
+  width: 100%;
   gap: 8px;
   margin-top: auto;
 }
@@ -113,7 +114,7 @@ const progressWidth = computed(() => Math.min(Math.max(props.progressPct, 0), 10
 }
 
 .btn-access {
-  flex: 1;
+  width: 100%;
   padding: 10px 16px;
   border: none;
   border-radius: 6px;
@@ -130,7 +131,7 @@ const progressWidth = computed(() => Math.min(Math.max(props.progressPct, 0), 10
 }
 
 .btn-completed {
-  flex: 1;
+  width: 100%;
   padding: 10px 16px;
   border: none;
   border-radius: 6px;

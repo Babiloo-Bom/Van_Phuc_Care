@@ -79,16 +79,21 @@
       />
 
       <p class="course-description">{{ course.shortDescription }}</p>
-      <CourseCardActions
-        :is-purchased="isPurchased == true"
-        :ever-completed="everCompleted"
-        :is-currently-completed="isCurrentlyCompleted"
-        :progress-pct="progressPct"
-        @buy-now="buyNow"
-        @add-to-cart="addToCart"
-        @go-to-certificate="goToCertificate"
-        @go-to-learning="goToLearningOrCertificate"
-      />
+      <ClientOnly>
+        <CourseCardActions
+          :is-purchased="isPurchased == true"
+          :ever-completed="everCompleted"
+          :is-currently-completed="isCurrentlyCompleted"
+          :progress-pct="progressPct"
+          @buy-now="buyNow"
+          @add-to-cart="addToCart"
+          @go-to-certificate="goToCertificate"
+          @go-to-learning="goToLearningOrCertificate"
+        />
+        <template #fallback>
+          <div class="btn-placeholder"></div>
+        </template>
+      </ClientOnly>
     </div>
   </div>
 </template>
@@ -437,6 +442,13 @@ const isPromotionActive = computed(() => {
   font-size: 14px;
   font-weight: 600;
   border: 1px solid #a7f3d0;
+}
+
+.btn-placeholder {
+  height: 36px;
+  background: #e5e7eb;
+  border-radius: 6px;
+  margin-top: auto;
 }
 
 .icon {
