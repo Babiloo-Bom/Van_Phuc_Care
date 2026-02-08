@@ -416,7 +416,7 @@
                                   <!-- Lock Icon (for locked lessons - only show if course not purchased) -->
                                   <img
                                     v-if="
-                                      lesson.isLocked && !course?.isPurchased
+                                      lesson.isLocked && !isPurchased
                                     "
                                     src="/images/svg/lock.svg"
                                     alt="locked"
@@ -710,103 +710,133 @@
                 </div>
               </div>
               <!-- Pricing and Action Section -->
-              <div class="mb-4">
-                <!-- Purchased Badge -->
-                <div v-if="course?.isPurchased" class="mb-3 sm:mb-4">
-                  <div
-                    class="flex items-center justify-center gap-2 px-3 py-2 rounded-lg"
-                    style="background-color: #e6f7ff; border: 1px solid #1a75bb"
-                  >
-                    <svg
-                      xmlns="http://www.w3.org/2000/svg"
-                      width="20"
-                      height="20"
-                      viewBox="0 0 24 24"
-                      fill="none"
-                      stroke="#1a75bb"
-                      stroke-width="2"
-                      stroke-linecap="round"
-                      stroke-linejoin="round"
+              <ClientOnly>
+                <div class="mb-4">
+                  <!-- Purchased Badge -->
+                  <div v-if="isPurchased" class="mb-3 sm:mb-4">
+                    <div
+                      class="flex items-center justify-center gap-2 px-3 py-2 rounded-lg"
+                      style="background-color: #e6f7ff; border: 1px solid #1a75bb"
                     >
-                      <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path>
-                      <polyline points="22 4 12 14.01 9 11.01"></polyline>
-                    </svg>
-                    <span
-                      class="text-sm sm:text-base font-semibold"
-                      style="color: #1a75bb"
-                      >Đã mua khóa học này</span
+                      <svg
+                        xmlns="http://www.w3.org/2000/svg"
+                        width="20"
+                        height="20"
+                        viewBox="0 0 24 24"
+                        fill="none"
+                        stroke="#1a75bb"
+                        stroke-width="2"
+                        stroke-linecap="round"
+                        stroke-linejoin="round"
+                      >
+                        <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path>
+                        <polyline points="22 4 12 14.01 9 11.01"></polyline>
+                      </svg>
+                      <span
+                        class="text-sm sm:text-base font-semibold"
+                        style="color: #1a75bb"
+                        >Đã mua khóa học này</span
+                      >
+                    </div>
+                  </div>
+
+                  <!-- Offer Timer (only show if not purchased and promotion is active) -->
+                  <div
+                    v-if="!isPurchased && promotionDaysRemaining !== null && promotionDaysRemaining > 0"
+                    class="flex items-center gap-2 mb-2 sm:mb-3"
+                  >
+                    <img
+                      src="/images/svg/clock-pink.svg"
+                      alt="clock"
+                      class="w-3 h-3 sm:w-4 sm:h-4"
+                    />
+                    <span class="text-sm" style="color: #f48283"
+                      >Ưu đãi còn {{ promotionDaysRemaining }} ngày</span
                     >
                   </div>
-                </div>
 
-                <!-- Offer Timer (only show if not purchased and promotion is active) -->
-                <div
-                  v-if="!course?.isPurchased && promotionDaysRemaining !== null && promotionDaysRemaining > 0"
-                  class="flex items-center gap-2 mb-2 sm:mb-3"
-                >
-                  <img
-                    src="/images/svg/clock-pink.svg"
-                    alt="clock"
-                    class="w-3 h-3 sm:w-4 sm:h-4"
-                  />
-                  <span class="text-sm" style="color: #f48283"
-                    >Ưu đãi còn {{ promotionDaysRemaining }} ngày</span
+                  <!-- Price (only show if not purchased) -->
+                  <div
+                    v-if="!isPurchased"
+                    class="flex items-end gap-2 sm:gap-3 mb-3 sm:mb-4"
                   >
-                </div>
+                    <!-- Hiển thị giá khuyến mãi nếu đang trong thời gian khuyến mãi -->
+                    <h3
+                      v-if="((course as any)?.isPromotionActive || (promotionDaysRemaining !== null && promotionDaysRemaining > 0)) && course?.originalPrice && Number(course.originalPrice) > Number(course.price || 0)"
+                      class="text-2xl sm:text-3xl md:text-4xl font-bold mb-0"
+                      style="color: #2176ff"
+                    >
+                      {{ Number(course.price || 0).toLocaleString("vi-VN") }}₫
+                    </h3>
+                    <!-- Hiển thị giá gốc nếu không có khuyến mãi -->
+                    <h3
+                      v-else-if="course?.price || course?.originalPrice"
+                      class="text-2xl sm:text-3xl md:text-4xl font-bold mb-0"
+                      style="color: #2176ff"
+                    >
+                      {{ Number(course.originalPrice || course.price || 0).toLocaleString("vi-VN") }}₫
+                    </h3>
+                    <!-- Hiển thị "Miễn phí" chỉ khi course đã load và thực sự miễn phí -->
+                    <h3
+                      v-else-if="course && (!course.price && !course.originalPrice)"
+                      class="text-2xl sm:text-3xl md:text-4xl font-bold mb-0"
+                      style="color: #15cf74"
+                    >
+                      Miễn phí
+                    </h3>
+                    <!-- Khoảng trắng khi chưa load course -->
+                    <h3
+                      v-else
+                      class="text-2xl sm:text-3xl md:text-4xl font-bold mb-0"
+                      style="color: transparent"
+                    >
+                      &nbsp;
+                    </h3>
+                    <!-- Hiển thị giá gốc bị gạch khi có khuyến mãi -->
+                    <h4
+                      v-if="((course as any)?.isPromotionActive || (promotionDaysRemaining !== null && promotionDaysRemaining > 0)) && course?.originalPrice && Number(course.originalPrice) > Number(course.price || 0)"
+                      class="text-lg sm:text-xl md:text-2xl italic mb-0 line-through"
+                      style="color: #999999"
+                    >
+                      {{ Number(course.originalPrice).toLocaleString("vi-VN") }}₫
+                    </h4>
+                  </div>
 
-                <!-- Price (only show if not purchased) -->
-                <div
-                  v-if="!course?.isPurchased"
-                  class="flex items-end gap-2 sm:gap-3 mb-3 sm:mb-4"
-                >
-                  <!-- Hiển thị giá khuyến mãi nếu đang trong thời gian khuyến mãi -->
-                  <h3
-                    v-if="((course as any)?.isPromotionActive || (promotionDaysRemaining !== null && promotionDaysRemaining > 0)) && course?.originalPrice && Number(course.originalPrice) > Number(course.price || 0)"
-                    class="text-2xl sm:text-3xl md:text-4xl font-bold mb-0"
-                    style="color: #2176ff"
-                  >
-                    {{ Number(course.price || 0).toLocaleString("vi-VN") }}₫
-                  </h3>
-                  <!-- Hiển thị giá gốc nếu không có khuyến mãi -->
-                  <h3
-                    v-else-if="course?.price || course?.originalPrice"
-                    class="text-2xl sm:text-3xl md:text-4xl font-bold mb-0"
-                    style="color: #2176ff"
-                  >
-                    {{ Number(course.originalPrice || course.price || 0).toLocaleString("vi-VN") }}₫
-                  </h3>
-                  <!-- Hiển thị "Miễn phí" chỉ khi course đã load và thực sự miễn phí -->
-                  <h3
-                    v-else-if="course && (!course.price && !course.originalPrice)"
-                    class="text-2xl sm:text-3xl md:text-4xl font-bold mb-0"
-                    style="color: #15cf74"
-                  >
-                    Miễn phí
-                  </h3>
-                  <!-- Khoảng trắng khi chưa load course -->
-                  <h3
-                    v-else
-                    class="text-2xl sm:text-3xl md:text-4xl font-bold mb-0"
-                    style="color: transparent"
-                  >
-                    &nbsp;
-                  </h3>
-                  <!-- Hiển thị giá gốc bị gạch khi có khuyến mãi -->
-                  <h4
-                    v-if="((course as any)?.isPromotionActive || (promotionDaysRemaining !== null && promotionDaysRemaining > 0)) && course?.originalPrice && Number(course.originalPrice) > Number(course.price || 0)"
-                    class="text-lg sm:text-xl md:text-2xl italic mb-0 line-through"
-                    style="color: #999999"
-                  >
-                    {{ Number(course.originalPrice).toLocaleString("vi-VN") }}₫
-                  </h4>
-                </div>
+                  <!-- Action Buttons -->
+                  <div class="flex flex-col gap-2 sm:gap-3">
+                    <!-- Đã mua và có chứng chỉ: hiển thị 2 nút "Đã hoàn thành" và "Review" -->
+                    <template v-if="isPurchased && hasCertificate">
+                      <!-- Nút Đã hoàn thành (đi tới trang chứng chỉ) -->
+                      <a-button
+                        class="!w-full !py-2 sm:!py-3 !h-[44px] sm:!h-[50px] !text-white !border-none !font-bold !text-sm sm:!text-base !rounded-lg !transition-all !duration-200 hover:!opacity-90"
+                        style="
+                          background: linear-gradient(
+                            88.69deg,
+                            #ffbe6a -1.04%,
+                            #ebbc46 23.61%,
+                            #ffda7d 55.57%,
+                            #ebbc46 74.44%,
+                            #ffbe6a 97.91%
+                          ) !important;
+                        "
+                        @click="goToCertificate"
+                      >
+                        Đã hoàn thành
+                      </a-button>
 
-                <!-- Action Buttons -->
-                <div class="flex flex-col gap-2 sm:gap-3">
-                  <!-- Đã mua và có chứng chỉ: hiển thị 2 nút "Đã hoàn thành" và "Review" -->
-                  <template v-if="course?.isPurchased && hasCertificate">
-                    <!-- Nút Đã hoàn thành (đi tới trang chứng chỉ) -->
+                      <!-- Nút Review (đi tới trang học tập mode review) -->
+                      <a-button
+                        class="!w-full !py-2 sm:!py-3 !h-[44px] sm:!h-[50px] !text-white !border-none !font-bold !text-sm sm:!text-base !rounded-lg !transition-all !duration-200 hover:!opacity-90"
+                        style="background-color: #317bc4 !important"
+                        @click="goToReview"
+                      >
+                        Review
+                      </a-button>
+                    </template>
+
+                    <!-- Đã hoàn thành nhưng chưa có chứng chỉ (tiến trình 100%) -->
                     <a-button
+                      v-else-if="course?.progress?.isCompleted"
                       class="!w-full !py-2 sm:!py-3 !h-[44px] sm:!h-[50px] !text-white !border-none !font-bold !text-sm sm:!text-base !rounded-lg !transition-all !duration-200 hover:!opacity-90"
                       style="
                         background: linear-gradient(
@@ -823,66 +853,46 @@
                       Đã hoàn thành
                     </a-button>
 
-                    <!-- Nút Review (đi tới trang học tập mode review) -->
+                    <!-- Học ngay (đã mua nhưng chưa hoàn thành) -->
                     <a-button
+                      v-else-if="isPurchased"
                       class="!w-full !py-2 sm:!py-3 !h-[44px] sm:!h-[50px] !text-white !border-none !font-bold !text-sm sm:!text-base !rounded-lg !transition-all !duration-200 hover:!opacity-90"
-                      style="background-color: #317bc4 !important"
-                      @click="goToReview"
+                      style="background-color: #15cf74 !important"
+                      @click="goToLearning"
                     >
-                      Review
+                      Học ngay
                     </a-button>
-                  </template>
 
-                  <!-- Đã hoàn thành nhưng chưa có chứng chỉ (tiến trình 100%) -->
-                  <a-button
-                    v-else-if="course?.progress?.isCompleted"
-                    class="!w-full !py-2 sm:!py-3 !h-[44px] sm:!h-[50px] !text-white !border-none !font-bold !text-sm sm:!text-base !rounded-lg !transition-all !duration-200 hover:!opacity-90"
-                    style="
-                      background: linear-gradient(
-                        88.69deg,
-                        #ffbe6a -1.04%,
-                        #ebbc46 23.61%,
-                        #ffda7d 55.57%,
-                        #ebbc46 74.44%,
-                        #ffbe6a 97.91%
-                      ) !important;
-                    "
-                    @click="goToCertificate"
-                  >
-                    Đã hoàn thành
-                  </a-button>
+                    <!-- Mua ngay (chưa mua) -->
+                    <a-button
+                      v-else
+                      class="!w-full !py-2 sm:!py-3 !h-[44px] sm:!h-[50px] !text-white !border-none !font-bold !text-sm sm:!text-base !rounded-lg !transition-all !duration-200 hover:!opacity-90"
+                      style="background-color: #1a75bb !important"
+                      @click="redirectCheckout"
+                    >
+                      Mua ngay
+                    </a-button>
 
-                  <!-- Học ngay (đã mua nhưng chưa hoàn thành) -->
-                  <a-button
-                    v-else-if="course?.isPurchased"
-                    class="!w-full !py-2 sm:!py-3 !h-[44px] sm:!h-[50px] !text-white !border-none !font-bold !text-sm sm:!text-base !rounded-lg !transition-all !duration-200 hover:!opacity-90"
-                    style="background-color: #15cf74 !important"
-                    @click="goToLearning"
-                  >
-                    Học ngay
-                  </a-button>
-
-                  <!-- Mua ngay (chưa mua) -->
-                  <a-button
-                    v-else
-                    class="!w-full !py-2 sm:!py-3 !h-[44px] sm:!h-[50px] !text-white !border-none !font-bold !text-sm sm:!text-base !rounded-lg !transition-all !duration-200 hover:!opacity-90"
-                    style="background-color: #1a75bb !important"
-                    @click="redirectCheckout"
-                  >
-                    Mua ngay
-                  </a-button>
-
-                  <!-- Thêm vào giỏ hàng Button (only show if not purchased) -->
-                  <a-button
-                    v-if="!course?.isPurchased"
-                    class="!w-full !py-2 sm:!py-3 !h-[44px] sm:!h-[50px] !text-white !border-none !font-bold !text-sm sm:!text-base !rounded-lg !transition-all !duration-200 hover:!opacity-90"
-                    style="background-color: #f48283 !important"
-                    @click="toggleCourse"
-                  >
-                    {{ isInCart ? "Xóa khỏi giỏ hàng" : "Thêm vào giỏ hàng" }}
-                  </a-button>
+                    <!-- Thêm vào giỏ hàng Button (only show if not purchased) -->
+                    <a-button
+                      v-if="!isPurchased"
+                      class="!w-full !py-2 sm:!py-3 !h-[44px] sm:!h-[50px] !text-white !border-none !font-bold !text-sm sm:!text-base !rounded-lg !transition-all !duration-200 hover:!opacity-90"
+                      style="background-color: #f48283 !important"
+                      @click="toggleCourse"
+                    >
+                      {{ isInCart ? "Xóa khỏi giỏ hàng" : "Thêm vào giỏ hàng" }}
+                    </a-button>
+                  </div>
                 </div>
-              </div>
+                <template #fallback>
+                  <div class="mb-4">
+                    <div class="flex flex-col gap-2 sm:gap-3">
+                      <div class="h-[44px] sm:h-[50px] bg-gray-200 rounded-lg animate-pulse"></div>
+                      <div class="h-[44px] sm:h-[50px] bg-gray-200 rounded-lg animate-pulse"></div>
+                    </div>
+                  </div>
+                </template>
+              </ClientOnly>
 
               <!-- Course Details -->
               <div class="mt-3 sm:mt-4">
@@ -2029,6 +2039,15 @@ const redirectCheckout = async () => {
   } catch (error) {
   }
 };
+
+// Kiểm tra user đã mua khóa học chưa (check cả API response + authStore)
+const isPurchased = computed(() => {
+  const courseId = course.value?._id?.toString?.();
+  if (!courseId) return false;
+  const fromApi = course.value?.isPurchased === true;
+  const fromUser = authStore.user?.courseRegister?.includes(courseId) || false;
+  return fromApi || fromUser;
+});
 
 // Kiểm tra xem course đã có chứng chỉ chưa
 const hasCertificate = computed(() => {
