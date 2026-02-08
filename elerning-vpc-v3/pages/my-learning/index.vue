@@ -93,10 +93,13 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, onMounted } from "vue";
+import { ref, computed, defineAsyncComponent } from "vue";
 import { useCoursesStore } from "~/stores/courses";
 import PurchasedCourseCard from "~/components/courses/PurchasedCourseCard.vue";
-import BannerSlider from "~/components/banners/BannerSlider.vue";
+
+const BannerSlider = defineAsyncComponent(
+  () => import("~/components/banners/BannerSlider.vue")
+);
 
 // SEO (cho phép index khi có nội dung công khai / crawler)
 useHead({
@@ -122,8 +125,19 @@ definePageMeta({
 });
 
 const coursesStore = useCoursesStore();
-const loading = ref(false);
 const searchKey = ref("");
+
+// server: false vì trang này cần auth token (chỉ có trên client)
+const { pending: loading } = useAsyncData('my-courses', async () => {
+  try {
+    await coursesStore.fetchMyCourses();
+    return coursesStore.myCourses;
+  } catch (error) {
+    return [];
+  }
+}, {
+  server: false,
+});
 
 // Computed
 const filteredCourses = computed(() => {
@@ -173,25 +187,6 @@ const handleViewDetail = (course: any) => {
   navigateTo(`/my-learning/${course.slug}`);
 };
 
-const fetchData = async () => {
-  try {
-    loading.value = true;
-
-    // Get auth store
-    const authStore = useAuthStore();
-
-    // Get all courses first
-    await coursesStore.fetchMyCourses();
-  } catch (error) {
-  } finally {
-    loading.value = false;
-  }
-};
-
-// Lifecycle
-onMounted(() => {
-  fetchData();
-});
 </script>
 
 <style scoped>

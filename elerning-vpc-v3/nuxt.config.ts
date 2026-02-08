@@ -80,11 +80,11 @@ export default defineNuxtConfig({
     viewer: true,
   },
 
-  // CSS
+  // CSS - font.css trước để font load sớm, giảm CLS
   css: [
+    '~/assets/css/font.css',
     '~/assets/css/tailwind.css',
     'ant-design-vue/dist/reset.css',
-    '~/assets/css/font.css'
   ],
 
   // Runtime config - Environment variables
@@ -158,9 +158,23 @@ export default defineNuxtConfig({
       link: [
         { rel: 'icon', type: 'image/png', href: '/images/favicon-vpc.png' },
         { rel: 'apple-touch-icon', href: '/images/favicon-vpc.png' },
-        { rel: 'preconnect', href: 'https://www.googletagmanager.com', crossorigin: 'anonymous' }
+        { rel: 'preconnect', href: 'https://www.googletagmanager.com', crossorigin: 'anonymous' },
       ]
     }
+  },
+
+  // Image optimization
+  image: {
+    quality: 80,
+    format: ['webp'],
+    screens: {
+      xs: 320,
+      sm: 640,
+      md: 768,
+      lg: 1024,
+      xl: 1280,
+      xxl: 1536,
+    },
   },
 
   // Nitro: cache + compression for static

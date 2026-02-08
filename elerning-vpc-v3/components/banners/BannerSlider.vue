@@ -34,6 +34,8 @@
               alt=""
               class="absolute inset-0 w-full h-full object-cover"
               :loading="index === 0 ? 'eager' : 'lazy'"
+              :preload="index === 0"
+              sizes="xs:100vw sm:100vw md:100vw lg:100vw xl:100vw"
               width="1920"
               height="480"
             />
@@ -110,6 +112,7 @@
         alt=""
         class="absolute inset-0 w-full h-full object-cover"
         loading="eager"
+        sizes="xs:100vw sm:100vw md:100vw lg:100vw xl:100vw"
         width="1920"
         height="480"
         format="webp"

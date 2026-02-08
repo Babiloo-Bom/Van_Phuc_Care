@@ -85,12 +85,12 @@ onMounted(async () => {
     // This ensures logout sync works even if header/sidebar components are not mounted
     try {
       const { startLogoutSyncMonitor } = await import('~/utils/authSync');
-      // Use 500ms interval for faster detection
+      // Use 1000ms interval for detection (balanced between speed and CPU usage)
       stopLogoutMonitor = startLogoutSyncMonitor(async () => {
         // Logout if sync cookie detected, but not immediately after SSO login
         if (authStore.isAuthenticated) {
-          const timeSinceLogin = authStore.loginTimestamp 
-            ? Date.now() - authStore.loginTimestamp 
+          const timeSinceLogin = authStore.loginTimestamp
+            ? Date.now() - authStore.loginTimestamp
             : Infinity;
           // Only skip logout if login was VERY recent (within 2 seconds) - this protects against SSO race conditions
           // But allow logout sync for normal logouts from other site
@@ -98,7 +98,7 @@ onMounted(async () => {
             await authStore.logout();
           }
         }
-      }, 500); // Check every 500ms for faster detection
+      }, 1000); // Check every 1000ms
     } catch (error) {
     }
     

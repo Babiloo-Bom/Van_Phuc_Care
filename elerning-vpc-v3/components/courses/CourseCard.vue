@@ -6,6 +6,7 @@
         :alt="course.title"
         class="thumbnail-image"
         loading="lazy"
+        sizes="xs:100vw sm:100vw md:50vw lg:33vw"
         width="400"
         height="225"
       />

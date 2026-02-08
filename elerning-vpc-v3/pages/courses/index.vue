@@ -466,7 +466,7 @@ useHead({
             // 3. ItemList (danh sách các khóa học)
             {
               "@type": "ItemList",
-              itemListElement: (courses.value || []).map(
+              itemListElement: (courses.value || []).slice(0, 10).map(
                 (course: any, index: number) => {
                   const courseUrl = `${base}/courses/${course.slug}`;
                   const thumb = course.thumbnail;
