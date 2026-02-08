@@ -167,6 +167,11 @@ export default defineNuxtConfig({
   image: {
     quality: 80,
     format: ['webp'],
+    // Cho phép IPX proxy + optimize ảnh từ các domain external
+    domains: [
+      'files.vanphuccare.vn',
+      'firebasestorage.googleapis.com',
+    ],
     screens: {
       xs: 320,
       sm: 640,
@@ -179,6 +184,20 @@ export default defineNuxtConfig({
 
   // Nitro: cache + compression for static
   nitro: {
-    compressPublicAssets: true
+    compressPublicAssets: true,
+    routeRules: {
+      // Static assets (JS, CSS, fonts) - cache 1 year (hashed filenames)
+      '/_nuxt/**': {
+        headers: { 'Cache-Control': 'public, max-age=31536000, immutable' },
+      },
+      // Public images - cache 7 days
+      '/images/**': {
+        headers: { 'Cache-Control': 'public, max-age=604800' },
+      },
+      // IPX optimized images - cache 7 days
+      '/_ipx/**': {
+        headers: { 'Cache-Control': 'public, max-age=604800' },
+      },
+    },
   }
 })

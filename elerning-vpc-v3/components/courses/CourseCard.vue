@@ -80,7 +80,7 @@
 
       <p class="course-description">{{ course.shortDescription }}</p>
       <CourseCardActions
-        :is-purchased="course.isPurchased == true"
+        :is-purchased="isPurchased == true"
         :ever-completed="everCompleted"
         :is-currently-completed="isCurrentlyCompleted"
         :progress-pct="progressPct"
