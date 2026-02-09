@@ -1175,16 +1175,12 @@ onMounted(async () => {
   font-size: 14px;
 }
 .qr-transfer-row {
-  display: flex;
-  align-items: flex-start;
-  gap: 8px;
   margin-bottom: 6px;
 }
 .qr-transfer-label {
-  flex-shrink: 0;
   font-weight: 600;
   color: #595959;
-  min-width: 140px;
+  margin-right: 4px; /* tạo khoảng cách: Ngân hàng: MB Bank */
 }
 .qr-transfer-value {
   color: #262626;
@@ -1193,9 +1189,6 @@ onMounted(async () => {
 .qr-transfer-amount {
   font-weight: 700;
   color: #1A75BB;
-}
-.qr-transfer-content {
-  flex: 1;
 }
 .qr-expiry {
   font-size: 14px;
