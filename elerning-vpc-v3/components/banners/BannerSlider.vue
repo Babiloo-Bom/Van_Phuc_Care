@@ -21,8 +21,7 @@
       >
         <a
           :href="banner.url || '#'"
-          :target="banner.url ? '_blank' : '_self'"
-          :rel="banner.url ? 'noopener noreferrer' : ''"
+          target="_self"
           class="block w-full h-full"
           @click="handleBannerClick(banner)"
         >
