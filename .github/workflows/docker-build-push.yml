@@ -11,7 +11,9 @@ on:
 
 env:
   REGISTRY: ghcr.io
-  IMAGE_PREFIX: babiloo-bom/vanphuccare
+  # Repo đã chuyển sang org mới → dùng namespace GHCR theo owner hiện tại
+  # Ví dụ: ghcr.io/Van-Phuc-Care/vanphuccare-elearning:main
+  IMAGE_PREFIX: ${{ github.repository_owner }}/vanphuccare
 
 jobs:
   # Detect which services changed
