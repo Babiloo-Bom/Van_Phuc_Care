@@ -11,9 +11,10 @@ on:
 
 env:
   REGISTRY: ghcr.io
-  # Repo đã chuyển sang org mới → dùng namespace GHCR theo owner hiện tại
-  # Ví dụ: ghcr.io/Van-Phuc-Care/vanphuccare-elearning:main
-  IMAGE_PREFIX: ${{ github.repository_owner }}/vanphuccare
+  # GHCR/Docker image names MUST be lowercase.
+  # Org mới: Van-Phuc-Care -> dùng lowercase trong đường dẫn image.
+  # Ví dụ: ghcr.io/van-phuc-care/vanphuccare-elearning:main
+  IMAGE_PREFIX: van-phuc-care/vanphuccare
 
 jobs:
   # Detect which services changed
