@@ -40,8 +40,8 @@
       </div>
     </BannerSlider>
 
-    <!-- Courses Section: lúc chưa load xong không hiện card, chỉ placeholder giống trang Khóa học của tôi -->
-    <section class="pb-20 p-4 lg:pt-20 sm:pt-10 bg-[#f4f7f9] relative z-10">
+    <!-- Courses Section: nền trắng đồng bộ toàn trang -->
+    <section class="pb-20 p-4 lg:pt-20 sm:pt-10 bg-white relative z-10">
       <div class="container mx-auto !px-0 md:!px-auto">
         <div v-if="!coursesPending">
           <div

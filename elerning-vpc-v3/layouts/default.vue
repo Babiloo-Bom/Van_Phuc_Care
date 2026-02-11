@@ -1,5 +1,5 @@
 <template>
-  <div class="min-h-screen bg-gray-50">
+  <div class="min-h-screen bg-white">
     <!-- Header: on my-learning-slug, only mount on mobile (<768px) -->
     <TheHeader v-if="showHeader" :class-name="headerClass" />
 

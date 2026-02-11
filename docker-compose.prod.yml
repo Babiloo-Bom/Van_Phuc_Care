@@ -79,7 +79,7 @@ services:
       start_period: 10s
 
   api:
-    image: ghcr.io/babiloo-bom/vanphuccare-api:latest
+    image: ghcr.io/van-phuc-care/vanphuccare-api:latest
     container_name: vpc-api
     restart: unless-stopped
     ports:
@@ -160,7 +160,7 @@ services:
       start_period: 40s
 
   admin:
-    image: ghcr.io/babiloo-bom/vanphuccare-admin:latest
+    image: ghcr.io/van-phuc-care/vanphuccare-admin:latest
     container_name: vpc-admin
     restart: unless-stopped
     ports:
@@ -189,7 +189,7 @@ services:
       start_period: 40s
 
   crm:
-    image: ghcr.io/babiloo-bom/vanphuccare-crm:latest
+    image: ghcr.io/van-phuc-care/vanphuccare-crm:latest
     container_name: vpc-crm
     restart: unless-stopped
     ports:
@@ -220,7 +220,7 @@ services:
       start_period: 40s
 
   elearning:
-    image: ghcr.io/babiloo-bom/vanphuccare-elearning:latest
+    image: ghcr.io/van-phuc-care/vanphuccare-elearning:latest
     container_name: vpc-elearning
     restart: unless-stopped
     ports:

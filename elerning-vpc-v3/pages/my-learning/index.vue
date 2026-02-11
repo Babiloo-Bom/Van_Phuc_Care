@@ -41,8 +41,8 @@
       </div>
     </BannerSlider>
 
-    <!-- Courses Section -->
-    <section class="pb-20 p-4 lg:pt-20 sm:pt-10 bg-[#f4f7f9] relative z-10">
+    <!-- Courses Section: nền trắng đồng bộ toàn trang -->
+    <section class="pb-20 p-4 lg:pt-20 sm:pt-10 bg-white relative z-10">
       <div class="container mx-auto !px-0 md:!px-auto">
         <div v-if="!loading">
           <div
