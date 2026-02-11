@@ -247,6 +247,7 @@ const fetchBanners = async () => {
 
 onMounted(() => {
   fetchBanners()
+  console.log('Check banner')
 })
 </script>
 
