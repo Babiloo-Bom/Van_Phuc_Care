@@ -9,6 +9,7 @@
     <div class="payment-dialog">
       <!-- Thông tin chuyển khoản -->
       <div class="bg-blue-50 p-4 rounded-lg mb-6">
+        
         <h4 class="font-semibold text-lg mb-3">Thông tin chuyển khoản</h4>
         <div class="space-y-2">
           <div class="flex justify-between">
