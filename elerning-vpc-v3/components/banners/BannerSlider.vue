@@ -19,10 +19,8 @@
         :key="banner._id || index"
         class="banner-slide"
       >
-        <a
-          :href="banner.url || '#'"
-          target="_self"
-          class="block w-full h-full"
+        <div
+          class="block w-full h-full cursor-pointer"
           @click="handleBannerClick(banner)"
         >
           <div
@@ -97,7 +95,7 @@
               </div>
             </div>
           </div>
-        </a>
+        </div>
       </swiper-slide>
     </swiper>
 
@@ -224,8 +222,10 @@ const onSwiper = (swiper: any) => {
 }
 
 const handleBannerClick = (banner: Banner) => {
-  if (banner.url) {
+  if (banner.url && banner.url !== '#') {
     // Analytics tracking can be added here
+    // Navigate to the URL in the same tab
+    window.location.href = banner.url
   }
 }
 
