@@ -115,10 +115,10 @@
                     </div>
                   </div>
 
-                  <!-- Loading overlay khi reload HLS do token refresh -->
+                  <!-- Loading overlay khi reload HLS (error recovery) -->
                   <div
                     v-if="hlsReloading"
-                    class="absolute inset-0 flex items-center justify-center bg-black bg-opacity-60 z-10"
+                    class="absolute inset-0 flex items-center justify-center bg-black bg-opacity-50 z-10"
                   >
                     <div
                       class="w-10 h-10 border-4 border-white border-t-transparent rounded-full animate-spin"
@@ -808,7 +808,7 @@ const userClickedPlay = ref(false);
 const videoReady = ref(false); // Chỉ set video src khi ready (delay để tránh Cốc Cốc)
 let hlsInstance: Hls | null = null; // HLS instance để stream video theo chunks
 let pendingResumeTime = 0; // Vị trí cần resume sau khi reload HLS (token refresh / error recovery)
-const hlsReloading = ref(false); // Đang reload HLS do token refresh — hiện loading overlay
+const hlsReloading = ref(false); // Đang reload HLS khi error recovery — hiện loading overlay
 
 // Client-side mounted flag để tránh hydration mismatch
 const isMounted = ref(false);
@@ -1248,13 +1248,26 @@ const loadVideoWithHls = async (startTime = 0) => {
   if (isHls) {
     // HLS: Use hls.js to load HLS manifest (.m3u8)
     if (Hls.isSupported()) {
+      // Custom loader: tự động inject token mới nhất vào mọi request (manifest + segment)
+      // → token refresh hoàn toàn trong suốt, không cần reload HLS
+      const DefaultLoader = Hls.DefaultConfig.loader as any;
+      class TokenAwareLoader extends DefaultLoader {
+        load(context: any, loaderConfig: any, callbacks: any) {
+          if (videoToken.value && context.url?.includes("/stream/")) {
+            context.url = context.url.replace(
+              /(\/stream\/)([^/?#]+)/,
+              `$1${videoToken.value}`,
+            );
+          }
+          super.load(context, loaderConfig, callbacks);
+        }
+      }
+
       hlsInstance = new Hls({
         enableWorker: true,
         lowLatencyMode: false,
         backBufferLength: 90,
-        xhrSetup: (xhr: XMLHttpRequest, url: string) => {
-          xhr.withCredentials = false;
-        },
+        loader: TokenAwareLoader,
         fragLoadingTimeOut: 20000,
         manifestLoadingTimeOut: 10000,
       });
@@ -1277,13 +1290,18 @@ const loadVideoWithHls = async (startTime = 0) => {
         if (data.fatal) {
           switch (data.type) {
             case Hls.ErrorTypes.NETWORK_ERROR: {
-              // startLoad() retry URL cũ (token hết hạn) → vẫn 401
-              // Lưu vị trí → destroy HLS → refresh token
-              // Watch sẽ detect urlChanged + !hlsInstance → tự reload HLS + resume
-              pendingResumeTime = videoRef.value?.currentTime || 0;
-              hlsInstance?.destroy();
-              hlsInstance = null;
-              getVideoToken(true);
+              // TokenAwareLoader tự inject token mới → chỉ cần refresh token rồi startLoad()
+              // Không cần destroy HLS → video không bị giật
+              getVideoToken(true).then(() => {
+                if (videoToken.value && hlsInstance) {
+                  hlsInstance.startLoad();
+                } else {
+                  // Không lấy được token mới → fallback: full reload
+                  pendingResumeTime = videoRef.value?.currentTime || 0;
+                  hlsInstance?.destroy();
+                  hlsInstance = null;
+                }
+              });
               break;
             }
             case Hls.ErrorTypes.MEDIA_ERROR:
@@ -1923,10 +1941,11 @@ watch(
   { immediate: false },
 );
 
-// Watch videoReady và currentVideoUrl để load/reload HLS khi cần
+// Watch videoReady để load HLS lần đầu play, hoặc reload khi HLS bị lỗi (pendingResumeTime > 0)
+// Token refresh không cần reload nữa — TokenAwareLoader tự inject token mới vào mọi request
 watch(
   [videoReady, currentVideoUrl],
-  async ([ready, url], [wasReady, prevUrl]) => {
+  async ([ready, url], [wasReady]) => {
     if (!ready || !url || !userClickedPlay.value) return;
 
     // Đợi DOM cập nhật để videoRef được gán sau khi <video> mount
@@ -1934,22 +1953,11 @@ watch(
     if (!videoRef.value) return;
 
     const justBecameReady = !wasReady && ready;
-    // URL thay đổi do token refresh → cần reload HLS với token mới
-    const urlChanged = prevUrl != null && url !== prevUrl;
+    // Chỉ load HLS khi lần đầu play hoặc HLS đã bị destroy (error recovery)
+    if (!justBecameReady && hlsInstance) return;
 
-    if (!justBecameReady && !urlChanged && hlsInstance) return;
-
-    // Xác định vị trí cần resume:
-    // - Nếu URL đổi (token refresh): lấy currentTime hiện tại HOẶC pendingResumeTime (từ error handler)
-    // - Nếu lần đầu play (justBecameReady): không seek (startTime = 0)
-    const resumeTime =
-      urlChanged && !justBecameReady
-        ? pendingResumeTime || videoRef.value.currentTime || 0
-        : pendingResumeTime;
+    const resumeTime = pendingResumeTime;
     pendingResumeTime = 0;
-
-    // Hiện loading overlay khi reload do token refresh (không phải lần đầu play)
-    if (urlChanged && !justBecameReady) hlsReloading.value = true;
 
     await loadVideoWithHls(resumeTime);
   },
