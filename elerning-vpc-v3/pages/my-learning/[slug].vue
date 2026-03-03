@@ -100,7 +100,7 @@
                   @mouseleave="handleMouseLeave"
                   @touchstart.passive="handleTouchStart"
                 >
-                  <!-- Loading indicator khi đang lấy video token -->
+                  <!-- Loading indicator khi đang lấy video token (lần đầu play) -->
                   <div
                     v-if="hasVideo && videoTokenLoading"
                     class="absolute inset-x-0 bottom-0 flex items-center justify-center bg-gray-900 z-10"
@@ -115,6 +115,16 @@
                     </div>
                   </div>
 
+                  <!-- Loading overlay khi reload HLS do token refresh -->
+                  <div
+                    v-if="hlsReloading"
+                    class="absolute inset-0 flex items-center justify-center bg-black bg-opacity-60 z-10"
+                  >
+                    <div
+                      class="w-10 h-10 border-4 border-white border-t-transparent rounded-full animate-spin"
+                    ></div>
+                  </div>
+
                   <!-- Video Element với chặn tải xuống và context menu -->
                   <!-- Stream qua HLS (hls.js) để stream theo chunks - chống download tốt hơn -->
                   <!-- CHỈ render khi video ready và component đã mounted để tránh hydration mismatch -->
@@ -126,7 +136,7 @@
                       videoReady
                     "
                     ref="videoRef"
-                    :poster="currentThumbnail || undefined"
+                    :poster="userClickedPlay ? undefined : (currentThumbnail || undefined)"
                     class="w-full h-full object-cover video-element"
                     preload="none"
                     playsinline
@@ -798,6 +808,7 @@ const userClickedPlay = ref(false);
 const videoReady = ref(false); // Chỉ set video src khi ready (delay để tránh Cốc Cốc)
 let hlsInstance: Hls | null = null; // HLS instance để stream video theo chunks
 let pendingResumeTime = 0; // Vị trí cần resume sau khi reload HLS (token refresh / error recovery)
+const hlsReloading = ref(false); // Đang reload HLS do token refresh — hiện loading overlay
 
 // Client-side mounted flag để tránh hydration mismatch
 const isMounted = ref(false);
@@ -1259,6 +1270,7 @@ const loadVideoWithHls = async (startTime = 0) => {
           videoRef.value.play().catch(() => {});
           playerState.value.playing = true;
         }
+        hlsReloading.value = false;
       });
 
       hlsInstance.on(Hls.Events.ERROR, (event: string, data: any) => {
@@ -1935,6 +1947,9 @@ watch(
         ? pendingResumeTime || videoRef.value.currentTime || 0
         : pendingResumeTime;
     pendingResumeTime = 0;
+
+    // Hiện loading overlay khi reload do token refresh (không phải lần đầu play)
+    if (urlChanged && !justBecameReady) hlsReloading.value = true;
 
     await loadVideoWithHls(resumeTime);
   },
