@@ -797,6 +797,7 @@ const TOKEN_REFRESH_INTERVAL = 240000; // Refresh token mỗi 4 phút (trước 
 const userClickedPlay = ref(false);
 const videoReady = ref(false); // Chỉ set video src khi ready (delay để tránh Cốc Cốc)
 let hlsInstance: Hls | null = null; // HLS instance để stream video theo chunks
+let pendingResumeTime = 0; // Vị trí cần resume sau khi reload HLS (token refresh / error recovery)
 
 // Client-side mounted flag để tránh hydration mismatch
 const isMounted = ref(false);
@@ -1219,7 +1220,7 @@ const downloadDocument = (docType: string) => {
 };
 
 // Load video - HLS hoặc MP4
-const loadVideoWithHls = async () => {
+const loadVideoWithHls = async (startTime = 0) => {
   if (!videoRef.value || !currentVideoUrl.value) return;
 
   // Cleanup previous HLS instance
@@ -1252,8 +1253,9 @@ const loadVideoWithHls = async () => {
       hlsInstance.attachMedia(videoRef.value);
 
       hlsInstance.on(Hls.Events.MANIFEST_PARSED, () => {
-        // Video ready to play
+        // Video ready to play, seek về vị trí cũ nếu là token refresh / error recovery
         if (videoRef.value) {
+          if (startTime > 0) videoRef.value.currentTime = startTime;
           videoRef.value.play().catch(() => {});
           playerState.value.playing = true;
         }
@@ -1263,31 +1265,13 @@ const loadVideoWithHls = async () => {
         if (data.fatal) {
           switch (data.type) {
             case Hls.ErrorTypes.NETWORK_ERROR: {
-              // startLoad() sẽ retry URL cũ (token hết hạn) → vẫn 401
-              // Force refresh token rồi reload HLS, resume từ vị trí hiện tại
-              const resumeTime = videoRef.value?.currentTime || 0;
+              // startLoad() retry URL cũ (token hết hạn) → vẫn 401
+              // Lưu vị trí → destroy HLS → refresh token
+              // Watch sẽ detect urlChanged + !hlsInstance → tự reload HLS + resume
+              pendingResumeTime = videoRef.value?.currentTime || 0;
               hlsInstance?.destroy();
               hlsInstance = null;
-              getVideoToken(true).then(async () => {
-                await nextTick();
-                if (!videoRef.value || !currentVideoUrl.value) return;
-                await loadVideoWithHls();
-                // Seek về vị trí cũ sau khi HLS sẵn sàng
-                if (resumeTime > 0 && videoRef.value) {
-                  if (videoRef.value.readyState >= 1) {
-                    videoRef.value.currentTime = resumeTime;
-                  } else {
-                    videoRef.value.addEventListener(
-                      "loadedmetadata",
-                      () => {
-                        if (videoRef.value)
-                          videoRef.value.currentTime = resumeTime;
-                      },
-                      { once: true },
-                    );
-                  }
-                }
-              });
+              getVideoToken(true);
               break;
             }
             case Hls.ErrorTypes.MEDIA_ERROR:
@@ -1927,24 +1911,32 @@ watch(
   { immediate: false },
 );
 
-// Watch videoReady để tự động load HLS khi ready
+// Watch videoReady và currentVideoUrl để load/reload HLS khi cần
 watch(
   [videoReady, currentVideoUrl],
-  async ([ready, url], [wasReady]) => {
+  async ([ready, url], [wasReady, prevUrl]) => {
     if (!ready || !url || !userClickedPlay.value) return;
 
     // Đợi DOM cập nhật để videoRef được gán sau khi <video> mount
     await nextTick();
     if (!videoRef.value) return;
 
-    // Chỉ load HLS khi:
-    // 1. videoReady vừa chuyển true (lần đầu play), HOẶC
-    // 2. hlsInstance không tồn tại (chưa khởi tạo hoặc bị lỗi destroy)
-    // Không reload khi chỉ token thay đổi (URL mới) - HLS đang chạy bình thường
     const justBecameReady = !wasReady && ready;
-    if (justBecameReady || !hlsInstance) {
-      await loadVideoWithHls();
-    }
+    // URL thay đổi do token refresh → cần reload HLS với token mới
+    const urlChanged = prevUrl != null && url !== prevUrl;
+
+    if (!justBecameReady && !urlChanged && hlsInstance) return;
+
+    // Xác định vị trí cần resume:
+    // - Nếu URL đổi (token refresh): lấy currentTime hiện tại HOẶC pendingResumeTime (từ error handler)
+    // - Nếu lần đầu play (justBecameReady): không seek (startTime = 0)
+    const resumeTime =
+      urlChanged && !justBecameReady
+        ? pendingResumeTime || videoRef.value.currentTime || 0
+        : pendingResumeTime;
+    pendingResumeTime = 0;
+
+    await loadVideoWithHls(resumeTime);
   },
   { immediate: false },
 );
