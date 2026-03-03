@@ -1262,9 +1262,34 @@ const loadVideoWithHls = async () => {
       hlsInstance.on(Hls.Events.ERROR, (event: string, data: any) => {
         if (data.fatal) {
           switch (data.type) {
-            case Hls.ErrorTypes.NETWORK_ERROR:
-              hlsInstance?.startLoad();
+            case Hls.ErrorTypes.NETWORK_ERROR: {
+              // startLoad() sẽ retry URL cũ (token hết hạn) → vẫn 401
+              // Force refresh token rồi reload HLS, resume từ vị trí hiện tại
+              const resumeTime = videoRef.value?.currentTime || 0;
+              hlsInstance?.destroy();
+              hlsInstance = null;
+              getVideoToken(true).then(async () => {
+                await nextTick();
+                if (!videoRef.value || !currentVideoUrl.value) return;
+                await loadVideoWithHls();
+                // Seek về vị trí cũ sau khi HLS sẵn sàng
+                if (resumeTime > 0 && videoRef.value) {
+                  if (videoRef.value.readyState >= 1) {
+                    videoRef.value.currentTime = resumeTime;
+                  } else {
+                    videoRef.value.addEventListener(
+                      "loadedmetadata",
+                      () => {
+                        if (videoRef.value)
+                          videoRef.value.currentTime = resumeTime;
+                      },
+                      { once: true },
+                    );
+                  }
+                }
+              });
               break;
+            }
             case Hls.ErrorTypes.MEDIA_ERROR:
               hlsInstance?.recoverMediaError();
               break;
@@ -1811,7 +1836,7 @@ const handleFullscreenChange = () => {
 };
 
 // Get video token for proxy streaming - CHỈ lấy khi user click play
-const getVideoToken = async () => {
+const getVideoToken = async (silent = false) => {
   // CHỈ lấy token khi user đã click play - ẩn URL khỏi Cốc Cốc
   if (!userClickedPlay.value) {
     videoToken.value = null;
@@ -1824,7 +1849,8 @@ const getVideoToken = async () => {
   }
 
   try {
-    videoTokenLoading.value = true;
+    // silent=true: background refresh, không hiện loading để tránh unmount <video>
+    if (!silent) videoTokenLoading.value = true;
     const response = await fetch(`${apiUser}/video/token`, {
       method: "POST",
       headers: {
@@ -1846,7 +1872,7 @@ const getVideoToken = async () => {
   } catch (error) {
     videoToken.value = null;
   } finally {
-    videoTokenLoading.value = false;
+    if (!silent) videoTokenLoading.value = false;
   }
 };
 
@@ -1858,10 +1884,10 @@ const startTokenRefresh = () => {
     return;
   }
 
-  // Refresh token mỗi 2 giây (trước khi hết hạn 1 giây)
+  // Refresh token định kỳ - dùng silent=true để không unmount <video> đang phát
   tokenRefreshInterval = setInterval(async () => {
     if (hasVideo.value && currentLesson.value && course.value) {
-      await getVideoToken();
+      await getVideoToken(true);
     }
   }, TOKEN_REFRESH_INTERVAL);
 };
@@ -1904,8 +1930,19 @@ watch(
 // Watch videoReady để tự động load HLS khi ready
 watch(
   [videoReady, currentVideoUrl],
-  async ([ready, url]) => {
-    if (ready && url && videoRef.value && userClickedPlay.value) {
+  async ([ready, url], [wasReady]) => {
+    if (!ready || !url || !userClickedPlay.value) return;
+
+    // Đợi DOM cập nhật để videoRef được gán sau khi <video> mount
+    await nextTick();
+    if (!videoRef.value) return;
+
+    // Chỉ load HLS khi:
+    // 1. videoReady vừa chuyển true (lần đầu play), HOẶC
+    // 2. hlsInstance không tồn tại (chưa khởi tạo hoặc bị lỗi destroy)
+    // Không reload khi chỉ token thay đổi (URL mới) - HLS đang chạy bình thường
+    const justBecameReady = !wasReady && ready;
+    if (justBecameReady || !hlsInstance) {
       await loadVideoWithHls();
     }
   },
